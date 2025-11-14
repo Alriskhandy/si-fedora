@@ -1,0 +1,242 @@
+/**
+ * SIFEDORA Custom Theme
+ * Primary Color: Blue (#1E40AF, #2563EB, #3B82F6)
+ * Sesuai dengan logo SIFEDORA
+ */
+
+:root {
+    --sifedora-primary: #2563eb;
+    --sifedora-primary-dark: #1e40af;
+    --sifedora-primary-light: #3b82f6;
+    --sifedora-primary-lighter: #60a5fa;
+    --sifedora-primary-lightest: #dbeafe;
+    --sifedora-accent: #0ea5e9;
+}
+
+/* Primary Button */
+.btn-primary {
+    background-color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--sifedora-primary-dark) !important;
+    border-color: var(--sifedora-primary-dark) !important;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25) !important;
+}
+
+.btn-primary:active {
+    background-color: var(--sifedora-primary-dark) !important;
+    border-color: #1e3a8a !important;
+}
+
+/* Menu Sidebar */
+.menu .menu-item.active > .menu-link {
+    background-color: rgba(37, 99, 235, 0.08) !important;
+    color: var(--sifedora-primary) !important;
+}
+
+.menu .menu-item.active > .menu-link .menu-icon {
+    color: var(--sifedora-primary) !important;
+}
+
+.menu .menu-link:hover {
+    background-color: rgba(37, 99, 235, 0.05) !important;
+}
+
+/* Navbar */
+.bg-navbar-theme {
+    background-color: #fff!important;
+    color: #3b3b3b !important;
+}
+
+/* Badge Primary */
+.badge-primary {
+    background-color: var(--sifedora-primary) !important;
+    color: #fff !important;
+}
+
+/* Text Primary */
+.text-primary {
+    color: var(--sifedora-primary) !important;
+}
+
+a.text-primary:hover,
+a.text-primary:focus {
+    color: var(--sifedora-primary-dark) !important;
+}
+
+/* Border Primary */
+.border-primary {
+    border-color: var(--sifedora-primary) !important;
+}
+
+/* Background Primary */
+.bg-primary {
+    background-color: var(--sifedora-primary) !important;
+    color: #fff !important;
+}
+
+/* Links */
+a {
+    color: var(--sifedora-primary);
+}
+
+a:hover {
+    color: var(--sifedora-primary-dark);
+}
+
+/* Form Controls Focus */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--sifedora-primary-light) !important;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Checkbox & Radio */
+.form-check-input:checked {
+    background-color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+}
+
+.form-check-input:focus {
+    border-color: var(--sifedora-primary-light) !important;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Pagination */
+.pagination .page-item.active .page-link {
+    background-color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+}
+
+.pagination .page-link {
+    color: var(--sifedora-primary);
+}
+
+.pagination .page-link:hover {
+    color: var(--sifedora-primary-dark);
+    background-color: var(--sifedora-primary-lightest);
+}
+
+/* Nav Tabs */
+.nav-tabs .nav-link.active {
+    color: var(--sifedora-primary) !important;
+    border-bottom-color: var(--sifedora-primary) !important;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--sifedora-primary) !important;
+}
+
+/* Progress Bar */
+.progress-bar {
+    background-color: var(--sifedora-primary) !important;
+}
+
+/* Alert Primary */
+.alert-primary {
+    background-color: var(--sifedora-primary-lightest) !important;
+    border-color: var(--sifedora-primary-lighter) !important;
+    color: var(--sifedora-primary-dark) !important;
+}
+
+/* Card Header */
+.card-header.bg-primary {
+    background-color: var(--sifedora-primary) !important;
+}
+
+/* Dropdown Active */
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: var(--sifedora-primary) !important;
+}
+
+/* Table Hover */
+.table-hover tbody tr:hover {
+    background-color: rgba(37, 99, 235, 0.04);
+}
+
+/* List Group Active */
+.list-group-item.active {
+    background-color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+}
+
+/* Spinner */
+.spinner-border-primary {
+    color: var(--sifedora-primary) !important;
+}
+
+/* Avatar dengan border primary */
+.avatar-primary {
+    border: 2px solid var(--sifedora-primary);
+}
+
+/* Custom scrollbar untuk sidebar */
+.menu::-webkit-scrollbar-thumb {
+    background-color: var(--sifedora-primary-light);
+}
+
+/* Input Group Text */
+.input-group-text {
+    color: var(--sifedora-primary);
+}
+
+/* Switch/Toggle */
+.form-switch .form-check-input:checked {
+    background-color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+}
+
+/* Breadcrumb Active */
+.breadcrumb-item.active {
+    color: var(--sifedora-primary);
+}
+
+/* Close Button Focus */
+.btn-close:focus {
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+}
+
+/* Timeline dengan primary color */
+.timeline-item::before {
+    background-color: var(--sifedora-primary);
+}
+
+/* Custom untuk status badge */
+.badge-status-active {
+    background-color: var(--sifedora-primary) !important;
+    color: white;
+}
+
+/* Hover effect untuk card */
+.card-hover:hover {
+    border-color: var(--sifedora-primary) !important;
+    box-shadow: 0 0.5rem 1rem rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Menu header text color */
+.menu-header-text {
+    color: var(--sifedora-primary-dark) !important;
+    font-weight: 600;
+}
+
+/* App brand logo hover */
+.app-brand-link:hover {
+    opacity: 0.9;
+}
+
+/* Custom button outline primary */
+.btn-outline-primary {
+    color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--sifedora-primary) !important;
+    border-color: var(--sifedora-primary) !important;
+    color: white !important;
+}
