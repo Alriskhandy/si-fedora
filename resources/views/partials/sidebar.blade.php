@@ -241,9 +241,9 @@
 
         {{-- Logout --}}
         <li class="menu-item">
-            <form method="POST" action="#" id="logout-form">
+            <form method="POST" action="{{ route('logout') }}" id="logout-form">
                 @csrf
-                <a href="#" class="menu-link"
+                <a href="{{ route('logout') }}" class="menu-link"
                     onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                     <i class="menu-icon tf-icons bx bx-power-off"></i>
                     <div>Logout</div>

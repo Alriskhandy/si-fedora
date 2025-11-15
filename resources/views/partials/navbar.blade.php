@@ -96,9 +96,9 @@
                         <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                        <form method="POST" action="#" id="logout-form-navbar">
+                        <form method="POST" action="{{ route('logout') }}" id="logout-form-navbar">
                             @csrf
-                            <a class="dropdown-item" href="#"
+                            <a class="dropdown-item" href="{{ route('logout') }}"
                                 onclick="event.preventDefault(); document.getElementById('logout-form-navbar').submit();">
                                 <i class="bx bx-power-off me-2"></i>
                                 <span class="align-middle">Logout</span>

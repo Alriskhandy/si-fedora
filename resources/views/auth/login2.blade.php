@@ -29,6 +29,9 @@
         class="template-customizer-theme-css" />
     <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
 
+    {{-- SIFEDORA Custom Theme --}}
+    <link rel="stylesheet" href="{{ asset('assets/css/sifedora-theme.css') }}" />
+
     <!-- Page CSS -->
     <link rel="stylesheet" href="{{ asset('assets/vendor/css/pages/page-auth.css') }}" />
 
@@ -51,7 +54,8 @@
                             </a>
                         </div>
 
-                        <h4 class="mb-2 text-center">Selamat Datang</h4>
+                        <h5 class="mb-2 text-center">Sistem Informasi Fasilitasi/Evaluasi Dokumen Perencanaan Kabupaten/Kota</h5>
+                        {{-- <h4 class="mb-2 text-center">Selamat Datang</h4> --}}
                         <p class="mb-4 text-center">Silakan masuk ke akun Anda</p>
 
                         @if (session('status'))
