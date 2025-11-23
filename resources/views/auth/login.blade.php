@@ -89,7 +89,7 @@
                             <div class="mb-3 form-password-toggle">
                                 <div class="d-flex justify-content-between">
                                     <label class="form-label" for="password">Kata Sandi</label>
-                                    @if (Route::has('password.request'))
+                                    @if (app('router')->getRoutes()->hasNamedRoute('password.request'))
                                         <a href="{{ route('password.request') }}">
                                             <small>Lupa Kata Sandi?</small>
                                         </a>

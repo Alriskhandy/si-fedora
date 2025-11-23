@@ -113,4 +113,13 @@ class User extends Authenticatable
     {
         $this->update(['last_login_at' => now()]);
     }
+    public function temporaryRoles()
+{
+    return $this->hasMany(TemporaryRoleAssignment::class);
+}
+
+public function activeTemporaryRoles()
+{
+    return $this->temporaryRoles()->where('end_date', '>', now());
+}
 }

@@ -8,7 +8,8 @@
         <div class="col-lg-12 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Dashboard {{ Auth::user()->kabupatenKota->nama ?? 'Kabupaten/Kota' }}</h5>
+                    {{-- <h5 class="card-title">Dashboard {{ Auth::user()->kabupatenKota->nama ?? 'Kabupaten/Kota' }}</h5> --}}
+                    {{ auth()->user()?->kabupatenKota?->nama ?? 'Kabupaten/Kota' }}
                     <p class="text-muted">Monitoring Permohonan Fasilitasi</p>
                 </div>
             </div>
