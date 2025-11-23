@@ -1,0 +1,92 @@
+@extends('layouts.app')
+
+@section('title', 'Tambah User')
+
+@section('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/select2/select2.css') }}" />
+@endsection
+
+@section('main')
+<div class="container-xxl flex-grow-1 container-p-y">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tambah User Baru</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('users.store') }}" method="POST">
+                        @csrf
+                        
+                        <div class="mb-3">
+                            <label class="form-label" for="name">Nama Lengkap</label>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                                   id="name" name="name" value="{{ old('name') }}" required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="email">Email</label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                                   id="email" name="email" value="{{ old('email') }}" required>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="password">Kata Sandi</label>
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                   id="password" name="password" required>
+                            @error('password')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="password_confirmation">Konfirmasi Kata Sandi</label>
+                            <input type="password" class="form-control" 
+                                   id="password_confirmation" name="password_confirmation" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="role">Role</label>
+                            <select class="form-select @error('role') is-invalid @enderror" 
+                                    id="role" name="role" required>
+                                <option value="">Pilih Role</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->name }}" {{ old('role') == $role->name ? 'selected' : '' }}>
+                                        {{ $role->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('role')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary me-2">Simpan</button>
+                            <a href="{{ route('users.index') }}" class="btn btn-secondary">Batal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        $('#role').select2({
+            placeholder: "Pilih role...",
+            allowClear: true
+        });
+    });
+</script>
+@endsection

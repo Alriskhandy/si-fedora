@@ -1,0 +1,139 @@
+@extends('layouts.app')
+
+@section('title', 'Edit Jadwal Fasilitasi')
+
+@section('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/select2/select2.css') }}" />
+@endsection
+
+@section('main')
+<div class="container-xxl flex-grow-1 container-p-y">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Edit Jadwal Fasilitasi</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('jadwal.update', $jadwal) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        
+                        <div class="mb-3">
+                            <label class="form-label" for="tahun_anggaran_id">Tahun Anggaran</label>
+                            <select class="form-select @error('tahun_anggaran_id') is-invalid @enderror" 
+                                    id="tahun_anggaran_id" name="tahun_anggaran_id" required>
+                                <option value="">Pilih Tahun Anggaran</option>
+                                @foreach($tahunAnggaran as $tahun)
+                                    <option value="{{ $tahun->id }}" {{ old('tahun_anggaran_id', $jadwal->tahun_anggaran_id) == $tahun->id ? 'selected' : '' }}>
+                                        {{ $tahun->tahun }} - {{ $tahun->nama ?? 'Tahun ' . $tahun->tahun }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('tahun_anggaran_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jenis_dokumen_id">Jenis Dokumen</label>
+                            <select class="form-select @error('jenis_dokumen_id') is-invalid @enderror" 
+                                    id="jenis_dokumen_id" name="jenis_dokumen_id" required>
+                                <option value="">Pilih Jenis Dokumen</option>
+                                @foreach($jenisDokumen as $dokumen)
+                                    <option value="{{ $dokumen->id }}" {{ old('jenis_dokumen_id', $jadwal->jenis_dokumen_id) == $dokumen->id ? 'selected' : '' }}>
+                                        {{ $dokumen->nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('jenis_dokumen_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="nama_kegiatan">Nama Kegiatan</label>
+                            <input type="text" class="form-control @error('nama_kegiatan') is-invalid @enderror" 
+                                   id="nama_kegiatan" name="nama_kegiatan" value="{{ old('nama_kegiatan', $jadwal->nama_kegiatan) }}" required>
+                            @error('nama_kegiatan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="tanggal_mulai">Tanggal Mulai</label>
+                                    <input type="date" class="form-control @error('tanggal_mulai') is-invalid @enderror" 
+                                           id="tanggal_mulai" name="tanggal_mulai" value="{{ old('tanggal_mulai', $jadwal->tanggal_mulai->format('Y-m-d')) }}" required>
+                                    @error('tanggal_mulai')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" for="tanggal_selesai">Tanggal Selesai</label>
+                                    <input type="date" class="form-control @error('tanggal_selesai') is-invalid @enderror" 
+                                           id="tanggal_selesai" name="tanggal_selesai" value="{{ old('tanggal_selesai', $jadwal->tanggal_selesai->format('Y-m-d')) }}" required>
+                                    @error('tanggal_selesai')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="batas_permohonan">Batas Permohonan</label>
+                            <input type="date" class="form-control @error('batas_permohonan') is-invalid @enderror" 
+                                   id="batas_permohonan" name="batas_permohonan" value="{{ old('batas_permohonan', $jadwal->batas_permohonan ? $jadwal->batas_permohonan->format('Y-m-d') : '') }}" required>
+                            @error('batas_permohonan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="keterangan">Keterangan</label>
+                            <textarea class="form-control @error('keterangan') is-invalid @enderror" 
+                                      id="keterangan" name="keterangan" rows="3">{{ old('keterangan', $jadwal->keterangan) }}</textarea>
+                            @error('keterangan')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="status">Status</label>
+                            <select class="form-select @error('status') is-invalid @enderror" 
+                                    id="status" name="status" required>
+                                <option value="draft" {{ old('status', $jadwal->status) == 'draft' ? 'selected' : '' }}>Draft</option>
+                                <option value="published" {{ old('status', $jadwal->status) == 'published' ? 'selected' : '' }}>Published</option>
+                                <option value="cancelled" {{ old('status', $jadwal->status) == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                            </select>
+                            @error('status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary me-2">Update</button>
+                            <a href="{{ route('jadwal.index') }}" class="btn btn-secondary">Batal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        $('#tahun_anggaran_id, #jenis_dokumen_id').select2({
+            placeholder: "Pilih...",
+            allowClear: true
+        });
+    });
+</script>
+@endsection
