@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 
+
 class UserController extends Controller
 {
     /**
@@ -16,25 +17,19 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
-
         // Filter by role
         if ($request->filled('role')) {
             $query->role($request->role);
         }
-
         // Search
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('email', 'like', '%' . $request->search . '%');
         }
-
         $users = $query->with('roles')->latest()->paginate(10);
-
         $roles = Role::all();
-
         return view('users.index', compact('users', 'roles'));
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -43,7 +38,6 @@ class UserController extends Controller
         $roles = Role::all();
         return view('users.create', compact('roles'));
     }
-
     /**
      * Store a newly created resource in storage.
      */

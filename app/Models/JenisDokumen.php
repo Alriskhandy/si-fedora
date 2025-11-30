@@ -38,4 +38,9 @@ class JenisDokumen extends Model
     {
         return $this->hasMany(JadwalFasilitasi::class, 'jenis_dokumen_id');
     }
+    // Tambahin ini di model JenisDokumen
+    public function persyaratan()
+    {
+        return $this->hasMany(PersyaratanDokumen::class, 'jenis_dokumen_id');
+    }
 }

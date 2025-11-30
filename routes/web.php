@@ -7,20 +7,26 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\JenisDokumenController; 
+use App\Http\Controllers\JenisDokumenController;
 use App\Http\Controllers\KabupatenKotaController;
-use App\Http\Controllers\TahunAnggaranController; 
-use App\Http\Controllers\JadwalFasilitasiController; 
-use App\Http\Controllers\SuratPemberitahuanController; 
-use App\Http\Controllers\TimPokjaController; 
+use App\Http\Controllers\TahunAnggaranController;
+use App\Http\Controllers\JadwalFasilitasiController;
+use App\Http\Controllers\SuratPemberitahuanController;
+use App\Http\Controllers\TimPokjaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermohonanController;
-use App\Http\Controllers\PermohonanDokumenController; 
+use App\Http\Controllers\PermohonanDokumenController;
+use App\Http\Controllers\VerifikasiController;
+use App\Http\Controllers\EvaluasiController;
+use App\Http\Controllers\AdminPeranController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\SuratRekomendasiController;
+use App\Http\Controllers\LogoController;    
 
 // Route::middleware(['auth'])->group(function () {
 //     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 // });
-
+Route::get('/logo/index', [LogoController::class, 'index'])->name('logo.index');
 // Protected routes
 Route::middleware(['auth'])->group(function () {
     // Route::post('logout', [LoginController::class, 'logout'])->name('logout');
@@ -31,35 +37,42 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:superadmin|admin_peran'])->group(function () {
         Route::resource('users', UserController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])
-             ->name('users.reset-password');
+            ->name('users.reset-password');
     });
-  // Role & Permission Management - hanya superadmin
-  Route::middleware(['role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('roles', RoleController::class);
-    Route::resource('permissions', PermissionController::class);
-});
-   // Jenis Dokumen Management - superadmin & admin_peran master data
-   Route::middleware(['role:superadmin|admin_peran'])->group(function () {
-    Route::resource('jenis-dokumen', JenisDokumenController::class);
-    Route::resource('kabupaten-kota', KabupatenKotaController::class)->parameters([
-        'kabupaten-kota' => 'kabupatenKota'
-    ]);
-    Route::resource('tahun-anggaran', TahunAnggaranController::class)->parameters([
-        'tahun-anggaran' => 'tahunAnggaran'
-    ]);
-    Route::resource('tim-pokja', TimPokjaController::class)->parameters([
-        'tim-pokja' => 'timPokja'
-    ]);
-});
+    // Role & Permission Management - hanya superadmin
+    Route::middleware(['role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('roles', RoleController::class);
+        Route::resource('permissions', PermissionController::class);
+    });
+    // Jenis Dokumen Management - superadmin & admin_peran master data
+    Route::middleware(['role:superadmin|admin_peran'])->group(function () {
+        Route::resource('jenis-dokumen', JenisDokumenController::class);
+        Route::resource('kabupaten-kota', KabupatenKotaController::class)->parameters([
+            'kabupaten-kota' => 'kabupatenKota'
+        ]);
+        Route::resource('tahun-anggaran', TahunAnggaranController::class)->parameters([
+            'tahun-anggaran' => 'tahunAnggaran'
+        ]);
+        Route::resource('tim-pokja', TimPokjaController::class)->parameters([
+            'tim-pokja' => 'timPokja'
+        ]);
+    });
 
-// Jadwal Fasilitasi Management - admin_peran only
-Route::middleware(['role:admin_peran'])->group(function () {
-    Route::resource('jadwal', JadwalFasilitasiController::class)->parameters([
-        'jadwal' => 'jadwal'
-    ]);
-    Route::post('/jadwal/{jadwal}/publish', [JadwalFasilitasiController::class, 'publish'])->name('jadwal.publish');
-    Route::post('/jadwal/{jadwal}/cancel', [JadwalFasilitasiController::class, 'cancel'])->name('jadwal.cancel');
-});
+    // Admin PERAN Management
+    Route::middleware(['role:admin_peran'])->group(function () {
+        Route::get('/admin-peran', [AdminPeranController::class, 'index'])->name('admin-peran.index');
+        Route::post('/admin-peran/{permohonan}/assign', [AdminPeranController::class, 'assign'])->name('admin-peran.assign');
+        Route::post('/admin-peran/{permohonan}/unassign', [AdminPeranController::class, 'unassign'])->name('admin-peran.unassign');
+    });
+
+    // Jadwal Fasilitasi Management - admin_peran only
+    Route::middleware(['role:admin_peran'])->group(function () {
+        Route::resource('jadwal', JadwalFasilitasiController::class)->parameters([
+            'jadwal' => 'jadwal'
+        ]);
+        Route::post('/jadwal/{jadwal}/publish', [JadwalFasilitasiController::class, 'publish'])->name('jadwal.publish');
+        Route::post('/jadwal/{jadwal}/cancel', [JadwalFasilitasiController::class, 'cancel'])->name('jadwal.cancel');
+    });
 
     // Surat Pemberitahuan Management - admin_peran only
     Route::middleware(['role:admin_peran'])->group(function () {
@@ -70,22 +83,59 @@ Route::middleware(['role:admin_peran'])->group(function () {
         Route::get('/surat-pemberitahuan/{suratPemberitahuan}/download', [SuratPemberitahuanController::class, 'download'])->name('surat-pemberitahuan.download');
     });
 
-        // Permohonan Management - role based
-        Route::middleware(['role:kabkota|admin_peran'])->group(function () {
-            Route::resource('permohonan', PermohonanController::class);
-            Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
-        });
+    // Permohonan Management - role based
+    Route::middleware(['role:kabkota|admin_peran'])->group(function () {
+        Route::resource('permohonan', PermohonanController::class);
+        Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
+    });
 
-        Route::middleware(['auth', 'role:kabkota|admin_peran'])->group(function () {
-            Route::resource('permohonan-dokumen', PermohonanDokumenController::class);
-        });
-    
-        // Untuk verifikator & pokja (nanti ditambahin)
-        // Route::middleware(['role:verifikator|pokja|admin_peran'])->group(function () {
-        //     Route::get('/permohonan/{permohonan}/verifikasi', [VerifikasiController::class, 'show'])->name('permohonan.verifikasi.show');
-        //     Route::get('/permohonan/{permohonan}/evaluasi', [EvaluasiController::class, 'show'])->name('permohonan.evaluasi.show');
-        // });
-// Tambahkan di route group yang sesuai
+    // Route::middleware(['auth', 'role:kabkota|admin_peran'])->group(function () {
+    //     Route::resource('permohonan-dokumen', PermohonanDokumenController::class);
+    // });
+    Route::resource('permohonan-dokumen', PermohonanDokumenController::class)
+    ->parameters([
+        'permohonan-dokumen' => 'permohonanDokumen'
+    ]);
+
+    // Verifikasi Management - verifikator only
+    Route::middleware(['role:verifikator'])->group(function () {
+        Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
+        Route::get('/verifikasi/{permohonan}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
+        Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
+    });
+
+    // Evaluasi Management - pokja only
+    Route::middleware(['role:pokja'])->group(function () {
+        Route::get('/evaluasi', [EvaluasiController::class, 'index'])->name('evaluasi.index');
+        Route::get('/evaluasi/{permohonan}', [EvaluasiController::class, 'show'])->name('evaluasi.show');
+        Route::post('/evaluasi/{permohonan}', [EvaluasiController::class, 'store'])->name('evaluasi.store');
+        Route::get('/evaluasi/draft/{evaluasi}/download', [EvaluasiController::class, 'downloadDraft'])->name('evaluasi.download-draft');
+    });
+
+    // Approval oleh Kaban
+    Route::middleware(['role:kaban'])->group(function () {
+        Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
+        Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
+        Route::post('/approval/{permohonan}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
+        Route::post('/approval/{permohonan}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
+        Route::get('/approval/draft/{evaluasi}/download', [ApprovalController::class, 'downloadDraft'])->name('approval.download-draft');
+    });
+
+    Route::middleware(['role:kaban'])->group(function () {
+        Route::get('/surat-rekomendasi', [SuratRekomendasiController::class, 'index'])->name('surat-rekomendasi.index');
+        Route::get('/surat-rekomendasi/{permohonan}/create', [SuratRekomendasiController::class, 'create'])->name('surat-rekomendasi.create');
+        Route::post('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'store'])->name('surat-rekomendasi.store');
+
+        Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])
+        ->name('surat-rekomendasi.show');
+    });
+
+    // Untuk verifikator & pokja (nanti ditambahin)
+    // Route::middleware(['role:verifikator|pokja|admin_peran'])->group(function () {
+    //     Route::get('/permohonan/{permohonan}/verifikasi', [VerifikasiController::class, 'show'])->name('permohonan.verifikasi.show');
+    //     Route::get('/permohonan/{permohonan}/evaluasi', [EvaluasiController::class, 'show'])->name('permohonan.evaluasi.show');
+    // });
+    // Tambahkan di route group yang sesuai
 
     // Route::get('/kabupaten-kota', function() { return 'Kabupaten/Kota Management'; })->name('kabupaten-kota.index');
     // Route::get('/jenis-dokumen', function() { return 'Jenis Dokumen Management'; })->name('jenis-dokumen.index');
@@ -96,12 +146,20 @@ Route::middleware(['role:admin_peran'])->group(function () {
     // Route::get('/surat-pemberitahuan', function() { return 'Surat Pemberitahuan Management'; })->name('surat-pemberitahuan.index');
     // Route::get('/permohonan', function() { return 'Permohonan Management'; })->name('permohonan.index');
     // Route::get('/permohonan-dokumen', function() { return 'Permohonan Dokumen Management'; })->name('permohonan-dokumen.index');
-    Route::get('/verifikasi', function() { return 'Verifikasi Management'; })->name('verifikasi.index');
-    Route::get('/evaluasi', function() { return 'Evaluasi Management'; })->name('evaluasi.index');
-    Route::get('/approval', function() { return 'Approval Management'; })->name('approval.index');
-    Route::get('/surat-rekomendasi', function() { return 'Surat Rekomendasi Management'; })->name('surat-rekomendasi.index');
-    Route::get('/monitoring', function() { return 'Monitoring Management'; })->name('monitoring.index');
-    Route::get('/kaban', function() { return 'Kaban Management'; })->name('kaban.index');
+    // Route::get('/verifikasi', function() { return 'Verifikasi Management'; })->name('verifikasi.index');
+    // Route::get('/evaluasi', function() { return 'Evaluasi Management'; })->name('evaluasi.index');
+    // Route::get('/approval', function() { return 'Approval Management'; })->name('approval.index');
+    // Route::get('/surat-rekomendasi', function () {
+    //     return 'Surat Rekomendasi Management';
+    // })->name('surat-rekomendasi.index');
+
+
+    Route::get('/monitoring', function () {
+        return 'Monitoring Management';
+    })->name('monitoring.index');
+    Route::get('/kaban', function () {
+        return 'Kaban Management';
+    })->name('kaban.index');
 });
 
 // Route::get('/', function () {

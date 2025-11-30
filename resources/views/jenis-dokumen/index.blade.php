@@ -48,7 +48,8 @@
                                     <td>{{ $index + $jenisDokumen->firstItem() }}</td>
                                     <td>{{ $item->kode }}</td>
                                     <td>{{ $item->nama }}</td>
-                                    <td>{{ Str::limit($item->deskripsi, 50) }}</td>
+                                    <td>{{ str($item->deskripsi)->limit(50) }}</td>
+                                    {{-- <td>{{ Str::limit($item->deskripsi, 50) }}</td> --}}
                                     <td>
                                         @if($item->is_active)
                                             <span class="badge bg-label-success">Aktif</span>
