@@ -1,4 +1,4 @@
-@extends('layouts.app')
+ @extends('layouts.app')
 
 @section('title', 'Manajemen User')
 
@@ -145,4 +145,4 @@ function deleteUser(userId) {
     }
 }
 </script>
-@endsection
+@endsection 

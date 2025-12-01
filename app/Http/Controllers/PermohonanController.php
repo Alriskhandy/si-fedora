@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permohonan;
-use App\Models\JadwalFasilitasi;
 use App\Models\JenisDokumen;
+use Illuminate\Http\Request;
 use App\Models\KabupatenKota;
 use App\Models\TahunAnggaran;
-use Illuminate\Http\Request;
+use App\Models\JadwalFasilitasi;
+use App\Models\PermohonanDokumen;
+use App\Models\PersyaratanDokumen;
 use Illuminate\Support\Facades\Auth;
 
 class PermohonanController extends Controller
@@ -125,7 +127,45 @@ class PermohonanController extends Controller
 
     //     return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
     // }
-    public function store(Request $request)
+//     public function store(Request $request)
+// {
+    // $request->validate([
+    //     'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
+    //     'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
+    //     'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
+    //     'nama_dokumen' => 'required|string|max:200',
+    //     'tanggal_permohonan' => 'required|date',
+    //     'keterangan' => 'nullable|string',
+    // ]);
+
+    // // Cek apakah jadwal masih aktif
+    // $jadwal = JadwalFasilitasi::find($request->jadwal_fasilitasi_id);
+    // if ($jadwal->batas_permohonan < now()) {
+    //     return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
+    // }
+
+//     // Generate nomor permohonan
+//     $tahun = now()->year;
+//     $bulan = now()->format('m');
+//     $counter = Permohonan::whereYear('created_at', $tahun)->count() + 1;
+//     $nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
+
+//     $permohonan = Permohonan::create([
+//         'tahun_anggaran_id' => $request->tahun_anggaran_id,
+//         'jenis_dokumen_id' => $request->jenis_dokumen_id,
+//         'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
+//         'nama_dokumen' => $request->nama_dokumen,
+//         'tanggal_permohonan' => $request->tanggal_permohonan,
+//         'keterangan' => $request->keterangan,
+//         'nomor_permohonan' => $nomor_permohonan, // <-- Tambahin ini
+//         'status' => 'draft',
+//         'created_by' => Auth::id(),
+//         'kabupaten_kota_id' => Auth::user()->kabupaten_kota_id,
+//     ]);
+
+//     return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
+// }
+public function store(Request $request)
 {
     $request->validate([
         'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
@@ -148,6 +188,7 @@ class PermohonanController extends Controller
     $counter = Permohonan::whereYear('created_at', $tahun)->count() + 1;
     $nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
 
+    // Buat permohonan
     $permohonan = Permohonan::create([
         'tahun_anggaran_id' => $request->tahun_anggaran_id,
         'jenis_dokumen_id' => $request->jenis_dokumen_id,
@@ -155,15 +196,25 @@ class PermohonanController extends Controller
         'nama_dokumen' => $request->nama_dokumen,
         'tanggal_permohonan' => $request->tanggal_permohonan,
         'keterangan' => $request->keterangan,
-        'nomor_permohonan' => $nomor_permohonan, // <-- Tambahin ini
+        'nomor_permohonan' => $nomor_permohonan,
         'status' => 'draft',
         'created_by' => Auth::id(),
         'kabupaten_kota_id' => Auth::user()->kabupaten_kota_id,
     ]);
 
+    // Auto-generate dokumen persyaratan berdasarkan jenis dokumen
+    $persyaratan = PersyaratanDokumen::where('jenis_dokumen_id', $request->jenis_dokumen_id)->get();
+    foreach ($persyaratan as $item) {
+        PermohonanDokumen::create([
+            'permohonan_id' => $permohonan->id,
+            'persyaratan_dokumen_id' => $item->id,
+            'is_ada' => false, // Default: dokumen belum diupload
+            'status_verifikasi' => 'pending',
+        ]);
+    }
+
     return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
 }
-
     public function show(Permohonan $permohonan)
     {
         // Cek hak akses
@@ -225,29 +276,52 @@ class PermohonanController extends Controller
         return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil diperbarui.');
     }
 
-    public function submit(Permohonan $permohonan)
-    {
-        // Hanya bisa submit kalo status draft
-        if ($permohonan->status !== 'draft') {
-            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
-        }
+    // public function submit(Permohonan $permohonan)
+    // {
+    //     // Hanya bisa submit kalo status draft
+    //     if ($permohonan->status !== 'draft') {
+    //         return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
+    //     }
 
-        // Cek apakah semua dokumen persyaratan sudah diupload (ini bisa diimplementasiin nanti)
-        // $dokumenBelumLengkap = $permohonan->permohonanDokumen()
-        //     ->where('is_ada', false)
-        //     ->exists();
+    //     // Cek apakah semua dokumen persyaratan sudah diupload (ini bisa diimplementasiin nanti)
+    //     // $dokumenBelumLengkap = $permohonan->permohonanDokumen()
+    //     //     ->where('is_ada', false)
+    //     //     ->exists();
         
-        // if ($dokumenBelumLengkap) {
-        //     return redirect()->back()->with('error', 'Silakan lengkapi semua dokumen persyaratan terlebih dahulu.');
-        // }
+    //     // if ($dokumenBelumLengkap) {
+    //     //     return redirect()->back()->with('error', 'Silakan lengkapi semua dokumen persyaratan terlebih dahulu.');
+    //     // }
 
-        $permohonan->update([
-            'status' => 'submitted',
-            'submitted_at' => now(),
-        ]);
+    //     $permohonan->update([
+    //         'status' => 'submitted',
+    //         'submitted_at' => now(),
+    //     ]);
 
-        return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
+    //     return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
+    // }
+    public function submit(Permohonan $permohonan)
+{
+    if ($permohonan->status !== 'draft') {
+        return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
     }
+
+    // Cari verifikator pertama (bisa random atau pake round-robin)
+    $verifikator = \App\Models\User::whereHas('roles', function($q) {
+        $q->where('name', 'verifikator');
+    })->first();
+
+    if (!$verifikator) {
+        return redirect()->back()->with('error', 'Tidak ada Tim Verifikasi yang tersedia.');
+    }
+
+    $permohonan->update([
+        'status' => 'submitted',
+        'submitted_at' => now(),
+        'verifikator_id' => $verifikator->id, // <-- Tambahin ini
+    ]);
+
+    return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
+}
 
     public function destroy(Permohonan $permohonan)
     {

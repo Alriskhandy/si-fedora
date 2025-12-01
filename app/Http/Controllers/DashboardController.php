@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\JadwalFasilitasi;
-
+use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     public function index()
@@ -77,10 +77,11 @@ class DashboardController extends Controller
             'in_evaluation' => Permohonan::where('status', 'in_evaluation')->count(),
             'pending_approval' => Permohonan::where('status', 'draft_recommendation')->count(),
             'total_permohonan' => Permohonan::count(),
-            'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
-                ->latest()
-                ->limit(10)
-                ->get()
+            'recent_activities' => DB::table('activity_log') // <-- Ganti jadi ini
+            ->where('created_at', '>=', now()->subDays(7))
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
         ];
 
         return view('dashboard.admin_peran', compact('stats'));
@@ -145,11 +146,11 @@ class DashboardController extends Controller
             'verified_permohonan' => Permohonan::where('created_by', $user->id)
                 ->where('status', 'verified')
                 ->count(),
-            'my_permohonan_list' => Permohonan::with(['jenisDokumen', 'status'])
-                ->where('created_by', $user->id)
-                ->latest()
-                ->limit(5)
-                ->get()
+           'my_permohonan_list' => Permohonan::with(['jenisDokumen'])
+    ->where('created_by', $user->id)
+    ->latest()
+    ->limit(5)
+    ->get()
         ];
 
         return view('dashboard.kab_kota', compact('stats'));

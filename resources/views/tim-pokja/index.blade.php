@@ -48,7 +48,7 @@
                                     <td>{{ $index + $timPokja->firstItem() }}</td>
                                     <td>{{ $item->nama }}</td>
                                     <td>{{ $item->ketua->name ?? '-' }}</td>
-                                    <td>{{ Str::limit($item->deskripsi, 50) }}</td>
+                                    <td>{{ str($item->deskripsi)->limit(50) }}</td>
                                     <td>
                                         @if($item->is_active)
                                             <span class="badge bg-label-success">Aktif</span>

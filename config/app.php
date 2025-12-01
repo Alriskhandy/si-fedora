@@ -125,5 +125,6 @@ return [
 
     'aliases' => [
         'check.temporary.role' => \App\Http\Middleware\CheckTemporaryRole::class,
+        'Auth' => Illuminate\Support\Facades\Auth::class,
     ],
 ];

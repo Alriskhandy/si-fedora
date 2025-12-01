@@ -49,7 +49,7 @@
                                 <tr>
                                     <td>{{ $index + $suratPemberitahuan->firstItem() }}</td>
                                     <td>{{ $item->nomor_surat ?? '-' }}</td>
-                                    <td>{{ Str::limit($item->perihal, 30) }}</td>
+                                    {{-- <td>{{ Str::limit($item->perihal, 30) }}</td> --}}
                                     <td>{{ $item->kabupatenKota->getFullNameAttribute() ?? '-' }}</td>
                                     <td>{{ $item->jadwalFasilitasi->nama_kegiatan ?? '-' }}</td>
                                     <td>{{ $item->tanggal_surat->format('d M Y') }}</td>

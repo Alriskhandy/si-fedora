@@ -45,22 +45,20 @@
 </head>
 
 <body>
-    {{-- Layout wrapper --}}
     <div class="layout-wrapper layout-content-navbar">
         <div class="layout-container">
-            
+             {{-- Navbar --}}
+            @include('partials.navbar')
+          
            
-            @include('partials.sidebar')
 
-            {{-- Layout page --}}
             <div class="layout-page">
-                
-               
-                @include('partials.navbar')
+                 {{-- Sidebar --}}
+                @include('partials.sidebar')
+                {{-- @include('partials.navbar') --}}
 
-                {{-- Content wrapper --}}
                 <div class="content-wrapper">
-                    {{-- Content --}}
+                    {{-- Main Content --}}
                     @yield('main')
 
                     {{-- Footer --}}
@@ -68,15 +66,11 @@
 
                     <div class="content-backdrop fade"></div>
                 </div>
-                {{-- / Content wrapper --}}
             </div>
-            {{-- / Layout page --}}
         </div>
 
-        {{-- Overlay --}}
         <div class="layout-overlay layout-menu-toggle"></div>
     </div>
-    {{-- / Layout wrapper --}}
 
     {{-- Core JS --}}
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>

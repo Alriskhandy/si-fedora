@@ -150,7 +150,7 @@
        </li>
        @endif
 
-       @if(auth()->user()->hasAnyRole(['admin_peran', 'kaban']))
+       {{-- @if(auth()->user()->hasAnyRole(['admin_peran', 'kaban']))
        <!-- Monitoring & Approval -->
        <li class="menu-header small text-uppercase">
            <span class="menu-header-text">Monitoring</span>
@@ -186,7 +186,39 @@
                <div data-i18n="Dashboard Kaban">Dashboard Eksekutif</div>
            </a>
        </li>
-       @endif
+       @endif --}}
+       @if(auth()->user()->hasAnyRole(['admin_peran', 'kaban']))
+   <!-- Monitoring & Approval -->
+   <li class="menu-header small text-uppercase">
+       <span class="menu-header-text">Monitoring</span>
+   </li>
+   <li class="menu-item {{ request()->routeIs('admin-peran.*') ? 'active' : '' }}">
+       <a href="{{ route('admin-peran.index') }}" class="menu-link">
+           <i class="menu-icon tf-icons bx bx-user-check"></i>
+           <div data-i18n="Admin PERAN">Admin PERAN Dashboard</div>
+       </a>
+   </li>
+   @if(auth()->user()->hasRole('kaban'))
+   <li class="menu-item {{ request()->routeIs('approval.*') ? 'active' : '' }}">
+       <a href="{{ route('approval.index') }}" class="menu-link">
+           <i class="menu-icon tf-icons bx bx-check-circle"></i>
+           <div data-i18n="Approval">Approval Draft</div>
+       </a>
+   </li>
+   @endif
+   <li class="menu-item {{ request()->routeIs('surat-rekomendasi.*') ? 'active' : '' }}">
+       <a href="{{ route('surat-rekomendasi.index') }}" class="menu-link">
+           <i class="menu-icon tf-icons bx bx-paper-plane"></i>
+           <div data-i18n="Surat Rekomendasi">Surat Rekomendasi</div>
+       </a>
+   </li>
+   <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
+       <a href="{{ route('monitoring.index') }}" class="menu-link">
+           <i class="menu-icon tf-icons bx bx-bar-chart"></i>
+           <div data-i18n="Monitoring">Monitoring Progress</div>
+       </a>
+   </li>
+@endif
     
       {{-- Logout --}}
       <li class="menu-item">

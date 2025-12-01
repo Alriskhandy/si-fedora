@@ -34,7 +34,7 @@ class PermohonanDokumen extends Model
 
     public function permohonan()
     {
-        return $this->belongsTo(Permohonan::class);
+        return $this->belongsTo(Permohonan::class, 'permohonan_id');
     }
 
     public function persyaratanDokumen()

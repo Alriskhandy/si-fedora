@@ -59,7 +59,7 @@
                                     </td>
                                     <td>
                                         @if($dokumen->file_path)
-                                            <a href="{{ Storage::url($dokumen->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                                 <i class="bx bx-download"></i> Lihat File
                                             </a>
                                         @else
@@ -89,7 +89,7 @@
                                                 </a>
                                                 @endif
                                                 @if($dokumen->file_path)
-                                                <a class="dropdown-item" href="{{ Storage::url($dokumen->file_path) }}" target="_blank">
+                                                <a class="dropdown-item" href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank">
                                                     <i class="bx bx-show me-1"></i> Lihat
                                                 </a>
                                                 @endif

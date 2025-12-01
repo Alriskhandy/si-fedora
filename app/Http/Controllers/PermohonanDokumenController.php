@@ -173,12 +173,17 @@ class PermohonanDokumenController extends Controller
     private function authorizeView(PermohonanDokumen $permohonanDokumen)
     {
         $user = Auth::user();
-
+        
+        // Tambahin null check
+        if (!$permohonanDokumen->permohonan) {
+            abort(404, 'Permohonan tidak ditemukan.');
+        }
+    
         if ($user->hasRole('kabkota')) {
             if ($permohonanDokumen->permohonan->created_by !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
             }
-        } elseif ($user->hasRole('verifikator')) {
+        }  elseif ($user->hasRole('verifikator')) {
             if ($permohonanDokumen->permohonan->verifikator_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
             }

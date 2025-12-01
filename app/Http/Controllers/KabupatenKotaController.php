@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KabupatenKota;
 use Illuminate\Http\Request;
+use App\Models\Evaluasi; 
 
 class KabupatenKotaController extends Controller
 {
@@ -25,7 +26,63 @@ class KabupatenKotaController extends Controller
     {
         return view('kabupaten-kota.create');
     }
+// ... existing code ...
 
+public function evaluasi(KabupatenKota $kabupatenKota)
+{
+    $this->authorize('evaluasi.view');
+    
+    $evaluasi = $kabupatenKota->evaluasi()->latest()->get();
+    
+    return view('kabupaten-kota.evaluasi', [
+        'kabupatenKota' => $kabupatenKota,
+        'evaluasi' => $evaluasi
+    ]);
+}
+
+public function storeEvaluasi(Request $request, KabupatenKota $kabupatenKota)
+{
+    $this->authorize('evaluasi.create');
+    
+    $validated = $request->validate([
+        'aspek' => 'required|string|max:255',
+        'nilai' => 'required|numeric|min:0|max:100',
+        'keterangan' => 'nullable|string'
+    ]);
+    
+    $kabupatenKota->evaluasi()->create($validated);
+    
+    return redirect()->back()
+        ->with('success', 'Evaluasi berhasil ditambahkan');
+}
+
+public function updateEvaluasi(Request $request, Evaluasi $evaluasi)
+{
+    $this->authorize('evaluasi.edit');
+    
+    $validated = $request->validate([
+        'aspek' => 'required|string|max:255',
+        'nilai' => 'required|numeric|min:0|max:100',
+        'keterangan' => 'nullable|string'
+    ]);
+    
+    $evaluasi->update($validated);
+    
+    return redirect()->back()
+        ->with('success', 'Evaluasi berhasil diperbarui');
+}
+
+public function destroyEvaluasi(Evaluasi $evaluasi)
+{
+    $this->authorize('evaluasi.delete');
+    
+    $evaluasi->delete();
+    
+    return redirect()->back()
+        ->with('success', 'Evaluasi berhasil dihapus');
+}
+
+// ... existing code ...
     public function store(Request $request)
     {
         $request->validate([
