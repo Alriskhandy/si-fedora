@@ -93,14 +93,14 @@
                             </tr>
                         </thead>
                         <tbody class="table-border-bottom-0">
-                            @forelse($stats['recent_evaluasi'] as $index => $permohonan)
+                            @forelse($stats['recent_permohonan'] as $index => $permohonan)
                             <tr>
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $permohonan->kabupatenKota->nama ?? '-' }}</td>
                                 <td>{{ $permohonan->jenisDokumen->nama ?? '-' }}</td>
-                                <td>{{ $permohonan->evaluasi->first()?->submitted_at?->format('d M Y') ?? '-' }}</td>
+                                <td>{{ $permohonan->updated_at->format('d M Y') ?? '-' }}</td>
                                 <td>
-                                    <a href="{{ route('approval.show', $permohonan->id) }}" class="btn btn-sm btn-primary">Review</a>
+                                    <a href="#" class="btn btn-sm btn-primary">Review</a>
                                 </td>
                             </tr>
                             @empty

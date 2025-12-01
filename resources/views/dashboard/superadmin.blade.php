@@ -9,7 +9,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Dashboard Superadmin</h5>
-                    <p class="text-muted">Selamat datang, <strong>{{ Auth::user()->name }}</strong></p>
+                    <p class="text-muted">Selamat datang, <strong>{{ auth()->user()->name }}</strong></p>
                 </div>
             </div>
         </div>

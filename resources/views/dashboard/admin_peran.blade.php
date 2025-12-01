@@ -113,7 +113,7 @@
                             </tr>
                         </thead>
                         <tbody class="table-border-bottom-0">
-                            @forelse($stats['recent_activities'] as $index => $activity)
+                            @forelse($stats['recent_permohonan'] as $index => $activity)
                             <tr>
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $activity->causer_name ?? 'System' }}</td>

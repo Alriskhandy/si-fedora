@@ -47,13 +47,13 @@
 <body>
     <div class="layout-wrapper layout-content-navbar">
         <div class="layout-container">
-             {{-- Navbar --}}
+            {{-- Navbar --}}
             {{-- @include('partials.navbar') --}}
-          
-           
+
+
 
             <div class="layout-page">
-                 {{-- Sidebar --}}
+                {{-- Sidebar --}}
                 @include('partials.sidebar')
                 {{-- @include('partials.navbar') --}}
 

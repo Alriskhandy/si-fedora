@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use App\Models\Permohonan;
 use App\Models\User;
@@ -14,7 +15,7 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Redirect berdasarkan role
         if ($user->hasRole('superadmin')) {
             return $this->superadminDashboard($user);
@@ -29,7 +30,7 @@ class DashboardController extends Controller
         } elseif ($user->hasRole('kabkota')) {  // <-- Ganti jadi ini
             return $this->kabKotaDashboard($user);
         }
-        
+
         // Fallback
         return view('dashboard.default', [
             'user' => $user
@@ -54,19 +55,13 @@ class DashboardController extends Controller
     private function kabanDashboard($user)
     {
         $stats = [
-            'pending_approval' => Permohonan::where('status', 'draft_recommendation')
-                ->whereHas('evaluasi', function($q) {
-                    $q->where('status', 'submitted');
-                })
-                ->count(),
+            'pending_approval' => Permohonan::where('status', 'draft_recommendation')->count(),
             'total_permohonan' => Permohonan::count(),
             'completed_this_month' => Permohonan::where('status', 'completed')
-                ->whereMonth('completed_at', now()->month)
+                ->whereMonth('updated_at', now()->month)
                 ->count(),
-            'recent_evaluasi' => Permohonan::with(['kabupatenKota', 'evaluasi'])
-                ->whereHas('evaluasi', function($q) {
-                    $q->where('status', 'submitted');
-                })
+            'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
+                ->whereIn('status', ['draft_recommendation', 'approved'])
                 ->latest()
                 ->limit(5)
                 ->get()
@@ -82,9 +77,8 @@ class DashboardController extends Controller
             'in_evaluation' => Permohonan::where('status', 'in_evaluation')->count(),
             'pending_approval' => Permohonan::where('status', 'draft_recommendation')->count(),
             'total_permohonan' => Permohonan::count(),
-            'recent_activities' => \DB::table('activity_log')
-                ->where('created_at', '>=', now()->subDays(7))
-                ->orderBy('created_at', 'desc')
+            'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
+                ->latest()
                 ->limit(10)
                 ->get()
         ];
