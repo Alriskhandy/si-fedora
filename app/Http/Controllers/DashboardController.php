@@ -9,7 +9,6 @@ use Spatie\Permission\Models\Role;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\JadwalFasilitasi;
-use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     public function index()
