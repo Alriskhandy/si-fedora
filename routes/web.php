@@ -96,7 +96,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Permohonan Management - role based
-    Route::middleware(['role:kabkota|admin_peran'])->group(function () {
+    Route::middleware(['role:pemohon|admin_peran'])->group(function () {
         Route::resource('permohonan', PermohonanController::class);
         Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
     });

@@ -11,16 +11,16 @@ class MasterDataSeeder extends Seeder
     {
         // 1. Kabupaten/Kota - Semua Kab/Kota di Maluku Utara
         $kabupatenKota = [
-            ['kode' => '8201', 'nama' => 'Kabupaten Halmahera Barat', 'jenis' => 'kabupaten'],
-            ['kode' => '8202', 'nama' => 'Kabupaten Halmahera Tengah', 'jenis' => 'kabupaten'],
-            ['kode' => '8203', 'nama' => 'Kabupaten Halmahera Utara', 'jenis' => 'kabupaten'],
-            ['kode' => '8204', 'nama' => 'Kabupaten Halmahera Selatan', 'jenis' => 'kabupaten'],
-            ['kode' => '8205', 'nama' => 'Kabupaten Kepulauan Sula', 'jenis' => 'kabupaten'],
-            ['kode' => '8206', 'nama' => 'Kabupaten Halmahera Timur', 'jenis' => 'kabupaten'],
-            ['kode' => '8207', 'nama' => 'Kabupaten Pulau Morotai', 'jenis' => 'kabupaten'],
-            ['kode' => '8208', 'nama' => 'Kabupaten Pulau Taliabu', 'jenis' => 'kabupaten'],
-            ['kode' => '8271', 'nama' => 'Kota Ternate', 'jenis' => 'kota'],
-            ['kode' => '8272', 'nama' => 'Kota Tidore Kepulauan', 'jenis' => 'kota'],
+            ['kode' => '8201', 'nama' => 'Halmahera Barat', 'jenis' => 'kabupaten'],
+            ['kode' => '8202', 'nama' => 'Halmahera Tengah', 'jenis' => 'kabupaten'],
+            ['kode' => '8203', 'nama' => 'Halmahera Utara', 'jenis' => 'kabupaten'],
+            ['kode' => '8204', 'nama' => 'Halmahera Selatan', 'jenis' => 'kabupaten'],
+            ['kode' => '8205', 'nama' => 'Kepulauan Sula', 'jenis' => 'kabupaten'],
+            ['kode' => '8206', 'nama' => 'Halmahera Timur', 'jenis' => 'kabupaten'],
+            ['kode' => '8207', 'nama' => 'Pulau Morotai', 'jenis' => 'kabupaten'],
+            ['kode' => '8208', 'nama' => 'Pulau Taliabu', 'jenis' => 'kabupaten'],
+            ['kode' => '8271', 'nama' => 'Ternate', 'jenis' => 'kota'],
+            ['kode' => '8272', 'nama' => 'Tidore Kepulauan', 'jenis' => 'kota'],
         ];
 
         foreach ($kabupatenKota as $item) {

@@ -24,7 +24,7 @@ class PermohonanController extends Controller
         $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'tahunAnggaran']);
 
         // Filter berdasarkan role
-        if (Auth::user()->hasRole('kabkota')) {
+        if (Auth::user()->hasRole('pemohon')) {
             $query->where('created_by', Auth::id());
         } elseif (Auth::user()->hasRole('admin_peran')) {
             // Admin bisa liat semua permohonan
