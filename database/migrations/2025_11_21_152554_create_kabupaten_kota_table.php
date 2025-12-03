@@ -15,11 +15,6 @@ return new class extends Migration
             $table->string('kode', 10)->unique();
             $table->string('nama', 100);
             $table->enum('jenis', ['kabupaten', 'kota']);
-            $table->string('provinsi', 100)->default('Maluku Utara');
-            $table->string('kepala_daerah')->nullable();
-            $table->string('email')->nullable();
-            $table->string('telepon', 20)->nullable();
-            $table->text('alamat')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

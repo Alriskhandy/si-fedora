@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
         // 2. Kepala Badan
         $kaban = User::create([
             'name' => 'Kepala Badan PERAN',
-            'email' => 'kaban@peran.malutprov.go.id',
+            'email' => 'kaban@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
@@ -36,7 +36,7 @@ class UserSeeder extends Seeder
         // 3. Admin PERAN
         $adminPeran = User::create([
             'name' => 'Admin PERAN',
-            'email' => 'admin@peran.malutprov.go.id',
+            'email' => 'admin@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
@@ -45,29 +45,29 @@ class UserSeeder extends Seeder
         // 4. Tim Verifikasi
         $verifikator1 = User::create([
             'name' => 'Verifikator 1',
-            'email' => 'verifikator1@peran.malutprov.go.id',
+            'email' => 'verifikator1@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
-        $verifikator1->assignRole('verifikator'); // Pastiin role verifikator, bukan kabkota
+        $verifikator1->assignRole('verifikator');
 
         $verifikator2 = User::create([
             'name' => 'Verifikator 2',
-            'email' => 'verifikator2@peran.malutprov.go.id',
+            'email' => 'verifikator2@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
         $verifikator2->assignRole('verifikator');
 
-        // 5. Tim Pokja
+        // 5. Tim Pokja (Fasilitator)
         $pokja1 = User::create([
-            'name' => 'Evaluator Pokja 1',
-            'email' => 'pokja1@peran.malutprov.go.id',
+            'name' => 'Fasilitator Pokja 1',
+            'email' => 'fasilitator1@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
-        $pokja1->assignRole('pokja');
-        
+        $pokja1->assignRole('fasilitator');
+
         // Link ke pokja_anggota
         DB::table('pokja_anggota')->insert([
             'pokja_id' => $pokjaId,
@@ -78,13 +78,13 @@ class UserSeeder extends Seeder
         ]);
 
         $pokja2 = User::create([
-            'name' => 'Evaluator Pokja 2',
-            'email' => 'pokja2@peran.malutprov.go.id',
+            'name' => 'Fasilitator Pokja 2',
+            'email' => 'fasilitator2@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
-        $pokja2->assignRole('pokja');
-        
+        $pokja2->assignRole('fasilitator');
+
         DB::table('pokja_anggota')->insert([
             'pokja_id' => $pokjaId,
             'user_id' => $pokja2->id,
@@ -93,28 +93,38 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // 6. User Kota Ternate
+        // 6. User Kota Ternate (Pemohon)
         $ternateUser = User::create([
-            'name' => 'Admin Kota Ternate',
-            'email' => 'admin@ternatekota.go.id',
+            'name' => 'Pemohon Kota Ternate',
+            'email' => 'ternate@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
-        $ternateUser->assignRole('kabkota');
-        
+        $ternateUser->assignRole('pemohon');
+
         // Link user ke kabupaten_kota
         DB::table('users')->where('id', $ternateUser->id)->update([
             'kabupaten_kota_id' => $ternateId
         ]);
 
+        // 7. User Auditor (Monitoring)
+        $auditor = User::create([
+            'name' => 'Auditor Monitoring',
+            'email' => 'auditor@sifedora.go.id',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+        ]);
+        $auditor->assignRole('auditor');
+
         echo "Users with roles created successfully!\n";
         echo "\nDefault Login Credentials:\n";
         echo "==========================\n";
         echo "Superadmin: superadmin@sifedora.go.id / password\n";
-        echo "Kaban: kaban@peran.malutprov.go.id / password\n";
-        echo "Admin PERAN: admin@peran.malutprov.go.id / password\n";
-        echo "Verifikator: verifikator1@peran.malutprov.go.id / password\n";
-        echo "Pokja: pokja1@peran.malutprov.go.id / password\n";
-        echo "Kota Ternate: admin@ternatekota.go.id / password\n";
+        echo "Kaban: kaban@sifedora.go.id / password\n";
+        echo "Admin PERAN: admin@sifedora.go.id / password\n";
+        echo "Verifikator: verifikator1@sifedora.go.id / password\n";
+        echo "Fasilitator: fasilitator1@sifedora.go.id / password\n";
+        echo "Pemohon (Ternate): ternate@sifedora.go.id / password\n";
+        echo "Auditor: auditor@sifedora.go.id / password\n";
     }
 }

@@ -3,26 +3,24 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up()
     {
-        Schema::table('permohonan_dokumen', function (Blueprint $table) {
-            // Ganti enum jadi sesuai kebutuhan
-            $table->enum('status_verifikasi', [
-                'pending', 
-                'verified', 
-                'rejected', 
-                'revision_required'  // <-- Tambahin ini
-            ])->default('pending')->change();
-        });
+        // PostgreSQL: Drop constraint lama, tambah nilai baru ke enum, buat constraint baru
+        DB::statement("ALTER TABLE permohonan_dokumen DROP CONSTRAINT IF EXISTS permohonan_dokumen_status_verifikasi_check");
+
+        DB::statement("ALTER TABLE permohonan_dokumen ADD CONSTRAINT permohonan_dokumen_status_verifikasi_check 
+            CHECK (status_verifikasi IN ('pending', 'verified', 'rejected', 'revision_required'))");
     }
 
     public function down()
     {
-        Schema::table('permohonan_dokumen', function (Blueprint $table) {
-            $table->enum('status_verifikasi', ['pending', 'verified', 'rejected'])->default('pending')->change();
-        });
+        DB::statement("ALTER TABLE permohonan_dokumen DROP CONSTRAINT IF EXISTS permohonan_dokumen_status_verifikasi_check");
+
+        DB::statement("ALTER TABLE permohonan_dokumen ADD CONSTRAINT permohonan_dokumen_status_verifikasi_check 
+            CHECK (status_verifikasi IN ('pending', 'verified', 'rejected'))");
     }
 };
