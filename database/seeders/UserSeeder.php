@@ -12,7 +12,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Ambil ID dari tabel master
-        $ternateId = DB::table('kabupaten_kota')->where('kode', 'KT-TRN')->value('id');
+        $ternateId = DB::table('kabupaten_kota')->where('kode', '8271')->value('id');
         $pokjaId = DB::table('tim_pokja')->first()->id; // Pastiin tim_pokja udah ada
 
         // 1. Superadmin

@@ -1,64 +1,51 @@
 @extends('layouts.app')
 
-@section('title', 'Kabupaten/Kota')
+@section('title', 'Master Kelengkapan Verifikasi')
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="row">
             <div class="col-lg-12 mb-4">
+                @if (session('success'))
+                    <div class="alert alert-success alert-dismissible" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Kabupaten/Kota</h5>
-                        <a href="{{ route('kabupaten-kota.create') }}" class="btn btn-primary">
-                            <i class="bx bx-plus me-1"></i> Tambah Kabupaten/Kota
+                        <h5 class="card-title mb-0">Master Kelengkapan Verifikasi</h5>
+                        <a href="{{ route('master-kelengkapan.create') }}" class="btn btn-primary">
+                            <i class="bx bx-plus me-1"></i> Tambah Kelengkapan
                         </a>
                     </div>
                     <div class="card-body">
-                        <!-- Search -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <form method="GET" action="{{ route('kabupaten-kota.index') }}">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" name="search"
-                                            placeholder="Cari kabupaten/kota..." value="{{ request('search') }}">
-                                        <button class="btn btn-outline-secondary" type="submit">
-                                            <i class="bx bx-search"></i>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
                         <!-- Table -->
                         <div class="table-responsive">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Kode</th>
-                                        <th>Nama</th>
-                                        <th>Jenis</th>
+                                        <th>Nama Dokumen</th>
+                                        <th>Deskripsi</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($kabupatenKota as $index => $item)
+                                    @forelse($kelengkapan as $index => $item)
                                         <tr>
-                                            <td>{{ $index + $kabupatenKota->firstItem() }}</td>
-                                            <td>{{ $item->kode }}</td>
-                                            <td>{{ $item->getFullNameAttribute() }}</td>
+                                            <td>{{ $index + 1 }}</td>
+                                            <td>{{ $item->nama_dokumen }}</td>
                                             <td>
-                                                <span
-                                                    class="badge bg-label-{{ $item->jenis == 'kabupaten' ? 'primary' : 'info' }}">
-                                                    {{ ucfirst($item->jenis) }}
-                                                </span>
+                                                <small class="text-muted">{{ $item->deskripsi ?: '-' }}</small>
                                             </td>
                                             <td>
-                                                @if ($item->is_active)
-                                                    <span class="badge bg-label-success">Aktif</span>
+                                                @if ($item->wajib)
+                                                    <span class="badge bg-label-danger">Wajib</span>
                                                 @else
-                                                    <span class="badge bg-label-secondary">Nonaktif</span>
+                                                    <span class="badge bg-label-secondary">Opsional</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -69,14 +56,10 @@
                                                     </button>
                                                     <div class="dropdown-menu">
                                                         <a class="dropdown-item"
-                                                            href="{{ route('kabupaten-kota.show', $item) }}">
-                                                            <i class="bx bx-show me-1"></i> Detail
-                                                        </a>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('kabupaten-kota.edit', $item) }}">
+                                                            href="{{ route('master-kelengkapan.edit', $item) }}">
                                                             <i class="bx bx-edit-alt me-1"></i> Edit
                                                         </a>
-                                                        <form action="{{ route('kabupaten-kota.destroy', $item) }}"
+                                                        <form action="{{ route('master-kelengkapan.destroy', $item) }}"
                                                             method="POST" class="d-inline">
                                                             @csrf
                                                             @method('DELETE')
@@ -91,16 +74,11 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="text-center text-muted">Tidak ada data</td>
+                                            <td colspan="5" class="text-center text-muted">Tidak ada data</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="d-flex justify-content-center">
-                            {{ $kabupatenKota->appends(request()->query())->links() }}
                         </div>
                     </div>
                 </div>

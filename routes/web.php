@@ -21,7 +21,10 @@ use App\Http\Controllers\EvaluasiController;
 use App\Http\Controllers\AdminPeranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\SuratRekomendasiController;
-use App\Http\Controllers\LogoController;    
+use App\Http\Controllers\LogoController;
+use App\Http\Controllers\MasterTahapanController;
+use App\Http\Controllers\MasterUrusanController;
+use App\Http\Controllers\MasterKelengkapanController;
 
 // Route::middleware(['auth'])->group(function () {
 //     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -55,6 +58,15 @@ Route::middleware(['auth'])->group(function () {
         ]);
         Route::resource('tim-pokja', TimPokjaController::class)->parameters([
             'tim-pokja' => 'timPokja'
+        ]);
+        Route::resource('master-tahapan', MasterTahapanController::class)->parameters([
+            'master-tahapan' => 'masterTahapan'
+        ]);
+        Route::resource('master-urusan', MasterUrusanController::class)->parameters([
+            'master-urusan' => 'masterUrusan'
+        ]);
+        Route::resource('master-kelengkapan', MasterKelengkapanController::class)->parameters([
+            'master-kelengkapan' => 'masterKelengkapan'
         ]);
     });
 
@@ -93,9 +105,9 @@ Route::middleware(['auth'])->group(function () {
     //     Route::resource('permohonan-dokumen', PermohonanDokumenController::class);
     // });
     Route::resource('permohonan-dokumen', PermohonanDokumenController::class)
-    ->parameters([
-        'permohonan-dokumen' => 'permohonanDokumen'
-    ]);
+        ->parameters([
+            'permohonan-dokumen' => 'permohonanDokumen'
+        ]);
 
     // Verifikasi Management - verifikator only
     Route::middleware(['role:verifikator'])->group(function () {
@@ -127,7 +139,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'store'])->name('surat-rekomendasi.store');
 
         Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])
-        ->name('surat-rekomendasi.show');
+            ->name('surat-rekomendasi.show');
     });
 
     // Untuk verifikator & pokja (nanti ditambahin)

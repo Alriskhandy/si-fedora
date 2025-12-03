@@ -9,17 +9,32 @@ class MasterDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Kabupaten/Kota - Fokus Ternate dulu
-        DB::table('kabupaten_kota')->insert([
-            [
-                'kode' => 'KT-TRN',
-                'nama' => 'Kota Ternate',
-                'jenis' => 'kota',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        // 1. Kabupaten/Kota - Semua Kab/Kota di Maluku Utara
+        $kabupatenKota = [
+            ['kode' => '8201', 'nama' => 'Kabupaten Halmahera Barat', 'jenis' => 'kabupaten'],
+            ['kode' => '8202', 'nama' => 'Kabupaten Halmahera Tengah', 'jenis' => 'kabupaten'],
+            ['kode' => '8203', 'nama' => 'Kabupaten Halmahera Utara', 'jenis' => 'kabupaten'],
+            ['kode' => '8204', 'nama' => 'Kabupaten Halmahera Selatan', 'jenis' => 'kabupaten'],
+            ['kode' => '8205', 'nama' => 'Kabupaten Kepulauan Sula', 'jenis' => 'kabupaten'],
+            ['kode' => '8206', 'nama' => 'Kabupaten Halmahera Timur', 'jenis' => 'kabupaten'],
+            ['kode' => '8207', 'nama' => 'Kabupaten Pulau Morotai', 'jenis' => 'kabupaten'],
+            ['kode' => '8208', 'nama' => 'Kabupaten Pulau Taliabu', 'jenis' => 'kabupaten'],
+            ['kode' => '8271', 'nama' => 'Kota Ternate', 'jenis' => 'kota'],
+            ['kode' => '8272', 'nama' => 'Kota Tidore Kepulauan', 'jenis' => 'kota'],
+        ];
+
+        foreach ($kabupatenKota as $item) {
+            DB::table('kabupaten_kota')->updateOrInsert(
+                ['kode' => $item['kode']],
+                [
+                    'nama' => $item['nama'],
+                    'jenis' => $item['jenis'],
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
 
         // 2. Jenis Dokumen
         $jenisDokumen = [
@@ -52,7 +67,7 @@ class MasterDataSeeder extends Seeder
 
         // 4. Persyaratan Dokumen untuk RKPD (contoh)
         $rkpdId = DB::table('jenis_dokumen')->where('kode', 'RKPD')->value('id');
-        
+
         $persyaratan = [
             ['kode' => 'RKPD-01', 'nama' => 'Surat Permohonan Fasilitasi', 'is_wajib' => true, 'urutan' => 1],
             ['kode' => 'RKPD-02', 'nama' => 'Draft RKPD', 'is_wajib' => true, 'urutan' => 2],
