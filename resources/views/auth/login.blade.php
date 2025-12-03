@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="id" class="light-style customizer-hide" dir="ltr" data-theme="theme-default"
     data-assets-path="{{ asset('assets') }}/" data-template="vertical-menu-template-free">
@@ -81,24 +78,31 @@
         }
 
         body.dark-mode .form-control {
-            background-color: #0f1729;
-            border-color: #2d3a54;
-            color: #fff;
+            background-color: #2d3a54 !important;
+            border-color: #3d4a64 !important;
+            color: #ffffff !important;
         }
 
         body.dark-mode .form-control:focus {
-            border-color: #4dabf7;
-            box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25);
+            border-color: #4dabf7 !important;
+            box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.25) !important;
+            background-color: #2d3a54 !important;
+            color: #ffffff !important;
         }
 
         body.dark-mode .form-control::placeholder {
-            color: #6c7a89;
+            color: #8a95a5 !important;
         }
 
         body.dark-mode .input-group-text {
-            background-color: #0f1729;
-            border-color: #2d3a54;
-            color: #b4bdc6;
+            background-color: #2d3a54 !important;
+            border-color: #3d4a64 !important;
+            color: #ffffff !important;
+        }
+
+        body.dark-mode .input-group-text:hover {
+            background-color: #3d4a64 !important;
+            color: #4dabf7 !important;
         }
 
         body.dark-mode a {
@@ -131,13 +135,17 @@
         }
 
         body.dark-mode .form-check-input {
-            background-color: #0f1729;
-            border-color: #2d3a54;
+            background-color: #2d3a54 !important;
+            border-color: #3d4a64 !important;
         }
 
         body.dark-mode .form-check-input:checked {
-            background-color: #4dabf7;
-            border-color: #4dabf7;
+            background-color: #4dabf7 !important;
+            border-color: #4dabf7 !important;
+        }
+
+        body.dark-mode .form-check-label {
+            color: #ffffff !important;
         }
 
         body.dark-mode .invalid-feedback {
@@ -172,15 +180,20 @@
         }
 
         @keyframes float {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0) translateX(0) scale(1);
             }
+
             25% {
                 transform: translateY(-50px) translateX(30px) scale(1.1);
             }
+
             50% {
                 transform: translateY(-100px) translateX(-30px) scale(0.9);
             }
+
             75% {
                 transform: translateY(-50px) translateX(30px) scale(1.05);
             }
@@ -233,6 +246,7 @@
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -283,6 +297,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -325,11 +340,17 @@
         /* Input Focus Animation */
         .form-control,
         .input-group {
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, background-color 0.3s ease;
         }
 
         .form-control:focus {
             transform: scale(1.01);
+        }
+
+        /* Password Toggle Cursor */
+        .cursor-pointer {
+            cursor: pointer;
+            user-select: none;
         }
 
         /* Alert Slide Down */
@@ -342,6 +363,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -376,13 +398,13 @@
                         <div class="app-brand justify-content-center">
                             <a href="{{ url('/logo/index') }}" class="app-brand-link gap-2">
                                 <span class="app-brand-logo demo">
-                                    <img src="{{ asset('assets/img/icons/logo.png') }}" alt="Logo SIFEDORA" width="150">
-                                    {{-- <img src="{{ asset('assets/img/logo.webp') }}" alt="Logo SIFEDORA" width="150"> --}}
+                                    <img src="{{ asset('assets/img/logo.webp') }}" alt="Logo SIFEDORA" width="150">
                                 </span>
                             </a>
                         </div>
 
-                        <h5 class="mb-2 text-center">Sistem Informasi Fasilitasi/Evaluasi Dokumen Perencanaan Kabupaten/Kota</h5>
+                        <h5 class="mb-2 text-center">Sistem Informasi Fasilitasi/Evaluasi Dokumen Perencanaan
+                            Kabupaten/Kota</h5>
                         <p class="mb-4 text-center">Silakan masuk ke akun Anda</p>
 
                         @if (session('status'))
@@ -413,7 +435,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            
+
                             <div class="mb-3 form-password-toggle">
                                 <div class="d-flex justify-content-between">
                                     <label class="form-label" for="password">Kata Sandi</label>
@@ -428,25 +450,26 @@
                                         class="form-control @error('password') is-invalid @enderror" name="password"
                                         placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                         required autocomplete="current-password" />
-                                    <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+                                    <span class="input-group-text cursor-pointer" id="togglePassword"><i
+                                            class="bx bx-hide"></i></span>
                                 </div>
                                 @error('password')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
-                            
+
                             <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="remember_me" name="remember" />
                                     <label class="form-check-label" for="remember_me"> Ingat Saya </label>
                                 </div>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <button class="btn btn-primary d-grid w-100" type="submit">Login</button>
                             </div>
                         </form>
-                        
+
                         <p class="text-center">
                             <small>Belum punya akun? Hubungi administrator untuk pendaftaran.</small>
                         </p>
@@ -461,19 +484,27 @@
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
-    
+
     <script>
         // Password toggle functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const passwordToggle = document.querySelector('.form-password-toggle .input-group-text');
+            const passwordToggle = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
-            
+
             if (passwordToggle && passwordInput) {
-                passwordToggle.addEventListener('click', function() {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    this.querySelector('i').classList.toggle('bx-hide');
-                    this.querySelector('i').classList.toggle('bx-show');
+                passwordToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const icon = this.querySelector('i');
+
+                    if (passwordInput.getAttribute('type') === 'password') {
+                        passwordInput.setAttribute('type', 'text');
+                        icon.classList.remove('bx-hide');
+                        icon.classList.add('bx-show');
+                    } else {
+                        passwordInput.setAttribute('type', 'password');
+                        icon.classList.remove('bx-show');
+                        icon.classList.add('bx-hide');
+                    }
                 });
             }
 
@@ -510,11 +541,11 @@
             function createParticles() {
                 const bgAnimation = document.getElementById('bgAnimation');
                 const particleCount = 12;
-                
+
                 for (let i = 0; i < particleCount; i++) {
                     const particle = document.createElement('div');
                     particle.classList.add('particle');
-                    
+
                     const size = Math.random() * 60 + 30;
                     particle.style.width = `${size}px`;
                     particle.style.height = `${size}px`;
@@ -522,7 +553,7 @@
                     particle.style.top = `${Math.random() * 100}%`;
                     particle.style.animationDelay = `${Math.random() * 5}s`;
                     particle.style.animationDuration = `${Math.random() * 10 + 12}s`;
-                    
+
                     bgAnimation.appendChild(particle);
                 }
             }
