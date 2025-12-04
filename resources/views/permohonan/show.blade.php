@@ -268,17 +268,148 @@
         <!-- Dokumen Persyaratan -->
         <div class="row mt-4">
             <div class="col-12">
+                <!-- Surat Permohonan -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class='bx bx-file-blank me-2'></i>Surat Permohonan
+                        </h5>
+                        @if ($permohonan->status == 'draft')
+                            <span class="badge bg-label-info">Wajib</span>
+                        @endif
+                    </div>
+                    <div class="card-body">
+                        @if ($permohonan->status == 'draft')
+                            <div class="alert alert-info mb-3">
+                                <i class='bx bx-info-circle me-2'></i>
+                                Upload surat permohonan resmi dari Kabupaten/Kota yang ditujukan kepada Kepala Badan.
+                            </div>
+                        @endif
+
+                        @php
+                            $suratPermohonan = $permohonan->permohonanDokumen->first(function ($dok) {
+                                return $dok->masterKelengkapan &&
+                                    $dok->masterKelengkapan->kategori === 'surat_permohonan';
+                            });
+                        @endphp
+
+                        @if ($suratPermohonan)
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Dokumen</th>
+                                            <th>File</th>
+                                            <th width="15%">Status</th>
+                                            <th>Catatan Verifikasi</th>
+                                            @if ($permohonan->status == 'draft' || $permohonan->status == 'revision_required')
+                                                <th width="10%">Aksi</th>
+                                            @endif
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div>
+                                                    <strong>{{ $suratPermohonan->masterKelengkapan->nama_dokumen ?? 'Surat Permohonan' }}</strong>
+                                                    @if ($suratPermohonan->masterKelengkapan && $suratPermohonan->masterKelengkapan->wajib)
+                                                        <span class="badge badge-sm bg-label-danger ms-1">Wajib</span>
+                                                    @endif
+                                                </div>
+                                                @if ($suratPermohonan->masterKelengkapan && $suratPermohonan->masterKelengkapan->deskripsi)
+                                                    <small class="text-muted d-block mt-1">
+                                                        <i class='bx bx-info-circle'></i>
+                                                        {{ $suratPermohonan->masterKelengkapan->deskripsi }}
+                                                    </small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($suratPermohonan->file_path)
+                                                    <a href="{{ asset('storage/' . $suratPermohonan->file_path) }}"
+                                                        target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bx bx-download me-1"></i> Lihat File
+                                                    </a>
+                                                    <br>
+                                                    <small
+                                                        class="text-muted">{{ $suratPermohonan->file_name ?? '' }}</small>
+                                                @else
+                                                    <span class="badge bg-label-warning">
+                                                        <i class='bx bx-upload'></i> Belum diupload
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($suratPermohonan->is_ada)
+                                                    <span class="badge bg-label-success">
+                                                        <i class='bx bx-check'></i> Tersedia
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-label-danger">
+                                                        <i class='bx bx-x'></i> Belum Upload
+                                                    </span>
+                                                @endif
+                                                @if ($suratPermohonan->status_verifikasi && $suratPermohonan->status_verifikasi !== 'pending')
+                                                    <br>
+                                                    <small
+                                                        class="badge bg-label-{{ $suratPermohonan->status_verifikasi === 'verified' ? 'success' : 'warning' }} mt-1">
+                                                        {{ ucfirst($suratPermohonan->status_verifikasi) }}
+                                                    </small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($suratPermohonan->catatan_verifikasi)
+                                                    <small
+                                                        class="text-{{ $suratPermohonan->status_verifikasi === 'verified' ? 'success' : 'danger' }}">
+                                                        <i
+                                                            class='bx bx-{{ $suratPermohonan->status_verifikasi === 'verified' ? 'check-circle' : 'error-circle' }}'></i>
+                                                        {{ $suratPermohonan->catatan_verifikasi }}
+                                                    </small>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            @if ($permohonan->status == 'draft' || $permohonan->status == 'revision_required')
+                                                <td>
+                                                    <a href="{{ route('permohonan-dokumen.edit', $suratPermohonan) }}"
+                                                        class="btn btn-sm btn-outline-primary">
+                                                        <i class="bx bx-upload me-1"></i> Upload
+                                                    </a>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <div class="text-center text-muted py-4">
+                                <i class='bx bx-folder-open bx-lg mb-2 d-block'></i>
+                                Dokumen surat permohonan belum tersedia
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Kelengkapan Verifikasi -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Dokumen Persyaratan</h5>
+                        <h5 class="mb-0">
+                            <i class='bx bx-folder-open me-2'></i>Kelengkapan Verifikasi
+                        </h5>
                     </div>
                     <div class="card-body">
                         @if ($permohonan->status == 'draft')
                             <div class="alert alert-info">
                                 <i class='bx bx-info-circle me-2'></i>
-                                Silakan upload dokumen persyaratan sebelum mengirim permohonan.
+                                Silakan upload semua dokumen kelengkapan verifikasi sebelum mengirim permohonan.
                             </div>
                         @endif
+
+                        @php
+                            $kelengkapanVerifikasi = $permohonan->permohonanDokumen->filter(function ($dok) {
+                                return $dok->masterKelengkapan &&
+                                    $dok->masterKelengkapan->kategori === 'kelengkapan_verifikasi';
+                            });
+                        @endphp
 
                         <div class="table-responsive">
                             <table class="table table-hover">
@@ -295,20 +426,20 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($permohonan->permohonanDokumen as $index => $dokumen)
+                                    @forelse($kelengkapanVerifikasi as $index => $dokumen)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>
                                                 <div>
-                                                    <strong>{{ $dokumen->persyaratanDokumen->nama ?? 'Dokumen Persyaratan' }}</strong>
-                                                    @if ($dokumen->persyaratanDokumen && $dokumen->persyaratanDokumen->is_wajib)
+                                                    <strong>{{ $dokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen Kelengkapan' }}</strong>
+                                                    @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->wajib)
                                                         <span class="badge badge-sm bg-label-danger ms-1">Wajib</span>
                                                     @endif
                                                 </div>
-                                                @if ($dokumen->persyaratanDokumen && $dokumen->persyaratanDokumen->deskripsi)
+                                                @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->deskripsi)
                                                     <small class="text-muted d-block mt-1">
                                                         <i class='bx bx-info-circle'></i>
-                                                        {{ $dokumen->persyaratanDokumen->deskripsi }}
+                                                        {{ $dokumen->masterKelengkapan->deskripsi }}
                                                     </small>
                                                 @endif
                                             </td>
@@ -368,7 +499,7 @@
                                             <td colspan="{{ $permohonan->status == 'draft' || $permohonan->status == 'revision_required' ? '6' : '5' }}"
                                                 class="text-center text-muted py-4">
                                                 <i class='bx bx-folder-open bx-lg mb-2 d-block'></i>
-                                                Belum ada dokumen persyaratan yang didefinisikan
+                                                Belum ada dokumen kelengkapan verifikasi
                                             </td>
                                         </tr>
                                     @endforelse

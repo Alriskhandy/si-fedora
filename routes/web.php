@@ -180,12 +180,14 @@ Route::middleware(['auth'])->group(function () {
     })->name('kaban.index');
 });
 
-// Route::get('/', function () {
-//     return view('index');
-// })->middleware(['auth', 'verified'])->name('dashboard');
+// Root route - redirect based on auth status  
 Route::get('/', function () {
-    return redirect()->route('dashboard');
-})->middleware(['auth', 'verified'])->name('home');
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    // Direct view instead of redirect for debugging
+    return view('auth.login');
+})->name('home');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

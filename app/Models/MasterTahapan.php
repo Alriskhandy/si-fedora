@@ -12,7 +12,9 @@ class MasterTahapan extends Model
     protected $table = 'master_tahapan';
 
     protected $fillable = [
-        'nama_tahapan',
+        'kode',
+        'nama',
+        'deskripsi',
         'urutan',
     ];
 
@@ -20,9 +22,20 @@ class MasterTahapan extends Model
         'urutan' => 'integer',
     ];
 
-    // Relasi ke permohonan atau evaluasi jika diperlukan
-    public function permohonan()
+    // Relasi
+    public function permohonanTahapan()
     {
-        return $this->hasMany(Permohonan::class, 'tahapan_id');
+        return $this->hasMany(PermohonanTahapan::class, 'tahapan_id');
+    }
+
+    public function masterKelengkapan()
+    {
+        return $this->hasMany(MasterKelengkapanVerifikasi::class, 'tahapan_id');
+    }
+
+    // Scope
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('urutan');
     }
 }

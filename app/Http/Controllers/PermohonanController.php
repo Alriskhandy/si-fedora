@@ -9,7 +9,7 @@ use App\Models\KabupatenKota;
 use App\Models\TahunAnggaran;
 use App\Models\JadwalFasilitasi;
 use App\Models\PermohonanDokumen;
-use App\Models\PersyaratanDokumen;
+use App\Models\MasterKelengkapanVerifikasi;
 use Illuminate\Support\Facades\Auth;
 
 class PermohonanController extends Controller
@@ -21,7 +21,7 @@ class PermohonanController extends Controller
 
     public function index(Request $request)
     {
-        $query = Permohonan::with(['kabupatenKota', 'kelengkapan', 'tahunAnggaran']);
+        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'tahunAnggaran', 'jadwalFasilitasi']);
 
         // Filter berdasarkan role
         if (Auth::user()->hasRole('pemohon')) {
@@ -203,27 +203,12 @@ class PermohonanController extends Controller
         ]);
 
         // Auto-generate dokumen persyaratan berdasarkan master_kelengkapan_verifikasi
-        $kelengkapanList = \App\Models\MasterKelengkapanVerifikasi::all();
-        foreach ($kelengkapanList as $index => $kelengkapan) {
-            // Cek apakah sudah ada di persyaratan_dokumen untuk jenis dokumen ini
-            $persyaratan = PersyaratanDokumen::firstOrCreate(
-                [
-                    'jenis_dokumen_id' => $request->jenis_dokumen_id,
-                    'nama' => $kelengkapan->nama_dokumen,
-                ],
-                [
-                    'kode' => 'DOK-' . str_pad($index + 1, 2, '0', STR_PAD_LEFT),
-                    'deskripsi' => $kelengkapan->deskripsi,
-                    'is_wajib' => $kelengkapan->wajib,
-                    'urutan' => $index + 1,
-                    'is_active' => true,
-                ]
-            );
-
-            // Buat permohonan_dokumen
+        $kelengkapanList = MasterKelengkapanVerifikasi::orderBy('urutan')->get();
+        foreach ($kelengkapanList as $kelengkapan) {
+            // Langsung buat permohonan_dokumen dari master_kelengkapan_verifikasi
             PermohonanDokumen::create([
                 'permohonan_id' => $permohonan->id,
-                'persyaratan_dokumen_id' => $persyaratan->id,
+                'master_kelengkapan_id' => $kelengkapan->id,
                 'is_ada' => false,
                 'status_verifikasi' => 'pending',
             ]);

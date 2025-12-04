@@ -15,7 +15,8 @@ class PermohonanDokumen extends Model
 
     protected $fillable = [
         'permohonan_id',
-        'persyaratan_dokumen_id',
+        'persyaratan_dokumen_id', // deprecated - untuk backward compatibility
+        'master_kelengkapan_id', // kolom baru
         'is_ada',
         'file_path',
         'file_name',
@@ -37,9 +38,15 @@ class PermohonanDokumen extends Model
         return $this->belongsTo(Permohonan::class, 'permohonan_id');
     }
 
+    public function masterKelengkapan()
+    {
+        return $this->belongsTo(MasterKelengkapanVerifikasi::class, 'master_kelengkapan_id');
+    }
+
+    // Alias untuk backward compatibility di view
     public function persyaratanDokumen()
     {
-        return $this->belongsTo(PersyaratanDokumen::class);
+        return $this->masterKelengkapan();
     }
 
     public function verifiedBy()

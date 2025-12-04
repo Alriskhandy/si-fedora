@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,88 +13,155 @@ class Permohonan extends Model
     protected $table = 'permohonan';
 
     protected $fillable = [
-        'nomor_permohonan',
-        'kabupaten_kota_id',
-        'nomor_permohonan',
-        'jenis_dokumen_id',
-
-        'tahun_anggaran_id',
-        'jadwal_fasilitasi_id',
-        'nama_dokumen',
-        'keterangan',
-        'tanggal_permohonan',
-        'status',
-        'submitted_at',
-        'verified_at',
-        'assigned_at',
-        'evaluated_at',
-        'approved_at',
-        'completed_at',
-        'verifikator_id',
-        'pokja_id',
+        'kab_kota_id',
+        'tahun',
+        'jenis_dokumen',
+        'status_akhir',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'tanggal_permohonan' => 'date',
-        'submitted_at' => 'datetime',
-        'verified_at' => 'datetime',
-        'assigned_at' => 'datetime',
-        'evaluated_at' => 'datetime',
-        'approved_at' => 'datetime',
-        'completed_at' => 'datetime',
+        'tahun' => 'integer',
     ];
 
-    // Status labels dan badge class
+    // Status labels dan badge class untuk status_akhir
     public function getStatusLabelAttribute()
     {
         $labels = [
-            'draft' => 'Draft',
-            'submitted' => 'Menunggu Verifikasi',
-            'verified' => 'Terverifikasi',
-            'revision_required' => 'Perlu Revisi',
-            'assigned' => 'Ditugaskan',
-            'in_evaluation' => 'Sedang Dievaluasi',
-            'draft_recommendation' => 'Draft Rekomendasi',
-            'approved_by_kaban' => 'Disetujui Kaban',
-            'letter_issued' => 'Surat Diterbitkan',
-            'sent' => 'Terkirim',
-            'follow_up' => 'Tindak Lanjut',
-            'completed' => 'Selesai',
-            'rejected' => 'Ditolak',
+            'belum' => 'Belum Dimulai',
+            'proses' => 'Dalam Proses',
+            'revisi' => 'Perlu Revisi',
+            'selesai' => 'Selesai',
         ];
 
-        return $labels[$this->status] ?? 'Status Tidak Dikenal';
+        return $labels[$this->status_akhir] ?? 'Status Tidak Dikenal';
     }
 
     public function getStatusBadgeClassAttribute()
     {
         $classes = [
-            'draft' => 'primary',
-            'submitted' => 'warning',
-            'verified' => 'success',
-            'revision_required' => 'danger',
-            'assigned' => 'info',
-            'in_evaluation' => 'warning',
-            'draft_recommendation' => 'info',
-            'approved_by_kaban' => 'success',
-            'letter_issued' => 'primary',
-            'sent' => 'success',
-            'follow_up' => 'warning',
-            'completed' => 'success',
-            'rejected' => 'danger',
+            'belum' => 'secondary',
+            'proses' => 'warning',
+            'revisi' => 'danger',
+            'selesai' => 'success',
         ];
 
-        return $classes[$this->status] ?? 'secondary';
+        return $classes[$this->status_akhir] ?? 'secondary';
     }
 
     // Relasi
     public function kabupatenKota()
     {
-        return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
+        return $this->belongsTo(KabupatenKota::class, 'kab_kota_id');
     }
 
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    // Relasi ke tabel baru
+    public function tahapan()
+    {
+        return $this->hasMany(PermohonanTahapan::class);
+    }
+
+    public function koordinator()
+    {
+        return $this->hasOne(KoordinatorAssignment::class);
+    }
+
+    public function timFasilitasi()
+    {
+        return $this->hasMany(TimFasilitasiAssignment::class);
+    }
+
+    public function timVerifikasi()
+    {
+        return $this->hasMany(TimVerifikasiAssignment::class);
+    }
+
+    public function dokumenTahapan()
+    {
+        return $this->hasMany(DokumenTahapan::class);
+    }
+
+    public function jadwalFasilitasi()
+    {
+        return $this->hasMany(JadwalFasilitasi::class);
+    }
+
+    public function pelaksanaanCatatan()
+    {
+        return $this->hasOne(PelaksanaanCatatan::class);
+    }
+
+    public function hasilFasilitasi()
+    {
+        return $this->hasOne(HasilFasilitasi::class);
+    }
+
+    public function penetapanPerda()
+    {
+        return $this->hasOne(PenetapanPerda::class);
+    }
+
+    public function fasilitasiBab()
+    {
+        return $this->hasMany(FasilitasiBab::class);
+    }
+
+    public function fasilitasiUrusan()
+    {
+        return $this->hasMany(FasilitasiUrusan::class);
+    }
+
+    // Helper method untuk mendapatkan tahapan saat ini
+    public function getCurrentTahapan()
+    {
+        return $this->tahapan()
+            ->with('masterTahapan')
+            ->whereIn('status', ['proses', 'revisi'])
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    // Helper method untuk cek apakah tahapan sudah selesai
+    public function isTahapanSelesai($tahapanId)
+    {
+        return $this->tahapan()
+            ->where('tahapan_id', $tahapanId)
+            ->where('status', 'selesai')
+            ->exists();
+    }
+
+    // Scope
+    public function scopeByJenisDokumen($query, $jenis)
+    {
+        return $query->where('jenis_dokumen', $jenis);
+    }
+
+    public function scopeByTahun($query, $tahun)
+    {
+        return $query->where('tahun', $tahun);
+    }
+
+    public function scopeByKabKota($query, $kabKotaId)
+    {
+        return $query->where('kab_kota_id', $kabKotaId);
+    }
+
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status_akhir', $status);
+    }
+    
     public function jenisDokumen()
     {
         return $this->belongsTo(JenisDokumen::class, 'jenis_dokumen_id');
@@ -106,10 +172,6 @@ class Permohonan extends Model
         return $this->belongsTo(TahunAnggaran::class, 'tahun_anggaran_id');
     }
 
-    public function jadwalFasilitasi()
-    {
-        return $this->belongsTo(JadwalFasilitasi::class, 'jadwal_fasilitasi_id');
-    }
     // app/Models/Permohonan.php
     public function suratRekomendasi()
     {
@@ -160,11 +222,6 @@ class Permohonan extends Model
     public function permohonanDokumen()
     {
         return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
-    }
-
-    public function kelengkapan()
-    {
-        return $this->hasMany(MasterKelengkapanVerifikasi::class, 'permohonan_id');
     }
 
     // Method untuk mendapatkan progress tahapan dari master_tahapan

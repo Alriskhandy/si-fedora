@@ -29,18 +29,12 @@ class JenisDokumen extends Model
         return $this->hasMany(Permohonan::class, 'jenis_dokumen_id');
     }
 
-    public function persyaratanDokumen()
-    {
-        return $this->hasMany(PersyaratanDokumen::class, 'jenis_dokumen_id');
-    }
+    // Persyaratan dokumen sekarang menggunakan master_kelengkapan_verifikasi
+    // Tidak ada relasi langsung karena master_kelengkapan_verifikasi adalah master data umum
 
     public function jadwalFasilitasi()
     {
         return $this->hasMany(JadwalFasilitasi::class, 'jenis_dokumen_id');
     }
-    // Tambahin ini di model JenisDokumen
-    public function persyaratan()
-    {
-        return $this->hasMany(PersyaratanDokumen::class, 'jenis_dokumen_id');
-    }
+
 }

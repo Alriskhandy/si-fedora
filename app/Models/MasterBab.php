@@ -35,10 +35,7 @@ class MasterBab extends Model
     }
 
     // Relasi ke dokumen persyaratan
-    public function persyaratanDokumen()
-    {
-        return $this->hasMany(PersyaratanDokumen::class, 'bab_id');
-    }
+    // Persyaratan dokumen sekarang menggunakan master_kelengkapan_verifikasi
 
     // Scope untuk bab utama (tanpa parent)
     public function scopeMainBab($query)

@@ -52,7 +52,7 @@ class EvaluasiController extends Controller
         $permohonan->load([
             'kabupatenKota',
             'jenisDokumen',
-            'permohonanDokumen.persyaratanDokumen',
+            'permohonanDokumen.masterKelengkapan',
             'evaluasi'
         ]);
 
