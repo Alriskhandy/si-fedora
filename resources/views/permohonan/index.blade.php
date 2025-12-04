@@ -58,27 +58,49 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>No</th>
+                                    <th width="5%">No</th>
                                     <th>Nomor Permohonan</th>
                                     <th>Kabupaten/Kota</th>
                                     <th>Jenis Dokumen</th>
                                     <th>Nama Dokumen</th>
                                     <th>Tanggal</th>
                                     <th>Status</th>
-                                    <th>Aksi</th>
+                                    <th width="15%">Progress</th>
+                                    <th width="8%">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($permohonan as $index => $item)
                                 <tr>
                                     <td>{{ $index + $permohonan->firstItem() }}</td>
-                                    <td>{{ $item->nomor_permohonan ?? '-' }}</td>
+                                    <td>
+                                        <strong>{{ $item->nomor_permohonan ?? '-' }}</strong>
+                                    </td>
                                     <td>{{ $item->kabupatenKota->getFullNameAttribute() ?? '-' }}</td>
                                     <td>{{ $item->jenisDokumen->nama ?? '-' }}</td>
-                                    <td>{{ $item->nama_dokumen }}</td>
+                                    <td>{{ str()->limit($item->nama_dokumen, 30) }}</td>
                                     <td>{{ $item->getTanggalPermohonanFormattedAttribute() }}</td>
                                     <td>
                                         <span class="badge bg-label-{{ $item->status_badge_class }}">{{ $item->status_label }}</span>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $currentStep = $item->getCurrentStepIndex();
+                                            $totalSteps = 7;
+                                            $percentage = ($currentStep / ($totalSteps - 1)) * 100;
+                                        @endphp
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress w-100 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ $item->status === 'rejected' ? 'danger' : ($percentage >= 100 ? 'success' : 'primary') }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ $percentage }}%"
+                                                     aria-valuenow="{{ $percentage }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{ round($percentage) }}%</small>
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="dropdown">

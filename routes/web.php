@@ -101,6 +101,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
     });
 
+    // Jadwal untuk Pemohon
+    Route::middleware(['role:pemohon'])->prefix('pemohon')->name('pemohon.')->group(function () {
+        Route::get('/jadwal', [\App\Http\Controllers\PemohonJadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('/jadwal/{jadwal}', [\App\Http\Controllers\PemohonJadwalController::class, 'show'])->name('jadwal.show');
+    });
+
     // Route::middleware(['auth', 'role:kabkota|admin_peran'])->group(function () {
     //     Route::resource('permohonan-dokumen', PermohonanDokumenController::class);
     // });

@@ -8,6 +8,12 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @method bool hasRole($roles, $guard = null)
+ * @method bool hasAnyRole($roles, $guard = null)
+ * @method bool hasAllRoles($roles, $guard = null)
+ * @method \Illuminate\Database\Eloquent\Relations\MorphToMany roles()
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles, SoftDeletes;
@@ -46,7 +52,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
     }
-    
+
 
     public function permohonanCreated()
     {
@@ -114,12 +120,12 @@ class User extends Authenticatable
         $this->update(['last_login_at' => now()]);
     }
     public function temporaryRoles()
-{
-    return $this->hasMany(TemporaryRoleAssignment::class);
-}
+    {
+        return $this->hasMany(TemporaryRoleAssignment::class);
+    }
 
-public function activeTemporaryRoles()
-{
-    return $this->temporaryRoles()->where('end_date', '>', now());
-}
+    public function activeTemporaryRoles()
+    {
+        return $this->temporaryRoles()->where('end_date', '>', now());
+    }
 }

@@ -9,6 +9,7 @@ use Spatie\Permission\Models\Role;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\JadwalFasilitasi;
+
 class DashboardController extends Controller
 {
     public function index()
@@ -77,10 +78,10 @@ class DashboardController extends Controller
             'pending_approval' => Permohonan::where('status', 'draft_recommendation')->count(),
             'total_permohonan' => Permohonan::count(),
             'recent_activities' => DB::table('activity_log') // <-- Ganti jadi ini
-            ->where('created_at', '>=', now()->subDays(7))
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get()
+                ->where('created_at', '>=', now()->subDays(7))
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get()
         ];
 
         return view('dashboard.admin_peran', compact('stats'));
@@ -139,17 +140,26 @@ class DashboardController extends Controller
     {
         $stats = [
             'my_permohonan' => Permohonan::where('created_by', $user->id)->count(),
-            'submitted_permohonan' => Permohonan::where('created_by', $user->id)
-                ->where('status', 'submitted')
+            'draft_permohonan' => Permohonan::where('created_by', $user->id)
+                ->where('status', 'draft')
                 ->count(),
-            'verified_permohonan' => Permohonan::where('created_by', $user->id)
-                ->where('status', 'verified')
+            'in_process_permohonan' => Permohonan::where('created_by', $user->id)
+                ->whereIn('status', ['submitted', 'verified', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban'])
                 ->count(),
-           'my_permohonan_list' => Permohonan::with(['jenisDokumen'])
-    ->where('created_by', $user->id)
-    ->latest()
-    ->limit(5)
-    ->get()
+            'completed_permohonan' => Permohonan::where('created_by', $user->id)
+                ->where('status', 'completed')
+                ->count(),
+            'jadwal_aktif' => JadwalFasilitasi::where('status', 'published')
+                ->where('batas_permohonan', '>=', now())
+                ->with(['tahunAnggaran', 'jenisDokumen'])
+                ->orderBy('batas_permohonan', 'asc')
+                ->limit(3)
+                ->get(),
+            'my_permohonan_list' => Permohonan::with(['jenisDokumen'])
+                ->where('created_by', $user->id)
+                ->latest()
+                ->limit(5)
+                ->get()
         ];
 
         return view('dashboard.kab_kota', compact('stats'));

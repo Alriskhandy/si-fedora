@@ -37,6 +37,16 @@ class Permohonan extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'tanggal_permohonan' => 'date',
+        'submitted_at' => 'datetime',
+        'verified_at' => 'datetime',
+        'assigned_at' => 'datetime',
+        'evaluated_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
+
     // Status labels dan badge class
     public function getStatusLabelAttribute()
     {
@@ -101,10 +111,10 @@ class Permohonan extends Model
         return $this->belongsTo(JadwalFasilitasi::class, 'jadwal_fasilitasi_id');
     }
     // app/Models/Permohonan.php
-public function suratRekomendasi()
-{
-    return $this->hasOne(SuratRekomendasi::class, 'permohonan_id');
-}
+    public function suratRekomendasi()
+    {
+        return $this->hasOne(SuratRekomendasi::class, 'permohonan_id');
+    }
 
     public function evaluasi()
     {
@@ -118,7 +128,7 @@ public function suratRekomendasi()
     {
         return $this->belongsTo(TimPokja::class, 'pokja_id');
     }
-    
+
     public function verifikator()
     {
         return $this->belongsTo(User::class, 'verifikator_id');
@@ -126,31 +136,120 @@ public function suratRekomendasi()
 
 
 
-protected static function boot()
-{
-    parent::boot();
+    protected static function boot()
+    {
+        parent::boot();
 
-    static::creating(function ($model) {
-        if (!$model->nomor_permohonan) {
-            $tahun = now()->year;
-            $bulan = now()->format('m');
-            $counter = self::whereYear('created_at', $tahun)->count() + 1;
-            $model->nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
+        static::creating(function ($model) {
+            if (!$model->nomor_permohonan) {
+                $tahun = now()->year;
+                $bulan = now()->format('m');
+                $counter = self::whereYear('created_at', $tahun)->count() + 1;
+                $model->nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
+            }
+        });
+    }
+
+
+    public function getTanggalPermohonanFormattedAttribute()
+    {
+        return $this->tanggal_permohonan ? \Carbon\Carbon::parse($this->tanggal_permohonan)->format('d M Y') : '-';
+    }
+
+    // app/Models/Permohonan.php
+    public function permohonanDokumen()
+    {
+        return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
+    }
+
+    public function kelengkapan()
+    {
+        return $this->hasMany(MasterKelengkapanVerifikasi::class, 'permohonan_id');
+    }
+
+    // Method untuk mendapatkan progress tahapan dari master_tahapan
+    public function getProgressSteps()
+    {
+        $masterTahapan = \App\Models\MasterTahapan::orderBy('urutan')->get();
+        $steps = [];
+
+        foreach ($masterTahapan as $tahapan) {
+            $step = [
+                'name' => $tahapan->nama_tahapan,
+                'urutan' => $tahapan->urutan,
+                'description' => $this->getStepDescription($tahapan->urutan),
+                'icon' => $this->getStepIcon($tahapan->urutan),
+                'date' => $this->getStepDate($tahapan->urutan),
+                'completed' => $this->isStepCompleted($tahapan->urutan)
+            ];
+            $steps[] = $step;
         }
-    });
-}
 
+        return $steps;
+    }
 
-public function getTanggalPermohonanFormattedAttribute()
-{
-    return $this->tanggal_permohonan ? \Carbon\Carbon::parse($this->tanggal_permohonan)->format('d M Y') : '-';
-}
+    private function getStepDescription($urutan)
+    {
+        $descriptions = [
+            1 => 'Permohonan dibuat dan diajukan',
+            2 => 'Dokumen diverifikasi oleh tim',
+            3 => 'Jadwal fasilitasi ditetapkan',
+            4 => 'Pelaksanaan fasilitasi/evaluasi',
+            5 => 'Draft hasil fasilitasi',
+            6 => 'Penetapan Perda/Perkada'
+        ];
+        return $descriptions[$urutan] ?? '';
+    }
 
-// app/Models/Permohonan.php
-public function permohonanDokumen()
-{
-    return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
-}
+    private function getStepIcon($urutan)
+    {
+        $icons = [
+            1 => 'bx-send',
+            2 => 'bx-check-circle',
+            3 => 'bx-calendar-event',
+            4 => 'bx-briefcase',
+            5 => 'bx-file-blank',
+            6 => 'bx-check-shield'
+        ];
+        return $icons[$urutan] ?? 'bx-circle';
+    }
 
-    
+    private function getStepDate($urutan)
+    {
+        $dates = [
+            1 => $this->submitted_at ?? $this->created_at,
+            2 => $this->verified_at,
+            3 => $this->assigned_at,
+            4 => $this->evaluated_at,
+            5 => $this->approved_at,
+            6 => $this->completed_at
+        ];
+        return $dates[$urutan] ?? null;
+    }
+
+    private function isStepCompleted($urutan)
+    {
+        $statusMapping = [
+            1 => ['submitted', 'revision_required', 'verified', 'assigned', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
+            2 => ['verified', 'assigned', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
+            3 => ['assigned', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
+            4 => ['in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
+            5 => ['draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
+            6 => ['completed']
+        ];
+
+        return in_array($this->status, $statusMapping[$urutan] ?? []);
+    }
+
+    public function getCurrentStepIndex()
+    {
+        if ($this->status === 'completed') return 5;
+        if (in_array($this->status, ['approved_by_kaban', 'letter_issued', 'sent', 'follow_up'])) return 5;
+        if (in_array($this->status, ['draft_recommendation'])) return 4;
+        if (in_array($this->status, ['in_evaluation'])) return 3;
+        if (in_array($this->status, ['assigned'])) return 2;
+        if (in_array($this->status, ['verified', 'revision_required'])) return 1;
+        if (in_array($this->status, ['submitted'])) return 1;
+        return 0; // draft
+    }
 }

@@ -121,7 +121,13 @@
         @if (auth()->user()->hasAnyRole(['pemohon']))
             <!-- Permohonan -->
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Permohonan</span>
+                <span class="menu-header-text">Permohonan Fasilitasi</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('pemohon.jadwal.*') ? 'active' : '' }}">
+                <a href="{{ route('pemohon.jadwal.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-event"></i>
+                    <div data-i18n="Jadwal">Jadwal Fasilitasi</div>
+                </a>
             </li>
             <li class="menu-item {{ request()->routeIs('permohonan.*') ? 'active' : '' }}">
                 <a href="{{ route('permohonan.index') }}" class="menu-link">
