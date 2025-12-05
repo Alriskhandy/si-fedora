@@ -4,45 +4,42 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\JadwalFasilitasi;
-use App\Models\JenisDokumen;
 use App\Models\Permohonan;
-use App\Models\TahunAnggaran;
 
 class PemohonJadwalController extends Controller
 {
     public function index(Request $request)
     {
-        $query = JadwalFasilitasi::with(['tahunAnggaran', 'jenisDokumen'])
-            ->where('status', 'published');
+        $query = JadwalFasilitasi::with(['permohonan.kabupatenKota'])
+            ->where('tanggal_pelaksanaan', '>=', now());
 
         // Filter by jenis dokumen
-        if ($request->filled('jenis_dokumen_id')) {
-            $query->where('jenis_dokumen_id', $request->jenis_dokumen_id);
+        if ($request->filled('jenis_dokumen')) {
+            $query->whereHas('permohonan', function($q) use ($request) {
+                $q->where('jenis_dokumen', $request->jenis_dokumen);
+            });
         }
 
-        // Filter by tahun anggaran
-        if ($request->filled('tahun_anggaran_id')) {
-            $query->where('tahun_anggaran_id', $request->tahun_anggaran_id);
+        // Filter by tahun
+        if ($request->filled('tahun')) {
+            $query->whereHas('permohonan', function($q) use ($request) {
+                $q->where('tahun', $request->tahun);
+            });
         }
 
-        // Filter by status (aktif/expired)
-        if ($request->filled('filter_status')) {
-            if ($request->filter_status === 'aktif') {
-                $query->where('batas_permohonan', '>=', now());
-            } elseif ($request->filter_status === 'expired') {
-                $query->where('batas_permohonan', '<', now());
-            }
-        } else {
-            // Default: hanya tampilkan jadwal aktif
-            $query->where('batas_permohonan', '>=', now());
+        // Filter by kabupaten/kota (untuk user pemohon)
+        if (auth()->user()->kabupaten_kota_id) {
+            $query->whereHas('permohonan', function($q) {
+                $q->where('kab_kota_id', auth()->user()->kabupaten_kota_id);
+            });
         }
 
-        $jadwalList = $query->orderBy('batas_permohonan', 'asc')->paginate(10);
+        $jadwalList = $query->orderBy('tanggal_pelaksanaan', 'asc')->paginate(10);
 
         // Data untuk filter
         $filterOptions = [
-            'jenisDokumen' => JenisDokumen::where('is_active', true)->get(),
-            'tahunAnggaran' => TahunAnggaran::where('is_active', true)->get(),
+            'jenisDokumen' => ['perda' => 'PERDA', 'perkada' => 'PERKADA'],
+            'tahunList' => Permohonan::distinct()->pluck('tahun')->sort()->values(),
         ];
 
         return view('pemohon.jadwal.index', compact('jadwalList', 'filterOptions'));
@@ -50,13 +47,8 @@ class PemohonJadwalController extends Controller
 
     public function show(JadwalFasilitasi $jadwal)
     {
-        $jadwal->load(['tahunAnggaran', 'jenisDokumen']);
+        $jadwal->load(['permohonan.kabupatenKota']);
 
-        // Cek apakah user sudah punya permohonan untuk jadwal ini
-        $existingPermohonan = Permohonan::where('created_by', auth()->id())
-            ->where('jadwal_fasilitasi_id', $jadwal->id)
-            ->first();
-
-        return view('pemohon.jadwal.show', compact('jadwal', 'existingPermohonan'));
+        return view('pemohon.jadwal.show', compact('jadwal'));
     }
 }

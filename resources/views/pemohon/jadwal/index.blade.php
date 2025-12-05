@@ -17,37 +17,26 @@
                 <form method="GET" action="{{ route('pemohon.jadwal.index') }}">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label for="jenis_dokumen_id" class="form-label">Jenis Dokumen</label>
-                            <select name="jenis_dokumen_id" id="jenis_dokumen_id" class="form-select">
+                            <label for="jenis_dokumen" class="form-label">Jenis Dokumen</label>
+                            <select name="jenis_dokumen" id="jenis_dokumen" class="form-select">
                                 <option value="">Semua Jenis Dokumen</option>
-                                @foreach ($filterOptions['jenisDokumen'] as $jd)
-                                    <option value="{{ $jd->id }}"
-                                        {{ request('jenis_dokumen_id') == $jd->id ? 'selected' : '' }}>
-                                        {{ $jd->nama }}
+                                @foreach ($filterOptions['jenisDokumen'] as $key => $value)
+                                    <option value="{{ $key }}"
+                                        {{ request('jenis_dokumen') == $key ? 'selected' : '' }}>
+                                        {{ $value }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="tahun_anggaran_id" class="form-label">Tahun Anggaran</label>
-                            <select name="tahun_anggaran_id" id="tahun_anggaran_id" class="form-select">
+                            <label for="tahun" class="form-label">Tahun</label>
+                            <select name="tahun" id="tahun" class="form-select">
                                 <option value="">Semua Tahun</option>
-                                @foreach ($filterOptions['tahunAnggaran'] as $ta)
-                                    <option value="{{ $ta->id }}"
-                                        {{ request('tahun_anggaran_id') == $ta->id ? 'selected' : '' }}>
-                                        {{ $ta->tahun }}
+                                @foreach ($filterOptions['tahunList'] as $tahun)
+                                    <option value="{{ $tahun }}" {{ request('tahun') == $tahun ? 'selected' : '' }}>
+                                        {{ $tahun }}
                                     </option>
                                 @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="filter_status" class="form-label">Status</label>
-                            <select name="filter_status" id="filter_status" class="form-select">
-                                <option value="">Jadwal Aktif</option>
-                                <option value="aktif" {{ request('filter_status') == 'aktif' ? 'selected' : '' }}>Aktif
-                                </option>
-                                <option value="expired" {{ request('filter_status') == 'expired' ? 'selected' : '' }}>
-                                    Expired</option>
                             </select>
                         </div>
                         <div class="col-12">
@@ -70,39 +59,39 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <h5 class="card-title mb-0">{{ $jadwal->jenisDokumen->nama ?? '-' }}</h5>
+                                <div>
+                                    <h5 class="card-title mb-1">{{ $jadwal->permohonan?->kabupatenKota?->nama ?? '-' }}</h5>
+                                    <span
+                                        class="badge bg-label-{{ $jadwal->permohonan?->jenis_dokumen === 'perda' ? 'primary' : 'info' }}">
+                                        {{ strtoupper($jadwal->permohonan?->jenis_dokumen ?? '-') }}
+                                    </span>
+                                </div>
                                 <span
-                                    class="badge bg-label-{{ $jadwal->batas_permohonan > now() ? 'success' : 'secondary' }}">
-                                    {{ $jadwal->batas_permohonan > now() ? 'Aktif' : 'Expired' }}
+                                    class="badge bg-label-{{ $jadwal->tanggal_pelaksanaan > now() ? 'success' : 'secondary' }}">
+                                    {{ $jadwal->tanggal_pelaksanaan > now() ? 'Akan Datang' : 'Selesai' }}
                                 </span>
                             </div>
 
                             <div class="mb-3">
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <small class="text-muted d-block">Tahun Anggaran</small>
-                                        <strong>{{ $jadwal->tahunAnggaran->tahun ?? '-' }}</strong>
+                                        <small class="text-muted d-block">Tahun</small>
+                                        <strong>{{ $jadwal->permohonan?->tahun ?? '-' }}</strong>
                                     </div>
                                     <div class="col-6">
-                                        <small class="text-muted d-block">Batas Permohonan</small>
+                                        <small class="text-muted d-block">Tanggal Pelaksanaan</small>
                                         <strong
-                                            class="text-{{ $jadwal->batas_permohonan > now()->addDays(7) ? 'success' : 'warning' }}">
-                                            {{ $jadwal->batas_permohonan->format('d M Y') }}
+                                            class="text-{{ $jadwal->tanggal_pelaksanaan > now()->addDays(7) ? 'success' : 'warning' }}">
+                                            {{ $jadwal->tanggal_pelaksanaan->format('d M Y') }}
                                         </strong>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <small class="text-muted d-block">Jadwal Pelaksanaan</small>
-                                <strong>{{ $jadwal->tanggal_mulai->format('d M Y') }} -
-                                    {{ $jadwal->tanggal_selesai->format('d M Y') }}</strong>
-                            </div>
-
-                            @if ($jadwal->lokasi)
+                            @if ($jadwal->tempat)
                                 <div class="mb-3">
-                                    <small class="text-muted d-block">Lokasi</small>
-                                    <span>{{ $jadwal->lokasi }}</span>
+                                    <small class="text-muted d-block">Tempat</small>
+                                    <span>{{ $jadwal->tempat }}</span>
                                 </div>
                             @endif
 
@@ -113,21 +102,24 @@
                                 </div>
                             @endif
 
+                            @if ($jadwal->undangan_file)
+                                <div class="mb-3">
+                                    <a href="{{ Storage::url($jadwal->undangan_file) }}" target="_blank"
+                                        class="btn btn-sm btn-outline-info">
+                                        <i class='bx bx-file-blank me-1'></i> Undangan
+                                    </a>
+                                </div>
+                            @endif
+
                             <div class="d-flex gap-2 mt-3">
                                 <a href="{{ route('pemohon.jadwal.show', $jadwal->id) }}"
                                     class="btn btn-sm btn-outline-primary">
                                     <i class='bx bx-show me-1'></i> Detail
                                 </a>
-                                @if ($jadwal->batas_permohonan > now())
-                                    <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
-                                        class="btn btn-sm btn-primary">
-                                        <i class='bx bx-plus me-1'></i> Buat Permohonan
-                                    </a>
-                                @else
-                                    <button class="btn btn-sm btn-secondary" disabled>
-                                        <i class='bx bx-time me-1'></i> Expired
-                                    </button>
-                                @endif
+                                <a href="{{ route('permohonan.show', $jadwal->permohonan_id) }}"
+                                    class="btn btn-sm btn-primary">
+                                    <i class='bx bx-file me-1'></i> Lihat Permohonan
+                                </a>
                             </div>
                         </div>
                     </div>

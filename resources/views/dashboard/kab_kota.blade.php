@@ -30,27 +30,29 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
+                                            <th>Kabupaten/Kota</th>
                                             <th>Jenis Dokumen</th>
-                                            <th>Tahun Anggaran</th>
-                                            <th>Batas Permohonan</th>
-                                            <th>Aksi</th>
+                                            <th>Tanggal Pelaksanaan</th>
+                                            <th>Tempat</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($stats['jadwal_aktif'] as $jadwal)
                                             <tr>
-                                                <td>{{ $jadwal->jenisDokumen->nama ?? '-' }}</td>
-                                                <td>{{ $jadwal->tahunAnggaran->tahun ?? '-' }}</td>
+                                                <td>{{ $jadwal->permohonan?->kabupatenKota?->nama ?? '-' }}</td>
                                                 <td>
                                                     <span
-                                                        class="badge bg-label-{{ $jadwal->batas_permohonan > now()->addDays(7) ? 'success' : 'warning' }}">
-                                                        {{ $jadwal->batas_permohonan->format('d M Y') }}
+                                                        class="badge bg-label-{{ $jadwal->permohonan?->jenis_dokumen === 'perda' ? 'primary' : 'info' }}">
+                                                        {{ strtoupper($jadwal->permohonan?->jenis_dokumen ?? '-') }}
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
-                                                        class="btn btn-xs btn-primary">Buat Permohonan</a>
+                                                    <span
+                                                        class="badge bg-label-{{ $jadwal->tanggal_pelaksanaan > now()->addDays(7) ? 'success' : 'warning' }}">
+                                                        {{ $jadwal->tanggal_pelaksanaan->format('d M Y') }}
+                                                    </span>
                                                 </td>
+                                                <td>{{ $jadwal->tempat ?? '-' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -159,10 +161,10 @@
                                 <thead>
                                     <tr>
                                         <th width="5%">No</th>
+                                        <th>Kabupaten/Kota</th>
                                         <th>Jenis Dokumen</th>
-                                        <th>Nama Dokumen</th>
+                                        <th>Tahun</th>
                                         <th>Status</th>
-                                        <th width="20%">Progress</th>
                                         <th>Tanggal</th>
                                         <th width="10%">Aksi</th>
                                     </tr>
@@ -171,34 +173,18 @@
                                     @forelse($stats['my_permohonan_list'] as $index => $permohonan)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            <td>{{ $permohonan->kabupatenKota?->nama ?? '-' }}</td>
                                             <td>
-                                                <strong>{{ $permohonan->jenisDokumen->nama ?? '-' }}</strong>
-                                            </td>
-                                            <td>{{ str()->limit($permohonan->nama_dokumen, 30) }}</td>
-                                            <td>
-                                                <span class="badge bg-label-{{ $permohonan->status_badge_class ?? 'secondary' }}">
-                                                    {{ $permohonan->status_label ?? $permohonan->status }}
+                                                <span
+                                                    class="badge bg-label-{{ $permohonan->jenis_dokumen === 'perda' ? 'primary' : 'info' }}">
+                                                    {{ strtoupper($permohonan->jenis_dokumen) }}
                                                 </span>
                                             </td>
+                                            <td>{{ $permohonan->tahun }}</td>
                                             <td>
-                                                @php
-                                                    $currentStep = $permohonan->getCurrentStepIndex();
-                                                    $totalSteps = 7;
-                                                    $percentage = ($currentStep / ($totalSteps - 1)) * 100;
-                                                @endphp
-                                                <div class="d-flex align-items-center">
-                                                    <div class="progress w-100 me-2" style="height: 6px;">
-                                                        <div class="progress-bar bg-{{ $permohonan->status === 'rejected' ? 'danger' : ($percentage >= 100 ? 'success' : 'primary') }}" 
-                                                             role="progressbar" 
-                                                             style="width: {{ $percentage }}%"
-                                                             aria-valuenow="{{ $percentage }}" 
-                                                             aria-valuemin="0" 
-                                                             aria-valuemax="100">
-                                                        </div>
-                                                    </div>
-                                                    <small class="text-nowrap text-muted">{{ round($percentage) }}%</small>
-                                                </div>
-                                                <small class="text-muted">{{ $permohonan->status_label }}</small>
+                                                <span class="badge bg-label-{{ $permohonan->status_badge_class }}">
+                                                    {{ $permohonan->status_label }}
+                                                </span>
                                             </td>
                                             <td>
                                                 <small>{{ $permohonan->created_at->format('d M Y') }}</small>

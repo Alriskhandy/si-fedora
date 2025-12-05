@@ -3,22 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\JadwalFasilitasi;
-use App\Models\TahunAnggaran;
-use App\Models\JenisDokumen;
+use App\Models\Permohonan;
 use Illuminate\Http\Request;
 
 class JadwalFasilitasiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = JadwalFasilitasi::with(['tahunAnggaran', 'jenisDokumen']);
+        $query = JadwalFasilitasi::with(['permohonan.kabupatenKota']);
 
         if ($request->filled('search')) {
-            $query->whereHas('jenisDokumen', function($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
-            })
-            ->orWhereHas('tahunAnggaran', function($q) use ($request) {
-                $q->where('tahun', 'like', '%' . $request->search . '%');
+            $query->whereHas('permohonan', function($q) use ($request) {
+                $q->where('jenis_dokumen', 'like', '%' . $request->search . '%')
+                  ->orWhere('tahun', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('kabupatenKota', function($q2) use ($request) {
+                      $q2->where('nama', 'like', '%' . $request->search . '%');
+                  });
             });
         }
 
@@ -29,10 +29,13 @@ class JadwalFasilitasiController extends Controller
 
     public function create()
     {
-        $tahunAnggaran = TahunAnggaran::where('is_active', true)->get();
-        $jenisDokumen = JenisDokumen::where('is_active', true)->get();
+        $permohonan = Permohonan::with(['kabupatenKota'])
+            ->whereNotIn('id', function($query) {
+                $query->select('permohonan_id')->from('jadwal_fasilitasi');
+            })
+            ->get();
         
-        return view('jadwal-fasilitasi.create', compact('tahunAnggaran', 'jenisDokumen'));
+        return view('jadwal-fasilitasi.create', compact('permohonan'));
     }
 
     // public function store(Request $request)
@@ -63,32 +66,31 @@ class JadwalFasilitasiController extends Controller
     //     return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil ditambahkan.');
     // }
     public function store(Request $request)
-{
-    $request->validate([
-        'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
-        'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
-        'nama_kegiatan' => 'required|string|max:200', // Pastiin required
-        'tanggal_mulai' => 'required|date',
-        'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-        'batas_permohonan' => 'required|date|after_or_equal:tanggal_mulai', // Pastiin required
-        'keterangan' => 'nullable|string', // Boleh nullable
-        'status' => 'required|in:draft,published,cancelled',
-    ]);
+    {
+        $request->validate([
+            'permohonan_id' => 'required|exists:permohonan,id',
+            'tanggal_pelaksanaan' => 'required|date',
+            'tempat' => 'required|string|max:255',
+            'undangan_file' => 'nullable|file|mimes:pdf|max:2048',
+            'keterangan' => 'nullable|string',
+        ]);
 
-    JadwalFasilitasi::create([
-        'tahun_anggaran_id' => $request->tahun_anggaran_id,
-        'jenis_dokumen_id' => $request->jenis_dokumen_id,
-        'nama_kegiatan' => $request->nama_kegiatan, // Harus diisi
-        'tanggal_mulai' => $request->tanggal_mulai,
-        'tanggal_selesai' => $request->tanggal_selesai,
-        'batas_permohonan' => $request->batas_permohonan, // Harus diisi
-        'keterangan' => $request->keterangan, // Boleh null
-        'status' => $request->status,
-        'created_by' => auth()->id(),
-    ]);
+        $data = [
+            'permohonan_id' => $request->permohonan_id,
+            'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan,
+            'tempat' => $request->tempat,
+            'keterangan' => $request->keterangan,
+            'dibuat_oleh' => auth()->id(),
+        ];
 
-    return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil ditambahkan.');
-}
+        if ($request->hasFile('undangan_file')) {
+            $data['undangan_file'] = $request->file('undangan_file')->store('undangan', 'public');
+        }
+
+        JadwalFasilitasi::create($data);
+
+        return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil ditambahkan.');
+    }
 
     public function show(JadwalFasilitasi $jadwal)
     {
@@ -97,36 +99,31 @@ class JadwalFasilitasiController extends Controller
 
     public function edit(JadwalFasilitasi $jadwal)
     {
-        $tahunAnggaran = TahunAnggaran::where('is_active', true)->get();
-        $jenisDokumen = JenisDokumen::where('is_active', true)->get();
+        $jadwal->load('permohonan.kabupatenKota');
         
-        return view('jadwal-fasilitasi.edit', compact('jadwal', 'tahunAnggaran', 'jenisDokumen'));
+        return view('jadwal-fasilitasi.edit', compact('jadwal'));
     }
 
     public function update(Request $request, JadwalFasilitasi $jadwal)
     {
         $request->validate([
-            'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
-            'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
-            'nama_kegiatan' => 'required|string|max:200',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'batas_permohonan' => 'required|date|after_or_equal:tanggal_mulai',
+            'tanggal_pelaksanaan' => 'required|date',
+            'tempat' => 'required|string|max:255',
+            'undangan_file' => 'nullable|file|mimes:pdf|max:2048',
             'keterangan' => 'nullable|string',
-            'status' => 'required|in:draft,published,cancelled',
         ]);
     
-        $jadwal->update([
-            'tahun_anggaran_id' => $request->tahun_anggaran_id,
-            'jenis_dokumen_id' => $request->jenis_dokumen_id,
-            'nama_kegiatan' => $request->nama_kegiatan,
-            'tanggal_mulai' => $request->tanggal_mulai,
-            'tanggal_selesai' => $request->tanggal_selesai,
-            'batas_permohonan' => $request->batas_permohonan,
+        $data = [
+            'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan,
+            'tempat' => $request->tempat,
             'keterangan' => $request->keterangan,
-            'status' => $request->status,
-            'updated_by' => auth()->id(),
-        ]);
+        ];
+
+        if ($request->hasFile('undangan_file')) {
+            $data['undangan_file'] = $request->file('undangan_file')->store('undangan', 'public');
+        }
+    
+        $jadwal->update($data);
     
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil diperbarui.');
     }
@@ -135,17 +132,5 @@ class JadwalFasilitasiController extends Controller
     {
         $jadwal->delete();
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil dihapus.');
-    }
-
-    public function publish(JadwalFasilitasi $jadwal)
-    {
-        $jadwal->update(['status' => 'published']);
-        return redirect()->back()->with('success', 'Jadwal berhasil dipublikasikan.');
-    }
-
-    public function cancel(JadwalFasilitasi $jadwal)
-    {
-        $jadwal->update(['status' => 'cancelled']);
-        return redirect()->back()->with('success', 'Jadwal berhasil dibatalkan.');
     }
 }
