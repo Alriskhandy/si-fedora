@@ -60,53 +60,49 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h5 class="card-title mb-1">{{ $jadwal->permohonan?->kabupatenKota?->nama ?? '-' }}</h5>
-                                    <span
-                                        class="badge bg-label-{{ $jadwal->permohonan?->jenis_dokumen === 'perda' ? 'primary' : 'info' }}">
-                                        {{ strtoupper($jadwal->permohonan?->jenis_dokumen ?? '-') }}
+                                    <h5 class="card-title mb-1">{{ $jadwal->jenis_dokumen_label }}
+                                        {{ $jadwal->tahun_anggaran }}</h5>
+                                    <span class="badge bg-label-primary">
+                                        {{ strtoupper($jadwal->jenis_dokumen) }}
                                     </span>
                                 </div>
                                 <span
-                                    class="badge bg-label-{{ $jadwal->tanggal_selesai > now() ? 'success' : 'secondary' }}">
-                                    {{ $jadwal->tanggal_selesai > now() ? 'Akan Datang' : 'Selesai' }}
+                                    class="badge bg-label-{{ $jadwal->status == 'published' ? 'success' : 'secondary' }}">
+                                    {{ $jadwal->status_label }}
                                 </span>
                             </div>
 
                             <div class="mb-3">
                                 <div class="row g-2">
                                     <div class="col-6">
-                                        <small class="text-muted d-block">Tahun</small>
-                                        <strong>{{ $jadwal->permohonan?->tahun ?? '-' }}</strong>
+                                        <small class="text-muted d-block">Tahun Anggaran</small>
+                                        <strong>{{ $jadwal->tahun_anggaran }}</strong>
                                     </div>
                                     <div class="col-6">
-                                        <small class="text-muted d-block">Tanggal Pelaksanaan</small>
+                                        <small class="text-muted d-block">Batas Permohonan</small>
                                         <strong
-                                            class="text-{{ $jadwal->tanggal_pelaksanaan > now()->addDays(7) ? 'success' : 'warning' }}">
-                                            {{ $jadwal->tanggal_pelaksanaan->format('d M Y') }}
+                                            class="text-{{ $jadwal->batas_permohonan && $jadwal->batas_permohonan < now() ? 'danger' : 'success' }}">
+                                            {{ $jadwal->batas_permohonan ? $jadwal->batas_permohonan->format('d M Y') : '-' }}
                                         </strong>
                                     </div>
                                 </div>
                             </div>
 
-                            @if ($jadwal->tempat)
-                                <div class="mb-3">
-                                    <small class="text-muted d-block">Tempat</small>
-                                    <span>{{ $jadwal->tempat }}</span>
-                                </div>
-                            @endif
-
-                            @if ($jadwal->keterangan)
-                                <div class="mb-3">
-                                    <small class="text-muted d-block">Keterangan</small>
-                                    <p class="mb-0 small">{{ Str::limit($jadwal->keterangan, 100) }}</p>
-                                </div>
-                            @endif
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Periode Fasilitasi</small>
+                                <span>{{ $jadwal->tanggal_mulai->format('d M Y') }} -
+                                    {{ $jadwal->tanggal_selesai->format('d M Y') }}</span>
+                            </div>
 
                             @if ($jadwal->undangan_file)
                                 <div class="mb-3">
-                                    <a href="{{ Storage::url($jadwal->undangan_file) }}" target="_blank"
-                                        class="btn btn-sm btn-outline-info">
-                                        <i class='bx bx-file-blank me-1'></i> Undangan
+                                    <a href="{{ url('storage/' . $jadwal->undangan_file) }}" target="_blank"
+                                        class="btn btn-sm btn-outline-info me-2">
+                                        <i class='bx bx-show me-1'></i> Lihat
+                                    </a>
+                                    <a href="{{ url('storage/' . $jadwal->undangan_file) }}" download
+                                        class="btn btn-sm btn-outline-success">
+                                        <i class='bx bx-download me-1'></i> Download
                                     </a>
                                 </div>
                             @endif
@@ -116,10 +112,12 @@
                                     class="btn btn-sm btn-outline-primary">
                                     <i class='bx bx-show me-1'></i> Detail
                                 </a>
-                                <a href="{{ route('permohonan.show', $jadwal->permohonan_id) }}"
-                                    class="btn btn-sm btn-primary">
-                                    <i class='bx bx-file me-1'></i> Lihat Permohonan
-                                </a>
+                                @if ($jadwal->status == 'published' && $jadwal->batas_permohonan && $jadwal->batas_permohonan >= now())
+                                    <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
+                                        class="btn btn-sm btn-primary">
+                                        <i class='bx bx-plus me-1'></i> Buat Permohonan
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>

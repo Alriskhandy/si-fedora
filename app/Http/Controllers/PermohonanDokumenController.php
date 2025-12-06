@@ -140,6 +140,68 @@ class PermohonanDokumenController extends Controller
         return redirect()->route('permohonan.show', $permohonanDokumen->permohonan)->with('success', 'Dokumen persyaratan berhasil diperbarui.');
     }
 
+    public function upload(Request $request, PermohonanDokumen $permohonanDokumen)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,doc,docx|max:2048', // 2MB
+        ], [
+            'file.required' => 'File harus diupload',
+            'file.mimes' => 'File harus berformat PDF, DOC, atau DOCX',
+            'file.max' => 'Ukuran file maksimal 2MB'
+        ]);
+
+        // Cek akses - hanya pemohon yang bisa upload
+        if (Auth::user()->hasRole('pemohon')) {
+            if ($permohonanDokumen->permohonan->created_by !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses ke dokumen ini.'
+                ], 403);
+            }
+        }
+
+        // Cek status permohonan - hanya bisa upload jika status belum atau revisi
+        if (!in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.'
+            ], 400);
+        }
+
+        try {
+            // Hapus file lama jika ada
+            if ($permohonanDokumen->file_path) {
+                Storage::disk('public')->delete($permohonanDokumen->file_path);
+            }
+
+            // Upload file baru
+            $file = $request->file('file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $filePath = $file->store('permohonan_dokumen/' . $permohonanDokumen->permohonan_id, 'public');
+
+            // Update database
+            $permohonanDokumen->update([
+                'is_ada' => true,
+                'file_path' => $filePath,
+                'file_name' => $fileName,
+                'file_size' => $file->getSize(),
+                'file_type' => $file->getMimeType(),
+                'status_verifikasi' => 'pending',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil diupload'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function destroy(PermohonanDokumen $permohonanDokumen)
     {
         // Cek akses

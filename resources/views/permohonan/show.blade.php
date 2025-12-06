@@ -2,6 +2,10 @@
 
 @section('title', 'Detail Permohonan')
 
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+@endpush
+
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -62,7 +66,7 @@
                     @endforeach
                 </div>
 
-                @if ($permohonan->status === 'revision_required')
+                @if ($permohonan->status_akhir === 'revisi')
                     <div class="alert alert-warning mt-3 mb-0">
                         <i class='bx bx-error-circle me-2'></i>
                         <strong>Perlu Revisi:</strong> Silakan perbaiki dokumen sesuai catatan verifikasi.
@@ -73,7 +77,7 @@
 
         <div class="row">
             <div class="col-lg-8">
-                <div class="card mb-4">
+                <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Informasi Permohonan</h5>
                         <span
@@ -81,58 +85,48 @@
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Nomor Permohonan</label></div>
-                            <div class="col-sm-8"><strong>{{ $permohonan->nomor_permohonan ?? '-' }}</strong></div>
-                        </div>
-                        <hr class="my-3">
-                        <div class="row mb-3">
                             <div class="col-sm-4"><label class="text-muted">Kabupaten/Kota</label></div>
                             <div class="col-sm-8">
-                                <strong>{{ $permohonan->kabupatenKota->getFullNameAttribute() ?? '-' }}</strong>
+                                <strong>{{ $permohonan->kabupatenKota->nama ?? '-' }}</strong>
                             </div>
                         </div>
                         <hr class="my-3">
                         <div class="row mb-3">
                             <div class="col-sm-4"><label class="text-muted">Jenis Dokumen</label></div>
-                            <div class="col-sm-8"><strong>{{ $permohonan->jenisDokumen->nama ?? '-' }}</strong></div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-primary">{{ strtoupper($permohonan->jenis_dokumen) }}</span>
+                            </div>
                         </div>
                         <hr class="my-3">
                         <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Nama Dokumen</label></div>
-                            <div class="col-sm-8"><strong>{{ $permohonan->nama_dokumen }}</strong></div>
-                        </div>
-                        <hr class="my-3">
-                        <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Tahun Anggaran</label></div>
-                            <div class="col-sm-8"><strong>{{ $permohonan->tahunAnggaran->tahun ?? '-' }}</strong></div>
+                            <div class="col-sm-4"><label class="text-muted">Tahun</label></div>
+                            <div class="col-sm-8"><strong>{{ $permohonan->tahun }}</strong></div>
                         </div>
                         <hr class="my-3">
                         <div class="row mb-3">
                             <div class="col-sm-4"><label class="text-muted">Jadwal Fasilitasi</label></div>
                             <div class="col-sm-8">
-                                <strong>{{ $permohonan->jadwalFasilitasi->nama_kegiatan ?? '-' }}</strong>
                                 @if ($permohonan->jadwalFasilitasi)
-                                    <br><small class="text-muted">
-                                        {{ $permohonan->jadwalFasilitasi->tanggal_mulai->format('d M Y') }} -
+                                    <strong>
+                                        {{ $permohonan->jadwalFasilitasi->tanggal_mulai->format('d M Y') }} s/d
                                         {{ $permohonan->jadwalFasilitasi->tanggal_selesai->format('d M Y') }}
+                                    </strong>
+                                    <br><small class="text-muted">
+                                        Batas Permohonan:
+                                        {{ $permohonan->jadwalFasilitasi->batas_permohonan ? $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y') : '-' }}
                                     </small>
+                                @else
+                                    <span class="text-muted">-</span>
                                 @endif
                             </div>
                         </div>
                         <hr class="my-3">
                         <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Tanggal Permohonan</label></div>
+                            <div class="col-sm-4"><label class="text-muted">Tanggal Dibuat</label></div>
                             <div class="col-sm-8">
-                                <strong>{{ $permohonan->tanggal_permohonan ? $permohonan->tanggal_permohonan->format('d M Y') : '-' }}</strong>
+                                <strong>{{ $permohonan->created_at->format('d M Y H:i') }}</strong>
                             </div>
                         </div>
-                        @if ($permohonan->keterangan)
-                            <hr class="my-3">
-                            <div class="row mb-3">
-                                <div class="col-sm-4"><label class="text-muted">Keterangan</label></div>
-                                <div class="col-sm-8">{{ $permohonan->keterangan }}</div>
-                            </div>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -244,15 +238,52 @@
                         <h5 class="mb-0">Aksi</h5>
                     </div>
                     <div class="card-body">
-                        @if ($permohonan->status == 'draft' && auth()->user()->hasRole('pemohon'))
-                            <a href="{{ route('permohonan.edit', $permohonan) }}" class="btn btn-primary w-100 mb-2">
-                                <i class="bx bx-edit-alt me-1"></i> Edit Permohonan
-                            </a>
+                        @if ($permohonan->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
+                            @php
+                                $dokumenBelumLengkap = $permohonan->permohonanDokumen->where('is_ada', false)->count();
+                                $totalDokumen = $permohonan->permohonanDokumen->count();
+                                $dokumenTerlengkapi = $totalDokumen - $dokumenBelumLengkap;
+                            @endphp
+
+                            <!-- Progress Upload Dokumen -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small class="text-muted">Kelengkapan Dokumen</small>
+                                    <small class="text-muted">{{ $dokumenTerlengkapi }}/{{ $totalDokumen }}</small>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar {{ $dokumenBelumLengkap == 0 ? 'bg-success' : 'bg-warning' }}"
+                                        role="progressbar"
+                                        style="width: {{ $totalDokumen > 0 ? ($dokumenTerlengkapi / $totalDokumen) * 100 : 0 }}%"
+                                        aria-valuenow="{{ $dokumenTerlengkapi }}" aria-valuemin="0"
+                                        aria-valuemax="{{ $totalDokumen }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if ($dokumenBelumLengkap > 0)
+                                <div class="alert alert-warning alert-dismissible mb-3" role="alert">
+                                    <i class='bx bx-info-circle me-2'></i>
+                                    <strong>Perhatian!</strong><br>
+                                    Masih ada <strong>{{ $dokumenBelumLengkap }} dokumen</strong> yang belum diupload.
+                                    Silakan lengkapi semua dokumen sebelum mengirim permohonan.
+                                </div>
+                            @else
+                                <div class="alert alert-success mb-3" role="alert">
+                                    <i class='bx bx-check-circle me-2'></i>
+                                    <strong>Dokumen Lengkap!</strong><br>
+                                    Semua dokumen sudah diupload. Anda dapat mengirim permohonan sekarang.
+                                </div>
+                            @endif
+
                             <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST" class="mb-2">
                                 @csrf
-                                <button type="submit" class="btn btn-success w-100"
-                                    onclick="return confirm('Yakin ingin mengirim permohonan ini?')">
-                                    <i class='bx bx-send me-1'></i> Kirim Permohonan
+                                <button type="submit"
+                                    class="btn btn-success w-100 {{ $dokumenBelumLengkap > 0 ? 'disabled' : '' }}"
+                                    {{ $dokumenBelumLengkap > 0 ? 'disabled' : '' }}
+                                    onclick="return confirm('Yakin ingin mengirim permohonan ini? Setelah dikirim, dokumen tidak dapat diubah lagi.')">
+                                    <i class='bx bx-send me-1'></i>
+                                    {{ $dokumenBelumLengkap > 0 ? 'Lengkapi Dokumen Terlebih Dahulu' : 'Kirim Permohonan' }}
                                 </button>
                             </form>
                         @endif
@@ -274,12 +305,12 @@
                         <h5 class="mb-0">
                             <i class='bx bx-file-blank me-2'></i>Surat Permohonan
                         </h5>
-                        @if ($permohonan->status == 'draft')
+                        @if ($permohonan->status_akhir == 'belum')
                             <span class="badge bg-label-info">Wajib</span>
                         @endif
                     </div>
                     <div class="card-body">
-                        @if ($permohonan->status == 'draft')
+                        @if ($permohonan->status_akhir == 'belum')
                             <div class="alert alert-info mb-3">
                                 <i class='bx bx-info-circle me-2'></i>
                                 Upload surat permohonan resmi dari Kabupaten/Kota yang ditujukan kepada Kepala Badan.
@@ -302,7 +333,7 @@
                                             <th>File</th>
                                             <th width="15%">Status</th>
                                             <th>Catatan Verifikasi</th>
-                                            @if ($permohonan->status == 'draft' || $permohonan->status == 'revision_required')
+                                            @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <th width="10%">Aksi</th>
                                             @endif
                                         </tr>
@@ -368,12 +399,22 @@
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
-                                            @if ($permohonan->status == 'draft' || $permohonan->status == 'revision_required')
+                                            @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <td>
-                                                    <a href="{{ route('permohonan-dokumen.edit', $suratPermohonan) }}"
-                                                        class="btn btn-sm btn-outline-primary">
-                                                        <i class="bx bx-upload me-1"></i> Upload
-                                                    </a>
+                                                    <form
+                                                        action="{{ route('permohonan-dokumen.upload', $suratPermohonan) }}"
+                                                        method="POST" enctype="multipart/form-data"
+                                                        class="upload-dokumen-form mb-0"
+                                                        data-dokumen-id="{{ $suratPermohonan->id }}">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="file" name="file" class="file-input d-none"
+                                                            accept=".pdf,.doc,.docx" required>
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-primary btn-upload-trigger">
+                                                            <i class="bx bx-upload"></i> Upload
+                                                        </button>
+                                                    </form>
                                                 </td>
                                             @endif
                                         </tr>
@@ -397,7 +438,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        @if ($permohonan->status == 'draft')
+                        @if ($permohonan->status_akhir == 'belum')
                             <div class="alert alert-info">
                                 <i class='bx bx-info-circle me-2'></i>
                                 Silakan upload semua dokumen kelengkapan verifikasi sebelum mengirim permohonan.
@@ -420,7 +461,7 @@
                                         <th>File</th>
                                         <th width="10%">Status</th>
                                         <th>Catatan Verifikasi</th>
-                                        @if ($permohonan->status == 'draft' || $permohonan->status == 'revision_required')
+                                        @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                             <th width="10%">Aksi</th>
                                         @endif
                                     </tr>
@@ -485,18 +526,27 @@
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
-                                            @if ($permohonan->status == 'draft' || $permohonan->status == 'revision_required')
+                                            @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <td>
-                                                    <a href="{{ route('permohonan-dokumen.edit', $dokumen) }}"
-                                                        class="btn btn-sm btn-outline-primary">
-                                                        <i class="bx bx-upload me-1"></i> Upload
-                                                    </a>
+                                                    <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
+                                                        method="POST" enctype="multipart/form-data"
+                                                        class="upload-dokumen-form mb-0"
+                                                        data-dokumen-id="{{ $dokumen->id }}">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="file" name="file" class="file-input d-none"
+                                                            accept=".pdf,.doc,.docx" required>
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-primary btn-upload-trigger">
+                                                            <i class="bx bx-upload"></i> Upload
+                                                        </button>
+                                                    </form>
                                                 </td>
                                             @endif
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="{{ $permohonan->status == 'draft' || $permohonan->status == 'revision_required' ? '6' : '5' }}"
+                                            <td colspan="{{ $permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi' ? '6' : '5' }}"
                                                 class="text-center text-muted py-4">
                                                 <i class='bx bx-folder-open bx-lg mb-2 d-block'></i>
                                                 Belum ada dokumen kelengkapan verifikasi
@@ -511,5 +561,71 @@
             </div>
         </div>
     </div>
-    </div>
 @endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Trigger file input when upload button clicked
+            $('.btn-upload-trigger').on('click', function() {
+                $(this).siblings('.file-input').click();
+            });
+
+            // Auto submit when file selected
+            $('.file-input').on('change', function() {
+                if (this.files.length > 0) {
+                    const form = $(this).closest('form');
+                    const button = form.find('.btn-upload-trigger');
+                    const buttonText = button.html();
+
+                    // Disable button and show loading
+                    button.prop('disabled', true).html(
+                        '<i class="bx bx-loader bx-spin"></i> Upload');
+
+                    const formData = new FormData(form[0]);
+
+                    $.ajax({
+                        url: form.attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message ||
+                                        'Dokumen berhasil diupload',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            button.prop('disabled', false).html(buttonText);
+
+                            let errorMessage = 'Terjadi kesalahan saat upload';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                errorMessage = Object.values(xhr.responseJSON.errors).flat()
+                                    .join(
+                                        '<br>');
+                            }
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal!',
+                                html: errorMessage
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+@endpush

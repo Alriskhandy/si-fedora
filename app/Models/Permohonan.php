@@ -14,6 +14,7 @@ class Permohonan extends Model
 
     protected $fillable = [
         'kab_kota_id',
+        'jadwal_fasilitasi_id',
         'tahun',
         'jenis_dokumen',
         'status_akhir',
@@ -94,7 +95,7 @@ class Permohonan extends Model
 
     public function jadwalFasilitasi()
     {
-        return $this->hasMany(JadwalFasilitasi::class);
+        return $this->belongsTo(JadwalFasilitasi::class);
     }
 
     public function pelaksanaanCatatan()
@@ -161,7 +162,7 @@ class Permohonan extends Model
     {
         return $query->where('status_akhir', $status);
     }
-    
+
     public function jenisDokumen()
     {
         return $this->belongsTo(JenisDokumen::class, 'jenis_dokumen_id');
@@ -194,28 +195,6 @@ class Permohonan extends Model
     public function verifikator()
     {
         return $this->belongsTo(User::class, 'verifikator_id');
-    }
-
-
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) {
-            if (!$model->nomor_permohonan) {
-                $tahun = now()->year;
-                $bulan = now()->format('m');
-                $counter = self::whereYear('created_at', $tahun)->count() + 1;
-                $model->nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
-            }
-        });
-    }
-
-
-    public function getTanggalPermohonanFormattedAttribute()
-    {
-        return $this->tanggal_permohonan ? \Carbon\Carbon::parse($this->tanggal_permohonan)->format('d M Y') : '-';
     }
 
     // app/Models/Permohonan.php

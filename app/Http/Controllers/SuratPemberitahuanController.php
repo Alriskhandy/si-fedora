@@ -7,6 +7,7 @@ use App\Models\JadwalFasilitasi;
 use App\Models\KabupatenKota;
 use Illuminate\Http\Request;
 use App\Jobs\SendSuratPemberitahuanJob;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class SuratPemberitahuanController extends Controller
@@ -30,9 +31,7 @@ class SuratPemberitahuanController extends Controller
 
     public function create()
     {
-        // Jadwal fasilitasi sekarang per-permohonan, tidak ada status 'published' lagi
-        // Temporarily disabled - perlu konfirmasi apakah surat pemberitahuan masih perlu jadwal_fasilitasi_id
-        $jadwalFasilitasi = collect(); // Empty collection untuk sementara
+        $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')->get();
         $kabupatenKota = KabupatenKota::where('is_active', true)->get();
 
         return view('surat-pemberitahuan.create', compact('jadwalFasilitasi', 'kabupatenKota'));
@@ -64,7 +63,7 @@ class SuratPemberitahuanController extends Controller
             'isi_surat' => $request->isi_surat,
             'file_path' => $file_path,
             'status' => 'draft',
-            'created_by' => auth()->id(),
+            'created_by' => Auth::user()->id,
         ]);
 
         return redirect()->route('surat-pemberitahuan.index')->with('success', 'Surat pemberitahuan berhasil ditambahkan.');
@@ -99,7 +98,7 @@ class SuratPemberitahuanController extends Controller
         if ($request->hasFile('file_path')) {
             // Hapus file lama kalo ada
             if ($suratPemberitahuan->file_path) {
-                \Storage::disk('public')->delete($suratPemberitahuan->file_path);
+                Storage::disk('public')->delete($suratPemberitahuan->file_path);
             }
             $file_path = $request->file('file_path')->store('surat-pemberitahuan', 'public');
         }
@@ -112,7 +111,7 @@ class SuratPemberitahuanController extends Controller
             'perihal' => $request->perihal,
             'isi_surat' => $request->isi_surat,
             'file_path' => $file_path,
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::user()->id,
         ]);
 
         return redirect()->route('surat-pemberitahuan.index')->with('success', 'Surat pemberitahuan berhasil diperbarui.');

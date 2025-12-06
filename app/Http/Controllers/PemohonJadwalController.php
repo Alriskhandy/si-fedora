@@ -10,36 +10,35 @@ class PemohonJadwalController extends Controller
 {
     public function index(Request $request)
     {
-        $query = JadwalFasilitasi::with(['permohonan.kabupatenKota'])
-            ->where('tanggal_selesai', '>=', now());
+        // Tampilkan jadwal yang published dan masih aktif (batas permohonan belum lewat)
+        $query = JadwalFasilitasi::where('status', 'published')
+            ->where('batas_permohonan', '>=', now());
 
-        // Filter by jenis dokumen
+        // Filter by jenis dokumen (filter langsung di jadwal, bukan lewat permohonan)
         if ($request->filled('jenis_dokumen')) {
-            $query->whereHas('permohonan', function ($q) use ($request) {
-                $q->where('jenis_dokumen', $request->jenis_dokumen);
-            });
+            $query->where('jenis_dokumen', $request->jenis_dokumen);
         }
 
-        // Filter by tahun
+        // Filter by tahun (filter langsung di jadwal)
         if ($request->filled('tahun')) {
-            $query->whereHas('permohonan', function ($q) use ($request) {
-                $q->where('tahun', $request->tahun);
-            });
+            $query->where('tahun_anggaran', $request->tahun);
         }
 
-        // Filter by kabupaten/kota (untuk user pemohon)
-        if (auth()->user()->kabupaten_kota_id) {
-            $query->whereHas('permohonan', function ($q) {
-                $q->where('kab_kota_id', auth()->user()->kabupaten_kota_id);
-            });
-        }
+        $jadwalList = $query->orderBy('batas_permohonan', 'asc')
+            ->orderBy('tanggal_mulai', 'asc')
+            ->paginate(10);
 
-        $jadwalList = $query->orderBy('tanggal_mulai', 'asc')->paginate(10);
-
-        // Data untuk filter
+        // Data untuk filter - ambil dari jadwal yang published
         $filterOptions = [
-            'jenisDokumen' => ['perda' => 'PERDA', 'perkada' => 'PERKADA'],
-            'tahunList' => Permohonan::distinct()->pluck('tahun')->sort()->values(),
+            'jenisDokumen' => [
+                'rkpd' => 'RKPD',
+                'rpd' => 'RPD',
+                'rpjmd' => 'RPJMD'
+            ],
+            'tahunList' => JadwalFasilitasi::where('status', 'published')
+                ->distinct()
+                ->orderBy('tahun_anggaran', 'desc')
+                ->pluck('tahun_anggaran'),
         ];
 
         return view('pemohon.jadwal.index', compact('jadwalList', 'filterOptions'));
@@ -47,8 +46,17 @@ class PemohonJadwalController extends Controller
 
     public function show(JadwalFasilitasi $jadwal)
     {
+        // Load permohonan yang terkait dengan jadwal ini (opsional, untuk info)
         $jadwal->load(['permohonan.kabupatenKota']);
 
-        return view('pemohon.jadwal.show', compact('jadwal'));
+        // Check if current user already has permohonan for this jadwal
+        $existingPermohonan = null;
+        if (auth()->check()) {
+            $existingPermohonan = Permohonan::where('jadwal_fasilitasi_id', $jadwal->id)
+                ->where('created_by', auth()->id())
+                ->first();
+        }
+
+        return view('pemohon.jadwal.show', compact('jadwal', 'existingPermohonan'));
     }
 }

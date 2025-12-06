@@ -30,29 +30,39 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
-                                            <th>Kabupaten/Kota</th>
+                                            <th>Tahun Anggaran</th>
                                             <th>Jenis Dokumen</th>
-                                            <th>Tanggal Pelaksanaan</th>
-                                            <th>Tempat</th>
+                                            <th>Periode Fasilitasi</th>
+                                            <th>Batas Permohonan</th>
+                                            <th>Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($stats['jadwal_aktif'] as $jadwal)
                                             <tr>
-                                                <td>{{ $jadwal->permohonan?->kabupatenKota?->nama ?? '-' }}</td>
+                                                <td><strong>{{ $jadwal->tahun_anggaran }}</strong></td>
                                                 <td>
-                                                    <span
-                                                        class="badge bg-label-{{ $jadwal->permohonan?->jenis_dokumen === 'perda' ? 'primary' : 'info' }}">
-                                                        {{ strtoupper($jadwal->permohonan?->jenis_dokumen ?? '-') }}
+                                                    <span class="badge bg-label-primary">
+                                                        {{ strtoupper($jadwal->jenis_dokumen) }}
                                                     </span>
                                                 </td>
                                                 <td>
+                                                    {{ $jadwal->tanggal_mulai->format('d M Y') }}
+                                                    <small class="text-muted">s/d</small>
+                                                    {{ $jadwal->tanggal_selesai->format('d M Y') }}
+                                                </td>
+                                                <td>
                                                     <span
-                                                        class="badge bg-label-{{ $jadwal->tanggal_pelaksanaan > now()->addDays(7) ? 'success' : 'warning' }}">
-                                                        {{ $jadwal->tanggal_pelaksanaan->format('d M Y') }}
+                                                        class="badge bg-label-{{ $jadwal->batas_permohonan < now() ? 'danger' : 'success' }}">
+                                                        {{ $jadwal->batas_permohonan->format('d M Y') }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $jadwal->tempat ?? '-' }}</td>
+                                                <td>
+                                                    <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
+                                                        class="btn btn-xs btn-primary">
+                                                        <i class='bx bx-plus'></i> Buat Permohonan
+                                                    </a>
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>

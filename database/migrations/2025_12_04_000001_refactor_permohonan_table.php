@@ -33,6 +33,7 @@ return new class extends Migration
                 'nama_dokumen',
                 'keterangan',
                 'tanggal_permohonan',
+                'tahun_anggaran_id',
                 'status',
                 'submitted_at',
                 'verified_at',
@@ -67,6 +68,8 @@ return new class extends Migration
             if (!Schema::hasColumn('permohonan', 'status_akhir')) {
                 $table->enum('status_akhir', ['belum', 'proses', 'revisi', 'selesai'])->default('belum')->after('jenis_dokumen');
             }
+
+            // Note: jadwal_fasilitasi_id akan ditambahkan di migration 000005 setelah tabel jadwal_fasilitasi dibuat ulang
         });
 
         // Rename kab_kota untuk konsistensi

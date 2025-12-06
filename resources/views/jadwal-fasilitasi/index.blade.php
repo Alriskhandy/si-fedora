@@ -14,20 +14,42 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <!-- Search -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <form method="GET" action="{{ route('jadwal.index') }}">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" name="search"
-                                            placeholder="Cari jadwal..." value="{{ request('search') }}">
-                                        <button class="btn btn-outline-secondary" type="submit">
-                                            <i class="bx bx-search"></i>
-                                        </button>
-                                    </div>
-                                </form>
+                        <!-- Search & Filters -->
+                        <form method="GET" action="{{ route('jadwal.index') }}">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="search"
+                                        placeholder="Cari tahun atau dokumen..." value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="status">
+                                        <option value="">Semua Status</option>
+                                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft
+                                        </option>
+                                        <option value="published" {{ request('status') == 'published' ? 'selected' : '' }}>
+                                            Published</option>
+                                        <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="jenis_dokumen">
+                                        <option value="">Semua Jenis</option>
+                                        <option value="rkpd" {{ request('jenis_dokumen') == 'rkpd' ? 'selected' : '' }}>
+                                            RKPD</option>
+                                        <option value="rpd" {{ request('jenis_dokumen') == 'rpd' ? 'selected' : '' }}>RPD
+                                        </option>
+                                        <option value="rpjmd" {{ request('jenis_dokumen') == 'rpjmd' ? 'selected' : '' }}>
+                                            RPJMD</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-secondary w-100" type="submit">
+                                        <i class="bx bx-search"></i> Filter
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </form>
 
                         <!-- Table -->
                         <div class="table-responsive">
@@ -35,11 +57,11 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Kabupaten/Kota</th>
+                                        <th>Tahun Anggaran</th>
                                         <th>Jenis Dokumen</th>
-                                        <th>Tahun</th>
-                                        <th>Tanggal Mulai</th>
-                                        <th>Tanggal Selesai</th>
+                                        <th>Tanggal Fasilitasi</th>
+                                        <th>Batas Permohonan</th>
+                                        <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -47,21 +69,35 @@
                                     @forelse($jadwalFasilitasi as $index => $item)
                                         <tr>
                                             <td>{{ $index + $jadwalFasilitasi->firstItem() }}</td>
-                                            <td>{{ $item->permohonan?->kabupatenKota?->nama ?? '-' }}</td>
+                                            <td><strong>{{ $item->tahun_anggaran }}</strong></td>
                                             <td>
-                                                <span
-                                                    class="badge bg-label-{{ $item->permohonan?->jenis_dokumen === 'perda' ? 'primary' : 'info' }}">
-                                                    {{ strtoupper($item->permohonan?->jenis_dokumen ?? '-') }}
+                                                <span class="badge bg-label-primary">
+                                                    {{ strtoupper($item->jenis_dokumen) }}
                                                 </span>
                                             </td>
-                                            <td>{{ $item->permohonan?->tahun ?? '-' }}</td>
                                             <td>
-                                                <span
-                                                    class="badge bg-label-{{ $item->tanggal_mulai > now()->addDays(7) ? 'success' : 'warning' }}">
-                                                    {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d M Y') : '-' }}
-                                                </span>
+                                                {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d M Y') : '-' }}
+                                                <small class="text-muted">s/d</small>
+                                                {{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d M Y') : '-' }}
                                             </td>
-                                            <td>{{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d M Y') : '-' }}
+                                            <td>
+                                                @if ($item->batas_permohonan)
+                                                    <span
+                                                        class="badge bg-label-{{ $item->batas_permohonan < now() ? 'danger' : 'success' }}">
+                                                        {{ $item->batas_permohonan->format('d M Y') }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($item->status == 'draft')
+                                                    <span class="badge bg-label-secondary">Draft</span>
+                                                @elseif($item->status == 'published')
+                                                    <span class="badge bg-label-success">Published</span>
+                                                @else
+                                                    <span class="badge bg-label-danger">Closed</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="dropdown">
@@ -91,7 +127,8 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">Tidak ada data</td>
+                                            <td colspan="7" class="text-center text-muted">Tidak ada jadwal fasilitasi
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>

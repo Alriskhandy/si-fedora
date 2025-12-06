@@ -8,35 +8,65 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Drop foreign key dari surat_pemberitahuan terlebih dahulu
+        // Drop foreign keys yang bergantung pada jadwal_fasilitasi
         if (Schema::hasTable('surat_pemberitahuan')) {
             Schema::table('surat_pemberitahuan', function (Blueprint $table) {
-                $table->dropForeign(['jadwal_fasilitasi_id']);
-                $table->dropColumn('jadwal_fasilitasi_id');
+                if (Schema::hasColumn('surat_pemberitahuan', 'jadwal_fasilitasi_id')) {
+                    $table->dropForeign(['jadwal_fasilitasi_id']);
+                }
             });
         }
 
-        // Refactor jadwal_fasilitasi menjadi per permohonan (bukan global)
+        if (Schema::hasTable('permohonan')) {
+            Schema::table('permohonan', function (Blueprint $table) {
+                if (Schema::hasColumn('permohonan', 'jadwal_fasilitasi_id')) {
+                    $table->dropForeign(['jadwal_fasilitasi_id']);
+                }
+            });
+        }
+
+        // Refactor jadwal_fasilitasi menjadi tabel global untuk Admin Peran
+        // Kab/Kota membuat permohonan berdasarkan jadwal ini
         Schema::dropIfExists('jadwal_fasilitasi');
 
         Schema::create('jadwal_fasilitasi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('permohonan_id')->constrained('permohonan')->cascadeOnDelete();
-
+            $table->integer('tahun_anggaran');
+            $table->enum('jenis_dokumen', ['rkpd', 'rpd', 'rpjmd']);
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
-            $table->text('undangan_file')->nullable(); // path file undangan (optional)
+            $table->date('batas_permohonan')->nullable(); // batas waktu kab/kota buat permohonan
+            $table->text('undangan_file')->nullable();
+            $table->enum('status', ['draft', 'published', 'closed'])->default('draft');
 
             $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
 
             // Index
-            $table->index(['permohonan_id']);
-            $table->index(['tanggal_mulai']);
-            $table->index(['tanggal_selesai']);
-
-            // Satu permohonan bisa punya beberapa jadwal (rapat persiapan, pelaksanaan, dll)
+            $table->index(['tahun_anggaran', 'jenis_dokumen']);
+            $table->index(['status']);
+            $table->index(['tanggal_mulai', 'tanggal_selesai']);
+            $table->index(['batas_permohonan']);
         });
+
+        // Restore foreign keys setelah jadwal_fasilitasi dibuat ulang
+        if (Schema::hasTable('permohonan')) {
+            Schema::table('permohonan', function (Blueprint $table) {
+                if (!Schema::hasColumn('permohonan', 'jadwal_fasilitasi_id')) {
+                    $table->foreignId('jadwal_fasilitasi_id')->after('kab_kota_id')->constrained('jadwal_fasilitasi')->cascadeOnDelete();
+                }
+            });
+        }
+
+        if (Schema::hasTable('surat_pemberitahuan')) {
+            Schema::table('surat_pemberitahuan', function (Blueprint $table) {
+                if (!Schema::hasColumn('surat_pemberitahuan', 'jadwal_fasilitasi_id')) {
+                    $table->foreignId('jadwal_fasilitasi_id')->after('id')->constrained('jadwal_fasilitasi')->cascadeOnDelete();
+                }
+            });
+        }
 
         // Catatan pelaksanaan: berita acara, notulensi, foto kegiatan, absensi
         Schema::create('pelaksanaan_catatan', function (Blueprint $table) {

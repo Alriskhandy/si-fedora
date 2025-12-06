@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 // ==================== PERMOHONAN DOKUMEN ====================
 class PermohonanDokumen extends Model
@@ -103,7 +104,7 @@ class Evaluasi extends Model
     {
         return $this->belongsTo(Permohonan::class);
     }
-    
+
 
     public function pokja()
     {
@@ -132,8 +133,8 @@ class Evaluasi extends Model
 
     public function canSubmit(): bool
     {
-        return $this->status === self::STATUS_IN_PROGRESS && 
-               !empty($this->draft_rekomendasi);
+        return $this->status === self::STATUS_IN_PROGRESS &&
+            !empty($this->draft_rekomendasi);
     }
 }
 
@@ -205,9 +206,9 @@ class SuratRekomendasi extends Model
     public static function generateNomorSurat(): string
     {
         $tahun = date('Y');
-        
+
         $lastNumber = self::whereYear('created_at', $tahun)->count() + 1;
-        
+
         return sprintf('%03d/PERAN/REKOMENDASI/%s', $lastNumber, $tahun);
     }
 }
@@ -247,7 +248,7 @@ class ActivityLog extends Model
     public static function log($action, $description, $model = null, $properties = []): void
     {
         self::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::user()->id,
             'model_type' => $model ? get_class($model) : null,
             'model_id' => $model ? $model->id : null,
             'action' => $action,

@@ -25,6 +25,7 @@ use App\Http\Controllers\LogoController;
 use App\Http\Controllers\MasterTahapanController;
 use App\Http\Controllers\MasterUrusanController;
 use App\Http\Controllers\MasterKelengkapanController;
+use App\Http\Controllers\PemohonJadwalController;
 
 // Route::middleware(['auth'])->group(function () {
 //     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -103,8 +104,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Jadwal untuk Pemohon
     Route::middleware(['role:pemohon'])->prefix('pemohon')->name('pemohon.')->group(function () {
-        Route::get('/jadwal', [\App\Http\Controllers\PemohonJadwalController::class, 'index'])->name('jadwal.index');
-        Route::get('/jadwal/{jadwal}', [\App\Http\Controllers\PemohonJadwalController::class, 'show'])->name('jadwal.show');
+        Route::get('/jadwal', [PemohonJadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('jadwal.show');
     });
 
     // Route::middleware(['auth', 'role:kabkota|admin_peran'])->group(function () {
@@ -114,6 +115,10 @@ Route::middleware(['auth'])->group(function () {
         ->parameters([
             'permohonan-dokumen' => 'permohonanDokumen'
         ]);
+    
+    // Upload dokumen permohonan (AJAX)
+    Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])
+        ->name('permohonan-dokumen.upload');
 
     // Verifikasi Management - verifikator only
     Route::middleware(['role:verifikator'])->group(function () {

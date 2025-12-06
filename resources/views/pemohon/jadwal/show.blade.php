@@ -25,8 +25,9 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Informasi Jadwal</h5>
-                        <span class="badge bg-label-{{ $jadwal->batas_permohonan > now() ? 'success' : 'secondary' }}">
-                            {{ $jadwal->batas_permohonan > now() ? 'Aktif' : 'Expired' }}
+                        <span
+                            class="badge bg-label-{{ $jadwal->status == 'published' ? 'success' : ($jadwal->status == 'closed' ? 'danger' : 'secondary') }}">
+                            {{ $jadwal->status_label }}
                         </span>
                     </div>
                     <div class="card-body">
@@ -35,7 +36,7 @@
                                 <label class="text-muted">Jenis Dokumen</label>
                             </div>
                             <div class="col-sm-8">
-                                <strong>{{ $jadwal->jenisDokumen->nama ?? '-' }}</strong>
+                                <strong>{{ $jadwal->jenis_dokumen_label }}</strong>
                             </div>
                         </div>
                         <hr class="my-3">
@@ -44,7 +45,7 @@
                                 <label class="text-muted">Tahun Anggaran</label>
                             </div>
                             <div class="col-sm-8">
-                                <strong>{{ $jadwal->tahunAnggaran->tahun ?? '-' }}</strong>
+                                <strong>{{ $jadwal->tahun_anggaran }}</strong>
                             </div>
                         </div>
                         <hr class="my-3">
@@ -53,46 +54,48 @@
                                 <label class="text-muted">Batas Permohonan</label>
                             </div>
                             <div class="col-sm-8">
-                                <strong
-                                    class="text-{{ $jadwal->batas_permohonan > now()->addDays(7) ? 'success' : 'warning' }}">
-                                    {{ $jadwal->batas_permohonan->format('d F Y, H:i') }} WIT
-                                </strong>
-                                @if ($jadwal->batas_permohonan > now())
-                                    <small class="d-block text-muted">
-                                        {{ $jadwal->batas_permohonan->diffForHumans() }}
-                                    </small>
+                                @if ($jadwal->batas_permohonan)
+                                    <strong
+                                        class="text-{{ $jadwal->batas_permohonan > now()->addDays(7) ? 'success' : 'warning' }}">
+                                        {{ $jadwal->batas_permohonan->format('d F Y') }}
+                                    </strong>
+                                    @if ($jadwal->batas_permohonan > now())
+                                        <small class="d-block text-muted">
+                                            {{ $jadwal->batas_permohonan->diffForHumans() }}
+                                        </small>
+                                    @else
+                                        <small class="d-block text-danger">Sudah berakhir</small>
+                                    @endif
+                                @else
+                                    <span class="text-muted">Tidak ada batas</span>
                                 @endif
                             </div>
                         </div>
                         <hr class="my-3">
                         <div class="row mb-3">
                             <div class="col-sm-4">
-                                <label class="text-muted">Tanggal Pelaksanaan</label>
+                                <label class="text-muted">Periode Fasilitasi</label>
                             </div>
                             <div class="col-sm-8">
                                 <strong>{{ $jadwal->tanggal_mulai->format('d F Y') }}</strong> sampai
                                 <strong>{{ $jadwal->tanggal_selesai->format('d F Y') }}</strong>
                             </div>
                         </div>
-                        @if ($jadwal->lokasi)
+                        @if ($jadwal->undangan_file)
                             <hr class="my-3">
                             <div class="row mb-3">
                                 <div class="col-sm-4">
-                                    <label class="text-muted">Lokasi</label>
+                                    <label class="text-muted">File Undangan</label>
                                 </div>
                                 <div class="col-sm-8">
-                                    <span>{{ $jadwal->lokasi }}</span>
-                                </div>
-                            </div>
-                        @endif
-                        @if ($jadwal->keterangan)
-                            <hr class="my-3">
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label class="text-muted">Keterangan</label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <p class="mb-0">{{ $jadwal->keterangan }}</p>
+                                    <a href="{{ url('storage/' . $jadwal->undangan_file) }}" target="_blank"
+                                        class="btn btn-sm btn-outline-primary me-2">
+                                        <i class='bx bx-show me-1'></i> Lihat
+                                    </a>
+                                    <a href="{{ url('storage/' . $jadwal->undangan_file) }}" download
+                                        class="btn btn-sm btn-outline-success">
+                                        <i class='bx bx-download me-1'></i> Download
+                                    </a>
                                 </div>
                             </div>
                         @endif
