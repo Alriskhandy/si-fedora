@@ -19,21 +19,17 @@ class ValidasiHasilController extends Controller
     public function index(Request $request)
     {
         $query = HasilFasilitasi::with(['permohonan.kabupatenKota', 'pembuat'])
-            ->whereIn('status_draft', ['diajukan', 'disetujui', 'revisi']);
+            ->whereNotNull('draft_file')
+            ->orWhereNotNull('final_file');
 
         // Filter pencarian
         if ($request->filled('search')) {
             $query->whereHas('permohonan.kabupatenKota', function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
+                $q->where('nama_kabkota', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Filter status
-        if ($request->filled('status_draft')) {
-            $query->where('status_draft', $request->status_draft);
-        }
-
-        $hasilList = $query->latest('tanggal_diajukan')->paginate(10);
+        $hasilList = $query->latest('updated_at')->paginate(10);
 
         return view('validasi-hasil.index', compact('hasilList'));
     }
@@ -66,7 +62,7 @@ class ValidasiHasilController extends Controller
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi || $hasilFasilitasi->status_draft !== 'diajukan') {
+        if (!$hasilFasilitasi) {
             return back()->with('error', 'Hasil fasilitasi tidak dapat disetujui.');
         }
 
@@ -74,10 +70,8 @@ class ValidasiHasilController extends Controller
             DB::beginTransaction();
 
             $hasilFasilitasi->update([
-                'status_draft' => 'disetujui',
-                'divalidasi_oleh' => Auth::id(),
-                'tanggal_validasi' => now(),
-                'catatan_validasi' => $request->catatan_validasi,
+                'catatan' => $request->catatan_validasi,
+                'updated_by' => Auth::id(),
             ]);
 
             // Update tahapan (Pelaksanaan = selesai)
@@ -121,16 +115,14 @@ class ValidasiHasilController extends Controller
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi || $hasilFasilitasi->status_draft !== 'diajukan') {
+        if (!$hasilFasilitasi) {
             return back()->with('error', 'Hasil fasilitasi tidak dapat direvisi.');
         }
 
         try {
             $hasilFasilitasi->update([
-                'status_draft' => 'revisi',
-                'divalidasi_oleh' => Auth::id(),
-                'tanggal_validasi' => now(),
-                'catatan_validasi' => $request->catatan_validasi,
+                'catatan' => $request->catatan_validasi,
+                'updated_by' => Auth::id(),
             ]);
 
             return back()->with('success', 'Hasil fasilitasi dikembalikan untuk revisi.');
@@ -219,19 +211,19 @@ class ValidasiHasilController extends Controller
                     </thead>
                     <tbody>';
 
-                    if ($sistematika->count() > 0) {
-                        foreach ($sistematika as $index => $item) {
-                            $html .= '<tr>
+        if ($sistematika->count() > 0) {
+            foreach ($sistematika as $index => $item) {
+                $html .= '<tr>
                                 <td class="no-col">' . ($index + 1) . '</td>
                                 <td><strong>' . htmlspecialchars($item->bab_sub_bab) . '</strong></td>
                                 <td>' . nl2br(htmlspecialchars($item->catatan_penyempurnaan)) . '</td>
                             </tr>';
-                        }
-                    } else {
-                        $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
-                    }
+            }
+        } else {
+            $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
+        }
 
-                    $html .= '</tbody>
+        $html .= '</tbody>
                 </table>
                 
                 <h2>II. Masukan terkait penyelenggaraan urusan Pemerintah Daerah</h2>
@@ -246,34 +238,34 @@ class ValidasiHasilController extends Controller
                     </thead>
                     <tbody>';
 
-                    if ($urusan->count() > 0) {
-                        $currentUrusan = null;
-                        $urusanIndex = 0;
-                        $itemIndex = 0;
+        if ($urusan->count() > 0) {
+            $currentUrusan = null;
+            $urusanIndex = 0;
+            $itemIndex = 0;
 
-                        foreach ($urusan as $item) {
-                            if ($currentUrusan !== $item->masterUrusan->nama) {
-                                $currentUrusan = $item->masterUrusan->nama;
-                                $urusanIndex++;
-                                $itemIndex = 0;
+            foreach ($urusan as $item) {
+                if ($currentUrusan !== $item->masterUrusan->nama) {
+                    $currentUrusan = $item->masterUrusan->nama;
+                    $urusanIndex++;
+                    $itemIndex = 0;
 
-                                $html .= '<tr>
+                    $html .= '<tr>
                                     <td class="no-col">' . $urusanIndex . '</td>
                                     <td><strong>Urusan ' . htmlspecialchars($currentUrusan) . '</strong></td>
                                 </tr>';
-                            }
+                }
 
-                            $itemIndex++;
-                            $html .= '<tr>
+                $itemIndex++;
+                $html .= '<tr>
                                 <td class="no-col">' . $itemIndex . '.</td>
                                 <td>' . nl2br(htmlspecialchars($item->catatan_masukan)) . '</td>
                             </tr>';
-                        }
-                    } else {
-                        $html .= '<tr><td colspan="2" style="text-align: center; font-style: italic;">Tidak ada catatan masukan</td></tr>';
-                    }
+            }
+        } else {
+            $html .= '<tr><td colspan="2" style="text-align: center; font-style: italic;">Tidak ada catatan masukan</td></tr>';
+        }
 
-                    $html .= '</tbody>
+        $html .= '</tbody>
                 </table>
             </body>
             </html>';

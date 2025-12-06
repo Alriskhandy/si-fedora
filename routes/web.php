@@ -31,6 +31,8 @@ use App\Http\Controllers\PenetapanJadwalController;
 use App\Http\Controllers\UndanganPelaksanaanController;
 use App\Http\Controllers\HasilFasilitasiController;
 use App\Http\Controllers\ValidasiHasilController;
+use App\Http\Controllers\TindakLanjutController;
+use App\Http\Controllers\PenetapanPerdaController;
 use Illuminate\Support\Facades\Auth;
 
 // Route::middleware(['auth'])->group(function () {
@@ -140,6 +142,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
     });
 
+    // Tindak Lanjut untuk Pemohon (Tahap 13)
+    Route::middleware(['role:pemohon'])->group(function () {
+        Route::get('/tindak-lanjut', [TindakLanjutController::class, 'index'])->name('tindak-lanjut.index');
+        Route::get('/tindak-lanjut/{permohonan}/create', [TindakLanjutController::class, 'create'])->name('tindak-lanjut.create');
+        Route::post('/tindak-lanjut/{permohonan}', [TindakLanjutController::class, 'store'])->name('tindak-lanjut.store');
+        Route::get('/tindak-lanjut/{permohonan}', [TindakLanjutController::class, 'show'])->name('tindak-lanjut.show');
+        Route::get('/tindak-lanjut/{permohonan}/download', [TindakLanjutController::class, 'download'])->name('tindak-lanjut.download');
+    });
+
     // Route::middleware(['auth', 'role:kabkota|admin_peran'])->group(function () {
     //     Route::resource('permohonan-dokumen', PermohonanDokumenController::class);
     // });
@@ -201,6 +212,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/surat-rekomendasi/{permohonan}/create', [SuratRekomendasiController::class, 'create'])->name('surat-rekomendasi.create');
         Route::post('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'store'])->name('surat-rekomendasi.store');
         Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])->name('surat-rekomendasi.show');
+
+        // Penetapan PERDA/PERKADA (Tahap 14)
+        Route::get('/penetapan-perda', [PenetapanPerdaController::class, 'index'])->name('penetapan-perda.index');
+        Route::get('/penetapan-perda/{permohonan}/create', [PenetapanPerdaController::class, 'create'])->name('penetapan-perda.create');
+        Route::post('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'store'])->name('penetapan-perda.store');
+        Route::get('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'show'])->name('penetapan-perda.show');
+        Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
     });
 
     // Untuk verifikator & pokja (nanti ditambahin)
@@ -233,6 +251,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/kaban', function () {
         return 'Kaban Management';
     })->name('kaban.index');
+
+    // Public Routes - Penetapan PERDA/PERKADA untuk semua user yang login
+    Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
 });
 
 // Root route - redirect based on auth status  

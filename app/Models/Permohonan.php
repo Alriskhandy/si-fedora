@@ -108,6 +108,11 @@ class Permohonan extends Model
         return $this->hasOne(HasilFasilitasi::class);
     }
 
+    public function tindakLanjut()
+    {
+        return $this->hasOne(TindakLanjut::class);
+    }
+
     public function penetapanPerda()
     {
         return $this->hasOne(PenetapanPerda::class);

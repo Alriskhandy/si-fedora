@@ -96,7 +96,7 @@
                             @endif
                         </dl>
 
-                        @if ($hasilFasilitasi->isDiajukan())
+                        @if ($hasilFasilitasi->draft_file || $hasilFasilitasi->final_file)
                             <hr>
                             <h6 class="mb-3">Validasi</h6>
 

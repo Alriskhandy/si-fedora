@@ -5,33 +5,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PenetapanPerda extends Model
+class TindakLanjut extends Model
 {
     use HasFactory;
 
-    protected $table = 'penetapan_perda';
+    protected $table = 'tindak_lanjut';
 
     protected $fillable = [
         'permohonan_id',
-        'nomor_perda',
-        'tanggal_penetapan',
-        'file_perda',
         'keterangan',
-        'dibuat_oleh',
+        'file_laporan',
+        'tanggal_upload',
+        'diupload_oleh',
     ];
 
     protected $casts = [
-        'tanggal_penetapan' => 'date',
+        'tanggal_upload' => 'datetime',
     ];
 
-    // Relasi
+    // Relasi ke Permohonan
     public function permohonan()
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function pembuat()
+    // Relasi ke User (yang upload)
+    public function uploader()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'diupload_oleh');
     }
 }

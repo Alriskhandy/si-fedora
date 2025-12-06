@@ -147,6 +147,12 @@
                     <div data-i18n="Undangan">Undangan Fasilitasi</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('tindak-lanjut.*') ? 'active' : '' }}">
+                <a href="{{ route('tindak-lanjut.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-upload"></i>
+                    <div data-i18n="Tindak Lanjut">Tindak Lanjut Hasil</div>
+                </a>
+            </li>
         @endif
 
         @if (auth()->user()->hasAnyRole(['verifikator']))
@@ -267,6 +273,30 @@
                 </a>
             </li>
         @endif
+
+        @if (auth()->user()->hasRole('kaban'))
+            <!-- Kaban Menu -->
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Kaban</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('penetapan-perda.*') ? 'active' : '' }}">
+                <a href="{{ route('penetapan-perda.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-file-blank"></i>
+                    <div data-i18n="Penetapan PERDA">Penetapan PERDA/PERKADA</div>
+                </a>
+            </li>
+        @endif
+
+        <!-- Public Menu -->
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Publik</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
+            <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-folder-open"></i>
+                <div data-i18n="Dokumen PERDA">Dokumen PERDA/PERKADA</div>
+            </a>
+        </li>
 
         {{-- Logout --}}
         <li class="menu-item">

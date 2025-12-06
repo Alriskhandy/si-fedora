@@ -56,13 +56,13 @@
                     </div>
                     <div class="card-body">
                         <dl class="row mb-0">
-                            <dt class="col-sm-5">Sistematika</dt>
-                            <dd class="col-sm-7">
+                            <dt class="col-sm-7">Sistematika</dt>
+                            <dd class="col-sm-5">
                                 <span class="badge bg-primary">{{ $hasilFasilitasi->hasilSistematika->count() }}</span> item
                             </dd>
 
-                            <dt class="col-sm-5">Urusan</dt>
-                            <dd class="col-sm-7">
+                            <dt class="col-sm-7">Urusan</dt>
+                            <dd class="col-sm-5">
                                 <span class="badge bg-primary">{{ $hasilFasilitasi->hasilUrusan->count() }}</span> item
                             </dd>
                         </dl>
@@ -173,7 +173,7 @@
                         @if ($hasilFasilitasi->draft_file)
                             <div class="mb-2">
                                 <strong>Draft File:</strong>
-                                <a href="{{ Storage::url($hasilFasilitasi->draft_file) }}" target="_blank"
+                                <a href="{{ url('storage/' . $hasilFasilitasi->draft_file) }}" target="_blank"
                                     class="btn btn-sm btn-outline-primary ms-2">
                                     <i class="bx bx-download"></i> Download
                                 </a>
@@ -183,7 +183,7 @@
                         @if ($hasilFasilitasi->final_file)
                             <div class="mb-2">
                                 <strong>Final File:</strong>
-                                <a href="{{ Storage::url($hasilFasilitasi->final_file) }}" target="_blank"
+                                <a href="{{ url('storage/' . $hasilFasilitasi->final_file) }}" target="_blank"
                                     class="btn btn-sm btn-outline-success ms-2">
                                     <i class="bx bx-download"></i> Download
                                 </a>
