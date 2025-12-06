@@ -29,6 +29,8 @@ use App\Http\Controllers\PemohonJadwalController;
 use App\Http\Controllers\LaporanVerifikasiController;
 use App\Http\Controllers\PenetapanJadwalController;
 use App\Http\Controllers\UndanganPelaksanaanController;
+use App\Http\Controllers\HasilFasilitasiController;
+use App\Http\Controllers\ValidasiHasilController;
 use Illuminate\Support\Facades\Auth;
 
 // Route::middleware(['auth'])->group(function () {
@@ -95,6 +97,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'show'])->name('undangan-pelaksanaan.show');
         Route::post('/undangan-pelaksanaan/{permohonan}/send', [UndanganPelaksanaanController::class, 'send'])->name('undangan-pelaksanaan.send');
         Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
+
+        // Validasi Hasil Fasilitasi (Tahap 11)
+        Route::get('/validasi-hasil', [ValidasiHasilController::class, 'index'])->name('validasi-hasil.index');
+        Route::get('/validasi-hasil/{permohonan}', [ValidasiHasilController::class, 'show'])->name('validasi-hasil.show');
+        Route::post('/validasi-hasil/{permohonan}/approve', [ValidasiHasilController::class, 'approve'])->name('validasi-hasil.approve');
+        Route::post('/validasi-hasil/{permohonan}/revise', [ValidasiHasilController::class, 'revise'])->name('validasi-hasil.revise');
     });
 
     // Jadwal Fasilitasi Management - admin_peran only
@@ -156,6 +164,22 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
         Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
         Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
+    });
+
+    // Hasil Fasilitasi untuk Fasilitator (Tahap 10)
+    Route::middleware(['role:fasilitator'])->group(function () {
+        Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
+        Route::get('/hasil-fasilitasi/{permohonan}/create', [HasilFasilitasiController::class, 'create'])->name('hasil-fasilitasi.create');
+        Route::post('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'store'])->name('hasil-fasilitasi.store');
+        Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
+        Route::post('/hasil-fasilitasi/{permohonan}/submit', [HasilFasilitasiController::class, 'submit'])->name('hasil-fasilitasi.submit');
+        Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
+        
+        // Routes untuk item sistematika dan urusan
+        Route::post('/hasil-fasilitasi/{permohonan}/sistematika', [HasilFasilitasiController::class, 'storeSistematika'])->name('hasil-fasilitasi.sistematika.store');
+        Route::delete('/hasil-fasilitasi/{permohonan}/sistematika/{id}', [HasilFasilitasiController::class, 'deleteSistematika'])->name('hasil-fasilitasi.sistematika.delete');
+        Route::post('/hasil-fasilitasi/{permohonan}/urusan', [HasilFasilitasiController::class, 'storeUrusan'])->name('hasil-fasilitasi.urusan.store');
+        Route::delete('/hasil-fasilitasi/{permohonan}/urusan/{id}', [HasilFasilitasiController::class, 'deleteUrusan'])->name('hasil-fasilitasi.urusan.delete');
     });    // Approval oleh Kaban
     Route::middleware(['role:kaban'])->group(function () {
         Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');

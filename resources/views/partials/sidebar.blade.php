@@ -217,6 +217,12 @@
                     <div data-i18n="Undangan">Undangan Fasilitasi</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
+                <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-edit"></i>
+                    <div data-i18n="Hasil Fasilitasi">Input Hasil Fasilitasi</div>
+                </a>
+            </li>
         @endif
 
         @if (auth()->user()->hasRole('admin_peran'))
@@ -240,6 +246,12 @@
                 <a href="{{ route('undangan-pelaksanaan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-envelope-open"></i>
                     <div data-i18n="Undangan Pelaksanaan">Undangan Pelaksanaan</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('validasi-hasil.*') ? 'active' : '' }}">
+                <a href="{{ route('validasi-hasil.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-check-double"></i>
+                    <div data-i18n="Validasi Hasil">Validasi Hasil Fasilitasi</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
