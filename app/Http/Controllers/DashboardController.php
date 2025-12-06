@@ -89,24 +89,18 @@ class DashboardController extends Controller
 
     private function verifikatorDashboard($user)
     {
-        // Verifikator sekarang menggunakan tim_verifikasi_assignment
-        $permohonanIds = \App\Models\TimVerifikasiAssignment::where('user_id', $user->id)
-            ->pluck('permohonan_id');
-
+        // Untuk sementara, verifikator bisa melihat semua permohonan dengan status proses
+        // Karena belum ada sistem assignment verifikator
         $stats = [
-            'my_verifikasi' => Permohonan::whereIn('id', $permohonanIds)
-                ->whereIn('status_akhir', ['belum', 'revisi'])
+            'my_verifikasi' => Permohonan::where('status_akhir', 'proses')
                 ->count(),
-            'completed_verifikasi' => Permohonan::whereIn('id', $permohonanIds)
-                ->where('status_akhir', 'selesai')
+            'completed_verifikasi' => Permohonan::where('status_akhir', 'selesai')
                 ->whereMonth('updated_at', now()->month)
                 ->count(),
-            'pending_verifikasi' => Permohonan::whereIn('id', $permohonanIds)
-                ->where('status_akhir', 'belum')
+            'pending_verifikasi' => Permohonan::where('status_akhir', 'proses')
                 ->count(),
             'my_tasks' => Permohonan::with(['kabupatenKota'])
-                ->whereIn('id', $permohonanIds)
-                ->whereIn('status_akhir', ['belum', 'revisi'])
+                ->where('status_akhir', 'proses')
                 ->latest()
                 ->limit(5)
                 ->get()

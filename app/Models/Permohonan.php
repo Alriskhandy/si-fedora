@@ -206,86 +206,96 @@ class Permohonan extends Model
     // Method untuk mendapatkan progress tahapan dari master_tahapan
     public function getProgressSteps()
     {
+        // Ambil semua tahapan dari master_tahapan
         $masterTahapan = \App\Models\MasterTahapan::orderBy('urutan')->get();
+        
+        // Icon mapping untuk setiap tahapan
+        $iconMap = [
+            'Permohonan' => 'bx-send',
+            'Verifikasi' => 'bx-check-circle',
+            'Penetapan Jadwal' => 'bx-calendar',
+            'Pelaksanaan' => 'bx-briefcase',
+            'Hasil Fasilitasi' => 'bx-file',
+            'Penetapan PERDA/PERKADA' => 'bx-check-shield',
+        ];
+        
         $steps = [];
-
-        foreach ($masterTahapan as $tahapan) {
-            $step = [
+        foreach ($masterTahapan as $index => $tahapan) {
+            // Cek apakah tahapan ini sudah ada di permohonan_tahapan
+            $permohonanTahapan = $this->tahapan()
+                ->where('tahapan_id', $tahapan->id)
+                ->first();
+            
+            // Tentukan status completed berdasarkan permohonan_tahapan
+            $completed = false;
+            $date = null;
+            
+            if ($permohonanTahapan) {
+                // Jika ada record di permohonan_tahapan dan statusnya selesai
+                $completed = $permohonanTahapan->status === 'selesai';
+                $date = $permohonanTahapan->tgl_selesai ?? $permohonanTahapan->tgl_mulai;
+            } else {
+                // Untuk tahapan pertama (Permohonan), dianggap selesai jika permohonan sudah dibuat
+                if ($index === 0) {
+                    $completed = true;
+                    $date = $this->created_at;
+                }
+            }
+            
+            $steps[] = [
                 'name' => $tahapan->nama_tahapan,
-                'urutan' => $tahapan->urutan,
-                'description' => $this->getStepDescription($tahapan->urutan),
-                'icon' => $this->getStepIcon($tahapan->urutan),
-                'date' => $this->getStepDate($tahapan->urutan),
-                'completed' => $this->isStepCompleted($tahapan->urutan)
+                'description' => $this->getStepDescription($tahapan->nama_tahapan),
+                'icon' => $iconMap[$tahapan->nama_tahapan] ?? 'bx-file',
+                'date' => $date,
+                'completed' => $completed,
+                'tahapan_id' => $tahapan->id,
+                'status' => $permohonanTahapan->status ?? null,
             ];
-            $steps[] = $step;
         }
-
+        
         return $steps;
-    }
-
-    private function getStepDescription($urutan)
-    {
-        $descriptions = [
-            1 => 'Permohonan dibuat dan diajukan',
-            2 => 'Dokumen diverifikasi oleh tim',
-            3 => 'Jadwal fasilitasi ditetapkan',
-            4 => 'Pelaksanaan fasilitasi/evaluasi',
-            5 => 'Draft hasil fasilitasi',
-            6 => 'Penetapan Perda/Perkada'
-        ];
-        return $descriptions[$urutan] ?? '';
-    }
-
-    private function getStepIcon($urutan)
-    {
-        $icons = [
-            1 => 'bx-send',
-            2 => 'bx-check-circle',
-            3 => 'bx-calendar-event',
-            4 => 'bx-briefcase',
-            5 => 'bx-file-blank',
-            6 => 'bx-check-shield'
-        ];
-        return $icons[$urutan] ?? 'bx-circle';
-    }
-
-    private function getStepDate($urutan)
-    {
-        $dates = [
-            1 => $this->submitted_at ?? $this->created_at,
-            2 => $this->verified_at,
-            3 => $this->assigned_at,
-            4 => $this->evaluated_at,
-            5 => $this->approved_at,
-            6 => $this->completed_at
-        ];
-        return $dates[$urutan] ?? null;
-    }
-
-    private function isStepCompleted($urutan)
-    {
-        $statusMapping = [
-            1 => ['submitted', 'revision_required', 'verified', 'assigned', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
-            2 => ['verified', 'assigned', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
-            3 => ['assigned', 'in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
-            4 => ['in_evaluation', 'draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
-            5 => ['draft_recommendation', 'approved_by_kaban', 'letter_issued', 'sent', 'follow_up', 'completed'],
-            6 => ['completed']
-        ];
-
-        return in_array($this->status, $statusMapping[$urutan] ?? []);
     }
 
     public function getCurrentStepIndex()
     {
-        if ($this->status === 'completed') return 5;
-        if (in_array($this->status, ['approved_by_kaban', 'letter_issued', 'sent', 'follow_up'])) return 5;
-        if (in_array($this->status, ['draft_recommendation'])) return 4;
-        if (in_array($this->status, ['in_evaluation'])) return 3;
-        if (in_array($this->status, ['assigned'])) return 2;
-        if (in_array($this->status, ['verified', 'revision_required'])) return 1;
-        if (in_array($this->status, ['submitted'])) return 1;
-        return 0; // draft
+        // Cari tahapan terakhir yang sedang berjalan
+        $currentTahapan = $this->tahapan()
+            ->with('masterTahapan')
+            ->whereIn('status', ['proses', 'revisi'])
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if ($currentTahapan) {
+            return $currentTahapan->masterTahapan->urutan - 1; // Array index dimulai dari 0
+        }
+        
+        // Jika belum ada tahapan yang berjalan, cek apakah sudah ada tahapan yang selesai
+        $lastCompletedTahapan = $this->tahapan()
+            ->with('masterTahapan')
+            ->where('status', 'selesai')
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if ($lastCompletedTahapan) {
+            // Return index tahapan berikutnya setelah yang terakhir selesai
+            return $lastCompletedTahapan->masterTahapan->urutan;
+        }
+        
+        // Default: tahapan pertama (Permohonan)
+        return 0;
+    }
+    
+    private function getStepDescription($tahapanName)
+    {
+        $descriptions = [
+            'Permohonan' => 'Permohonan dibuat dan diajukan',
+            'Verifikasi' => 'Dokumen diverifikasi oleh tim',
+            'Penetapan Jadwal' => 'Penetapan jadwal fasilitasi',
+            'Pelaksanaan' => 'Pelaksanaan fasilitasi',
+            'Hasil Fasilitasi' => 'Penyusunan hasil fasilitasi',
+            'Penetapan PERDA/PERKADA' => 'Penetapan peraturan daerah',
+        ];
+        
+        return $descriptions[$tahapanName] ?? '';
     }
 }

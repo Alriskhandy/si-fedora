@@ -30,44 +30,111 @@
                 <h5 class="mb-0">Progress Tahapan</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    @php
-                        $steps = $permohonan->getProgressSteps();
-                        $currentIndex = $permohonan->getCurrentStepIndex();
-                    @endphp
+                @php
+                    $steps = $permohonan->getProgressSteps();
+                    $currentIndex = $permohonan->getCurrentStepIndex();
+                @endphp
 
-                    @foreach ($steps as $index => $step)
-                        <div class="col-lg-{{ 12 / count($steps) }} col-md-3 col-6 mb-3">
-                            <div class="text-center">
-                                <div class="mb-2">
-                                    <div
-                                        class="avatar avatar-lg {{ $step['completed'] ? ($permohonan->status === 'rejected' && $index === count($steps) - 1 ? 'bg-label-danger' : 'bg-label-success') : 'bg-label-secondary' }} mx-auto">
-                                        <i class='bx {{ $step['icon'] }} bx-sm'></i>
+                <!-- Desktop View - Horizontal -->
+                <div class="d-none d-lg-block">
+                    <div class="row g-0 position-relative">
+                        @foreach ($steps as $index => $step)
+                            <div class="col-2">
+                                <div class="text-center position-relative">
+                                    <!-- Connector Line -->
+                                    @if ($index < count($steps) - 1)
+                                        <div class="position-absolute top-0 start-50 translate-middle-x"
+                                            style="width: 2px; height: 60px; background-color: {{ $steps[$index + 1]['completed'] ? '#28a745' : '#d4d4d4' }}; z-index: 0; margin-left: 50%;">
+                                        </div>
+                                    @endif
+
+                                    <!-- Step Circle -->
+                                    <div class="position-relative" style="z-index: 1;">
+                                        <div
+                                            class="avatar avatar-lg {{ $step['completed'] ? 'bg-success' : ($index === $currentIndex ? 'bg-warning' : 'bg-secondary') }} mx-auto mb-2">
+                                            <i class='bx {{ $step['icon'] }} bx-md text-white'></i>
+                                        </div>
                                     </div>
+
+                                    <!-- Step Info -->
+                                    <h6 class="mb-1 {{ $step['completed'] ? 'text-dark fw-bold' : 'text-muted' }}"
+                                        style="font-size: 0.875rem;">
+                                        {{ $step['name'] }}
+                                    </h6>
+                                    <small class="text-muted d-block mb-2" style="font-size: 0.75rem; line-height: 1.3;">
+                                        {{ $step['description'] }}
+                                    </small>
+                                    @if ($step['date'])
+                                        <small class="badge bg-label-{{ $step['completed'] ? 'success' : 'secondary' }}">
+                                            {{ $step['date']->format('d M Y') }}
+                                        </small>
+                                    @endif
+
+                                    @if ($index === $currentIndex && !$step['completed'])
+                                        <div class="mt-2">
+                                            <span class="badge bg-warning">
+                                                <i class='bx bx-time-five'></i> Sedang Berjalan
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
-                                <h6 class="mb-1 {{ $step['completed'] ? 'text-dark' : 'text-muted' }}">{{ $step['name'] }}
-                                </h6>
-                                <small class="text-muted d-block mb-1">{{ $step['description'] }}</small>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Mobile View - Vertical -->
+                <div class="d-lg-none">
+                    @foreach ($steps as $index => $step)
+                        <div class="d-flex mb-3 position-relative">
+                            <!-- Timeline Line -->
+                            @if ($index < count($steps) - 1)
+                                <div class="position-absolute"
+                                    style="left: 19px; top: 50px; width: 2px; height: calc(100% + 20px); background-color: {{ $steps[$index + 1]['completed'] ? '#28a745' : '#d4d4d4' }}; z-index: 0;">
+                                </div>
+                            @endif
+
+                            <!-- Step Circle -->
+                            <div class="flex-shrink-0 position-relative" style="z-index: 1;">
+                                <div
+                                    class="avatar {{ $step['completed'] ? 'bg-success' : ($index === $currentIndex ? 'bg-warning' : 'bg-secondary') }}">
+                                    <i class='bx {{ $step['icon'] }} text-white'></i>
+                                </div>
+                            </div>
+
+                            <!-- Step Content -->
+                            <div class="flex-grow-1 ms-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 {{ $step['completed'] ? 'text-dark fw-bold' : 'text-muted' }}">
+                                            {{ $step['name'] }}
+                                        </h6>
+                                        <small class="text-muted d-block mb-2">{{ $step['description'] }}</small>
+
+                                        @if ($index === $currentIndex && !$step['completed'])
+                                            <span class="badge bg-warning mb-2">
+                                                <i class='bx bx-time-five'></i> Sedang Berjalan
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    @if ($step['completed'])
+                                        <i class='bx bx-check-circle text-success fs-5'></i>
+                                    @endif
+                                </div>
+
                                 @if ($step['date'])
-                                    <small class="badge bg-label-{{ $step['completed'] ? 'primary' : 'secondary' }}">
-                                        {{ $step['date']->format('d M Y') }}
+                                    <small class="badge bg-label-{{ $step['completed'] ? 'success' : 'secondary' }}">
+                                        <i class='bx bx-calendar'></i> {{ $step['date']->format('d M Y') }}
                                     </small>
                                 @endif
                             </div>
-
-                            @if ($index < count($steps) - 1)
-                                <div class="d-none d-lg-block position-relative"
-                                    style="margin-top: -40px; margin-bottom: -40px;">
-                                    <hr class="border-2 {{ $steps[$index + 1]['completed'] ? 'border-success' : 'border-secondary' }}"
-                                        style="opacity: 0.5;">
-                                </div>
-                            @endif
                         </div>
                     @endforeach
                 </div>
 
                 @if ($permohonan->status_akhir === 'revisi')
-                    <div class="alert alert-warning mt-3 mb-0">
+                    <div class="alert alert-warning mt-4 mb-0">
                         <i class='bx bx-error-circle me-2'></i>
                         <strong>Perlu Revisi:</strong> Silakan perbaiki dokumen sesuai catatan verifikasi.
                     </div>
@@ -163,68 +230,29 @@
                                     </div>
                                 </li>
                             @endif
-                            @if ($permohonan->verified_at)
+                            @if ($permohonan->status_akhir === 'selesai')
                                 <li class="timeline-item timeline-item-transparent">
                                     <span class="timeline-point timeline-point-success"></span>
                                     <div class="timeline-event">
                                         <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Diverifikasi</h6>
+                                            <h6 class="mb-0">Selesai Verifikasi</h6>
                                             <small
-                                                class="text-muted">{{ $permohonan->verified_at->format('d M Y, H:i') }}</small>
+                                                class="text-muted">{{ $permohonan->updated_at->format('d M Y, H:i') }}</small>
                                         </div>
-                                        <p class="mb-0 small">Dokumen terverifikasi</p>
+                                        <p class="mb-0 small">Dokumen terverifikasi lengkap</p>
                                     </div>
                                 </li>
                             @endif
-                            @if ($permohonan->assigned_at)
-                                <li class="timeline-item timeline-item-transparent">
-                                    <span class="timeline-point timeline-point-info"></span>
-                                    <div class="timeline-event">
-                                        <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Ditugaskan</h6>
-                                            <small
-                                                class="text-muted">{{ $permohonan->assigned_at->format('d M Y, H:i') }}</small>
-                                        </div>
-                                        <p class="mb-0 small">Ditugaskan ke tim evaluasi</p>
-                                    </div>
-                                </li>
-                            @endif
-                            @if ($permohonan->evaluated_at)
+                            @if ($permohonan->status_akhir === 'revisi')
                                 <li class="timeline-item timeline-item-transparent">
                                     <span class="timeline-point timeline-point-warning"></span>
                                     <div class="timeline-event">
                                         <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Dievaluasi</h6>
+                                            <h6 class="mb-0">Perlu Revisi</h6>
                                             <small
-                                                class="text-muted">{{ $permohonan->evaluated_at->format('d M Y, H:i') }}</small>
+                                                class="text-muted">{{ $permohonan->updated_at->format('d M Y, H:i') }}</small>
                                         </div>
-                                        <p class="mb-0 small">Draft evaluasi dibuat</p>
-                                    </div>
-                                </li>
-                            @endif
-                            @if ($permohonan->approved_at)
-                                <li class="timeline-item timeline-item-transparent">
-                                    <span class="timeline-point timeline-point-success"></span>
-                                    <div class="timeline-event">
-                                        <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Disetujui</h6>
-                                            <small
-                                                class="text-muted">{{ $permohonan->approved_at->format('d M Y, H:i') }}</small>
-                                        </div>
-                                        <p class="mb-0 small">Disetujui oleh Kepala Badan</p>
-                                    </div>
-                                </li>
-                            @endif
-                            @if ($permohonan->completed_at)
-                                <li class="timeline-item timeline-item-transparent">
-                                    <span class="timeline-point timeline-point-success"></span>
-                                    <div class="timeline-event">
-                                        <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Selesai</h6>
-                                            <small
-                                                class="text-muted">{{ $permohonan->completed_at->format('d M Y, H:i') }}</small>
-                                        </div>
-                                        <p class="mb-0 small">Proses fasilitasi selesai</p>
+                                        <p class="mb-0 small">Dokumen perlu diperbaiki</p>
                                     </div>
                                 </li>
                             @endif

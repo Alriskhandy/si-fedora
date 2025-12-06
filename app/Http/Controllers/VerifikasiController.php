@@ -17,26 +17,22 @@ class VerifikasiController extends Controller
 
     public function index(Request $request)
     {
-        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'permohonanDokumen.persyaratanDokumen'])
-            ->whereIn('status', ['submitted', 'revision_required']);
+        $query = Permohonan::with(['kabupatenKota', 'permohonanDokumen.masterKelengkapan'])
+            ->where('status_akhir', 'proses'); // Status proses = menunggu verifikasi
 
-        // Hanya verifikator yang ditugaskan
-        if (Auth::user()->hasRole('verifikator')) {
-            $query->where('verifikator_id', Auth::id());
-        }
-
+        // Filter pencarian
         if ($request->filled('search')) {
-            $query->whereHas('kabupatenKota', function($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
-            })
-            ->orWhereHas('jenisDokumen', function($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('kabupatenKota', function ($subQ) use ($request) {
+                    $subQ->where('nama', 'like', '%' . $request->search . '%');
+                })
+                    ->orWhere('jenis_dokumen', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Filter status
+        // Filter status verifikasi
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('status_akhir', $request->status);
         }
 
         $permohonan = $query->latest()->paginate(10);
@@ -44,79 +40,55 @@ class VerifikasiController extends Controller
         return view('verifikasi.index', compact('permohonan'));
     }
 
-    // public function show(Permohonan $permohonan)
-    // {
-    //     // Cek akses
-    //     if (Auth::user()->hasRole('verifikator')) {
-    //         if ($permohonan->verifikator_id !== Auth::id()) {
-    //             abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-    //         }
-    //     }
-
-    //     // Load dokumen lengkap
-    //     $permohonan->load([
-    //         'permohonanDokumen.persyaratanDokumen',
-    //         'kabupatenKota',
-    //         'jenisDokumen'
-    //     ]);
-
-    //     return view('verifikasi.show', compact('permohonan'));
-    // }
     public function show(Permohonan $permohonan)
-{
-    // Cek akses
-    if (Auth::user()->hasRole('verifikator')) {
-        if ($permohonan->verifikator_id !== Auth::id()) {
-            abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-        }
+    {
+        // Load data lengkap dengan proper relations
+        $permohonan->load([
+            'kabupatenKota',
+            'jadwalFasilitasi',
+            'permohonanDokumen.masterKelengkapan'
+        ]);
+
+        return view('verifikasi.show', compact('permohonan'));
     }
-
-    // Load data lengkap
-    $permohonan->load([
-        'kabupatenKota',
-        'jenisDokumen',
-        'permohonanDokumen.persyaratanDokumen' // <-- Tambahin ini
-    ]);
-
-    return view('verifikasi.show', compact('permohonan'));
-}
 
     public function verifikasi(Request $request, Permohonan $permohonan)
     {
-        // Cek akses
-        if (Auth::user()->hasRole('verifikator')) {
-            if ($permohonan->verifikator_id !== Auth::id()) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
-        }
-
         // Validasi
         $request->validate([
             'dokumen' => 'required|array',
-            'dokumen.*.is_ada' => 'required|boolean',
+            'dokumen.*.status_verifikasi' => 'required|in:verified,revision_required',
             'catatan_umum' => 'nullable|string',
             'status_verifikasi' => 'required|in:verified,revision_required',
         ]);
 
         // Update dokumen verifikasi
+        $allVerified = true;
         foreach ($request->dokumen as $dokumenId => $data) {
             $dokumen = PermohonanDokumen::findOrFail($dokumenId);
             $dokumen->update([
-                'is_ada' => $data['is_ada'],
-                'status_verifikasi' => $request->status_verifikasi,
+                'status_verifikasi' => $data['status_verifikasi'],
                 'catatan_verifikasi' => $data['catatan'] ?? null,
                 'verified_by' => Auth::id(),
                 'verified_at' => now(),
             ]);
+
+            if ($data['status_verifikasi'] === 'revision_required') {
+                $allVerified = false;
+            }
         }
 
-        // Update status permohonan
+        // Update status permohonan berdasarkan hasil verifikasi
+        $newStatus = $request->status_verifikasi === 'verified' && $allVerified ? 'selesai' : 'revisi';
+
         $permohonan->update([
-            'status' => $request->status_verifikasi,
-            'verified_at' => now(),
-            'verified_by' => Auth::id(),
+            'status_akhir' => $newStatus,
         ]);
 
-        return redirect()->route('verifikasi.index')->with('success', 'Verifikasi berhasil disimpan.');
+        $message = $newStatus === 'selesai'
+            ? 'Verifikasi berhasil! Dokumen lengkap dan dapat dilanjutkan ke evaluasi.'
+            : 'Verifikasi selesai! Dokumen perlu revisi oleh pemohon.';
+
+        return redirect()->route('verifikasi.index')->with('success', $message);
     }
 }
