@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-         Schema::create('master_urusan', function (Blueprint $table) {
+        Schema::create('master_urusan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_urusan');
             $table->enum('kategori', [
@@ -40,9 +40,16 @@ return new class extends Migration
         Schema::create('master_kelengkapan_verifikasi', function (Blueprint $table) {
             $table->id();
             $table->string('nama_dokumen');
+            $table->enum('kategori', ['surat_permohonan', 'kelengkapan_verifikasi'])->default('kelengkapan_verifikasi');
+            $table->foreignId('tahapan_id')->nullable()->constrained('master_tahapan')->nullOnDelete()->comment('Kelengkapan untuk tahapan tertentu (null = berlaku untuk semua)');
             $table->text('deskripsi')->nullable();
             $table->boolean('wajib')->default(true);
+            $table->integer('urutan')->default(0);
             $table->timestamps();
+
+            // Index
+            $table->index(['kategori', 'tahapan_id']);
+            $table->index(['wajib', 'urutan']);
         });
     }
 

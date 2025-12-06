@@ -93,6 +93,9 @@ return new class extends Migration
 
             $table->text('draft_file')->nullable();
             $table->text('final_file')->nullable();
+            $table->string('surat_penyampaian')->nullable();
+            $table->foreignId('surat_dibuat_oleh')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('surat_tanggal')->nullable();
             $table->text('catatan')->nullable();
 
             $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
