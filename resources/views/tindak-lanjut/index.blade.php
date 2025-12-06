@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('content')
+@section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <h4 class="fw-bold py-3 mb-4">
             <span class="text-muted fw-light">Pemohon /</span> Tindak Lanjut Hasil Fasilitasi
@@ -22,7 +22,13 @@
 
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Daftar Permohonan dengan Hasil Fasilitasi yang Disetujui</h5>
+                <div>
+                    <h5 class="mb-0">Daftar Permohonan dengan Surat Penyampaian Hasil</h5>
+                    <p class="text-muted small mb-0 mt-2">
+                        <i class="bx bx-info-circle"></i> Download surat penyampaian terlebih dahulu, kemudian upload
+                        laporan tindak lanjut
+                    </p>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive text-nowrap">
@@ -33,8 +39,8 @@
                                 <th>Nomor Permohonan</th>
                                 <th>Kabupaten/Kota</th>
                                 <th>Perihal</th>
+                                <th>Surat Penyampaian</th>
                                 <th>Status Tindak Lanjut</th>
-                                <th>Tanggal Upload</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -53,17 +59,17 @@
                                         </div>
                                     </td>
                                     <td>
-                                        @if ($permohonan->tindakLanjut)
-                                            <span class="badge bg-success">Sudah Upload</span>
+                                        @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->surat_penyampaian)
+                                            <span class="badge bg-success">Tersedia</span>
                                         @else
-                                            <span class="badge bg-warning">Belum Upload</span>
+                                            <span class="badge bg-secondary">Belum tersedia</span>
                                         @endif
                                     </td>
                                     <td>
                                         @if ($permohonan->tindakLanjut)
-                                            {{ $permohonan->tindakLanjut->tanggal_upload->format('d M Y H:i') }}
+                                            <span class="badge bg-success">Sudah Upload</span>
                                         @else
-                                            -
+                                            <span class="badge bg-warning">Belum Upload</span>
                                         @endif
                                     </td>
                                     <td>
@@ -73,10 +79,16 @@
                                                 <i class="bx bx-dots-vertical-rounded"></i>
                                             </button>
                                             <div class="dropdown-menu">
+                                                @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->surat_penyampaian)
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('public.surat-penyampaian-hasil.download', $permohonan) }}">
+                                                        <i class="bx bx-download me-1"></i> Download Surat Penyampaian
+                                                    </a>
+                                                @endif
                                                 @if ($permohonan->tindakLanjut)
                                                     <a class="dropdown-item"
                                                         href="{{ route('tindak-lanjut.show', $permohonan) }}">
-                                                        <i class="bx bx-show me-1"></i> Lihat Detail
+                                                        <i class="bx bx-show me-1"></i> Lihat Tindak Lanjut
                                                     </a>
                                                     <a class="dropdown-item"
                                                         href="{{ route('tindak-lanjut.download', $permohonan) }}">
@@ -85,7 +97,7 @@
                                                 @else
                                                     <a class="dropdown-item"
                                                         href="{{ route('tindak-lanjut.create', $permohonan) }}">
-                                                        <i class="bx bx-upload me-1"></i> Upload Laporan
+                                                        <i class="bx bx-upload me-1"></i> Upload Laporan Tindak Lanjut
                                                     </a>
                                                 @endif
                                             </div>
@@ -97,8 +109,8 @@
                                     <td colspan="7" class="text-center">
                                         <div class="py-4">
                                             <i class="bx bx-folder-open" style="font-size: 48px; color: #ddd;"></i>
-                                            <p class="text-muted mt-2">Belum ada permohonan dengan hasil fasilitasi yang
-                                                disetujui</p>
+                                            <p class="text-muted mt-2">Belum ada permohonan dengan surat penyampaian hasil
+                                            </p>
                                         </div>
                                     </td>
                                 </tr>

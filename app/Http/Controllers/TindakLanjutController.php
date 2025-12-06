@@ -17,15 +17,16 @@ class TindakLanjutController extends Controller
      */
     public function index(Request $request)
     {
+        // Permohonan dengan surat penyampaian hasil yang sudah ada
         $query = Permohonan::with(['kabupatenKota', 'hasilFasilitasi', 'tindakLanjut'])
-            ->where('user_id', Auth::id())
+            ->where('kab_kota_id', Auth::id())
             ->whereHas('hasilFasilitasi', function ($q) {
-                $q->where('status_validasi', 'disetujui');
+                $q->whereNotNull('surat_penyampaian');
             });
 
         // Filter pencarian
         if ($request->filled('search')) {
-            $query->where('no_permohonan', 'like', '%' . $request->search . '%');
+            $query->where('nomor_permohonan', 'like', '%' . $request->search . '%');
         }
 
         $permohonans = $query->latest()->paginate(10);
@@ -44,10 +45,10 @@ class TindakLanjutController extends Controller
                 ->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
         }
 
-        // Pastikan hasil fasilitasi sudah disetujui
-        if (!$permohonan->hasilFasilitasi || $permohonan->hasilFasilitasi->status_validasi !== 'disetujui') {
+        // Pastikan surat penyampaian sudah ada
+        if (!$permohonan->hasilFasilitasi || !$permohonan->hasilFasilitasi->surat_penyampaian) {
             return redirect()->route('tindak-lanjut.index')
-                ->with('error', 'Hasil fasilitasi belum disetujui.');
+                ->with('error', 'Surat penyampaian hasil belum tersedia.');
         }
 
         $tindakLanjut = $permohonan->tindakLanjut;

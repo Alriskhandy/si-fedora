@@ -33,6 +33,7 @@ use App\Http\Controllers\HasilFasilitasiController;
 use App\Http\Controllers\ValidasiHasilController;
 use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
+use App\Http\Controllers\SuratPenyampaianHasilController;
 use Illuminate\Support\Facades\Auth;
 
 // Route::middleware(['auth'])->group(function () {
@@ -207,6 +208,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'store'])->name('penetapan-jadwal.store');
         Route::get('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'show'])->name('penetapan-jadwal.show');
 
+        // Surat Penyampaian Hasil Fasilitasi (Tahap 12)
+        Route::get('/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'index'])->name('surat-penyampaian-hasil.index');
+        Route::get('/surat-penyampaian-hasil/{permohonan}/create', [SuratPenyampaianHasilController::class, 'create'])->name('surat-penyampaian-hasil.create');
+        Route::post('/surat-penyampaian-hasil/{permohonan}', [SuratPenyampaianHasilController::class, 'store'])->name('surat-penyampaian-hasil.store');
+        Route::get('/surat-penyampaian-hasil/{permohonan}', [SuratPenyampaianHasilController::class, 'show'])->name('surat-penyampaian-hasil.show');
+
         // Surat Rekomendasi
         Route::get('/surat-rekomendasi', [SuratRekomendasiController::class, 'index'])->name('surat-rekomendasi.index');
         Route::get('/surat-rekomendasi/{permohonan}/create', [SuratRekomendasiController::class, 'create'])->name('surat-rekomendasi.create');
@@ -254,6 +261,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Public Routes - Penetapan PERDA/PERKADA untuk semua user yang login
     Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
+    
+    // Public - Surat Penyampaian Hasil (semua role bisa lihat & download)
+    Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
+    Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
 });
 
 // Root route - redirect based on auth status  

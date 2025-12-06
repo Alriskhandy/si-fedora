@@ -204,6 +204,12 @@
                     <div data-i18n="Penetapan Jadwal">Penetapan Jadwal</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('surat-penyampaian-hasil.*') ? 'active' : '' }}">
+                <a href="{{ route('surat-penyampaian-hasil.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-file-find"></i>
+                    <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
+                </a>
+            </li>
             <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
                 <a href="{{ route('monitoring.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bar-chart"></i>
@@ -290,6 +296,12 @@
         <!-- Public Menu -->
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Publik</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('public.surat-penyampaian-hasil*') ? 'active' : '' }}">
+            <a href="{{ route('public.surat-penyampaian-hasil') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-file-find"></i>
+                <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
+            </a>
         </li>
         <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
             <a href="{{ route('public.penetapan-perda') }}" class="menu-link">

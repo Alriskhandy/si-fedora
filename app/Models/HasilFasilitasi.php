@@ -15,6 +15,9 @@ class HasilFasilitasi extends Model
         'permohonan_id',
         'draft_file',
         'final_file',
+        'surat_penyampaian',
+        'surat_dibuat_oleh',
+        'surat_tanggal',
         'catatan',
         'dibuat_oleh',
         'updated_by',
@@ -23,6 +26,7 @@ class HasilFasilitasi extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'surat_tanggal' => 'datetime',
     ];
 
     // Relasi
@@ -35,10 +39,14 @@ class HasilFasilitasi extends Model
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }
-
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function pembuatSurat()
+    {
+        return $this->belongsTo(User::class, 'surat_dibuat_oleh');
     }
 
     public function hasilUrusan()
