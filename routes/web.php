@@ -28,6 +28,8 @@ use App\Http\Controllers\MasterKelengkapanController;
 use App\Http\Controllers\PemohonJadwalController;
 use App\Http\Controllers\LaporanVerifikasiController;
 use App\Http\Controllers\PenetapanJadwalController;
+use App\Http\Controllers\UndanganPelaksanaanController;
+use Illuminate\Support\Facades\Auth;
 
 // Route::middleware(['auth'])->group(function () {
 //     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -78,13 +80,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin-peran', [AdminPeranController::class, 'index'])->name('admin-peran.index');
         Route::post('/admin-peran/{permohonan}/assign', [AdminPeranController::class, 'assign'])->name('admin-peran.assign');
         Route::post('/admin-peran/{permohonan}/unassign', [AdminPeranController::class, 'unassign'])->name('admin-peran.unassign');
-        
+
         // Laporan Hasil Verifikasi (Tahap 5)
         Route::get('/laporan-verifikasi', [LaporanVerifikasiController::class, 'index'])->name('laporan-verifikasi.index');
         Route::get('/laporan-verifikasi/{permohonan}/create', [LaporanVerifikasiController::class, 'create'])->name('laporan-verifikasi.create');
         Route::post('/laporan-verifikasi/{permohonan}', [LaporanVerifikasiController::class, 'store'])->name('laporan-verifikasi.store');
         Route::get('/laporan-verifikasi/{permohonan}', [LaporanVerifikasiController::class, 'show'])->name('laporan-verifikasi.show');
         Route::get('/laporan-verifikasi/{permohonan}/download', [LaporanVerifikasiController::class, 'download'])->name('laporan-verifikasi.download');
+
+        // Undangan Pelaksanaan (Tahap 7)
+        Route::get('/undangan-pelaksanaan', [UndanganPelaksanaanController::class, 'index'])->name('undangan-pelaksanaan.index');
+        Route::get('/undangan-pelaksanaan/{permohonan}/create', [UndanganPelaksanaanController::class, 'create'])->name('undangan-pelaksanaan.create');
+        Route::post('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'store'])->name('undangan-pelaksanaan.store');
+        Route::get('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'show'])->name('undangan-pelaksanaan.show');
+        Route::post('/undangan-pelaksanaan/{permohonan}/send', [UndanganPelaksanaanController::class, 'send'])->name('undangan-pelaksanaan.send');
+        Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
     });
 
     // Jadwal Fasilitasi Management - admin_peran only
@@ -115,6 +125,11 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:pemohon'])->prefix('pemohon')->name('pemohon.')->group(function () {
         Route::get('/jadwal', [PemohonJadwalController::class, 'index'])->name('jadwal.index');
         Route::get('/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('jadwal.show');
+
+        // Undangan untuk Pemohon (Tahap 8)
+        Route::get('/undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('undangan.index');
+        Route::get('/undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('undangan.view');
+        Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
     });
 
     // Route::middleware(['auth', 'role:kabkota|admin_peran'])->group(function () {
@@ -124,7 +139,7 @@ Route::middleware(['auth'])->group(function () {
         ->parameters([
             'permohonan-dokumen' => 'permohonanDokumen'
         ]);
-    
+
     // Upload dokumen permohonan (AJAX)
     Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])
         ->name('permohonan-dokumen.upload');
@@ -136,36 +151,30 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
     });
 
-    // Approval oleh Kaban
+    // Undangan untuk Verifikator dan Fasilitator (Tahap 8)
+    Route::middleware(['role:verifikator|fasilitator'])->group(function () {
+        Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
+        Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
+        Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
+    });    // Approval oleh Kaban
     Route::middleware(['role:kaban'])->group(function () {
         Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
         Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
         Route::post('/approval/{permohonan}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
         Route::post('/approval/{permohonan}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
         Route::get('/approval/draft/{evaluasi}/download', [ApprovalController::class, 'downloadDraft'])->name('approval.download-draft');
-        
+
         // Penetapan Jadwal Fasilitasi (Tahap 6)
         Route::get('/penetapan-jadwal', [PenetapanJadwalController::class, 'index'])->name('penetapan-jadwal.index');
         Route::get('/penetapan-jadwal/{permohonan}/create', [PenetapanJadwalController::class, 'create'])->name('penetapan-jadwal.create');
         Route::post('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'store'])->name('penetapan-jadwal.store');
         Route::get('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'show'])->name('penetapan-jadwal.show');
-    });
 
-    Route::middleware(['role:kaban'])->group(function () {
-        Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
-        Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
-        Route::post('/approval/{permohonan}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
-        Route::post('/approval/{permohonan}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
-        Route::get('/approval/draft/{evaluasi}/download', [ApprovalController::class, 'downloadDraft'])->name('approval.download-draft');
-    });
-
-    Route::middleware(['role:kaban'])->group(function () {
+        // Surat Rekomendasi
         Route::get('/surat-rekomendasi', [SuratRekomendasiController::class, 'index'])->name('surat-rekomendasi.index');
         Route::get('/surat-rekomendasi/{permohonan}/create', [SuratRekomendasiController::class, 'create'])->name('surat-rekomendasi.create');
         Route::post('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'store'])->name('surat-rekomendasi.store');
-
-        Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])
-            ->name('surat-rekomendasi.show');
+        Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])->name('surat-rekomendasi.show');
     });
 
     // Untuk verifikator & pokja (nanti ditambahin)
@@ -202,7 +211,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Root route - redirect based on auth status  
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     // Direct view instead of redirect for debugging

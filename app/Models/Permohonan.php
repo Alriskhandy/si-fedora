@@ -213,12 +213,17 @@ class Permohonan extends Model
         return $this->hasOne(PenetapanJadwalFasilitasi::class, 'permohonan_id');
     }
 
+    public function undanganPelaksanaan()
+    {
+        return $this->hasOne(UndanganPelaksanaan::class, 'permohonan_id');
+    }
+
     // Method untuk mendapatkan progress tahapan dari master_tahapan
     public function getProgressSteps()
     {
         // Ambil semua tahapan dari master_tahapan
         $masterTahapan = \App\Models\MasterTahapan::orderBy('urutan')->get();
-        
+
         // Icon mapping untuk setiap tahapan
         $iconMap = [
             'Permohonan' => 'bx-send',
@@ -228,18 +233,18 @@ class Permohonan extends Model
             'Hasil Fasilitasi' => 'bx-file',
             'Penetapan PERDA/PERKADA' => 'bx-check-shield',
         ];
-        
+
         $steps = [];
         foreach ($masterTahapan as $index => $tahapan) {
             // Cek apakah tahapan ini sudah ada di permohonan_tahapan
             $permohonanTahapan = $this->tahapan()
                 ->where('tahapan_id', $tahapan->id)
                 ->first();
-            
+
             // Tentukan status completed berdasarkan permohonan_tahapan
             $completed = false;
             $date = null;
-            
+
             if ($permohonanTahapan) {
                 // Jika ada record di permohonan_tahapan dan statusnya selesai
                 $completed = $permohonanTahapan->status === 'selesai';
@@ -251,7 +256,7 @@ class Permohonan extends Model
                     $date = $this->created_at;
                 }
             }
-            
+
             $steps[] = [
                 'name' => $tahapan->nama_tahapan,
                 'description' => $this->getStepDescription($tahapan->nama_tahapan),
@@ -262,7 +267,7 @@ class Permohonan extends Model
                 'status' => $permohonanTahapan->status ?? null,
             ];
         }
-        
+
         return $steps;
     }
 
@@ -274,27 +279,27 @@ class Permohonan extends Model
             ->whereIn('status', ['proses', 'revisi'])
             ->orderBy('id', 'desc')
             ->first();
-        
+
         if ($currentTahapan) {
             return $currentTahapan->masterTahapan->urutan - 1; // Array index dimulai dari 0
         }
-        
+
         // Jika belum ada tahapan yang berjalan, cek apakah sudah ada tahapan yang selesai
         $lastCompletedTahapan = $this->tahapan()
             ->with('masterTahapan')
             ->where('status', 'selesai')
             ->orderBy('id', 'desc')
             ->first();
-        
+
         if ($lastCompletedTahapan) {
             // Return index tahapan berikutnya setelah yang terakhir selesai
             return $lastCompletedTahapan->masterTahapan->urutan;
         }
-        
+
         // Default: tahapan pertama (Permohonan)
         return 0;
     }
-    
+
     private function getStepDescription($tahapanName)
     {
         $descriptions = [
@@ -305,7 +310,7 @@ class Permohonan extends Model
             'Hasil Fasilitasi' => 'Penyusunan hasil fasilitasi',
             'Penetapan PERDA/PERKADA' => 'Penetapan peraturan daerah',
         ];
-        
+
         return $descriptions[$tahapanName] ?? '';
     }
 }

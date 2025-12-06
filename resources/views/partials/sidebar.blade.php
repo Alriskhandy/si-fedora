@@ -141,6 +141,12 @@
                     <div data-i18n="Dokumen Persyaratan">Dokumen Persyaratan</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('pemohon.undangan.*') ? 'active' : '' }}">
+                <a href="{{ route('pemohon.undangan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-envelope"></i>
+                    <div data-i18n="Undangan">Undangan Fasilitasi</div>
+                </a>
+            </li>
         @endif
 
         @if (auth()->user()->hasAnyRole(['verifikator']))
@@ -152,6 +158,12 @@
                 <a href="{{ route('verifikasi.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-check-circle"></i>
                     <div data-i18n="Verifikasi">Verifikasi Dokumen</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('my-undangan.*') ? 'active' : '' }}">
+                <a href="{{ route('my-undangan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-envelope"></i>
+                    <div data-i18n="Undangan">Undangan Fasilitasi</div>
                 </a>
             </li>
         @endif
@@ -194,6 +206,19 @@
             </li>
         @endif
 
+        @if (auth()->user()->hasAnyRole(['fasilitator']))
+            <!-- Menu Fasilitator -->
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Fasilitator</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('my-undangan.*') ? 'active' : '' }}">
+                <a href="{{ route('my-undangan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-envelope"></i>
+                    <div data-i18n="Undangan">Undangan Fasilitasi</div>
+                </a>
+            </li>
+        @endif
+
         @if (auth()->user()->hasRole('admin_peran'))
             <!-- Menu Admin PERAN -->
             <li class="menu-header small text-uppercase">
@@ -209,6 +234,12 @@
                 <a href="{{ route('laporan-verifikasi.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-file-find"></i>
                     <div data-i18n="Laporan Verifikasi">Laporan Verifikasi</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('undangan-pelaksanaan.*') ? 'active' : '' }}">
+                <a href="{{ route('undangan-pelaksanaan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-envelope-open"></i>
+                    <div data-i18n="Undangan Pelaksanaan">Undangan Pelaksanaan</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
