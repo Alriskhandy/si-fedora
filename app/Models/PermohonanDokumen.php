@@ -105,12 +105,6 @@ class Evaluasi extends Model
         return $this->belongsTo(Permohonan::class);
     }
 
-
-    public function pokja()
-    {
-        return $this->belongsTo(TimPokja::class, 'pokja_id');
-    }
-
     public function evaluator()
     {
         return $this->belongsTo(User::class, 'evaluator_id');

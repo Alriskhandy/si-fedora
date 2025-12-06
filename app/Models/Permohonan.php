@@ -173,11 +173,6 @@ class Permohonan extends Model
         return $this->belongsTo(JenisDokumen::class, 'jenis_dokumen_id');
     }
 
-    public function tahunAnggaran()
-    {
-        return $this->belongsTo(TahunAnggaran::class, 'tahun_anggaran_id');
-    }
-
     // app/Models/Permohonan.php
     public function suratRekomendasi()
     {
@@ -187,14 +182,6 @@ class Permohonan extends Model
     public function evaluasi()
     {
         return $this->hasMany(Evaluasi::class);
-    }
-    // public function pokja()
-    // {
-    //     return $this->belongsTo(User::class, 'pokja_id');
-    // }
-    public function timPokja()
-    {
-        return $this->belongsTo(TimPokja::class, 'pokja_id');
     }
 
     public function verifikator()
