@@ -29,11 +29,6 @@ class PersyaratanDokumen extends Model
     ];
 
     // Relasi
-    public function jenisDokumen()
-    {
-        return $this->belongsTo(JenisDokumen::class, 'jenis_dokumen_id');
-    }
-
     public function permohonanDokumen()
     {
         return $this->hasMany(PermohonanDokumen::class, 'persyaratan_dokumen_id');

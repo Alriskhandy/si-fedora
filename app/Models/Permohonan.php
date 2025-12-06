@@ -168,20 +168,10 @@ class Permohonan extends Model
         return $query->where('status_akhir', $status);
     }
 
-    public function jenisDokumen()
-    {
-        return $this->belongsTo(JenisDokumen::class, 'jenis_dokumen_id');
-    }
-
     // app/Models/Permohonan.php
     public function suratRekomendasi()
     {
         return $this->hasOne(SuratRekomendasi::class, 'permohonan_id');
-    }
-
-    public function evaluasi()
-    {
-        return $this->hasMany(Evaluasi::class);
     }
 
     public function verifikator()
