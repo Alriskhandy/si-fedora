@@ -11,30 +11,30 @@ class PemohonJadwalController extends Controller
     public function index(Request $request)
     {
         $query = JadwalFasilitasi::with(['permohonan.kabupatenKota'])
-            ->where('tanggal_pelaksanaan', '>=', now());
+            ->where('tanggal_selesai', '>=', now());
 
         // Filter by jenis dokumen
         if ($request->filled('jenis_dokumen')) {
-            $query->whereHas('permohonan', function($q) use ($request) {
+            $query->whereHas('permohonan', function ($q) use ($request) {
                 $q->where('jenis_dokumen', $request->jenis_dokumen);
             });
         }
 
         // Filter by tahun
         if ($request->filled('tahun')) {
-            $query->whereHas('permohonan', function($q) use ($request) {
+            $query->whereHas('permohonan', function ($q) use ($request) {
                 $q->where('tahun', $request->tahun);
             });
         }
 
         // Filter by kabupaten/kota (untuk user pemohon)
         if (auth()->user()->kabupaten_kota_id) {
-            $query->whereHas('permohonan', function($q) {
+            $query->whereHas('permohonan', function ($q) {
                 $q->where('kab_kota_id', auth()->user()->kabupaten_kota_id);
             });
         }
 
-        $jadwalList = $query->orderBy('tanggal_pelaksanaan', 'asc')->paginate(10);
+        $jadwalList = $query->orderBy('tanggal_mulai', 'asc')->paginate(10);
 
         // Data untuk filter
         $filterOptions = [

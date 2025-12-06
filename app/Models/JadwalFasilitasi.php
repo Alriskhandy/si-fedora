@@ -13,15 +13,15 @@ class JadwalFasilitasi extends Model
 
     protected $fillable = [
         'permohonan_id',
-        'tanggal_pelaksanaan',
-        'tempat',
+        'tanggal_mulai',
+        'tanggal_selesai',
         'undangan_file',
-        'keterangan',
         'dibuat_oleh',
     ];
 
     protected $casts = [
-        'tanggal_pelaksanaan' => 'date',
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
     ];
 
     // Relasi

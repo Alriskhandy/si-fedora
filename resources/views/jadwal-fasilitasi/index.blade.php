@@ -38,8 +38,8 @@
                                         <th>Kabupaten/Kota</th>
                                         <th>Jenis Dokumen</th>
                                         <th>Tahun</th>
-                                        <th>Tanggal Pelaksanaan</th>
-                                        <th>Tempat</th>
+                                        <th>Tanggal Mulai</th>
+                                        <th>Tanggal Selesai</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -57,11 +57,12 @@
                                             <td>{{ $item->permohonan?->tahun ?? '-' }}</td>
                                             <td>
                                                 <span
-                                                    class="badge bg-label-{{ $item->tanggal_pelaksanaan > now()->addDays(7) ? 'success' : 'warning' }}">
-                                                    {{ $item->tanggal_pelaksanaan ? $item->tanggal_pelaksanaan->format('d M Y') : '-' }}
+                                                    class="badge bg-label-{{ $item->tanggal_mulai > now()->addDays(7) ? 'success' : 'warning' }}">
+                                                    {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d M Y') : '-' }}
                                                 </span>
                                             </td>
-                                            <td>{{ $item->tempat ?? '-' }}</td>
+                                            <td>{{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d M Y') : '-' }}
+                                            </td>
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow"

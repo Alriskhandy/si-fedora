@@ -156,9 +156,9 @@ class DashboardController extends Controller
             'completed_permohonan' => Permohonan::where('created_by', $user->id)
                 ->where('status_akhir', 'selesai')
                 ->count(),
-            'jadwal_aktif' => JadwalFasilitasi::where('tanggal_pelaksanaan', '>=', now())
+            'jadwal_aktif' => JadwalFasilitasi::where('tanggal_selesai', '>=', now())
                 ->with(['permohonan.kabupatenKota'])
-                ->orderBy('tanggal_pelaksanaan', 'asc')
+                ->orderBy('tanggal_mulai', 'asc')
                 ->limit(3)
                 ->get(),
             'my_permohonan_list' => Permohonan::where('created_by', $user->id)

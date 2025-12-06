@@ -67,8 +67,8 @@
                                     </span>
                                 </div>
                                 <span
-                                    class="badge bg-label-{{ $jadwal->tanggal_pelaksanaan > now() ? 'success' : 'secondary' }}">
-                                    {{ $jadwal->tanggal_pelaksanaan > now() ? 'Akan Datang' : 'Selesai' }}
+                                    class="badge bg-label-{{ $jadwal->tanggal_selesai > now() ? 'success' : 'secondary' }}">
+                                    {{ $jadwal->tanggal_selesai > now() ? 'Akan Datang' : 'Selesai' }}
                                 </span>
                             </div>
 

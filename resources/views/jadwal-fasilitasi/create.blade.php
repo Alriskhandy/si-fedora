@@ -38,22 +38,23 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="tanggal_pelaksanaan">Tanggal Pelaksanaan</label>
+                                <label class="form-label" for="tanggal_mulai">Tanggal Mulai</label>
                                 <input type="date"
-                                    class="form-control @error('tanggal_pelaksanaan') is-invalid @enderror"
-                                    id="tanggal_pelaksanaan" name="tanggal_pelaksanaan"
-                                    value="{{ old('tanggal_pelaksanaan') }}" required>
-                                @error('tanggal_pelaksanaan')
+                                    class="form-control @error('tanggal_mulai') is-invalid @enderror"
+                                    id="tanggal_mulai" name="tanggal_mulai"
+                                    value="{{ old('tanggal_mulai') }}" required>
+                                @error('tanggal_mulai')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="tempat">Tempat</label>
-                                <input type="text" class="form-control @error('tempat') is-invalid @enderror"
-                                    id="tempat" name="tempat" value="{{ old('tempat') }}"
-                                    placeholder="Contoh: Ruang Rapat Lantai 3" required>
-                                @error('tempat')
+                                <label class="form-label" for="tanggal_selesai">Tanggal Selesai</label>
+                                <input type="date"
+                                    class="form-control @error('tanggal_selesai') is-invalid @enderror"
+                                    id="tanggal_selesai" name="tanggal_selesai"
+                                    value="{{ old('tanggal_selesai') }}" required>
+                                @error('tanggal_selesai')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -66,15 +67,6 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="text-muted">Format: PDF, Maksimal 2MB</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label" for="keterangan">Keterangan</label>
-                                <textarea class="form-control @error('keterangan') is-invalid @enderror" id="keterangan" name="keterangan"
-                                    rows="3" placeholder="Catatan tambahan (opsional)">{{ old('keterangan') }}</textarea>
-                                @error('keterangan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
                             </div>
 
                             <div class="mb-3">

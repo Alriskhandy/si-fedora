@@ -23,17 +23,17 @@ return new class extends Migration
             $table->id();
             $table->foreignId('permohonan_id')->constrained('permohonan')->cascadeOnDelete();
 
-            $table->date('tanggal_pelaksanaan');
-            $table->text('tempat')->nullable();
+            $table->date('tanggal_mulai');
+            $table->date('tanggal_selesai');
             $table->text('undangan_file')->nullable(); // path file undangan (optional)
-            $table->text('keterangan')->nullable();
 
             $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
             // Index
             $table->index(['permohonan_id']);
-            $table->index(['tanggal_pelaksanaan']);
+            $table->index(['tanggal_mulai']);
+            $table->index(['tanggal_selesai']);
 
             // Satu permohonan bisa punya beberapa jadwal (rapat persiapan, pelaksanaan, dll)
         });

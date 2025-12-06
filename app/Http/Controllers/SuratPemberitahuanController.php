@@ -30,7 +30,9 @@ class SuratPemberitahuanController extends Controller
 
     public function create()
     {
-        $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')->get();
+        // Jadwal fasilitasi sekarang per-permohonan, tidak ada status 'published' lagi
+        // Temporarily disabled - perlu konfirmasi apakah surat pemberitahuan masih perlu jadwal_fasilitasi_id
+        $jadwalFasilitasi = collect(); // Empty collection untuk sementara
         $kabupatenKota = KabupatenKota::where('is_active', true)->get();
 
         return view('surat-pemberitahuan.create', compact('jadwalFasilitasi', 'kabupatenKota'));

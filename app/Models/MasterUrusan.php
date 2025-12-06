@@ -11,16 +11,21 @@ class MasterUrusan extends Model
 
     protected $table = 'master_urusan';
 
+    // Konstanta kategori urusan
+    const KATEGORI_WAJIB_DASAR = 'wajib_dasar';
+    const KATEGORI_WAJIB_NON_DASAR = 'wajib_non_dasar';
+    const KATEGORI_PILIHAN = 'pilihan';
+
     protected $fillable = [
-        'kode',
-        'nama',
-        'deskripsi',
+        'nama_urusan',
+        'kategori',
+        'urutan',
     ];
 
     // Relasi
     public function fasilitasiUrusan()
     {
-        return $this->hasMany(FasilitasiUrusan::class);
+        return $this->hasMany(FasilitasiUrusan::class, 'urusan_id');
     }
 
     // Accessor untuk nama kategori yang readable
