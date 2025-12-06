@@ -203,6 +203,16 @@ class Permohonan extends Model
         return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
     }
 
+    public function laporanVerifikasi()
+    {
+        return $this->hasOne(LaporanVerifikasi::class, 'permohonan_id');
+    }
+
+    public function penetapanJadwal()
+    {
+        return $this->hasOne(PenetapanJadwalFasilitasi::class, 'permohonan_id');
+    }
+
     // Method untuk mendapatkan progress tahapan dari master_tahapan
     public function getProgressSteps()
     {

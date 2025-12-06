@@ -26,6 +26,8 @@ use App\Http\Controllers\MasterTahapanController;
 use App\Http\Controllers\MasterUrusanController;
 use App\Http\Controllers\MasterKelengkapanController;
 use App\Http\Controllers\PemohonJadwalController;
+use App\Http\Controllers\LaporanVerifikasiController;
+use App\Http\Controllers\PenetapanJadwalController;
 
 // Route::middleware(['auth'])->group(function () {
 //     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -76,6 +78,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin-peran', [AdminPeranController::class, 'index'])->name('admin-peran.index');
         Route::post('/admin-peran/{permohonan}/assign', [AdminPeranController::class, 'assign'])->name('admin-peran.assign');
         Route::post('/admin-peran/{permohonan}/unassign', [AdminPeranController::class, 'unassign'])->name('admin-peran.unassign');
+        
+        // Laporan Hasil Verifikasi (Tahap 5)
+        Route::get('/laporan-verifikasi', [LaporanVerifikasiController::class, 'index'])->name('laporan-verifikasi.index');
+        Route::get('/laporan-verifikasi/{permohonan}/create', [LaporanVerifikasiController::class, 'create'])->name('laporan-verifikasi.create');
+        Route::post('/laporan-verifikasi/{permohonan}', [LaporanVerifikasiController::class, 'store'])->name('laporan-verifikasi.store');
+        Route::get('/laporan-verifikasi/{permohonan}', [LaporanVerifikasiController::class, 'show'])->name('laporan-verifikasi.show');
+        Route::get('/laporan-verifikasi/{permohonan}/download', [LaporanVerifikasiController::class, 'download'])->name('laporan-verifikasi.download');
     });
 
     // Jadwal Fasilitasi Management - admin_peran only
@@ -127,15 +136,21 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
     });
 
-    // Evaluasi Management - pokja only
-    Route::middleware(['role:pokja'])->group(function () {
-        Route::get('/evaluasi', [EvaluasiController::class, 'index'])->name('evaluasi.index');
-        Route::get('/evaluasi/{permohonan}', [EvaluasiController::class, 'show'])->name('evaluasi.show');
-        Route::post('/evaluasi/{permohonan}', [EvaluasiController::class, 'store'])->name('evaluasi.store');
-        Route::get('/evaluasi/draft/{evaluasi}/download', [EvaluasiController::class, 'downloadDraft'])->name('evaluasi.download-draft');
+    // Approval oleh Kaban
+    Route::middleware(['role:kaban'])->group(function () {
+        Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
+        Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
+        Route::post('/approval/{permohonan}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
+        Route::post('/approval/{permohonan}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
+        Route::get('/approval/draft/{evaluasi}/download', [ApprovalController::class, 'downloadDraft'])->name('approval.download-draft');
+        
+        // Penetapan Jadwal Fasilitasi (Tahap 6)
+        Route::get('/penetapan-jadwal', [PenetapanJadwalController::class, 'index'])->name('penetapan-jadwal.index');
+        Route::get('/penetapan-jadwal/{permohonan}/create', [PenetapanJadwalController::class, 'create'])->name('penetapan-jadwal.create');
+        Route::post('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'store'])->name('penetapan-jadwal.store');
+        Route::get('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'show'])->name('penetapan-jadwal.show');
     });
 
-    // Approval oleh Kaban
     Route::middleware(['role:kaban'])->group(function () {
         Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
         Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
