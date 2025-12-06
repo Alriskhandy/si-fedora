@@ -103,9 +103,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/validasi-hasil/{permohonan}', [ValidasiHasilController::class, 'show'])->name('validasi-hasil.show');
         Route::post('/validasi-hasil/{permohonan}/approve', [ValidasiHasilController::class, 'approve'])->name('validasi-hasil.approve');
         Route::post('/validasi-hasil/{permohonan}/revise', [ValidasiHasilController::class, 'revise'])->name('validasi-hasil.revise');
-    });
-
-    // Jadwal Fasilitasi Management - admin_peran only
+        Route::get('/validasi-hasil/{permohonan}/generate', [ValidasiHasilController::class, 'generate'])->name('validasi-hasil.generate');
+        Route::get('/validasi-hasil/{permohonan}/generate-pdf', [ValidasiHasilController::class, 'generatePdf'])->name('validasi-hasil.generate-pdf');
+    });    // Jadwal Fasilitasi Management - admin_peran only
     Route::middleware(['role:admin_peran'])->group(function () {
         Route::resource('jadwal', JadwalFasilitasiController::class)->parameters([
             'jadwal' => 'jadwal'
@@ -174,7 +174,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
         Route::post('/hasil-fasilitasi/{permohonan}/submit', [HasilFasilitasiController::class, 'submit'])->name('hasil-fasilitasi.submit');
         Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
-        
+        Route::get('/hasil-fasilitasi/{permohonan}/generate', [HasilFasilitasiController::class, 'generate'])->name('hasil-fasilitasi.generate');
+        Route::get('/hasil-fasilitasi/{permohonan}/generate-pdf', [HasilFasilitasiController::class, 'generatePdf'])->name('hasil-fasilitasi.generate-pdf');
+
         // Routes untuk item sistematika dan urusan
         Route::post('/hasil-fasilitasi/{permohonan}/sistematika', [HasilFasilitasiController::class, 'storeSistematika'])->name('hasil-fasilitasi.sistematika.store');
         Route::delete('/hasil-fasilitasi/{permohonan}/sistematika/{id}', [HasilFasilitasiController::class, 'deleteSistematika'])->name('hasil-fasilitasi.sistematika.delete');

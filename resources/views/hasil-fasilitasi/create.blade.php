@@ -5,6 +5,14 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold">Input Hasil Fasilitasi</h4>
             <div>
+                @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
+                    <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-success me-2">
+                        <i class="bx bx-file"></i> Generate Word
+                    </a>
+                    <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-primary me-2">
+                        <i class="bx bxs-file-pdf"></i> Generate PDF
+                    </a>
+                @endif
                 <a href="{{ route('hasil-fasilitasi.index') }}" class="btn btn-secondary">
                     <i class="bx bx-arrow-back"></i> Kembali
                 </a>
@@ -26,7 +34,7 @@
         @endif
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <!-- Informasi Permohonan -->
                 <div class="card mb-4">
                     <div class="card-header">
@@ -47,7 +55,7 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <!-- Jadwal Fasilitasi -->
                 @if ($permohonan->penetapanJadwal)
                     <div class="card mb-4">
@@ -70,7 +78,7 @@
                 @endif
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <!-- Ringkasan -->
                 <div class="card mb-4">
                     <div class="card-header">

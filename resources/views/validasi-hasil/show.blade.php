@@ -4,9 +4,19 @@
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold">Validasi Hasil Fasilitasi</h4>
-            <a href="{{ route('validasi-hasil.index') }}" class="btn btn-secondary">
-                <i class="bx bx-arrow-back"></i> Kembali
-            </a>
+            <div>
+                @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
+                    <a href="{{ route('validasi-hasil.generate', $permohonan->id) }}" class="btn btn-success me-2">
+                        <i class="bx bx-file"></i> Generate Word
+                    </a>
+                    <a href="{{ route('validasi-hasil.generate-pdf', $permohonan->id) }}" class="btn btn-primary me-2">
+                        <i class="bx bxs-file-pdf"></i> Generate PDF
+                    </a>
+                @endif
+                <a href="{{ route('validasi-hasil.index') }}" class="btn btn-secondary">
+                    <i class="bx bx-arrow-back"></i> Kembali
+                </a>
+            </div>
         </div>
 
         @if (session('success'))
