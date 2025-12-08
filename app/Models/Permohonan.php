@@ -13,13 +13,12 @@ class Permohonan extends Model
     protected $table = 'permohonan';
 
     protected $fillable = [
+        'user_id',
         'kab_kota_id',
         'jadwal_fasilitasi_id',
         'tahun',
         'jenis_dokumen',
         'status_akhir',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

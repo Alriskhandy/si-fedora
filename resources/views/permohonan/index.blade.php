@@ -54,7 +54,7 @@
                         </form>
 
                         <!-- Table -->
-                        <div class="table-responsive">
+                        <div class="table-responsive text-nowrap">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -67,7 +67,7 @@
                                         <th width="8%">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="table-border-bottom-0">
                                     @forelse($permohonan as $index => $item)
                                         <tr>
                                             <td>{{ $index + $permohonan->firstItem() }}</td>
@@ -87,10 +87,10 @@
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow"
-                                                        data-bs-toggle="dropdown">
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
                                                         <i class="bx bx-dots-vertical-rounded"></i>
                                                     </button>
-                                                    <div class="dropdown-menu">
+                                                    <div class="dropdown-menu dropdown-menu-end">
                                                         <a class="dropdown-item"
                                                             href="{{ route('permohonan.show', $item) }}">
                                                             <i class="bx bx-show me-1"></i> Detail

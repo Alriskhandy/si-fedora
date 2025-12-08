@@ -140,14 +140,14 @@ class DashboardController extends Controller
     private function kabKotaDashboard($user)
     {
         $stats = [
-            'my_permohonan' => Permohonan::where('created_by', $user->id)->count(),
-            'draft_permohonan' => Permohonan::where('created_by', $user->id)
+            'my_permohonan' => Permohonan::where('user_id', $user->id)->count(),
+            'draft_permohonan' => Permohonan::where('user_id', $user->id)
                 ->where('status_akhir', 'belum')
                 ->count(),
-            'in_process_permohonan' => Permohonan::where('created_by', $user->id)
+            'in_process_permohonan' => Permohonan::where('user_id', $user->id)
                 ->whereIn('status_akhir', ['proses', 'revisi'])
                 ->count(),
-            'completed_permohonan' => Permohonan::where('created_by', $user->id)
+            'completed_permohonan' => Permohonan::where('user_id', $user->id)
                 ->where('status_akhir', 'selesai')
                 ->count(),
             'jadwal_aktif' => JadwalFasilitasi::where('status', 'published')
@@ -156,7 +156,7 @@ class DashboardController extends Controller
                 ->limit(3)
                 ->get(),
             'my_permohonan_list' => Permohonan::with(['kabupatenKota'])
-                ->where('created_by', $user->id)
+                ->where('user_id', $user->id)
                 ->latest()
                 ->limit(5)
                 ->get()

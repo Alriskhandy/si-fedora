@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('persyaratan_dokumen', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('jenis_dokumen_id');
             $table->string('kode', 20);
             $table->string('nama', 200);
             $table->text('deskripsi')->nullable();
@@ -22,16 +21,9 @@ return new class extends Migration
             $table->softDeletes();
         });
         
-        // Tambahin foreign key constraint setelah table dibuat
-        Schema::table('persyaratan_dokumen', function (Blueprint $table) {
-            $table->foreign('jenis_dokumen_id')->references('id')->on('jenis_dokumen')->cascadeOnDelete();
-        });
-        
         // Tambahin index buat performance
         Schema::table('persyaratan_dokumen', function (Blueprint $table) {
-            $table->index(['jenis_dokumen_id', 'urutan']);
             $table->index('is_wajib');
-            $table->unique(['jenis_dokumen_id', 'kode']);
         });
     }
 

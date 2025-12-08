@@ -13,7 +13,6 @@ class UserSeeder extends Seeder
     {
         // Ambil ID dari tabel master
         $ternateId = DB::table('kabupaten_kota')->where('kode', '8271')->value('id');
-        $pokjaId = DB::table('tim_pokja')->first()->id; // Pastiin tim_pokja udah ada
 
         // 1. Superadmin
         $superadmin = User::create([
@@ -68,15 +67,6 @@ class UserSeeder extends Seeder
         ]);
         $pokja1->assignRole('fasilitator');
 
-        // Link ke pokja_anggota
-        DB::table('pokja_anggota')->insert([
-            'pokja_id' => $pokjaId,
-            'user_id' => $pokja1->id,
-            'jabatan' => 'Ketua',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
         $pokja2 = User::create([
             'name' => 'Fasilitator Pokja 2',
             'email' => 'fasilitator2@sifedora.go.id',
@@ -85,27 +75,15 @@ class UserSeeder extends Seeder
         ]);
         $pokja2->assignRole('fasilitator');
 
-        DB::table('pokja_anggota')->insert([
-            'pokja_id' => $pokjaId,
-            'user_id' => $pokja2->id,
-            'jabatan' => 'Anggota',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
         // 6. User Kota Ternate (Pemohon)
         $ternateUser = User::create([
             'name' => 'Pemohon Kota Ternate',
             'email' => 'ternate@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
+            'kabupaten_kota_id' => $ternateId,
         ]);
         $ternateUser->assignRole('pemohon');
-
-        // Link user ke kabupaten_kota
-        DB::table('users')->where('id', $ternateUser->id)->update([
-            'kabupaten_kota_id' => $ternateId
-        ]);
 
         // 7. User Auditor (Monitoring)
         $auditor = User::create([

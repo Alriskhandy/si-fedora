@@ -243,24 +243,6 @@
                     <div data-i18n="Kabupaten/Kota">Kabupaten/Kota</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('jenis-dokumen.*') ? 'active' : '' }}">
-                <a href="{{ route('jenis-dokumen.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-file"></i>
-                    <div data-i18n="Jenis Dokumen">Jenis Dokumen</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('tahun-anggaran.*') ? 'active' : '' }}">
-                <a href="{{ route('tahun-anggaran.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-calendar"></i>
-                    <div data-i18n="Tahun Anggaran">Tahun Anggaran</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('tim-pokja.*') ? 'active' : '' }}">
-                <a href="{{ route('tim-pokja.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-group"></i>
-                    <div data-i18n="Tim Pokja">Tim Pokja</div>
-                </a>
-            </li>
             <li class="menu-item {{ request()->routeIs('master-tahapan.*') ? 'active' : '' }}">
                 <a href="{{ route('master-tahapan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-list-ol"></i>

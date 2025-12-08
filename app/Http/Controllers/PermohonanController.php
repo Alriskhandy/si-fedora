@@ -3,10 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permohonan;
-use App\Models\JenisDokumen;
 use Illuminate\Http\Request;
-use App\Models\KabupatenKota;
-use App\Models\TahunAnggaran;
 use App\Models\JadwalFasilitasi;
 use App\Models\PermohonanDokumen;
 use App\Models\MasterKelengkapanVerifikasi;
@@ -25,7 +22,7 @@ class PermohonanController extends Controller
 
         // Filter berdasarkan role
         if (Auth::user()->hasRole('pemohon')) {
-            $query->where('created_by', Auth::id());
+            $query->where('user_id', Auth::id());
         } elseif (Auth::user()->hasRole('admin_peran')) {
             // Admin bisa liat semua permohonan
         } elseif (Auth::user()->hasRole('verifikator')) {
@@ -106,7 +103,7 @@ class PermohonanController extends Controller
 
         // Cek apakah user sudah pernah membuat permohonan untuk jadwal ini
         $existingPermohonan = Permohonan::where('jadwal_fasilitasi_id', $request->jadwal_fasilitasi_id)
-            ->where('created_by', Auth::id())
+            ->where('user_id', Auth::id())
             ->first();
         
         if ($existingPermohonan) {
@@ -116,12 +113,12 @@ class PermohonanController extends Controller
 
         // Buat permohonan dengan data dari jadwal
         $permohonan = Permohonan::create([
+            'user_id' => Auth::id(),
             'kab_kota_id' => Auth::user()->kabupaten_kota_id,
             'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
             'tahun' => $jadwal->tahun_anggaran,
             'jenis_dokumen' => $jadwal->jenis_dokumen,
             'status_akhir' => 'belum',
-            'created_by' => Auth::id(),
         ]);
 
         // Auto-generate dokumen persyaratan berdasarkan master_kelengkapan_verifikasi
@@ -135,7 +132,7 @@ class PermohonanController extends Controller
             ]);
         }
 
-        return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
+        return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
     }
     public function show(Permohonan $permohonan)
     {
@@ -213,7 +210,7 @@ class PermohonanController extends Controller
 
         // Pemohon (Kabupaten/Kota) hanya bisa lihat permohonan miliknya sendiri
         if ($user->hasRole('pemohon')) {
-            if ($permohonan->created_by !== $user->id) {
+            if ($permohonan->user_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
