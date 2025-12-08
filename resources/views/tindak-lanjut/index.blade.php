@@ -31,31 +31,26 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive text-nowrap">
+                <div class="table-responsive text-nowrap" style="overflow: visible;">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Nomor Permohonan</th>
                                 <th>Kabupaten/Kota</th>
                                 <th>Perihal</th>
                                 <th>Surat Penyampaian</th>
                                 <th>Status Tindak Lanjut</th>
-                                <th>Actions</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="table-border-bottom-0">
                             @forelse ($permohonans as $index => $permohonan)
                                 <tr>
                                     <td>{{ $permohonans->firstItem() + $index }}</td>
-                                    <td>
-                                        <strong>{{ $permohonan->nomor_permohonan }}</strong><br>
-                                        <small class="text-muted">{{ $permohonan->created_at->format('d M Y') }}</small>
-                                    </td>
-                                    <td>{{ $permohonan->kabupatenKota->nama_kabkota ?? '-' }}</td>
+                                    <td>{{ $permohonan->kabupatenKota->nama ?? '-' }}</td>
                                     <td>
                                         <div style="max-width: 300px; white-space: normal;">
-                                            {{ Str::limit($permohonan->perihal, 100) }}
+                                            {{ str()->limit($permohonan->perihal, 100) }}
                                         </div>
                                     </td>
                                     <td>
@@ -78,7 +73,7 @@
                                                 data-bs-toggle="dropdown">
                                                 <i class="bx bx-dots-vertical-rounded"></i>
                                             </button>
-                                            <div class="dropdown-menu">
+                                            <div class="dropdown-menu dropdown-menu-end text-nowrap">
                                                 @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->surat_penyampaian)
                                                     <a class="dropdown-item"
                                                         href="{{ route('public.surat-penyampaian-hasil.download', $permohonan) }}">

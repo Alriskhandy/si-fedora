@@ -15,10 +15,10 @@ class PermohonanDokumenController extends Controller
     {
         $query = PermohonanDokumen::with(['permohonan', 'persyaratanDokumen']);
 
-        if (Auth::user()->hasRole('kabupaten_kota')) {
-            // Kabupaten/Kota hanya bisa liat dokumen permohonan miliknya sendiri
+        if (Auth::user()->hasRole('pemohon')) {
+            // Pemohon hanya bisa liat dokumen permohonan miliknya sendiri
             $query->whereHas('permohonan', function($q) {
-                $q->where('created_by', Auth::id());
+                $q->where('user_id', Auth::id());
             });
         }
 
@@ -33,9 +33,9 @@ class PermohonanDokumenController extends Controller
         
         $permohonan = Permohonan::where('id', $permohonanId)->firstOrFail();
         
-        // Hanya bisa buat dokumen untuk permohonan milik sendiri (kalo kabkota)
-        if (Auth::user()->hasRole('kabupaten_kota')) {
-            if ($permohonan->created_by !== Auth::id()) {
+        // Hanya bisa buat dokumen untuk permohonan milik sendiri
+        if (Auth::user()->hasRole('pemohon')) {
+            if ($permohonan->user_id !== Auth::id()) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
@@ -57,8 +57,8 @@ class PermohonanDokumenController extends Controller
         $permohonan = Permohonan::findOrFail($request->permohonan_id);
 
         // Cek akses
-        if (Auth::user()->hasRole('kabupaten_kota')) {
-            if ($permohonan->created_by !== Auth::id()) {
+        if (Auth::user()->hasRole('pemohon')) {
+            if ($permohonan->user_id !== Auth::id()) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
@@ -106,8 +106,8 @@ class PermohonanDokumenController extends Controller
         ]);
 
         // Cek akses
-        if (Auth::user()->hasRole('kabupaten_kota')) {
-            if ($permohonanDokumen->permohonan->created_by !== Auth::id()) {
+        if (Auth::user()->hasRole('pemohon')) {
+            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
                 abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
             }
         }
@@ -152,7 +152,7 @@ class PermohonanDokumenController extends Controller
 
         // Cek akses - hanya pemohon yang bisa upload
         if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonanDokumen->permohonan->created_by !== Auth::id()) {
+            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses ke dokumen ini.'
@@ -205,8 +205,8 @@ class PermohonanDokumenController extends Controller
     public function destroy(PermohonanDokumen $permohonanDokumen)
     {
         // Cek akses
-        if (Auth::user()->hasRole('kabupaten_kota')) {
-            if ($permohonanDokumen->permohonan->created_by !== Auth::id()) {
+        if (Auth::user()->hasRole('pemohon')) {
+            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
                 abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
             }
         }
@@ -241,18 +241,12 @@ class PermohonanDokumenController extends Controller
             abort(404, 'Permohonan tidak ditemukan.');
         }
     
-        if ($user->hasRole('kabkota')) {
-            if ($permohonanDokumen->permohonan->created_by !== $user->id) {
-                abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
-            }
-        }  elseif ($user->hasRole('verifikator')) {
-            if ($permohonanDokumen->permohonan->verifikator_id !== $user->id) {
-                abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
-            }
-        } elseif ($user->hasRole('pokja')) {
-            if ($permohonanDokumen->permohonan->pokja_id !== $user->id) {
+        if ($user->hasRole('pemohon')) {
+            if ($permohonanDokumen->permohonan->user_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
             }
         }
+        // Admin PERAN, Kaban, Superadmin bisa akses semua
+        // Verifikator & Fasilitator cek via assignment (TODO: implement jika perlu)
     }
 }

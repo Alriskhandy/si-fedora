@@ -35,7 +35,7 @@
                                 <th>Perihal</th>
                                 <th>Tindak Lanjut</th>
                                 <th>Status Penetapan</th>
-                                <th>Actions</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="table-border-bottom-0">
@@ -49,7 +49,7 @@
                                     <td>{{ $permohonan->kabupatenKota->nama_kabkota ?? '-' }}</td>
                                     <td>
                                         <div style="max-width: 300px; white-space: normal;">
-                                            {{ Str::limit($permohonan->perihal, 100) }}
+                                            {{ str()->limit($permohonan->perihal, 100) }}
                                         </div>
                                     </td>
                                     <td>

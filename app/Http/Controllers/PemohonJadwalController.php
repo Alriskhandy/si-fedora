@@ -53,7 +53,7 @@ class PemohonJadwalController extends Controller
         $existingPermohonan = null;
         if (auth()->check()) {
             $existingPermohonan = Permohonan::where('jadwal_fasilitasi_id', $jadwal->id)
-                ->where('created_by', auth()->id())
+                ->where('user_id', auth()->id())
                 ->first();
         }
 

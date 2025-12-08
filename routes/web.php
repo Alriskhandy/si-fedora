@@ -96,7 +96,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'store'])->name('undangan-pelaksanaan.store');
         Route::get('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'show'])->name('undangan-pelaksanaan.show');
         Route::post('/undangan-pelaksanaan/{permohonan}/send', [UndanganPelaksanaanController::class, 'send'])->name('undangan-pelaksanaan.send');
-        Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
 
         // Validasi Hasil Fasilitasi
         Route::get('/validasi-hasil', [ValidasiHasilController::class, 'index'])->name('validasi-hasil.index');
@@ -181,20 +180,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
         Route::get('/verifikasi/{permohonan}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
         Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
-
-        // Undangan
-        Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
-        Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
     });
 
     // =====================================================
     // FASILITATOR ROUTES
     // =====================================================
     Route::middleware(['role:fasilitator'])->group(function () {
-        // Undangan
-        Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
-        Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
-
         // Hasil Fasilitasi
         Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
         Route::get('/hasil-fasilitasi/{permohonan}/create', [HasilFasilitasiController::class, 'create'])->name('hasil-fasilitasi.create');
@@ -215,9 +206,16 @@ Route::middleware(['auth'])->group(function () {
     // =====================================================
     // PUBLIC ROUTES (All Authenticated Users)
     // =====================================================
+    // My Undangan - accessible by verifikator, fasilitator, pemohon
+    Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
+    Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
+    
     Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
     Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
     Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
+    
+    // Download undangan - accessible by all authenticated users
+    Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
 
     // =====================================================
     // PROFILE ROUTES

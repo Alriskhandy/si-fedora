@@ -19,7 +19,7 @@ class TindakLanjutController extends Controller
     {
         // Permohonan dengan surat penyampaian hasil yang sudah ada
         $query = Permohonan::with(['kabupatenKota', 'hasilFasilitasi', 'tindakLanjut'])
-            ->where('kab_kota_id', Auth::id())
+            ->where('user_id', Auth::id())
             ->whereHas('hasilFasilitasi', function ($q) {
                 $q->whereNotNull('surat_penyampaian');
             });
@@ -30,7 +30,7 @@ class TindakLanjutController extends Controller
         }
 
         $permohonans = $query->latest()->paginate(10);
-
+        // dd($permohonans);
         return view('tindak-lanjut.index', compact('permohonans'));
     }
 
