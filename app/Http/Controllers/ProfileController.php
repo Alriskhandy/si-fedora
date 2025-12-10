@@ -31,20 +31,20 @@ class ProfileController extends Controller
         $data = $request->validated();
 
         // Handle foto upload
-        if ($request->hasFile('foto')) {
+        if ($request->hasFile('foto_profile')) {
             // Delete old foto if exists
             if ($user->foto && Storage::disk('public')->exists($user->foto)) {
                 Storage::disk('public')->delete($user->foto);
             }
 
             // Store new foto
-            $path = $request->file('foto')->store('profile-photos', 'public');
-            $data['foto'] = $path;
+            $path = $request->file('foto_profile')->store('profile-photos', 'public');
+            $data['foto_profile'] = $path;
         }
 
         // Remove foto from data if not uploaded
-        if (!isset($data['foto'])) {
-            unset($data['foto']);
+        if (!isset($data['foto_profile'])) {
+            unset($data['foto_profile']);
         }
 
         $user->fill($data);

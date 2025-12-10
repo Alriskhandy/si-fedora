@@ -62,7 +62,7 @@
                                     </td>
                                     <td>
                                         <div style="max-width: 400px; white-space: normal;">
-                                            {{ Str::limit($penetapan->keterangan, 150) }}
+                                            {{ str()->limit($penetapan->keterangan, 150) }}
                                         </div>
                                     </td>
                                     <td>{{ $penetapan->permohonan->kabupatenKota->nama_kabkota ?? '-' }}</td>

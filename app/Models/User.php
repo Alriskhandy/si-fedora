@@ -23,12 +23,8 @@ class User extends Authenticatable
         'email',
         'password',
         'kabupaten_kota_id',
-        'phone',
-        'nip',
-        'jabatan',
-        'alamat',
-        'foto',
-        'is_active',
+        'no_hp',
+        'foto_profile',
         'last_login_at',
     ];
 
@@ -43,7 +39,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_login_at' => 'datetime',
-            'is_active' => 'boolean',
         ];
     }
 
@@ -69,11 +64,6 @@ class User extends Authenticatable
         return $this->hasMany(Evaluasi::class, 'evaluator_id');
     }
 
-    public function pokjaAnggota()
-    {
-        return $this->hasMany(PokjaAnggota::class);
-    }
-
     public function notifikasi()
     {
         return $this->hasMany(Notifikasi::class)->orderBy('created_at', 'desc');
@@ -93,11 +83,6 @@ class User extends Authenticatable
     public function isVerifikator(): bool
     {
         return $this->hasRole('verifikator');
-    }
-
-    public function isPokja(): bool
-    {
-        return $this->hasRole('pokja');
     }
 
     public function isAdminPeran(): bool
