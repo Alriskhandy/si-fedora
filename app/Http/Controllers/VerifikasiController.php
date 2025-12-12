@@ -18,7 +18,7 @@ class VerifikasiController extends Controller
     public function index(Request $request)
     {
         $query = Permohonan::with(['kabupatenKota', 'permohonanDokumen.masterKelengkapan'])
-            ->where('status_akhir', 'proses'); // Status proses = menunggu verifikasi
+            ->whereIn('status_akhir', ['proses', 'revisi', 'selesai']); // Tampilkan semua status verifikasi
 
         // Filter pencarian
         if ($request->filled('search')) {
@@ -35,7 +35,7 @@ class VerifikasiController extends Controller
             $query->where('status_akhir', $request->status);
         }
 
-        $permohonan = $query->latest()->paginate(10);
+        $permohonan = $query->latest('submitted_at')->paginate(10);
 
         return view('verifikasi.index', compact('permohonan'));
     }
@@ -57,9 +57,9 @@ class VerifikasiController extends Controller
         // Validasi
         $request->validate([
             'dokumen' => 'required|array',
-            'dokumen.*.status_verifikasi' => 'required|in:verified,revision_required',
+            'dokumen.*.status_verifikasi' => 'required|in:verified,revision',
             'catatan_umum' => 'nullable|string',
-            'status_verifikasi' => 'required|in:verified,revision_required',
+            'status_verifikasi' => 'required|in:verified,revision',
         ]);
 
         // Update dokumen verifikasi
@@ -73,7 +73,7 @@ class VerifikasiController extends Controller
                 'verified_at' => now(),
             ]);
 
-            if ($data['status_verifikasi'] === 'revision_required') {
+            if ($data['status_verifikasi'] === 'revision') {
                 $allVerified = false;
             }
         }
@@ -90,5 +90,104 @@ class VerifikasiController extends Controller
             : 'Verifikasi selesai! Dokumen perlu revisi oleh pemohon.';
 
         return redirect()->route('verifikasi.index')->with('success', $message);
+    }
+
+    /**
+     * Verifikasi per dokumen (AJAX)
+     */
+    public function verifikasiDokumen(Request $request, Permohonan $permohonan)
+    {
+        // Validasi
+        $request->validate([
+            'dokumen_id' => 'required|exists:permohonan_dokumen,id',
+            'status_verifikasi' => 'required|in:verified,revision',
+            'catatan' => 'nullable|string',
+        ]);
+
+        // Cari dokumen
+        $dokumen = PermohonanDokumen::where('id', $request->dokumen_id)
+            ->where('permohonan_id', $permohonan->id)
+            ->firstOrFail();
+
+        // Update status verifikasi dokumen
+        $dokumen->update([
+            'status_verifikasi' => $request->status_verifikasi,
+            'catatan_verifikasi' => $request->catatan,
+            'verified_by' => Auth::id(),
+            'verified_at' => now(),
+        ]);
+
+        // Jika status = revision, reset file agar pemohon upload ulang
+        if ($request->status_verifikasi === 'revision') {
+            $dokumen->update([
+                'file_path' => null,
+                'file_name' => null,
+                'is_ada' => false,
+            ]);
+        }
+
+        // Cek apakah semua dokumen sudah verified
+        $totalDokumen = $permohonan->permohonanDokumen->count();
+        $verifiedDokumen = $permohonan->permohonanDokumen
+            ->where('status_verifikasi', 'verified')
+            ->count();
+        $revisiDokumen = $permohonan->permohonanDokumen
+            ->where('status_verifikasi', 'revision')
+            ->count();
+
+        // Update status permohonan dan tahapan
+        if ($verifiedDokumen === $totalDokumen) {
+            // Semua dokumen verified
+            $permohonan->update(['status_akhir' => 'selesai']);
+
+            // Update/create tahapan Verifikasi di permohonan_tahapan
+            $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+
+            if ($masterTahapanVerifikasi) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanVerifikasi->id,
+                    ],
+                    [
+                        'status' => 'selesai',
+                        'tgl_mulai' => $permohonan->submitted_at ?? now(),
+                        'tgl_selesai' => now(),
+                        'catatan' => 'Verifikasi dokumen selesai - semua dokumen terverifikasi',
+                    ]
+                );
+            }
+        } elseif ($revisiDokumen > 0) {
+            // Ada dokumen yang perlu revisi
+            $permohonan->update(['status_akhir' => 'revisi']);
+
+            // Update tahapan Verifikasi menjadi status revisi
+            $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+
+            if ($masterTahapanVerifikasi) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanVerifikasi->id,
+                    ],
+                    [
+                        'status' => 'revisi',
+                        'tgl_mulai' => $permohonan->submitted_at ?? now(),
+                        'tgl_selesai' => null,
+                        'catatan' => 'Dokumen perlu revisi - pemohon diminta memperbaiki dokumen',
+                    ]
+                );
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Verifikasi dokumen berhasil disimpan',
+            'data' => [
+                'status_verifikasi' => $dokumen->status_verifikasi,
+                'catatan' => $dokumen->catatan_verifikasi,
+                'status_permohonan' => $permohonan->status_akhir,
+            ]
+        ]);
     }
 }

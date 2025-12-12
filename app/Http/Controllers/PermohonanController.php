@@ -105,7 +105,7 @@ class PermohonanController extends Controller
         $existingPermohonan = Permohonan::where('jadwal_fasilitasi_id', $request->jadwal_fasilitasi_id)
             ->where('user_id', Auth::id())
             ->first();
-        
+
         if ($existingPermohonan) {
             return redirect()->route('permohonan.show', $existingPermohonan)
                 ->with('info', 'Anda sudah memiliki permohonan untuk jadwal ini.');
@@ -176,7 +176,7 @@ class PermohonanController extends Controller
         $dokumenBelumLengkap = PermohonanDokumen::where('permohonan_id', $permohonan->id)
             ->where('is_ada', false)
             ->exists();
-        
+
         if ($dokumenBelumLengkap) {
             return redirect()->route('permohonan.show', $permohonan)
                 ->with('error', 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.');
@@ -185,7 +185,42 @@ class PermohonanController extends Controller
         // Update status ke proses
         $permohonan->update([
             'status_akhir' => 'proses',
+            'submitted_at' => now(),
         ]);
+
+        // Buat tahapan Permohonan (tahapan pertama sudah selesai)
+        $masterTahapanPermohonan = \App\Models\MasterTahapan::where('nama_tahapan', 'Permohonan')->first();
+        if ($masterTahapanPermohonan) {
+            \App\Models\PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapanPermohonan->id,
+                ],
+                [
+                    'status' => 'selesai',
+                    'tgl_mulai' => $permohonan->created_at,
+                    'tgl_selesai' => now(),
+                    'catatan' => 'Permohonan dibuat dan diajukan',
+                ]
+            );
+        }
+
+        // Buat tahapan Verifikasi (tahapan berikutnya dimulai)
+        $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+        if ($masterTahapanVerifikasi) {
+            \App\Models\PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapanVerifikasi->id,
+                ],
+                [
+                    'status' => 'proses',
+                    'tgl_mulai' => now(),
+                    'tgl_selesai' => null,
+                    'catatan' => 'Menunggu verifikasi dokumen',
+                ]
+            );
+        }
 
         // Log activity atau kirim notifikasi ke verifikator (opsional)
         // TODO: Implement notification system

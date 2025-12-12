@@ -196,6 +196,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
         Route::get('/verifikasi/{permohonan}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
         Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
+        Route::post('/verifikasi/{permohonan}/verifikasi-dokumen', [VerifikasiController::class, 'verifikasiDokumen'])->name('verifikasi.verifikasi-dokumen');
     });
 
     // =====================================================

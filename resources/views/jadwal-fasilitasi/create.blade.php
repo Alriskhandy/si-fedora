@@ -30,12 +30,12 @@
                                 <select class="form-select @error('jenis_dokumen') is-invalid @enderror" id="jenis_dokumen"
                                     name="jenis_dokumen" required>
                                     <option value="">Pilih Jenis Dokumen</option>
-                                    <option value="rkpd" {{ old('jenis_dokumen') == 'rkpd' ? 'selected' : '' }}>RKPD
-                                    </option>
-                                    <option value="rpd" {{ old('jenis_dokumen') == 'rpd' ? 'selected' : '' }}>RPD
-                                    </option>
-                                    <option value="rpjmd" {{ old('jenis_dokumen') == 'rpjmd' ? 'selected' : '' }}>RPJMD
-                                    </option>
+                                    @foreach ($jenisdokumen as $item)
+                                        <option value="{{ $item->nama }}"
+                                            {{ old('jenis_dokumen') == $item->nama ? 'selected' : '' }}>
+                                            {{ strtoupper($item->nama) }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('jenis_dokumen')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -72,13 +72,13 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="undangan_file">File Undangan (PDF)</label>
+                                <label class="form-label" for="undangan_file">Surat Penyampaian Jadwal Verifikasi (PDF)</label>
                                 <input type="file" class="form-control @error('undangan_file') is-invalid @enderror"
                                     id="undangan_file" name="undangan_file" accept=".pdf">
                                 @error('undangan_file')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="text-muted">Format: PDF, Maksimal 2MB</small>
+                                <small class="text-muted">Format: PDF, Maksimal 5MB</small>
                             </div>
 
                             <div class="mb-3">

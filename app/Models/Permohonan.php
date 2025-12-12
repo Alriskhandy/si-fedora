@@ -19,10 +19,12 @@ class Permohonan extends Model
         'tahun',
         'jenis_dokumen',
         'status_akhir',
+        'submitted_at',
     ];
 
     protected $casts = [
         'tahun' => 'integer',
+        'submitted_at' => 'datetime',
     ];
 
     // Status labels dan badge class untuk status_akhir

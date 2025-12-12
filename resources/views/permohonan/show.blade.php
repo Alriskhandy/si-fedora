@@ -2,10 +2,6 @@
 
 @section('title', 'Detail Permohonan')
 
-@push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-@endpush
-
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -37,44 +33,42 @@
 
                 <!-- Desktop View - Horizontal -->
                 <div class="d-none d-lg-block">
-                    <div class="row g-0 position-relative">
+                    <div class="d-flex justify-content-between align-items-start position-relative"
+                        style="max-width: 1000px; margin: 0 auto; padding: 0 50px;">
                         @foreach ($steps as $index => $step)
-                            <div class="col-2">
-                                <div class="text-center position-relative">
-                                    <!-- Connector Line -->
-                                    @if ($index < count($steps) - 1)
-                                        <div class="position-absolute top-0 start-50 translate-middle-x"
-                                            style="width: 2px; height: 60px; background-color: {{ $steps[$index + 1]['completed'] ? '#28a745' : '#d4d4d4' }}; z-index: 0; margin-left: 50%;">
-                                        </div>
-                                    @endif
-
-                                    <!-- Step Circle -->
-                                    <div class="position-relative" style="z-index: 1;">
-                                        <div
-                                            class="avatar avatar-lg {{ $step['completed'] ? 'bg-success' : ($index === $currentIndex ? 'bg-warning' : 'bg-secondary') }} mx-auto mb-2">
-                                            <i class='bx {{ $step['icon'] }} bx-md text-white'></i>
-                                        </div>
+                            <div class="text-center position-relative" style="flex: 1; margin: 0 20px;">
+                                <!-- Connector Line -->
+                                @if ($index < count($steps) - 1)
+                                    <div class="position-absolute top-0 start-50 translate-middle-y"
+                                        style="left: 50%; right: -100%; width: calc(200% + 40px); height: 2px; background-color: {{ $step['completed'] ? '#696cff' : '#e0e0e0' }}; z-index: 0; margin-top: 30px;">
                                     </div>
+                                @endif
 
-                                    <!-- Step Info -->
+                                <!-- Step Circle with Number -->
+                                <div class="position-relative d-inline-block" style="z-index: 1;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center {{ $step['completed'] ? 'bg-primary' : 'bg-secondary' }} text-white fw-bold mx-auto mb-3"
+                                        style="width: 60px; height: 60px; font-size: 24px;">
+                                        {{ $index + 1 }}
+                                    </div>
+                                </div>
+
+                                <!-- Step Info -->
+                                <div class="mt-2">
                                     <h6 class="mb-1 {{ $step['completed'] ? 'text-dark fw-bold' : 'text-muted' }}"
-                                        style="font-size: 0.875rem;">
+                                        style="font-size: 0.9rem;">
                                         {{ $step['name'] }}
                                     </h6>
-                                    <small class="text-muted d-block mb-2" style="font-size: 0.75rem; line-height: 1.3;">
-                                        {{ $step['description'] }}
-                                    </small>
-                                    @if ($step['date'])
-                                        <small class="badge bg-label-{{ $step['completed'] ? 'success' : 'secondary' }}">
-                                            {{ $step['date']->format('d M Y') }}
-                                        </small>
-                                    @endif
 
                                     @if ($index === $currentIndex && !$step['completed'])
                                         <div class="mt-2">
-                                            <span class="badge bg-warning">
+                                            <span class="badge bg-warning d-block mb-1">
                                                 <i class='bx bx-time-five'></i> Sedang Berjalan
                                             </span>
+                                            @if ($step['date'])
+                                                <small class="badge bg-label-secondary">
+                                                    {{ $step['date']->format('d M Y') }}
+                                                </small>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>
@@ -86,19 +80,19 @@
                 <!-- Mobile View - Vertical -->
                 <div class="d-lg-none">
                     @foreach ($steps as $index => $step)
-                        <div class="d-flex mb-3 position-relative">
+                        <div class="d-flex mb-4 position-relative">
                             <!-- Timeline Line -->
                             @if ($index < count($steps) - 1)
                                 <div class="position-absolute"
-                                    style="left: 19px; top: 50px; width: 2px; height: calc(100% + 20px); background-color: {{ $steps[$index + 1]['completed'] ? '#28a745' : '#d4d4d4' }}; z-index: 0;">
+                                    style="left: 29px; top: 60px; width: 2px; height: calc(100% - 20px); background-color: {{ $step['completed'] ? '#696cff' : '#e0e0e0' }}; z-index: 0;">
                                 </div>
                             @endif
 
-                            <!-- Step Circle -->
+                            <!-- Step Circle with Number -->
                             <div class="flex-shrink-0 position-relative" style="z-index: 1;">
-                                <div
-                                    class="avatar {{ $step['completed'] ? 'bg-success' : ($index === $currentIndex ? 'bg-warning' : 'bg-secondary') }}">
-                                    <i class='bx {{ $step['icon'] }} text-white'></i>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center {{ $step['completed'] ? 'bg-primary' : 'bg-secondary' }} text-white fw-bold"
+                                    style="width: 60px; height: 60px; font-size: 24px;">
+                                    {{ $index + 1 }}
                                 </div>
                             </div>
 
@@ -109,25 +103,24 @@
                                         <h6 class="mb-1 {{ $step['completed'] ? 'text-dark fw-bold' : 'text-muted' }}">
                                             {{ $step['name'] }}
                                         </h6>
-                                        <small class="text-muted d-block mb-2">{{ $step['description'] }}</small>
 
                                         @if ($index === $currentIndex && !$step['completed'])
-                                            <span class="badge bg-warning mb-2">
+                                            <span class="badge bg-warning mb-1">
                                                 <i class='bx bx-time-five'></i> Sedang Berjalan
                                             </span>
+                                            @if ($step['date'])
+                                                <br>
+                                                <small class="badge bg-label-secondary mt-1">
+                                                    <i class='bx bx-calendar'></i> {{ $step['date']->format('d M Y') }}
+                                                </small>
+                                            @endif
                                         @endif
                                     </div>
 
                                     @if ($step['completed'])
-                                        <i class='bx bx-check-circle text-success fs-5'></i>
+                                        <i class='bx bx-check-circle text-primary fs-5'></i>
                                     @endif
                                 </div>
-
-                                @if ($step['date'])
-                                    <small class="badge bg-label-{{ $step['completed'] ? 'success' : 'secondary' }}">
-                                        <i class='bx bx-calendar'></i> {{ $step['date']->format('d M Y') }}
-                                    </small>
-                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -357,10 +350,11 @@
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Nama Dokumen</th>
-                                            <th>File</th>
-                                            <th width="15%">Status</th>
-                                            <th>Catatan Verifikasi</th>
+                                            <th width="25%">Nama Dokumen</th>
+                                            <th width="20%">File</th>
+                                            <th width="12%">Status Upload</th>
+                                            <th width="15%">Status Verifikasi</th>
+                                            <th width="18%">Catatan Verifikasi</th>
                                             @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <th width="10%">Aksi</th>
                                             @endif
@@ -386,14 +380,11 @@
                                                 @if ($suratPermohonan->file_path)
                                                     <a href="{{ asset('storage/' . $suratPermohonan->file_path) }}"
                                                         target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bx bx-download me-1"></i> Lihat File
+                                                        <i class="bx bx-download me-1"></i> Lihat
                                                     </a>
-                                                    <br>
-                                                    <small
-                                                        class="text-muted">{{ $suratPermohonan->file_name ?? '' }}</small>
                                                 @else
                                                     <span class="badge bg-label-warning">
-                                                        <i class='bx bx-upload'></i> Belum diupload
+                                                        <i class='bx bx-upload'></i> Belum upload
                                                     </span>
                                                 @endif
                                             </td>
@@ -407,12 +398,20 @@
                                                         <i class='bx bx-x'></i> Belum Upload
                                                     </span>
                                                 @endif
-                                                @if ($suratPermohonan->status_verifikasi && $suratPermohonan->status_verifikasi !== 'pending')
-                                                    <br>
-                                                    <small
-                                                        class="badge bg-label-{{ $suratPermohonan->status_verifikasi === 'verified' ? 'success' : 'warning' }} mt-1">
-                                                        {{ ucfirst($suratPermohonan->status_verifikasi) }}
-                                                    </small>
+                                            </td>
+                                            <td>
+                                                @if ($suratPermohonan->status_verifikasi === 'verified')
+                                                    <span class="badge bg-success">
+                                                        <i class='bx bx-check-circle'></i> Sesuai
+                                                    </span>
+                                                @elseif($suratPermohonan->status_verifikasi === 'revision')
+                                                    <span class="badge bg-danger">
+                                                        <i class='bx bx-x-circle'></i> Perlu Revisi
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-secondary">
+                                                        <i class='bx bx-time'></i> Pending
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td>
@@ -429,20 +428,28 @@
                                             </td>
                                             @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <td>
-                                                    <form
-                                                        action="{{ route('permohonan-dokumen.upload', $suratPermohonan) }}"
-                                                        method="POST" enctype="multipart/form-data"
-                                                        class="upload-dokumen-form mb-0"
-                                                        data-dokumen-id="{{ $suratPermohonan->id }}">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <input type="file" name="file" class="file-input d-none"
-                                                            accept=".pdf,.doc,.docx" required>
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-primary btn-upload-trigger">
-                                                            <i class="bx bx-upload"></i> Upload
-                                                        </button>
-                                                    </form>
+                                                    @if ($suratPermohonan->status_verifikasi === 'verified')
+                                                        <span class="badge bg-success">
+                                                            <i class='bx bx-lock'></i> Terverifikasi
+                                                        </span>
+                                                    @else
+                                                        <form
+                                                            action="{{ route('permohonan-dokumen.upload', $suratPermohonan) }}"
+                                                            method="POST" enctype="multipart/form-data"
+                                                            class="upload-dokumen-form mb-0"
+                                                            data-dokumen-id="{{ $suratPermohonan->id }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <input type="file" name="file"
+                                                                class="file-input d-none" accept=".pdf,.doc,.docx"
+                                                                required>
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-{{ $suratPermohonan->status_verifikasi === 'revision' ? 'warning' : 'primary' }} btn-upload-trigger">
+                                                                <i class="bx bx-upload"></i>
+                                                                {{ $suratPermohonan->status_verifikasi === 'revision' ? 'Upload Ulang' : 'Upload' }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                             @endif
                                         </tr>
@@ -485,10 +492,11 @@
                                 <thead>
                                     <tr>
                                         <th width="5%">No</th>
-                                        <th>Nama Dokumen</th>
-                                        <th>File</th>
-                                        <th width="10%">Status</th>
-                                        <th>Catatan Verifikasi</th>
+                                        <th width="23%">Nama Dokumen</th>
+                                        <th width="17%">File</th>
+                                        <th width="10%">Status Upload</th>
+                                        <th width="13%">Status Verifikasi</th>
+                                        <th width="17%">Catatan Verifikasi</th>
                                         @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                             <th width="10%">Aksi</th>
                                         @endif
@@ -516,30 +524,38 @@
                                                 @if ($dokumen->file_path)
                                                     <a href="{{ asset('storage/' . $dokumen->file_path) }}"
                                                         target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bx bx-download me-1"></i> Lihat File
+                                                        <i class="bx bx-download me-1"></i> Lihat
                                                     </a>
-                                                    <br>
-                                                    <small class="text-muted">{{ $dokumen->file_name ?? '' }}</small>
                                                 @else
-                                                    <span class="text-muted">Belum diupload</span>
+                                                    <span class="badge bg-label-warning">
+                                                        <i class='bx bx-upload'></i> Belum upload
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td>
                                                 @if ($dokumen->is_ada)
                                                     <span class="badge bg-label-success">
-                                                        <i class='bx bx-check'></i> Ada
+                                                        <i class='bx bx-check'></i> Tersedia
                                                     </span>
                                                 @else
                                                     <span class="badge bg-label-danger">
-                                                        <i class='bx bx-x'></i> Belum
+                                                        <i class='bx bx-x'></i> Belum Upload
                                                     </span>
                                                 @endif
-                                                @if ($dokumen->status_verifikasi && $dokumen->status_verifikasi !== 'pending')
-                                                    <br>
-                                                    <small
-                                                        class="badge bg-label-{{ $dokumen->status_verifikasi === 'verified' ? 'success' : 'warning' }} mt-1">
-                                                        {{ ucfirst($dokumen->status_verifikasi) }}
-                                                    </small>
+                                            </td>
+                                            <td>
+                                                @if ($dokumen->status_verifikasi === 'verified')
+                                                    <span class="badge bg-success">
+                                                        <i class='bx bx-check-circle'></i> Sesuai
+                                                    </span>
+                                                @elseif($dokumen->status_verifikasi === 'revision')
+                                                    <span class="badge bg-danger">
+                                                        <i class='bx bx-x-circle'></i> Perlu Revisi
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-secondary">
+                                                        <i class='bx bx-time'></i> Pending
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td>
@@ -556,28 +572,36 @@
                                             </td>
                                             @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <td>
-                                                    <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
-                                                        method="POST" enctype="multipart/form-data"
-                                                        class="upload-dokumen-form mb-0"
-                                                        data-dokumen-id="{{ $dokumen->id }}">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <input type="file" name="file" class="file-input d-none"
-                                                            accept=".pdf,.doc,.docx" required>
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-primary btn-upload-trigger">
-                                                            <i class="bx bx-upload"></i> Upload
-                                                        </button>
-                                                    </form>
+                                                    @if ($dokumen->status_verifikasi === 'verified')
+                                                        <span class="badge bg-success">
+                                                            <i class='bx bx-lock'></i> Terverifikasi
+                                                        </span>
+                                                    @else
+                                                        <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
+                                                            method="POST" enctype="multipart/form-data"
+                                                            class="upload-dokumen-form mb-0"
+                                                            data-dokumen-id="{{ $dokumen->id }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <input type="file" name="file"
+                                                                class="file-input d-none" accept=".pdf,.doc,.docx"
+                                                                required>
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-{{ $dokumen->status_verifikasi === 'revision' ? 'warning' : 'primary' }} btn-upload-trigger">
+                                                                <i class="bx bx-upload"></i>
+                                                                {{ $dokumen->status_verifikasi === 'revision' ? 'Upload Ulang' : 'Upload' }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                             @endif
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="{{ $permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi' ? '6' : '5' }}"
-                                                class="text-center text-muted py-4">
-                                                <i class='bx bx-folder-open bx-lg mb-2 d-block'></i>
-                                                Belum ada dokumen kelengkapan verifikasi
+                                            <td colspan="{{ $permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi' ? '7' : '6' }}"
+                                                class="text-center py-4">
+                                                <i class='bx bx-folder-open bx-lg text-muted mb-2 d-block'></i>
+                                                <p class="text-muted mb-0">Tidak ada dokumen kelengkapan</p>
                                             </td>
                                         </tr>
                                     @endforelse
@@ -592,7 +616,6 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
             // Trigger file input when upload button clicked
@@ -609,7 +632,7 @@
 
                     // Disable button and show loading
                     button.prop('disabled', true).html(
-                        '<i class="bx bx-loader bx-spin"></i> Upload');
+                        '<i class="bx bx-loader bx-spin"></i> Upload...');
 
                     const formData = new FormData(form[0]);
 
@@ -621,35 +644,40 @@
                         contentType: false,
                         success: function(response) {
                             if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil!',
-                                    text: response.message ||
-                                        'Dokumen berhasil diupload',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
+                                // Show success checkmark
+                                button.removeClass('btn-primary').addClass('btn-success').html(
+                                    '<i class="bx bx-check-circle"></i> Berhasil'
+                                );
+
+                                // Reload after 1 second
+                                setTimeout(function() {
                                     window.location.reload();
-                                });
+                                }, 1000);
                             }
                         },
                         error: function(xhr) {
-                            button.prop('disabled', false).html(buttonText);
+                            // Show error icon
+                            button.removeClass('btn-primary').addClass('btn-danger').html(
+                                '<i class="bx bx-x-circle"></i> Gagal'
+                            );
 
+                            // Reset button after 2 seconds
+                            setTimeout(function() {
+                                button.prop('disabled', false)
+                                    .removeClass('btn-danger')
+                                    .addClass('btn-primary')
+                                    .html(buttonText);
+                            }, 2000);
+
+                            // Log error to console
                             let errorMessage = 'Terjadi kesalahan saat upload';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
                             } else if (xhr.responseJSON && xhr.responseJSON.errors) {
                                 errorMessage = Object.values(xhr.responseJSON.errors).flat()
-                                    .join(
-                                        '<br>');
+                                    .join(', ');
                             }
-
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal!',
-                                html: errorMessage
-                            });
+                            console.error('Upload error:', errorMessage);
                         }
                     });
                 }

@@ -82,221 +82,215 @@
         </div>
 
         <!-- Form Verifikasi -->
-        <form action="{{ route('verifikasi.verifikasi', $permohonan) }}" method="POST">
-            @csrf
+        @php
+            $suratPermohonan = $permohonan->permohonanDokumen->first(function ($dok) {
+                return $dok->masterKelengkapan && $dok->masterKelengkapan->kategori === 'surat_permohonan';
+            });
 
-            @php
-                $suratPermohonan = $permohonan->permohonanDokumen->first(function ($dok) {
-                    return $dok->masterKelengkapan && $dok->masterKelengkapan->kategori === 'surat_permohonan';
-                });
+            $kelengkapanVerifikasi = $permohonan->permohonanDokumen->filter(function ($dok) {
+                return $dok->masterKelengkapan && $dok->masterKelengkapan->kategori === 'kelengkapan_verifikasi';
+            });
+        @endphp
 
-                $kelengkapanVerifikasi = $permohonan->permohonanDokumen->filter(function ($dok) {
-                    return $dok->masterKelengkapan && $dok->masterKelengkapan->kategori === 'kelengkapan_verifikasi';
-                });
-            @endphp
-
-            <!-- Surat Permohonan -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class='bx bx-file-blank me-2'></i>Surat Permohonan
-                    </h5>
-                    <span class="badge bg-label-danger">Wajib</span>
-                </div>
-                <div class="card-body">
-                    @if ($suratPermohonan)
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Dokumen</th>
-                                        <th width="20%">File</th>
-                                        <th width="15%">Status Upload</th>
-                                        <th width="20%">Status Verifikasi</th>
-                                        <th width="25%">Catatan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <strong>{{ $suratPermohonan->masterKelengkapan->nama_dokumen ?? 'Surat Permohonan' }}</strong>
-                                            @if ($suratPermohonan->masterKelengkapan && $suratPermohonan->masterKelengkapan->deskripsi)
-                                                <br><small
-                                                    class="text-muted">{{ $suratPermohonan->masterKelengkapan->deskripsi }}</small>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($suratPermohonan->file_path)
-                                                <a href="{{ asset('storage/' . $suratPermohonan->file_path) }}"
-                                                    target="_blank" class="btn btn-sm btn-outline-primary">
-                                                    <i class="bx bx-download"></i> Lihat
-                                                </a>
-                                                <br><small class="text-muted">{{ $suratPermohonan->file_name }}</small>
-                                            @else
-                                                <span class="badge bg-label-danger">Belum upload</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            @if ($suratPermohonan->is_ada)
-                                                <span class="badge bg-label-success"><i class='bx bx-check'></i> Ada</span>
-                                            @else
-                                                <span class="badge bg-label-danger"><i class='bx bx-x'></i> Tidak</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <select class="form-select form-select-sm"
-                                                name="dokumen[{{ $suratPermohonan->id }}][status_verifikasi]" required>
-                                                <option value="verified"
-                                                    {{ $suratPermohonan->status_verifikasi === 'verified' ? 'selected' : '' }}>
-                                                    ✓ Sesuai</option>
-                                                <option value="revision_required"
-                                                    {{ $suratPermohonan->status_verifikasi === 'revision_required' ? 'selected' : '' }}>
-                                                    ✗ Revisi</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <textarea class="form-control form-control-sm" name="dokumen[{{ $suratPermohonan->id }}][catatan]" rows="2"
-                                                placeholder="Catatan...">{{ $suratPermohonan->catatan_verifikasi }}</textarea>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="alert alert-warning mb-0">
-                            <i class='bx bx-error-circle me-2'></i>Surat permohonan belum tersedia.
-                        </div>
-                    @endif
-                </div>
+        <!-- Surat Permohonan -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class='bx bx-file-blank me-2'></i>Surat Permohonan
+                </h5>
+                <span class="badge bg-label-danger">Wajib</span>
             </div>
-
-            <!-- Kelengkapan Verifikasi -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class='bx bx-folder-open me-2'></i>Kelengkapan Verifikasi
-                    </h5>
-                </div>
-                <div class="card-body">
+            <div class="card-body">
+                @if ($suratPermohonan)
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th width="5%">No</th>
-                                    <th>Nama Dokumen</th>
-                                    <th width="20%">File</th>
-                                    <th width="10%">Status</th>
-                                    <th width="20%">Verifikasi</th>
-                                    <th width="25%">Catatan</th>
+                                    <th width="28%">Nama Dokumen</th>
+                                    <th width="10%" class="text-center">File</th>
+                                    <th width="10%" class="text-center">Status</th>
+                                    <th width="15%">Verifikasi</th>
+                                    <th width="27%">Catatan</th>
+                                    <th width="10%" class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($kelengkapanVerifikasi as $index => $dokumen)
-                                    <tr>
-                                        <td class="text-center">{{ $index + 1 }}</td>
-                                        <td>
-                                            <strong>{{ $dokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen Kelengkapan' }}</strong>
-                                            @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->wajib)
-                                                <span class="badge badge-sm bg-label-danger ms-1">Wajib</span>
-                                            @endif
-                                            @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->deskripsi)
-                                                <br><small
-                                                    class="text-muted">{{ $dokumen->masterKelengkapan->deskripsi }}</small>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($dokumen->file_path)
-                                                <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank"
-                                                    class="btn btn-sm btn-outline-primary">
-                                                    <i class="bx bx-download"></i> Lihat
-                                                </a>
-                                                <br><small class="text-muted">{{ $dokumen->file_name }}</small>
-                                            @else
-                                                <span class="badge bg-label-danger">Belum upload</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            @if ($dokumen->is_ada)
-                                                <span class="badge bg-label-success"><i class='bx bx-check'></i> Ada</span>
-                                            @else
-                                                <span class="badge bg-label-danger"><i class='bx bx-x'></i> Tidak</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <select class="form-select form-select-sm"
-                                                name="dokumen[{{ $dokumen->id }}][status_verifikasi]" required>
-                                                <option value="verified"
-                                                    {{ $dokumen->status_verifikasi === 'verified' ? 'selected' : '' }}>✓
-                                                    Sesuai</option>
-                                                <option value="revision_required"
-                                                    {{ $dokumen->status_verifikasi === 'revision_required' ? 'selected' : '' }}>
-                                                    ✗ Revisi</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <textarea class="form-control form-control-sm" name="dokumen[{{ $dokumen->id }}][catatan]" rows="2"
-                                                placeholder="Catatan...">{{ $dokumen->catatan_verifikasi }}</textarea>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4">
-                                            <i class='bx bx-folder-open bx-lg text-muted mb-2 d-block'></i>
-                                            <p class="text-muted mb-0">Tidak ada dokumen kelengkapan</p>
-                                        </td>
-                                    </tr>
-                                @endforelse
+                                <tr>
+                                    <td>
+                                        <strong>{{ $suratPermohonan->masterKelengkapan->nama_dokumen ?? 'Surat Permohonan' }}</strong>
+                                        @if ($suratPermohonan->masterKelengkapan && $suratPermohonan->masterKelengkapan->deskripsi)
+                                            <br><small
+                                                class="text-muted">{{ $suratPermohonan->masterKelengkapan->deskripsi }}</small>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($suratPermohonan->file_path)
+                                            <a href="{{ asset('storage/' . $suratPermohonan->file_path) }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="bx bx-download"></i> Lihat
+                                            </a>
+                                        @else
+                                            <span class="badge bg-label-danger">Belum upload</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($suratPermohonan->is_ada)
+                                            <span class="badge bg-label-success"><i class='bx bx-check'></i> Ada</span>
+                                        @else
+                                            <span class="badge bg-label-danger"><i class='bx bx-x'></i> Tidak</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm verifikasi-status"
+                                            data-dokumen-id="{{ $suratPermohonan->id }}"
+                                            {{ $suratPermohonan->status_verifikasi === 'verified' ? 'disabled' : '' }}>
+                                            <option value="pending"
+                                                {{ $suratPermohonan->status_verifikasi === 'pending' ? 'selected' : '' }}>
+                                                Pending</option>
+                                            <option value="verified"
+                                                {{ $suratPermohonan->status_verifikasi === 'verified' ? 'selected' : '' }}>
+                                                ✓ Sesuai</option>
+                                            <option value="revision"
+                                                {{ $suratPermohonan->status_verifikasi === 'revision' ? 'selected' : '' }}>
+                                                ✗ Revisi</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control form-control-sm catatan-verifikasi" data-dokumen-id="{{ $suratPermohonan->id }}"
+                                            rows="2" placeholder="Catatan..." {{ $suratPermohonan->status_verifikasi === 'verified' ? 'disabled' : '' }}>{{ $suratPermohonan->catatan_verifikasi }}</textarea>
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($suratPermohonan->status_verifikasi === 'verified')
+                                            <span class="badge bg-success"><i class='bx bx-check-circle'></i> Selesai</span>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-primary btn-verifikasi"
+                                                data-dokumen-id="{{ $suratPermohonan->id }}">
+                                                <i class='bx bx-save'></i> Simpan
+                                            </button>
+                                        @endif
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-
-            <!-- Kesimpulan -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class='bx bx-check-shield me-2'></i>Kesimpulan Verifikasi</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="status_verifikasi">
-                                <strong>Status Verifikasi Akhir</strong> <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select" id="status_verifikasi" name="status_verifikasi" required>
-                                <option value="">-- Pilih Status --</option>
-                                <option value="verified">✓ Dokumen LENGKAP dan SESUAI</option>
-                                <option value="revision_required">✗ Dokumen Perlu REVISI</option>
-                            </select>
-                            <div class="form-text">
-                                <i class='bx bx-info-circle'></i> Pilih "Perlu REVISI" jika ada dokumen yang tidak lengkap.
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label" for="catatan_umum">Catatan Umum</label>
-                            <textarea class="form-control" id="catatan_umum" name="catatan_umum" rows="4"
-                                placeholder="Catatan umum hasil verifikasi...">{{ old('catatan_umum') }}</textarea>
-                        </div>
+                @else
+                    <div class="alert alert-warning mb-0">
+                        <i class='bx bx-error-circle me-2'></i>Surat permohonan belum tersedia.
                     </div>
-                    <div class="alert alert-info mb-0">
-                        <i class='bx bx-info-circle me-2'></i>
-                        <strong>Panduan:</strong> Periksa semua dokumen, pastikan format dan isi sesuai persyaratan. Berikan
-                        catatan jelas jika perlu revisi.
-                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Kelengkapan Verifikasi -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class='bx bx-folder-open me-2'></i>Kelengkapan Verifikasi
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="5%" class="text-center">No</th>
+                                <th width="26%">Nama Dokumen</th>
+                                <th width="10%" class="text-center">File</th>
+                                <th width="10%" class="text-center">Status</th>
+                                <th width="15%">Verifikasi</th>
+                                <th width="24%">Catatan</th>
+                                <th width="10%" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($kelengkapanVerifikasi as $index => $dokumen)
+                                <tr>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td>
+                                        <strong>{{ $dokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen Kelengkapan' }}</strong>
+                                        @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->wajib)
+                                            <span class="badge badge-sm bg-label-danger ms-1">Wajib</span>
+                                        @endif
+                                        @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->deskripsi)
+                                            <br><small
+                                                class="text-muted">{{ $dokumen->masterKelengkapan->deskripsi }}</small>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($dokumen->file_path)
+                                            <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary">
+                                                <i class="bx bx-download"></i> Lihat
+                                            </a>
+                                        @else
+                                            <span class="badge bg-label-danger">Belum upload</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($dokumen->is_ada)
+                                            <span class="badge bg-label-success"><i class='bx bx-check'></i> Ada</span>
+                                        @else
+                                            <span class="badge bg-label-danger"><i class='bx bx-x'></i> Tidak</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm verifikasi-status"
+                                            data-dokumen-id="{{ $dokumen->id }}"
+                                            {{ $dokumen->status_verifikasi === 'verified' ? 'disabled' : '' }}>
+                                            <option value="pending"
+                                                {{ $dokumen->status_verifikasi === 'pending' ? 'selected' : '' }}>Pending
+                                            </option>
+                                            <option value="verified"
+                                                {{ $dokumen->status_verifikasi === 'verified' ? 'selected' : '' }}>✓
+                                                Sesuai</option>
+                                            <option value="revision"
+                                                {{ $dokumen->status_verifikasi === 'revision' ? 'selected' : '' }}>
+                                                ✗ Revisi</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <textarea class="form-control form-control-sm catatan-verifikasi" data-dokumen-id="{{ $dokumen->id }}"
+                                            rows="2" placeholder="Catatan..." {{ $dokumen->status_verifikasi === 'verified' ? 'disabled' : '' }}>{{ $dokumen->catatan_verifikasi }}</textarea>
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($dokumen->status_verifikasi === 'verified')
+                                            <span class="badge bg-success"><i class='bx bx-check-circle'></i>
+                                                Selesai</span>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-primary btn-verifikasi"
+                                                data-dokumen-id="{{ $dokumen->id }}">
+                                                <i class='bx bx-save'></i> Simpan
+                                            </button>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class='bx bx-folder-open bx-lg text-muted mb-2 d-block'></i>
+                                        <p class="text-muted mb-0">Tidak ada dokumen kelengkapan</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Actions -->
-            <div class="d-flex justify-content-between">
-                <a href="{{ route('verifikasi.index') }}" class="btn btn-outline-secondary">
-                    <i class='bx bx-x me-1'></i> Batal
-                </a>
-                <button type="submit" class="btn btn-success"
-                    onclick="return confirm('Apakah hasil verifikasi sudah benar?')">
-                    <i class='bx bx-check-circle me-1'></i> Simpan Hasil Verifikasi
-                </button>
-            </div>
-        </form>
+        <!-- Info Alert -->
+        <div class="alert alert-info">
+            <i class='bx bx-info-circle me-2'></i>
+            <strong>Panduan:</strong> Periksa dan verifikasi setiap dokumen satu per satu. Jika dokumen perlu revisi,
+            pemohon akan diminta mengupload ulang dokumen tersebut.
+        </div>
+
+        <!-- Tombol Kembali -->
+        <div class="text-start">
+            <a href="{{ route('verifikasi.index') }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali ke Daftar
+            </a>
+        </div>
     </div>
 @endsection
 
@@ -306,4 +300,79 @@
             background-color: rgba(102, 126, 234, 0.05);
         }
     </style>
+@endpush
+
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            // Handle verifikasi per dokumen
+            $('.btn-verifikasi').on('click', function() {
+                const button = $(this);
+                const dokumenId = button.data('dokumen-id');
+                const status = $('.verifikasi-status[data-dokumen-id="' + dokumenId + '"]').val();
+                const catatan = $('.catatan-verifikasi[data-dokumen-id="' + dokumenId + '"]').val();
+                const buttonText = button.html();
+
+                // Validasi
+                if (!status || status === 'pending') {
+                    alert('Silakan pilih status verifikasi terlebih dahulu');
+                    return;
+                }
+
+                if (status === 'revision' && !catatan.trim()) {
+                    alert('Catatan wajib diisi jika dokumen perlu revisi');
+                    return;
+                }
+
+                // Disable button dan show loading
+                button.prop('disabled', true).html('<i class="bx bx-loader bx-spin"></i> Menyimpan...');
+
+                // Submit via AJAX
+                $.ajax({
+                    url: '{{ route('verifikasi.verifikasi-dokumen', $permohonan) }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        dokumen_id: dokumenId,
+                        status_verifikasi: status,
+                        catatan: catatan
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success
+                            button.removeClass('btn-primary').addClass('btn-success').html(
+                                '<i class="bx bx-check-circle"></i> Tersimpan'
+                            );
+
+                            // Reload after 1 second
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1000);
+                        }
+                    },
+                    error: function(xhr) {
+                        // Show error
+                        button.removeClass('btn-primary').addClass('btn-danger').html(
+                            '<i class="bx bx-x-circle"></i> Gagal'
+                        );
+
+                        // Reset after 2 seconds
+                        setTimeout(function() {
+                            button.prop('disabled', false)
+                                .removeClass('btn-danger')
+                                .addClass('btn-primary')
+                                .html(buttonText);
+                        }, 2000);
+
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan verifikasi';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        console.error('Error:', errorMessage);
+                        alert(errorMessage);
+                    }
+                });
+            });
+        });
+    </script>
 @endpush
