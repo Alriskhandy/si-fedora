@@ -113,4 +113,64 @@ class User extends Authenticatable
     {
         return $this->temporaryRoles()->where('end_date', '>', now());
     }
+
+    // Assignment Kabupaten/Kota Relations
+    public function kabkotaAssignments()
+    {
+        return $this->hasMany(UserKabkotaAssignment::class);
+    }
+
+    public function assignedKabkota()
+    {
+        return $this->belongsToMany(KabupatenKota::class, 'user_kabkota_assignments')
+            ->withPivot(['role_type', 'is_pic', 'is_active', 'assigned_from', 'assigned_until', 'notes'])
+            ->withTimestamps();
+    }
+
+    // Helper Methods untuk Assignment
+    public function isAssignedToKabkota(int $kabkotaId, string $roleType = null): bool
+    {
+        $query = $this->kabkotaAssignments()
+            ->active()
+            ->where('kabupaten_kota_id', $kabkotaId);
+
+        if ($roleType) {
+            $query->where('role_type', $roleType);
+        }
+
+        return $query->exists();
+    }
+
+    public function isPicForKabkota(int $kabkotaId): bool
+    {
+        return $this->kabkotaAssignments()
+            ->active()
+            ->where('kabupaten_kota_id', $kabkotaId)
+            ->where('is_pic', true)
+            ->exists();
+    }
+
+    public function getAssignedKabkotaIds(string $roleType = null): array
+    {
+        $query = $this->kabkotaAssignments()->active();
+
+        if ($roleType) {
+            $query->where('role_type', $roleType);
+        }
+
+        return $query->pluck('kabupaten_kota_id')->toArray();
+    }
+
+    public function getAssignmentForKabkota(int $kabkotaId, string $roleType = null)
+    {
+        $query = $this->kabkotaAssignments()
+            ->active()
+            ->where('kabupaten_kota_id', $kabkotaId);
+
+        if ($roleType) {
+            $query->where('role_type', $roleType);
+        }
+
+        return $query->first();
+    }
 }

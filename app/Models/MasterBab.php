@@ -13,14 +13,22 @@ class MasterBab extends Model
 
     protected $fillable = [
         'nama_bab',
+        'jenis_dokumen_id',
         'parent_id',
         'urutan',
     ];
 
     protected $casts = [
+        'jenis_dokumen_id' => 'integer',
         'parent_id' => 'integer',
         'urutan' => 'integer',
     ];
+
+    // Relasi ke jenis dokumen
+    public function jenisDokumen()
+    {
+        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
+    }
 
     // Relasi ke parent bab (untuk sub-bab)
     public function parent()

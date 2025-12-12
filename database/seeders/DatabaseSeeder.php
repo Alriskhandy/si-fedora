@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             MasterTahapanSeeder::class,
             MasterKelengkapanSeeder::class,
             MasterUrusanSeeder::class,
+            MasterJenisDokumenSeeder::class,
+            MasterBabSeeder::class,
             UserSeeder::class,
         ]);
 

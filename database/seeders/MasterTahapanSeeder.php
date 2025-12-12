@@ -36,14 +36,20 @@ class MasterTahapanSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'nama_tahapan' => 'Hasil Fasilitasi',
+                'nama_tahapan' => 'Hasil Fasilitasi / Evaluasi',
                 'urutan' => 5,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'nama_tahapan' => 'Penetapan PERDA/PERKADA',
+                'nama_tahapan' => 'Tindak Lanjut Hasil',
                 'urutan' => 6,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_tahapan' => 'Penetapan PERDA / PERKADA',
+                'urutan' => 7,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

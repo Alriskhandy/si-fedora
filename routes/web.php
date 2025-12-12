@@ -28,6 +28,9 @@ use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
 use App\Http\Controllers\SuratPenyampaianHasilController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\TimAssignmentController;
+use App\Http\Controllers\MasterBabController;
+use App\Http\Controllers\MasterJenisDokumenController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -62,6 +65,17 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('master-tahapan', MasterTahapanController::class)->parameters(['master-tahapan' => 'masterTahapan']);
         Route::resource('master-urusan', MasterUrusanController::class)->parameters(['master-urusan' => 'masterUrusan']);
         Route::resource('master-kelengkapan', MasterKelengkapanController::class)->parameters(['master-kelengkapan' => 'masterKelengkapan']);
+        Route::resource('master-jenis-dokumen', MasterJenisDokumenController::class)->parameters(['master-jenis-dokumen' => 'masterJenisDokuman']);
+        Route::post('/master-jenis-dokumen/{masterJenisDokuman}/toggle-status', [MasterJenisDokumenController::class, 'toggleStatus'])->name('master-jenis-dokumen.toggle-status');
+        Route::resource('master-bab', MasterBabController::class)->parameters(['master-bab' => 'masterBab']);
+
+        // Tim Assignment Management
+        Route::resource('tim-assignment', TimAssignmentController::class)->parameters(['tim-assignment' => 'timAssignment']);
+        Route::post('/tim-assignment/{timAssignment}/activate', [TimAssignmentController::class, 'activate'])->name('tim-assignment.activate');
+        Route::post('/tim-assignment/{timAssignment}/toggle-status', [TimAssignmentController::class, 'toggleStatus'])->name('tim-assignment.toggle-status');
+        Route::post('/tim-assignment/toggle-tim-status', [TimAssignmentController::class, 'toggleTimStatus'])->name('tim-assignment.toggle-tim-status');
+        Route::get('/tim-assignment/{timAssignment}/download-sk', [TimAssignmentController::class, 'downloadSk'])->name('tim-assignment.download-sk');
+        Route::get('/api/tim-assignment/users', [TimAssignmentController::class, 'getAssignedUsers'])->name('tim-assignment.get-users');
     });
 
     // =====================================================
@@ -142,7 +156,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])->name('surat-rekomendasi.show');
 
         // Monitoring (placeholder)
-        Route::get('/monitoring', function () { return 'Monitoring Management'; })->name('monitoring.index');
+        Route::get('/monitoring', function () {
+            return 'Monitoring Management';
+        })->name('monitoring.index');
     });
 
     // =====================================================
@@ -209,11 +225,11 @@ Route::middleware(['auth'])->group(function () {
     // My Undangan - accessible by verifikator, fasilitator, pemohon
     Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
     Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
-    
+
     Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
     Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
     Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
-    
+
     // Download undangan - accessible by all authenticated users
     Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
 

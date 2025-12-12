@@ -25,6 +25,20 @@
             </a>
         </li>
 
+        <!-- PUBLIC MENU (All Authenticated Users) -->
+        <li class="menu-item {{ request()->routeIs('public.surat-penyampaian-hasil*') ? 'active' : '' }}">
+            <a href="{{ route('public.surat-penyampaian-hasil') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-file-find"></i>
+                <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
+            <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-folder-open"></i>
+                <div data-i18n="Dokumen PERDA">PERDA / PERKADA</div>
+            </a>
+        </li>
+
         <!-- KABAN -->
         @if (auth()->user()->hasRole('kaban'))
             <li class="menu-header small text-uppercase">
@@ -83,12 +97,12 @@
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Penugasan & Validasi</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('admin-peran.*') ? 'active' : '' }}">
+            {{-- <li class="menu-item {{ request()->routeIs('admin-peran.*') ? 'active' : '' }}">
                 <a href="{{ route('admin-peran.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-user-check"></i>
                     <div data-i18n="Assignment">Assignment Tim</div>
                 </a>
-            </li>
+            </li> --}}
             <li class="menu-item {{ request()->routeIs('laporan-verifikasi.*') ? 'active' : '' }}">
                 <a href="{{ route('laporan-verifikasi.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-file-find"></i>
@@ -113,12 +127,12 @@
                     <div data-i18n="Surat Rekomendasi">Surat Rekomendasi</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
+            {{-- <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
                 <a href="{{ route('monitoring.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bar-chart"></i>
                     <div data-i18n="Monitoring">Monitoring Progress</div>
                 </a>
-            </li>
+            </li> --}}
         @endif
 
         <!-- PEMOHON -->
@@ -209,33 +223,29 @@
             </li>
         @endif
 
-        <!-- PUBLIC MENU (All Authenticated Users) -->
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Publik</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('public.surat-penyampaian-hasil*') ? 'active' : '' }}">
-            <a href="{{ route('public.surat-penyampaian-hasil') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-file-find"></i>
-                <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
-            <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-folder-open"></i>
-                <div data-i18n="Dokumen PERDA">Dokumen PERDA/PERKADA</div>
-            </a>
-        </li>
+        <!-- MASTER DATA -->
+        @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran']))
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Manajemen Akun & Tim</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <a href="{{ route('users.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-user"></i>
+                    <div data-i18n="Users">Akun Pengguna</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('tim-assignment.*') ? 'active' : '' }}">
+                <a href="{{ route('tim-assignment.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-group"></i>
+                    <div data-i18n="Tim Assignment">Tim FEDORA</div>
+                </a>
+            </li>
+        @endif
 
         <!-- MASTER DATA -->
         @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran']))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Master Data</span>
-            </li>
-            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <a href="{{ route('users.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-user"></i>
-                    <div data-i18n="Users">Manajemen Akun</div>
-                </a>
             </li>
             <li class="menu-item {{ request()->routeIs('kabupaten-kota.*') ? 'active' : '' }}">
                 <a href="{{ route('kabupaten-kota.index') }}" class="menu-link">
@@ -247,6 +257,18 @@
                 <a href="{{ route('master-tahapan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-list-ol"></i>
                     <div data-i18n="Master Tahapan">Tahapan Fasilitasi</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('master-jenis-dokumen.*') ? 'active' : '' }}">
+                <a href="{{ route('master-jenis-dokumen.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-file"></i>
+                    <div data-i18n="Jenis Dokumen">Jenis Dokren</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('master-bab.*') ? 'active' : '' }}">
+                <a href="{{ route('master-bab.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-book-content"></i>
+                    <div data-i18n="Master Bab">Sistematika</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('master-urusan.*') ? 'active' : '' }}">

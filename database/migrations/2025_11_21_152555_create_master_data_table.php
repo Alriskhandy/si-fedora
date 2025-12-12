@@ -17,9 +17,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('master_jenis_dokumen', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama');
+            $table->boolean('status')->default(true);
+            $table->timestamps();
+        });
+
         Schema::create('master_bab', function (Blueprint $table) {
             $table->id();
             $table->string('nama_bab');
+            $table->foreignId('jenis_dokumen_id')->nullable()->constrained('master_jenis_dokumen')->nullOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('master_bab')->nullOnDelete();
             $table->integer('urutan')->nullable();
             $table->timestamps();
@@ -58,6 +66,7 @@ return new class extends Migration
         Schema::dropIfExists('master_kelengkapan_verifikasi');
         Schema::dropIfExists('master_urusan');
         Schema::dropIfExists('master_bab');
+        Schema::dropIfExists('master_jenis_dokumen');
         Schema::dropIfExists('master_tahapan');
     }
 };

@@ -43,6 +43,61 @@ class KabupatenKota extends Model
         return $this->hasMany(SuratPemberitahuan::class);
     }
 
+    // Assignment Relations
+    public function userAssignments()
+    {
+        return $this->hasMany(UserKabkotaAssignment::class);
+    }
+
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'user_kabkota_assignments')
+            ->withPivot(['role_type', 'is_pic', 'is_active', 'assigned_from', 'assigned_until', 'notes'])
+            ->withTimestamps();
+    }
+
+    // Helper Methods untuk Assignment
+    public function getVerifikators()
+    {
+        return $this->userAssignments()
+            ->active()
+            ->byRole('verifikator')
+            ->with('user')
+            ->get();
+    }
+
+    public function getFasilitators()
+    {
+        return $this->userAssignments()
+            ->active()
+            ->byRole('fasilitator')
+            ->with('user')
+            ->get();
+    }
+
+    public function getKoordinator()
+    {
+        return $this->userAssignments()
+            ->active()
+            ->byRole('koordinator')
+            ->with('user')
+            ->first();
+    }
+
+    public function getPic()
+    {
+        return $this->userAssignments()
+            ->active()
+            ->picOnly()
+            ->with('user')
+            ->first();
+    }
+
+    public function hasAssignedTeam(): bool
+    {
+        return $this->userAssignments()->active()->exists();
+    }
+
     public function getFullNameAttribute(): string
     {
         return ucfirst($this->jenis) . ' ' . $this->nama;
