@@ -116,6 +116,21 @@
         <tbody>
             @if ($sistematika->count() > 0)
                 @php
+                    // Helper function to clean HTML
+                    function cleanHtml($content) {
+                        if (is_object($content) && method_exists($content, 'render')) {
+                            $content = $content->render();
+                        }
+                        $content = (string) $content;
+                        $content = str_replace(['<br>', '<br/>', '<br />'], "\n", $content);
+                        $content = preg_replace('/<\/p>\s*<p>/', "\n\n", $content);
+                        $content = preg_replace('/<li>/', '• ', $content);
+                        $content = preg_replace('/<\/li>/', "\n", $content);
+                        $content = strip_tags($content);
+                        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                        return trim($content);
+                    }
+
                     $counter = 1;
                     $currentBabId = null;
                     // Group items by bab and sub_bab
@@ -154,7 +169,7 @@
                         <td>{{ $groupedItem['sub_bab'] }}</td>
                         <td>
                             @foreach ($groupedItem['catatan'] as $index => $catatan)
-                                {{ $index + 1 }}. {{ $catatan }}
+                                {{ $index + 1 }}. {{ cleanHtml($catatan) }}
                                 @if (!$loop->last)
                                     <br><br>
                                 @endif
@@ -180,40 +195,48 @@
     <table>
         <thead>
             <tr>
-                <th class="no-col">No.</th>
-                <th class="content-col">Catatan Masukan/ Saran</th>
+                <th style="width: 5%; text-align: center;">No</th>
+                <th style="width: 85%;">Masukan/Saran</th>
+                <th style="width: 10%;">Keterangan</th>
             </tr>
         </thead>
         <tbody>
             @if ($urusan->count() > 0)
                 @php
-                    $currentUrusan = null;
-                    $urusanIndex = 0;
-                    $itemIndex = 0;
+                    // Group urusan by master_urusan
+                    $groupedUrusan = [];
+                    foreach ($urusan as $item) {
+                        $urusanId = $item->master_urusan_id;
+                        $namaUrusan = $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama;
+                        if (!isset($groupedUrusan[$urusanId])) {
+                            $groupedUrusan[$urusanId] = [
+                                'nama' => $namaUrusan,
+                                'items' => [],
+                            ];
+                        }
+                        $groupedUrusan[$urusanId]['items'][] = $item->catatan_masukan;
+                    }
                 @endphp
 
-                @foreach ($urusan as $item)
-                    @if ($currentUrusan !== $item->masterUrusan->nama_urusan)
-                        @php
-                            $currentUrusan = $item->masterUrusan->nama_urusan;
-                            $urusanIndex++;
-                            $itemIndex = 0;
-                        @endphp
-                        <tr class="urusan-header">
-                            <td class="no-col">{{ $urusanIndex }}</td>
-                            <td><strong>Urusan {{ $currentUrusan }}</strong></td>
-                        </tr>
-                    @endif
-
-                    @php $itemIndex++; @endphp
+                @foreach ($groupedUrusan as $urusan)
+                    {{-- Header urusan --}}
                     <tr>
-                        <td class="no-col">{{ $itemIndex }}.</td>
-                        <td>{{ $item->catatan_masukan }}</td>
+                        <td colspan="3" style="background-color: #f0f0f0; font-weight: bold;">Urusan
+                            {{ $urusan['nama'] }}</td>
                     </tr>
+
+                    {{-- Items with numbering --}}
+                    @foreach ($urusan['items'] as $index => $catatan)
+                        <tr>
+                            <td style="text-align: center;">{{ $index + 1 }}.</td>
+                            <td>{{ cleanHtml($catatan) }}</td>
+                            <td></td>
+                        </tr>
+                    @endforeach
                 @endforeach
             @else
                 <tr>
-                    <td colspan="2" class="empty-state">Tidak ada catatan masukan</td>
+                    <td colspan="3" class="empty-state">Tidak ada catatan masukan</td>
                 </tr>
             @endif
         </tbody>

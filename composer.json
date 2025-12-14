@@ -13,6 +13,9 @@
         "laravel/tinker": "^2.9",
         "spatie/laravel-activitylog": "^4.10",
         "spatie/laravel-permission": "^6.23",
+        "symfony/html-sanitizer": "^7.4",
+        "tinymce/tinymce": "^8.3",
+        "tonysm/rich-text-laravel": "^3.3",
         "twilio/sdk": "^8.9"
     },
     "require-dev": {

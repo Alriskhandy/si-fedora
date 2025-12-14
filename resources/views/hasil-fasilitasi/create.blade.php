@@ -1,15 +1,24 @@
 @extends('layouts.app')
 
+@push('styles')
+    <style>
+        .tinymce-wrapper {
+            border: 1px solid #d9dee3;
+            border-radius: 0.375rem;
+        }
+    </style>
+@endpush
+
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold">Input Hasil Fasilitasi</h4>
             <div>
                 @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
-                    <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-success me-2">
-                        <i class="bx bx-file"></i> Generate Word
+                    <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-primary me-2">
+                        <i class="bx bxs-file-doc"></i> Generate Word
                     </a>
-                    <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-primary me-2">
+                    <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-danger me-2">
                         <i class="bx bxs-file-pdf"></i> Generate PDF
                     </a>
                 @endif
@@ -142,7 +151,7 @@
                                         <form id="formSistematika">
                                             @csrf
                                             <div class="row">
-                                                <div class="col-md-3">
+                                                <div class="col-md-6">
                                                     <div class="mb-3">
                                                         <label class="form-label">Pilih Bab <span
                                                                 class="text-danger">*</span></label>
@@ -155,18 +164,18 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-6">
                                                     <div class="mb-3">
                                                         <label class="form-label">Sub Bab (Opsional)</label>
                                                         <input type="text" class="form-control" id="sub_bab"
                                                             placeholder="Contoh: 1.2 Dasar Hukum">
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6">
+                                                <div class="col-12">
                                                     <div class="mb-3">
                                                         <label class="form-label">Catatan Penyempurnaan <span
                                                                 class="text-danger">*</span></label>
-                                                        <textarea class="form-control" id="catatan_penyempurnaan" rows="2" required></textarea>
+                                                        <textarea class="form-control tinymce-editor" id="catatan_penyempurnaan" rows="3"></textarea>
                                                     </div>
                                                 </div>
                                             </div>
@@ -203,7 +212,9 @@
                                                                         class="text-muted">{{ $item->sub_bab }}</small>
                                                                 @endif
                                                             </td>
-                                                            <td>{{ $item->catatan_penyempurnaan }}</td>
+                                                            <td>{!! is_string($item->catatan_penyempurnaan)
+                                                                ? $item->catatan_penyempurnaan
+                                                                : $item->catatan_penyempurnaan->render() !!}</td>
                                                             <td><small
                                                                     class="text-muted">{{ $item->user->name ?? '-' }}</small>
                                                             </td>
@@ -242,7 +253,7 @@
                                         <form id="formUrusan">
                                             @csrf
                                             <div class="row">
-                                                <div class="col-md-4">
+                                                <div class="col-md-6">
                                                     <div class="mb-3">
                                                         <label class="form-label">Pilih Urusan <span
                                                                 class="text-danger">*</span></label>
@@ -256,11 +267,11 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-8">
+                                                <div class="col-md-12">
                                                     <div class="mb-3">
                                                         <label class="form-label">Catatan Masukan / Saran <span
                                                                 class="text-danger">*</span></label>
-                                                        <textarea class="form-control" id="catatan_masukan" rows="2" required></textarea>
+                                                        <textarea class="form-control tinymce-editor" id="catatan_masukan" rows="3"></textarea>
                                                     </div>
                                                 </div>
                                             </div>
@@ -291,7 +302,7 @@
                                                             <td><strong
                                                                     class="text-primary">{{ $item->masterUrusan->urutan }}.
                                                                     {{ $item->masterUrusan->nama_urusan }}</strong></td>
-                                                            <td>{{ $item->catatan_masukan }}</td>
+                                                            <td>{!! is_string($item->catatan_masukan) ? $item->catatan_masukan : $item->catatan_masukan->render() !!}</td>
                                                             <td class="text-center">
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-danger btn-hapus-urusan"
@@ -321,7 +332,50 @@
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.tiny.cloud/1/{{ env('TINY_MCE_API_KEY') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin">
+    </script>
     <script>
+        // Initialize TinyMCE
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 200,
+            menubar: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'charmap', 'preview',
+                'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic underline strikethrough | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | table | code | help',
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px }',
+            branding: false,
+            promotion: false,
+            statusbar: false,
+
+            // Paste settings
+            paste_as_text: false,
+            paste_webkit_styles: 'font-weight font-style text-decoration',
+            paste_retain_style_properties: 'color font-size font-weight font-style text-decoration',
+
+            // Clean up HTML
+            valid_elements: 'p,br,strong/b,em/i,u,s,strike,del,h1,h2,h3,h4,h5,h6,' +
+                'ul,ol,li,a[href|title|target],blockquote,pre,code,table,thead,tbody,tr,th,td,' +
+                'span[class|style],div[class|style],sub,sup',
+
+            valid_styles: {
+                '*': 'color,font-size,font-weight,font-style,text-decoration,text-align'
+            },
+
+            // Setup function
+            setup: function(editor) {
+                editor.on('init', function() {
+                    console.log('TinyMCE initialized for: ' + editor.id);
+                });
+            }
+        });
+
         const permohonanId = {{ $permohonan->id }};
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -331,7 +385,9 @@
 
             const masterBabId = document.getElementById('master_bab_id').value;
             const subBab = document.getElementById('sub_bab').value;
-            const catatanPenyempurnaan = document.getElementById('catatan_penyempurnaan').value;
+
+            // Get content from TinyMCE
+            const catatanPenyempurnaan = tinymce.get('catatan_penyempurnaan').getContent();
 
             // Ambil nama bab dari dropdown
             const selectElement = document.getElementById('master_bab_id');
@@ -357,6 +413,7 @@
                 if (data.success) {
                     // Reset form
                     document.getElementById('formSistematika').reset();
+                    tinymce.get('catatan_penyempurnaan').setContent('');
 
                     // Tambahkan ke list
                     const listSistematika = document.getElementById('listSistematika');
@@ -425,7 +482,10 @@
             e.preventDefault();
 
             const masterUrusanId = document.getElementById('master_urusan_id').value;
-            const catatanMasukan = document.getElementById('catatan_masukan').value;
+
+            // Get content from TinyMCE
+            const catatanMasukan = tinymce.get('catatan_masukan').getContent();
+
             const selectElement = document.getElementById('master_urusan_id');
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             const namaUrusan = selectedOption.text;
@@ -448,6 +508,7 @@
                 if (data.success) {
                     // Reset form
                     document.getElementById('formUrusan').reset();
+                    tinymce.get('catatan_masukan').setContent('');
 
                     // Tambahkan ke list
                     const listUrusan = document.getElementById('listUrusan');

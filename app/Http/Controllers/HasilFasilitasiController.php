@@ -9,6 +9,7 @@ use App\Models\HasilFasilitasiSistematika;
 use App\Models\MasterUrusan;
 use App\Models\MasterBab;
 use App\Models\MasterJenisDokumen;
+use App\Services\HasilFasilitasiDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,13 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class HasilFasilitasiController extends Controller
 {
+    protected $documentService;
+
+    public function __construct(HasilFasilitasiDocumentService $documentService)
+    {
+        $this->documentService = $documentService;
+    }
+
     /**
      * Tampilkan daftar permohonan untuk input hasil fasilitasi (Fasilitator)
      */
@@ -239,10 +247,22 @@ class HasilFasilitasiController extends Controller
             // Load relasi untuk response
             $sistematika->load('masterBab', 'user');
 
+            // Convert to array with rendered rich text
+            $data = [
+                'id' => $sistematika->id,
+                'master_bab_id' => $sistematika->master_bab_id,
+                'sub_bab' => $sistematika->sub_bab,
+                'catatan_penyempurnaan' => is_object($sistematika->catatan_penyempurnaan) && method_exists($sistematika->catatan_penyempurnaan, 'render') 
+                    ? $sistematika->catatan_penyempurnaan->render() 
+                    : $sistematika->catatan_penyempurnaan,
+                'masterBab' => $sistematika->masterBab,
+                'user' => $sistematika->user,
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Item sistematika berhasil ditambahkan',
-                'data' => $sistematika
+                'data' => $data
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -314,10 +334,20 @@ class HasilFasilitasiController extends Controller
 
             $urusan->load('masterUrusan');
 
+            // Convert to array with rendered rich text
+            $data = [
+                'id' => $urusan->id,
+                'master_urusan_id' => $urusan->master_urusan_id,
+                'catatan_masukan' => is_object($urusan->catatan_masukan) && method_exists($urusan->catatan_masukan, 'render') 
+                    ? $urusan->catatan_masukan->render() 
+                    : $urusan->catatan_masukan,
+                'masterUrusan' => $urusan->masterUrusan,
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Item urusan berhasil ditambahkan',
-                'data' => $urusan
+                'data' => $data
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -372,16 +402,18 @@ class HasilFasilitasiController extends Controller
                 ->orderBy('master_bab_id')
                 ->orderBy('id')
                 ->get();
-            $urusan = $hasilFasilitasi->hasilUrusan()->with('masterUrusan')->orderBy('id')->get();
 
-            // Create Word document content
-            $content = $this->generateDocumentContent($permohonan, $sistematika, $urusan);
+            $urusan = $hasilFasilitasi->hasilUrusan()
+                ->with('masterUrusan')
+                ->orderBy('id')
+                ->get();
+
+            // Generate document using service
+            $content = $this->documentService->generateWordDocument($permohonan, $sistematika, $urusan);
 
             // Save to file
             $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
-            $filepath = 'hasil-fasilitasi/' . $filename;
-
-            Storage::disk('public')->put($filepath, $content);
+            $filepath = $this->documentService->saveDocument($content, $filename);
 
             // Update draft_file in hasil_fasilitasi
             $hasilFasilitasi->update([
@@ -389,157 +421,15 @@ class HasilFasilitasiController extends Controller
                 'updated_by' => Auth::id()
             ]);
 
-            return response()->download(storage_path('app/public/' . $filepath), $filename, [
-                'Content-Type' => 'application/msword'
-            ]);
+            return response()->download(
+                $this->documentService->getStoragePath($filepath),
+                $filename,
+                ['Content-Type' => 'application/msword']
+            );
         } catch (\Exception $e) {
             Log::error('Error generating hasil fasilitasi: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal generate dokumen: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Generate HTML content for Word document
-     */
-    private function generateDocumentContent($permohonan, $sistematika, $urusan)
-    {
-        $kabkota = $permohonan->kabupatenKota->nama;
-        $tahun = date('Y');
-
-        $html = '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.5; }
-        h1 { font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 20px; }
-        h2 { font-size: 13pt; font-weight: bold; margin-top: 20px; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table, th, td { border: 1px solid black; }
-        th, td { padding: 8px; vertical-align: top; }
-        th { background-color: #f0f0f0; font-weight: bold; text-align: center; }
-        .no-col { width: 5%; text-align: center; }
-        .title-col { width: 25%; }
-        .content-col { width: 70%; }
-    </style>
-</head>
-<body>
-    <h1>HASIL FASILITASI<br>RANCANGAN AKHIR RKPD ' . strtoupper($kabkota) . ' TAHUN ' . $tahun . '</h1>
-    
-    <h2>I. Sistematika dan Substansi Rancangan Akhir RKPD</h2>
-    <p>Catatan penyempurnaan terhadap sistematika dan rancangan akhir RKPD ' . $kabkota . ', sebagai berikut:</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th class="no-col">No.</th>
-                <th class="title-col">Bab/Sub Bab</th>
-                <th class="content-col">Catatan Penyempurnaan</th>
-            </tr>
-        </thead>
-        <tbody>';
-
-        if ($sistematika->count() > 0) {
-            $counter = 1;
-            $currentBabId = null;
-
-            // Group items by bab and sub_bab
-            $groupedItems = [];
-            foreach ($sistematika as $item) {
-                $babId = $item->master_bab_id;
-                $subBab = $item->sub_bab ?: ($item->masterBab->nama_bab ?? '-');
-                $key = $babId . '|' . $subBab;
-
-                if (!isset($groupedItems[$key])) {
-                    $groupedItems[$key] = [
-                        'bab_id' => $babId,
-                        'bab_nama' => $item->masterBab->nama_bab ?? '-',
-                        'sub_bab' => $subBab,
-                        'catatan' => []
-                    ];
-                }
-                $groupedItems[$key]['catatan'][] = $item->catatan_penyempurnaan;
-            }
-
-            foreach ($groupedItems as $groupedItem) {
-                // Jika bab berubah, tampilkan header bab
-                if ($currentBabId !== $groupedItem['bab_id']) {
-                    $html .= '<tr>
-                        <td class="no-col" style="background-color: #e8f4f8;"></td>
-                        <td colspan="2" style="background-color: #e8f4f8;"><strong>' . htmlspecialchars($groupedItem['bab_nama']) . '</strong></td>
-                    </tr>';
-                    $currentBabId = $groupedItem['bab_id'];
-                }
-
-                // Gabungkan catatan dengan numbering
-                $catatanGabungan = '';
-                foreach ($groupedItem['catatan'] as $index => $catatan) {
-                    $catatanGabungan .= ($index + 1) . '. ' . nl2br(htmlspecialchars($catatan));
-                    if ($index < count($groupedItem['catatan']) - 1) {
-                        $catatanGabungan .= '<br><br>';
-                    }
-                }
-
-                $html .= '<tr>
-                    <td class="no-col">' . $counter . '</td>
-                    <td>' . htmlspecialchars($groupedItem['sub_bab']) . '</td>
-                    <td>' . $catatanGabungan . '</td>
-                </tr>';
-
-                $counter++;
-            }
-        } else {
-            $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
-        }
-
-        $html .= '</tbody>
-    </table>
-    
-    <h2>II. Masukan terkait penyelenggaraan urusan Pemerintah Daerah</h2>
-    <p>Masukan terkait penyelenggaraan urusan Pemerintah Daerah sebagai berikut:</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th class="no-col">No.</th>
-                <th class="content-col">Catatan Masukan/ Saran</th>
-            </tr>
-        </thead>
-        <tbody>';
-
-        if ($urusan->count() > 0) {
-            $currentUrusan = null;
-            $urusanIndex = 0;
-            $itemIndex = 0;
-
-            foreach ($urusan as $item) {
-                if ($currentUrusan !== $item->masterUrusan->nama) {
-                    $currentUrusan = $item->masterUrusan->nama;
-                    $urusanIndex++;
-                    $itemIndex = 0;
-
-                    $html .= '<tr>
-                        <td class="no-col">' . $urusanIndex . '</td>
-                        <td><strong>Urusan ' . htmlspecialchars($currentUrusan) . '</strong></td>
-                    </tr>';
-                }
-
-                $itemIndex++;
-                $html .= '<tr>
-                    <td class="no-col">' . $itemIndex . '.</td>
-                    <td>' . nl2br(htmlspecialchars($item->catatan_masukan)) . '</td>
-                </tr>';
-            }
-        } else {
-            $html .= '<tr><td colspan="2" style="text-align: center; font-style: italic;">Tidak ada catatan masukan</td></tr>';
-        }
-
-        $html .= '</tbody>
-    </table>
-</body>
-</html>';
-
-        return $html;
     }
 
     /**
