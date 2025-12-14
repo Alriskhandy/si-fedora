@@ -337,6 +337,26 @@
                                     @enderror
                                 </div>
 
+                                <!-- Koordinator Fasilitator -->
+                                <div class="mb-3">
+                                    <label class="form-label" for="koordinator_fasilitator_id">Koordinator Fasilitator <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select @error('koordinator_fasilitator_id') is-invalid @enderror"
+                                        id="koordinator_fasilitator_id" name="koordinator_fasilitator_id" required>
+                                        <option value="">Pilih Koordinator</option>
+                                        @foreach ($fasilitators as $fasilitator)
+                                            <option value="{{ $fasilitator->id }}"
+                                                {{ old('koordinator_fasilitator_id') == $fasilitator->id ? 'selected' : '' }}>
+                                                {{ $fasilitator->name }} - {{ $fasilitator->email }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('koordinator_fasilitator_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Koordinator dapat mengedit/hapus masukan semua anggota dan generate dokumen</small>
+                                </div>
+
                                 <!-- Anggota Fasilitator -->
                                 <div class="mb-3">
                                     <label class="form-label">Anggota Fasilitator <span
@@ -474,6 +494,7 @@
                     document.getElementById('tahun').value = data.tahun;
                     document.getElementById('nomor_surat').value = data.nomor_surat || '';
                     document.getElementById('verifikator_id').value = data.verifikator_id || '';
+                    document.getElementById('koordinator_fasilitator_id').value = data.koordinator_fasilitator_id || '';
                     document.getElementById('assigned_from').value = data.assigned_from || '';
                     document.getElementById('assigned_until').value = data.assigned_until || '';
 
@@ -585,6 +606,7 @@
             document.getElementById('tahun').value = '{{ date('Y') }}';
             document.getElementById('nomor_surat').value = '';
             document.getElementById('verifikator_id').value = '';
+            document.getElementById('koordinator_fasilitator_id').value = '';
             document.getElementById('assigned_from').value = '';
             document.getElementById('assigned_until').value = '';
             document.getElementById('file_sk').value = '';

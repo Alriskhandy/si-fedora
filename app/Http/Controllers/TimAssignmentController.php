@@ -89,6 +89,7 @@ class TimAssignmentController extends Controller
             'nomor_surat' => 'nullable|string|max:255',
             'file_sk' => 'nullable|file|mimes:pdf|max:5120',
             'verifikator_id' => 'required|exists:users,id',
+            'koordinator_fasilitator_id' => 'required|exists:users,id',
             'evaluator_ids' => 'required|array|min:1',
             'evaluator_ids.*' => 'exists:users,id',
             'assigned_from' => 'nullable|date',
@@ -101,6 +102,7 @@ class TimAssignmentController extends Controller
             'file_sk.mimes' => 'File SK harus berformat PDF.',
             'file_sk.max' => 'Ukuran file SK maksimal 2MB.',
             'verifikator_id.required' => 'PIC / Verifikator wajib dipilih.',
+            'koordinator_fasilitator_id.required' => 'Koordinator Fasilitator wajib dipilih.',
             'evaluator_ids.required' => 'Minimal 1 Anggota Fasilitator wajib dipilih.',
             'evaluator_ids.min' => 'Minimal 1 Anggota Fasilitator wajib dipilih.',
             'assigned_until.after' => 'Tanggal akhir harus setelah tanggal mulai.',
@@ -169,19 +171,38 @@ class TimAssignmentController extends Controller
                 'assigned_until' => $validated['assigned_until'] ?? null,
             ]);
 
-            // 2. Create assignments for Fasilitators (Anggota)
+            // 2. Create assignments for Fasilitators
             foreach ($validated['evaluator_ids'] as $evaluatorId) {
-                // Skip if it's the same as PIC
+                // Skip if it's the same as Verifikator
                 if ($evaluatorId == $validated['verifikator_id']) {
                     continue;
                 }
+
+                // Check if this is the koordinator fasilitator
+                $isPicFasilitator = ($evaluatorId == $validated['koordinator_fasilitator_id']);
 
                 UserKabkotaAssignment::create([
                     'user_id' => $evaluatorId,
                     'kabupaten_kota_id' => $kabkotaId,
                     'jenis_dokumen_id' => $jenisDokumenId,
                     'role_type' => 'fasilitator',
-                    'is_pic' => false,
+                    'is_pic' => $isPicFasilitator,
+                    'tahun' => $tahun,
+                    'nomor_surat' => $validated['nomor_surat'] ?? null,
+                    'file_sk' => $fileSk,
+                    'assigned_from' => $validated['assigned_from'] ?? null,
+                    'assigned_until' => $validated['assigned_until'] ?? null,
+                ]);
+            }
+
+            // Create koordinator fasilitator if not in evaluator list
+            if (!in_array($validated['koordinator_fasilitator_id'], $validated['evaluator_ids'])) {
+                UserKabkotaAssignment::create([
+                    'user_id' => $validated['koordinator_fasilitator_id'],
+                    'kabupaten_kota_id' => $kabkotaId,
+                    'jenis_dokumen_id' => $jenisDokumenId,
+                    'role_type' => 'fasilitator',
+                    'is_pic' => true,
                     'tahun' => $tahun,
                     'nomor_surat' => $validated['nomor_surat'] ?? null,
                     'file_sk' => $fileSk,
@@ -225,8 +246,11 @@ class TimAssignmentController extends Controller
                     })
                     ->get();
 
-                $pic = $timMembers->where('is_pic', true)->first();
-                $evaluators = $timMembers->where('is_pic', false)->pluck('user_id')->toArray();
+                $pic = $timMembers->where('is_pic', true)->where('role_type', 'verifikator')->first();
+                $koordinatorFasilitator = $timMembers->where('role_type', 'fasilitator')->where('is_pic', true)->first();
+                $evaluators = $timMembers->where('role_type', 'fasilitator')
+                    ->pluck('user_id')
+                    ->toArray();
 
                 return response()->json([
                     'id' => $timAssignment->id,
@@ -236,6 +260,7 @@ class TimAssignmentController extends Controller
                     'nomor_surat' => $timAssignment->nomor_surat,
                     'file_sk' => $timAssignment->file_sk,
                     'verifikator_id' => $pic ? $pic->user_id : null,
+                    'koordinator_fasilitator_id' => $koordinatorFasilitator ? $koordinatorFasilitator->user_id : null,
                     'evaluator_ids' => $evaluators,
                     'role_type' => $timAssignment->role_type,
                     'is_pic' => $timAssignment->is_pic,
@@ -274,12 +299,14 @@ class TimAssignmentController extends Controller
             'nomor_surat' => 'nullable|string|max:255',
             'file_sk' => 'nullable|file|mimes:pdf|max:10240',
             'verifikator_id' => 'required|exists:users,id',
+            'koordinator_fasilitator_id' => 'required|exists:users,id',
             'evaluator_ids' => 'required|array|min:1',
             'evaluator_ids.*' => 'exists:users,id',
             'assigned_from' => 'nullable|date',
             'assigned_until' => 'nullable|date|after:assigned_from',
         ], [
             'verifikator_id.required' => 'PIC / Verifikator wajib dipilih.',
+            'koordinator_fasilitator_id.required' => 'Koordinator Fasilitator wajib dipilih.',
             'evaluator_ids.required' => 'Minimal 1 Anggota Fasilitator wajib dipilih.',
             'evaluator_ids.min' => 'Minimal 1 Anggota Fasilitator wajib dipilih.',
         ]);
@@ -341,17 +368,36 @@ class TimAssignmentController extends Controller
 
             // Create new fasilitator assignments
             foreach ($validated['evaluator_ids'] as $evaluatorId) {
-                // Skip if same as PIC
+                // Skip if same as Verifikator
                 if ($evaluatorId == $validated['verifikator_id']) {
                     continue;
                 }
+
+                // Check if this is the koordinator fasilitator
+                $isPicFasilitator = ($evaluatorId == $validated['koordinator_fasilitator_id']);
 
                 UserKabkotaAssignment::create([
                     'user_id' => $evaluatorId,
                     'kabupaten_kota_id' => $validated['kabupaten_kota_id'],
                     'jenis_dokumen_id' => $validated['jenis_dokumen_id'] ?? null,
                     'role_type' => 'fasilitator',
-                    'is_pic' => false,
+                    'is_pic' => $isPicFasilitator,
+                    'tahun' => $validated['tahun'],
+                    'nomor_surat' => $validated['nomor_surat'] ?? null,
+                    'file_sk' => $fileSk,
+                    'assigned_from' => $validated['assigned_from'] ?? null,
+                    'assigned_until' => $validated['assigned_until'] ?? null,
+                ]);
+            }
+
+            // Create koordinator fasilitator if not in evaluator list
+            if (!in_array($validated['koordinator_fasilitator_id'], $validated['evaluator_ids'])) {
+                UserKabkotaAssignment::create([
+                    'user_id' => $validated['koordinator_fasilitator_id'],
+                    'kabupaten_kota_id' => $validated['kabupaten_kota_id'],
+                    'jenis_dokumen_id' => $validated['jenis_dokumen_id'] ?? null,
+                    'role_type' => 'fasilitator',
+                    'is_pic' => true,
                     'tahun' => $validated['tahun'],
                     'nomor_surat' => $validated['nomor_surat'] ?? null,
                     'file_sk' => $fileSk,

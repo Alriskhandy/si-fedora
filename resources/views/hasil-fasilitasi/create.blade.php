@@ -12,15 +12,26 @@
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Input Hasil Fasilitasi</h4>
+            <h4 class="fw-bold">
+                Input Hasil Fasilitasi
+                @if($isKoordinator)
+                    <span class="badge bg-success">Koordinator</span>
+                @endif
+            </h4>
             <div>
-                @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
-                    <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-primary me-2">
+                @if ($isKoordinator && $hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
+                    <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-primary me-2" 
+                       data-bs-toggle="tooltip" title="Hanya koordinator (fasilitator dengan is_pic) yang dapat generate dokumen">
                         <i class="bx bxs-file-doc"></i> Generate Word
                     </a>
-                    <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-danger me-2">
+                    <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-danger me-2"
+                       data-bs-toggle="tooltip" title="Hanya koordinator (fasilitator dengan is_pic) yang dapat generate dokumen">
                         <i class="bx bxs-file-pdf"></i> Generate PDF
                     </a>
+                @elseif (!$isKoordinator && $hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
+                    <span class="text-muted me-2" data-bs-toggle="tooltip" title="Hanya koordinator tim yang dapat generate dokumen">
+                        <i class="bx bx-info-circle"></i> Generate dokumen: Hanya Koordinator
+                    </span>
                 @endif
                 <a href="{{ route('hasil-fasilitasi.index') }}" class="btn btn-secondary">
                     <i class="bx bx-arrow-back"></i> Kembali
@@ -54,14 +65,60 @@
                             <dt class="col-sm-5">Kabupaten/Kota</dt>
                             <dd class="col-sm-7">{{ $permohonan->kabupatenKota->nama }}</dd>
 
+                            <dt class="col-sm-5">Jenis Dokumen</dt>
+                            <dd class="col-sm-7"><span class="badge bg-primary">{{ strtoupper($permohonan->jenis_dokumen) }}</span></dd>
+
+                            <dt class="col-sm-5">Tahun</dt>
+                            <dd class="col-sm-7">{{ $permohonan->tahun }}</dd>
+
                             <dt class="col-sm-5">No. Permohonan</dt>
                             <dd class="col-sm-7">{{ $permohonan->no_permohonan }}</dd>
-
-                            <dt class="col-sm-5">Tanggal</dt>
-                            <dd class="col-sm-7">{{ $permohonan->created_at->format('d M Y') }}</dd>
                         </dl>
                     </div>
                 </div>
+
+                <!-- Informasi Tim -->
+                @if($timInfo)
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bx bx-group"></i> Tim Fasilitasi</h5>
+                        </div>
+                        <div class="card-body">
+                            @if($timInfo['verifikator'])
+                                <div class="mb-2">
+                                    <small class="text-muted">PIC Verifikator:</small>
+                                    <div><strong>{{ $timInfo['verifikator']->user->name }}</strong></div>
+                                </div>
+                            @endif
+                            
+                            @if($timInfo['koordinator'])
+                                <div class="mb-2">
+                                    <small class="text-muted">Koordinator Fasilitator:</small>
+                                    <div>
+                                        <strong class="text-primary">{{ $timInfo['koordinator']->user->name }}</strong>
+                                        @if($timInfo['koordinator']->user_id == Auth::id())
+                                            <span class="badge bg-success">Anda</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            @if($timInfo['anggota']->count() > 0)
+                                <div class="mb-0">
+                                    <small class="text-muted">Anggota Fasilitator:</small>
+                                    @foreach($timInfo['anggota'] as $anggota)
+                                        <div>
+                                            {{ $anggota->user->name }}
+                                            @if($anggota->user_id == Auth::id())
+                                                <span class="badge bg-success">Anda</span>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <div class="col-md-4">
@@ -219,11 +276,15 @@
                                                                     class="text-muted">{{ $item->user->name ?? '-' }}</small>
                                                             </td>
                                                             <td class="text-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-danger btn-hapus-sistematika"
-                                                                    data-id="{{ $item->id }}">
-                                                                    <i class="bx bx-trash"></i>
-                                                                </button>
+                                                                @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-danger btn-hapus-sistematika"
+                                                                        data-id="{{ $item->id }}">
+                                                                        <i class="bx bx-trash"></i>
+                                                                    </button>
+                                                                @else
+                                                                    <span class="text-muted small">-</span>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -291,7 +352,8 @@
                                                     <tr>
                                                         <th width="5%">No</th>
                                                         <th width="25%">Urusan Pemerintahan</th>
-                                                        <th width="60%">Catatan Masukan / Saran</th>
+                                                        <th width="45%">Catatan Masukan / Saran</th>
+                                                        <th width="15%">Dibuat Oleh</th>
                                                         <th width="10%">Aksi</th>
                                                     </tr>
                                                 </thead>
@@ -303,12 +365,17 @@
                                                                     class="text-primary">{{ $item->masterUrusan->urutan }}.
                                                                     {{ $item->masterUrusan->nama_urusan }}</strong></td>
                                                             <td>{!! is_string($item->catatan_masukan) ? $item->catatan_masukan : $item->catatan_masukan->render() !!}</td>
+                                                            <td>{{ $item->user->name ?? '-' }}</td>
                                                             <td class="text-center">
-                                                                <button type="button"
-                                                                    class="btn btn-sm btn-danger btn-hapus-urusan"
-                                                                    data-id="{{ $item->id }}">
-                                                                    <i class="bx bx-trash"></i>
-                                                                </button>
+                                                                @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-danger btn-hapus-urusan"
+                                                                        data-id="{{ $item->id }}">
+                                                                        <i class="bx bx-trash"></i>
+                                                                    </button>
+                                                                @else
+                                                                    <span class="text-muted small">-</span>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -378,6 +445,8 @@
 
         const permohonanId = {{ $permohonan->id }};
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const isKoordinator = {{ $isKoordinator ? 'true' : 'false' }};
+        const currentUserId = {{ Auth::id() }};
 
         // Submit Form Sistematika
         document.getElementById('formSistematika').addEventListener('submit', async function(e) {
@@ -450,6 +519,14 @@
                         displayBabSubBab += `<br><small class="text-muted">${subBab}</small>`;
                     }
 
+                    // Check if user can delete (koordinator or owner)
+                    const canDelete = isKoordinator || data.data.user_id === currentUserId;
+                    const deleteButton = canDelete 
+                        ? `<button type="button" class="btn btn-sm btn-danger btn-hapus-sistematika" data-id="${data.data.id}">
+                                <i class="bx bx-trash"></i>
+                            </button>`
+                        : `<span class="text-muted small">-</span>`;
+
                     const newRow = `
                         <tr class="sistematika-item" data-id="${data.data.id}">
                             <td class="text-center">${rowCount}</td>
@@ -457,9 +534,7 @@
                             <td>${data.data.catatan_penyempurnaan}</td>
                             <td><small class="text-muted">${data.data.user ? data.data.user.name : '-'}</small></td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-danger btn-hapus-sistematika" data-id="${data.data.id}">
-                                    <i class="bx bx-trash"></i>
-                                </button>
+                                ${deleteButton}
                             </td>
                         </tr>
                     `;
@@ -524,7 +599,8 @@
                                         <tr>
                                             <th width="5%">No</th>
                                             <th width="25%">Urusan Pemerintahan</th>
-                                            <th width="60%">Catatan Masukan / Saran</th>
+                                            <th width="45%">Catatan Masukan / Saran</th>
+                                            <th width="15%">Dibuat Oleh</th>
                                             <th width="10%">Aksi</th>
                                         </tr>
                                     </thead>
@@ -537,15 +613,22 @@
                     const tbody = document.getElementById('tableUrusan') || listUrusan.querySelector('tbody');
                     const rowCount = tbody.querySelectorAll('tr').length + 1;
 
+                    // Check if user can delete (koordinator or owner)
+                    const canDelete = isKoordinator || data.data.user_id === currentUserId;
+                    const deleteButton = canDelete 
+                        ? `<button type="button" class="btn btn-sm btn-danger btn-hapus-urusan" data-id="${data.data.id}">
+                                <i class="bx bx-trash"></i>
+                            </button>`
+                        : `<span class="text-muted small">-</span>`;
+
                     const newRow = `
                         <tr class="urusan-item" data-id="${data.data.id}">
                             <td class="text-center">${rowCount}</td>
                             <td><strong class="text-primary">${namaUrusan}</strong></td>
                             <td>${data.data.catatan_masukan}</td>
+                            <td><small class="text-muted">${data.data.user ? data.data.user.name : '-'}</small></td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-danger btn-hapus-urusan" data-id="${data.data.id}">
-                                    <i class="bx bx-trash"></i>
-                                </button>
+                                ${deleteButton}
                             </td>
                         </tr>
                     `;

@@ -9,6 +9,7 @@ use App\Models\HasilFasilitasiSistematika;
 use App\Models\MasterUrusan;
 use App\Models\MasterBab;
 use App\Models\MasterJenisDokumen;
+use App\Models\UserKabkotaAssignment;
 use App\Services\HasilFasilitasiDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,17 +28,138 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
+     * Check if user is koordinator for this permohonan
+     */
+    private function isKoordinator(Permohonan $permohonan)
+    {
+        // Get kabupaten_kota_id - handle both field names
+        $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
+        
+        // Get jenis_dokumen_id from permohonan
+        $jenisDokumenId = null;
+        if ($permohonan->jenis_dokumen) {
+            // Case-insensitive search
+            $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($permohonan->jenis_dokumen)])->first();
+            $jenisDokumenId = $jenisDokumen ? $jenisDokumen->id : null;
+            
+            Log::info('Searching Jenis Dokumen', [
+                'permohonan_jenis_dokumen' => $permohonan->jenis_dokumen,
+                'found_jenis_dokumen' => $jenisDokumen ? $jenisDokumen->nama : 'NOT FOUND',
+                'jenis_dokumen_id' => $jenisDokumenId
+            ]);
+        }
+        
+        // Get assignment for debugging
+        $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('kabupaten_kota_id', $kabkotaId)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->where('role_type', 'fasilitator')
+            ->where('is_pic', true)
+            ->where('is_active', true)
+            ->first();
+        
+        // Check if user is fasilitator with is_pic = true (koordinator) for this specific team
+        $isKoord = $assignment !== null;
+            
+        Log::info('isKoordinator Check', [
+            'user_id' => Auth::id(),
+            'permohonan_id' => $permohonan->id,
+            'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
+            'kab_kota_id' => $permohonan->kab_kota_id,
+            'used_kabkota_id' => $kabkotaId,
+            'jenis_dokumen' => $permohonan->jenis_dokumen,
+            'jenis_dokumen_id' => $jenisDokumenId,
+            'tahun' => $permohonan->tahun,
+            'assignment_found' => $assignment ? 'YES' : 'NO',
+            'result' => $isKoord
+        ]);
+        
+        return $isKoord;
+    }
+
+    /**
+     * Check if user is member of this permohonan's tim (fasilitator or verifikator)
+     */
+    private function isTimMember(Permohonan $permohonan)
+    {
+        // Get kabupaten_kota_id - handle both field names
+        $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
+        
+        // Get jenis_dokumen_id from permohonan
+        $jenisDokumenId = null;
+        if ($permohonan->jenis_dokumen) {
+            // Case-insensitive search
+            $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($permohonan->jenis_dokumen)])->first();
+            $jenisDokumenId = $jenisDokumen ? $jenisDokumen->id : null;
+        }
+        
+        // Get assignment for debugging
+        $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('kabupaten_kota_id', $kabkotaId)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->whereIn('role_type', ['fasilitator', 'verifikator'])
+            ->where('is_active', true)
+            ->first();
+        
+        $isMember = $assignment !== null;
+        
+        Log::info('isTimMember Check', [
+            'user_id' => Auth::id(),
+            'permohonan_id' => $permohonan->id,
+            'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
+            'kab_kota_id' => $permohonan->kab_kota_id,
+            'used_kabkota_id' => $kabkotaId,
+            'jenis_dokumen' => $permohonan->jenis_dokumen,
+            'jenis_dokumen_id' => $jenisDokumenId,
+            'tahun' => $permohonan->tahun,
+            'assignment_found' => $assignment ? 'YES (role: ' . $assignment->role_type . ')' : 'NO',
+            'result' => $isMember
+        ]);
+        
+        // Check if user is member of this specific team
+        return $isMember;
+    }
+
+    /**
+     * Check if user can edit/delete an item (owner or koordinator)
+     */
+    private function canManageItem($item, Permohonan $permohonan)
+    {
+        return $item->user_id == Auth::id() || $this->isKoordinator($permohonan);
+    }
+
+    /**
      * Tampilkan daftar permohonan untuk input hasil fasilitasi (Fasilitator)
      */
     public function index(Request $request)
     {
+        // Get user's tim assignments
+        $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('role_type', 'fasilitator')
+            ->where('is_active', true)
+            ->get();
+
         $query = Permohonan::with(['kabupatenKota', 'undanganPelaksanaan', 'hasilFasilitasi'])
-            ->whereHas('undanganPelaksanaan', function ($q) {
-                $q->where('status', 'terkirim')
-                    ->whereHas('penerima', function ($penerima) {
-                        $penerima->where('user_id', Auth::id())
-                            ->where('jenis_penerima', 'fasilitator');
+            ->where(function($q) use ($userAssignments) {
+                foreach ($userAssignments as $assignment) {
+                    // Get jenis_dokumen name from id
+                    $jenisDokumen = MasterJenisDokumen::find($assignment->jenis_dokumen_id);
+                    
+                    $q->orWhere(function($subQ) use ($assignment, $jenisDokumen) {
+                        // Check both field names for kabupaten_kota_id
+                        $subQ->where(function($kabQ) use ($assignment) {
+                            $kabQ->where('kabupaten_kota_id', $assignment->kabupaten_kota_id)
+                                ->orWhere('kab_kota_id', $assignment->kabupaten_kota_id);
+                        });
+                        $subQ->where('tahun', $assignment->tahun);
+                        
+                        if ($jenisDokumen) {
+                            $subQ->where('jenis_dokumen', $jenisDokumen->nama);
+                        }
                     });
+                }
             });
 
         // Filter pencarian
@@ -68,6 +190,11 @@ class HasilFasilitasiController extends Controller
      */
     public function create(Permohonan $permohonan)
     {
+        // Check if user is member of this tim
+        if (!$this->isTimMember($permohonan)) {
+            abort(403, 'Anda bukan anggota tim untuk permohonan ini.');
+        }
+
         // Jika belum ada hasil fasilitasi, buat otomatis
         if (!$permohonan->hasilFasilitasi) {
             HasilFasilitasi::create([
@@ -98,9 +225,40 @@ class HasilFasilitasiController extends Controller
 
         // Load hasil fasilitasi dengan relasi
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
-        $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.user', 'hasilUrusan.masterUrusan');
+        $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.user', 'hasilUrusan.masterUrusan', 'hasilUrusan.user');
 
-        return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi'));
+        // Check if current user is koordinator (fasilitator dengan is_pic=true)
+        $isKoordinator = $this->isKoordinator($permohonan);
+
+        // Get tim info untuk ditampilkan
+        $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
+        $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($permohonan->jenis_dokumen)])->first();
+        
+        $timInfo = null;
+        if ($jenisDokumen && $kabkotaId) {
+            $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
+                ->where('jenis_dokumen_id', $jenisDokumen->id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->with('user')
+                ->get();
+            
+            $timInfo = [
+                'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
+                'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
+                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values()
+            ];
+        }
+
+        // Debug log
+        Log::info('HasilFasilitasi Create', [
+            'user_id' => Auth::id(),
+            'permohonan_id' => $permohonan->id,
+            'isKoordinator' => $isKoordinator,
+            'tim_found' => $timInfo !== null
+        ]);
+
+        return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'timInfo'));
     }
 
     /**
@@ -223,6 +381,11 @@ class HasilFasilitasiController extends Controller
      */
     public function storeSistematika(Request $request, Permohonan $permohonan)
     {
+        // Check if user is member of this tim
+        if (!$this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
         $request->validate([
             'master_bab_id' => 'required|exists:master_bab,id',
             'sub_bab' => 'nullable|string',
@@ -252,6 +415,7 @@ class HasilFasilitasiController extends Controller
                 'id' => $sistematika->id,
                 'master_bab_id' => $sistematika->master_bab_id,
                 'sub_bab' => $sistematika->sub_bab,
+                'user_id' => $sistematika->user_id,
                 'catatan_penyempurnaan' => is_object($sistematika->catatan_penyempurnaan) && method_exists($sistematika->catatan_penyempurnaan, 'render') 
                     ? $sistematika->catatan_penyempurnaan->render() 
                     : $sistematika->catatan_penyempurnaan,
@@ -289,6 +453,11 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Item tidak ditemukan'], 404);
             }
 
+            // Check authorization: owner or koordinator
+            if (!$this->canManageItem($sistematika, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
             $sistematika->delete();
 
             return response()->json([
@@ -305,6 +474,11 @@ class HasilFasilitasiController extends Controller
      */
     public function storeUrusan(Request $request, Permohonan $permohonan)
     {
+        // Check if user is member of this tim
+        if (!$this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
         $request->validate([
             'master_urusan_id' => 'required|exists:master_urusan,id',
             'catatan_masukan' => 'required|string',
@@ -330,18 +504,21 @@ class HasilFasilitasiController extends Controller
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
                 'master_urusan_id' => $request->master_urusan_id,
                 'catatan_masukan' => $request->catatan_masukan,
+                'user_id' => Auth::id(),
             ]);
 
-            $urusan->load('masterUrusan');
+            $urusan->load('masterUrusan', 'user');
 
             // Convert to array with rendered rich text
             $data = [
                 'id' => $urusan->id,
                 'master_urusan_id' => $urusan->master_urusan_id,
+                'user_id' => $urusan->user_id,
                 'catatan_masukan' => is_object($urusan->catatan_masukan) && method_exists($urusan->catatan_masukan, 'render') 
                     ? $urusan->catatan_masukan->render() 
                     : $urusan->catatan_masukan,
                 'masterUrusan' => $urusan->masterUrusan,
+                'user' => $urusan->user,
             ];
 
             return response()->json([
@@ -374,6 +551,11 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Item tidak ditemukan'], 404);
             }
 
+            // Check authorization: owner or koordinator
+            if (!$this->canManageItem($urusan, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
             $urusan->delete();
 
             return response()->json([
@@ -390,6 +572,11 @@ class HasilFasilitasiController extends Controller
      */
     public function generate(Permohonan $permohonan)
     {
+        // Only koordinator can generate documents
+        if (!$this->isKoordinator($permohonan)) {
+            return redirect()->back()->with('error', 'Hanya koordinator yang dapat generate dokumen');
+        }
+
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
@@ -437,6 +624,11 @@ class HasilFasilitasiController extends Controller
      */
     public function generatePdf(Permohonan $permohonan)
     {
+        // Only koordinator can generate documents
+        if (!$this->isKoordinator($permohonan)) {
+            return redirect()->back()->with('error', 'Hanya koordinator yang dapat generate dokumen');
+        }
+
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
