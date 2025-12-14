@@ -142,15 +142,27 @@
                                         <form id="formSistematika">
                                             @csrf
                                             <div class="row">
-                                                <div class="col-md-4">
+                                                <div class="col-md-3">
                                                     <div class="mb-3">
-                                                        <label class="form-label">Bab / Sub Bab <span
+                                                        <label class="form-label">Pilih Bab <span
                                                                 class="text-danger">*</span></label>
-                                                        <input type="text" class="form-control" id="bab_sub_bab"
-                                                            placeholder="Contoh: BAB I, BAB II.1" required>
+                                                        <select class="form-select" id="master_bab_id" required>
+                                                            <option value="">-- Pilih Bab --</option>
+                                                            @foreach ($masterBabList as $bab)
+                                                                <option value="{{ $bab->id }}">{{ $bab->nama_bab }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-8">
+                                                <div class="col-md-3">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Sub Bab (Opsional)</label>
+                                                        <input type="text" class="form-control" id="sub_bab"
+                                                            placeholder="Contoh: 1.2 Dasar Hukum">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
                                                     <div class="mb-3">
                                                         <label class="form-label">Catatan Penyempurnaan <span
                                                                 class="text-danger">*</span></label>
@@ -174,7 +186,8 @@
                                                     <tr>
                                                         <th width="5%">No</th>
                                                         <th width="20%">Bab / Sub Bab</th>
-                                                        <th width="65%">Catatan Penyempurnaan</th>
+                                                        <th width="50%">Catatan Penyempurnaan</th>
+                                                        <th width="15%">Dibuat Oleh</th>
                                                         <th width="10%">Aksi</th>
                                                     </tr>
                                                 </thead>
@@ -182,10 +195,18 @@
                                                     @foreach ($hasilFasilitasi->hasilSistematika as $item)
                                                         <tr class="sistematika-item" data-id="{{ $item->id }}">
                                                             <td class="text-center">{{ $loop->iteration }}</td>
-                                                            <td><strong
-                                                                    class="text-primary">{{ $item->bab_sub_bab }}</strong>
+                                                            <td>
+                                                                <strong
+                                                                    class="text-primary">{{ $item->masterBab->nama_bab ?? '-' }}</strong>
+                                                                @if ($item->sub_bab)
+                                                                    <br><small
+                                                                        class="text-muted">{{ $item->sub_bab }}</small>
+                                                                @endif
                                                             </td>
                                                             <td>{{ $item->catatan_penyempurnaan }}</td>
+                                                            <td><small
+                                                                    class="text-muted">{{ $item->user->name ?? '-' }}</small>
+                                                            </td>
                                                             <td class="text-center">
                                                                 <button type="button"
                                                                     class="btn btn-sm btn-danger btn-hapus-sistematika"
@@ -308,8 +329,14 @@
         document.getElementById('formSistematika').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const babSubBab = document.getElementById('bab_sub_bab').value;
+            const masterBabId = document.getElementById('master_bab_id').value;
+            const subBab = document.getElementById('sub_bab').value;
             const catatanPenyempurnaan = document.getElementById('catatan_penyempurnaan').value;
+
+            // Ambil nama bab dari dropdown
+            const selectElement = document.getElementById('master_bab_id');
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const namaBab = selectedOption.text;
 
             try {
                 const response = await fetch(`/hasil-fasilitasi/${permohonanId}/sistematika`, {
@@ -319,7 +346,8 @@
                         'X-CSRF-TOKEN': csrfToken
                     },
                     body: JSON.stringify({
-                        bab_sub_bab: babSubBab,
+                        master_bab_id: masterBabId,
+                        sub_bab: subBab,
                         catatan_penyempurnaan: catatanPenyempurnaan
                     })
                 });
@@ -344,7 +372,8 @@
                                         <tr>
                                             <th width="5%">No</th>
                                             <th width="20%">Bab / Sub Bab</th>
-                                            <th width="65%">Catatan Penyempurnaan</th>
+                                            <th width="50%">Catatan Penyempurnaan</th>
+                                            <th width="15%">Dibuat Oleh</th>
                                             <th width="10%">Aksi</th>
                                         </tr>
                                     </thead>
@@ -358,11 +387,18 @@
                         'tbody');
                     const rowCount = tbody.querySelectorAll('tr').length + 1;
 
+                    // Format tampilan bab/sub bab
+                    let displayBabSubBab = `<strong class="text-primary">${namaBab}</strong>`;
+                    if (subBab) {
+                        displayBabSubBab += `<br><small class="text-muted">${subBab}</small>`;
+                    }
+
                     const newRow = `
                         <tr class="sistematika-item" data-id="${data.data.id}">
                             <td class="text-center">${rowCount}</td>
-                            <td><strong class="text-primary">${data.data.bab_sub_bab}</strong></td>
+                            <td>${displayBabSubBab}</td>
                             <td>${data.data.catatan_penyempurnaan}</td>
+                            <td><small class="text-muted">${data.data.user ? data.data.user.name : '-'}</small></td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm btn-danger btn-hapus-sistematika" data-id="${data.data.id}">
                                     <i class="bx bx-trash"></i>

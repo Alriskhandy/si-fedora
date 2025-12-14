@@ -48,7 +48,7 @@
                                 <div class="position-relative d-inline-block" style="z-index: 1;">
                                     <div class="rounded-circle d-flex align-items-center justify-content-center {{ $step['completed'] ? 'bg-primary' : 'bg-secondary' }} text-white fw-bold mx-auto mb-3"
                                         style="width: 60px; height: 60px; font-size: 24px;">
-                                        {{ $index + 1 }}
+                                        
                                     </div>
                                 </div>
 

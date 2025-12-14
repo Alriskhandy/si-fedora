@@ -369,7 +369,7 @@
                                     <!-- Nomor Surat -->
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label class="form-label" for="nomor_surat">Nomor Surat</label>
+                                            <label class="form-label" for="nomor_surat">Nomor SK</label>
                                             <input type="text"
                                                 class="form-control @error('nomor_surat') is-invalid @enderror"
                                                 id="nomor_surat" name="nomor_surat" value="{{ old('nomor_surat') }}">
@@ -382,7 +382,7 @@
                                     <!-- Periode -->
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label class="form-label" for="assigned_from">Tanggal Mulai</label>
+                                            <label class="form-label" for="assigned_from">Tanggal SK</label>
                                             <input type="date"
                                                 class="form-control @error('assigned_from') is-invalid @enderror"
                                                 id="assigned_from" name="assigned_from"

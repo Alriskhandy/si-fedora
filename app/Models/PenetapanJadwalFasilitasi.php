@@ -17,6 +17,8 @@ class PenetapanJadwalFasilitasi extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'lokasi',
+        'latitude',
+        'longitude',
         'catatan',
         'ditetapkan_oleh',
         'tanggal_penetapan',
@@ -26,6 +28,8 @@ class PenetapanJadwalFasilitasi extends Model
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
         'tanggal_penetapan' => 'datetime',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     // Relasi

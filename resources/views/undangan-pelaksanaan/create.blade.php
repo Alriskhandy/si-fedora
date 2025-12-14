@@ -112,7 +112,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="file_undangan">File Undangan (PDF)</label>
+                                <label class="form-label" for="file_undangan">File Undangan (PDF) (Opsional)</label>
                                 <input type="file" class="form-control" id="file_undangan" name="file_undangan"
                                     accept=".pdf">
                                 <small class="text-muted">Format: PDF, Maksimal 2MB</small>
@@ -120,59 +120,117 @@
 
                             <hr class="my-4">
 
-                            <h6 class="mb-3">Penerima Undangan <span class="text-danger">*</span></h6>
+                            <h6 class="mb-3">
+                                <i class='bx bx-user-check text-primary'></i> Penerima Undangan (Tim yang Di-assign)
+                            </h6>
 
-                            <div class="mb-3">
-                                <label class="form-label">Verifikator</label>
-                                <div class="border rounded p-3">
-                                    @forelse ($verifikatorList as $verifikator)
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="penerima[]"
-                                                value="{{ $verifikator->id }}" id="ver_{{ $verifikator->id }}"
-                                                {{ in_array($verifikator->id, old('penerima', [])) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="ver_{{ $verifikator->id }}">
-                                                {{ $verifikator->name }} ({{ $verifikator->email }})
-                                            </label>
-                                        </div>
-                                    @empty
-                                        <p class="text-muted mb-0">Tidak ada verifikator tersedia</p>
-                                    @endforelse
+                            @if($verifikatorList->isEmpty() && $fasilitatorList->isEmpty() && $koordinatorList->isEmpty())
+                                <div class="alert alert-warning">
+                                    <i class='bx bx-error-circle'></i>
+                                    <strong>Peringatan:</strong> Belum ada tim FEDORA yang di-assign untuk {{ $permohonan->kabupatenKota->nama }} tahun {{ $permohonan->tahun }}.
+                                    Silakan assign tim terlebih dahulu di menu Tim Assignment.
                                 </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Fasilitator</label>
-                                <div class="border rounded p-3">
-                                    @forelse ($fasilitatorList as $fasilitator)
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="penerima[]"
-                                                value="{{ $fasilitator->id }}" id="fas_{{ $fasilitator->id }}"
-                                                {{ in_array($fasilitator->id, old('penerima', [])) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="fas_{{ $fasilitator->id }}">
-                                                {{ $fasilitator->name }} ({{ $fasilitator->email }})
-                                            </label>
-                                        </div>
-                                    @empty
-                                        <p class="text-muted mb-0">Tidak ada fasilitator tersedia</p>
-                                    @endforelse
+                            @else
+                                <div class="alert alert-info">
+                                    <i class='bx bx-info-circle'></i>
+                                    <small>Tim yang di-assign ke {{ $permohonan->kabupatenKota->nama }} otomatis dipilih.</small>
                                 </div>
-                            </div>
+                            @endif
 
-                            <div class="mb-3">
-                                <label class="form-label">Pemohon ({{ $permohonan->kabupatenKota->nama }})</label>
-                                <div class="border rounded p-3">
-                                    @forelse ($pemohonList as $pemohon)
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="penerima[]"
-                                                value="{{ $pemohon->id }}" id="pem_{{ $pemohon->id }}"
-                                                {{ in_array($pemohon->id, old('penerima', [])) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="pem_{{ $pemohon->id }}">
-                                                {{ $pemohon->name }} ({{ $pemohon->email }})
-                                            </label>
+                            <div class="row">
+                                <!-- Verifikator -->
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        <i class='bx bx-check-shield text-success'></i> Verifikator
+                                    </label>
+                                    <div class="border rounded p-3" style="min-height: 150px; max-height: 300px; overflow-y: auto;">
+                                        @forelse ($verifikatorList as $verifikator)
+                                            @php
+                                                $assignment = $verifikator->kabkotaAssignments->first();
+                                            @endphp
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" name="penerima[]"
+                                                    value="{{ $verifikator->id }}" id="ver_{{ $verifikator->id }}"
+                                                    {{ in_array($verifikator->id, $autoSelectedPenerima) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="ver_{{ $verifikator->id }}">
+                                                    <strong>{{ $verifikator->name }}</strong>
+                                                    @if($assignment && $assignment->is_pic)
+                                                        <span class="badge bg-primary badge-sm">PIC</span>
+                                                    @endif
+                                                    <br>
+                                                    <small class="text-muted">{{ $verifikator->email }}</small>
+                                                    @if($assignment && $assignment->nomor_surat)
+                                                        <br>
+                                                        <small class="text-muted"><i class='bx bx-file'></i> {{ $assignment->nomor_surat }}</small>
+                                                    @endif
+                                                </label>
+                                            </div>
+                                        @empty
+                                            <p class="text-muted mb-0 small"><i class='bx bx-info-circle'></i> Tidak ada verifikator</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+
+                                <!-- Fasilitator -->
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        <i class='bx bx-briefcase text-info'></i> Fasilitator
+                                    </label>
+                                    <div class="border rounded p-3" style="min-height: 150px; max-height: 300px; overflow-y: auto;">
+                                        @forelse ($fasilitatorList as $fasilitator)
+                                            @php
+                                                $assignment = $fasilitator->kabkotaAssignments->first();
+                                            @endphp
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" name="penerima[]"
+                                                    value="{{ $fasilitator->id }}" id="fas_{{ $fasilitator->id }}"
+                                                    {{ in_array($fasilitator->id, $autoSelectedPenerima) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="fas_{{ $fasilitator->id }}">
+                                                    <strong>{{ $fasilitator->name }}</strong>
+                                                    @if($assignment && $assignment->is_pic)
+                                                        <span class="badge bg-primary badge-sm">PIC</span>
+                                                    @endif
+                                                    <br>
+                                                    <small class="text-muted">{{ $fasilitator->email }}</small>
+                                                    @if($assignment && $assignment->nomor_surat)
+                                                        <br>
+                                                        <small class="text-muted"><i class='bx bx-file'></i> {{ $assignment->nomor_surat }}</small>
+                                                    @endif
+                                                </label>
+                                            </div>
+                                        @empty
+                                            <p class="text-muted mb-0 small"><i class='bx bx-info-circle'></i> Tidak ada fasilitator</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+
+                                <!-- Pemohon -->
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        <i class='bx bx-user text-secondary'></i> Pemohon ({{ $permohonan->kabupatenKota->nama }})
+                                    </label>
+                                    <div class="border rounded p-3">
+                                        <div class="row">
+                                            @forelse ($pemohonList as $pemohon)
+                                                <div class="col-md-4 mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="penerima[]"
+                                                            value="{{ $pemohon->id }}" id="pem_{{ $pemohon->id }}"
+                                                            {{ in_array($pemohon->id, $autoSelectedPenerima) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="pem_{{ $pemohon->id }}">
+                                                            <strong>{{ $pemohon->name }}</strong>
+                                                            <br>
+                                                            <small class="text-muted">{{ $pemohon->email }}</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <div class="col-12">
+                                                    <p class="text-muted mb-0 small"><i class='bx bx-info-circle'></i> Tidak ada pemohon dari kabupaten/kota ini</p>
+                                                </div>
+                                            @endforelse
                                         </div>
-                                    @empty
-                                        <p class="text-muted mb-0">Tidak ada pemohon dari kabupaten/kota ini</p>
-                                    @endforelse
+                                    </div>
                                 </div>
                             </div>
 

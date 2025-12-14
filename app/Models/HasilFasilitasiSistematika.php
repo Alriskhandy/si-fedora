@@ -13,13 +13,26 @@ class HasilFasilitasiSistematika extends Model
 
     protected $fillable = [
         'hasil_fasilitasi_id',
+        'master_bab_id',
+        'sub_bab',
         'bab_sub_bab',
         'catatan_penyempurnaan',
+        'user_id',
     ];
 
     // Relasi
     public function hasilFasilitasi()
     {
         return $this->belongsTo(HasilFasilitasi::class, 'hasil_fasilitasi_id');
+    }
+
+    public function masterBab()
+    {
+        return $this->belongsTo(MasterBab::class, 'master_bab_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

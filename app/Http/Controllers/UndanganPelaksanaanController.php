@@ -66,20 +66,61 @@ class UndanganPelaksanaanController extends Controller
                 ->with('error', 'Jadwal fasilitasi belum ditetapkan.');
         }
 
-        // Ambil daftar user untuk penerima
-        $verifikatorList = User::whereHas('roles', function ($q) {
-            $q->where('name', 'verifikator');
-        })->get();
+        // Ambil tim yang di-assign untuk kabupaten/kota ini berdasarkan user_kabkota_assignments
+        $kabkotaId = $permohonan->kab_kota_id;
+        $tahun = $permohonan->tahun;
 
-        $fasilitatorList = User::whereHas('roles', function ($q) {
-            $q->where('name', 'fasilitator');
-        })->get();
+        // Verifikator yang di-assign ke kabupaten/kota ini
+        $verifikatorList = User::whereHas('kabkotaAssignments', function ($q) use ($kabkotaId, $tahun) {
+            $q->where('kabupaten_kota_id', $kabkotaId)
+              ->where('role_type', 'verifikator')
+              ->where('tahun', $tahun)
+              ->where('is_active', true);
+        })->with(['kabkotaAssignments' => function ($q) use ($kabkotaId, $tahun) {
+            $q->where('kabupaten_kota_id', $kabkotaId)
+              ->where('role_type', 'verifikator')
+              ->where('tahun', $tahun);
+        }])->get();
 
+        // Fasilitator yang di-assign ke kabupaten/kota ini
+        $fasilitatorList = User::whereHas('kabkotaAssignments', function ($q) use ($kabkotaId, $tahun) {
+            $q->where('kabupaten_kota_id', $kabkotaId)
+              ->where('role_type', 'fasilitator')
+              ->where('tahun', $tahun)
+              ->where('is_active', true);
+        })->with(['kabkotaAssignments' => function ($q) use ($kabkotaId, $tahun) {
+            $q->where('kabupaten_kota_id', $kabkotaId)
+              ->where('role_type', 'fasilitator')
+              ->where('tahun', $tahun);
+        }])->get();
+
+        // Koordinator yang di-assign ke kabupaten/kota ini (jika ada)
+        $koordinatorList = User::whereHas('kabkotaAssignments', function ($q) use ($kabkotaId, $tahun) {
+            $q->where('kabupaten_kota_id', $kabkotaId)
+              ->where('role_type', 'koordinator')
+              ->where('tahun', $tahun)
+              ->where('is_active', true);
+        })->with(['kabkotaAssignments' => function ($q) use ($kabkotaId, $tahun) {
+            $q->where('kabupaten_kota_id', $kabkotaId)
+              ->where('role_type', 'koordinator')
+              ->where('tahun', $tahun);
+        }])->get();
+
+        // Pemohon dari kabupaten/kota ini
         $pemohonList = User::whereHas('roles', function ($q) {
             $q->where('name', 'pemohon');
         })->whereHas('kabupatenKota', function ($q) use ($permohonan) {
             $q->where('id', $permohonan->kab_kota_id);
         })->get();
+
+        // Auto-select semua tim yang di-assign (akan di-check otomatis di form)
+        $autoSelectedPenerima = collect()
+            ->merge($verifikatorList->pluck('id'))
+            ->merge($fasilitatorList->pluck('id'))
+            ->merge($koordinatorList->pluck('id'))
+            ->merge($pemohonList->pluck('id'))
+            ->unique()
+            ->toArray();
 
         // Generate nomor undangan
         $tahun = date('Y');
@@ -90,7 +131,15 @@ class UndanganPelaksanaanController extends Controller
         $nomorUrut = str_pad($lastUndangan + 1, 3, '0', STR_PAD_LEFT);
         $nomorUndangan = "UND-{$nomorUrut}/BPKAD/{$bulan}/{$tahun}";
 
-        return view('undangan-pelaksanaan.create', compact('permohonan', 'verifikatorList', 'fasilitatorList', 'pemohonList', 'nomorUndangan'));
+        return view('undangan-pelaksanaan.create', compact(
+            'permohonan', 
+            'verifikatorList', 
+            'fasilitatorList', 
+            'koordinatorList',
+            'pemohonList', 
+            'nomorUndangan',
+            'autoSelectedPenerima'
+        ));
     }
 
     /**

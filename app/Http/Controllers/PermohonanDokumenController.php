@@ -17,7 +17,7 @@ class PermohonanDokumenController extends Controller
 
         if (Auth::user()->hasRole('pemohon')) {
             // Pemohon hanya bisa liat dokumen permohonan miliknya sendiri
-            $query->whereHas('permohonan', function($q) {
+            $query->whereHas('permohonan', function ($q) {
                 $q->where('user_id', Auth::id());
             });
         }
@@ -30,9 +30,9 @@ class PermohonanDokumenController extends Controller
     public function create(Request $request)
     {
         $permohonanId = $request->query('permohonan_id');
-        
+
         $permohonan = Permohonan::where('id', $permohonanId)->firstOrFail();
-        
+
         // Hanya bisa buat dokumen untuk permohonan milik sendiri
         if (Auth::user()->hasRole('pemohon')) {
             if ($permohonan->user_id !== Auth::id()) {
@@ -92,7 +92,7 @@ class PermohonanDokumenController extends Controller
     public function edit(PermohonanDokumen $permohonanDokumen)
     {
         $this->authorizeView($permohonanDokumen);
-        
+
         $persyaratanDokumen = PersyaratanDokumen::where('jenis_dokumen_id', $permohonanDokumen->permohonan->jenis_dokumen_id)->get();
 
         return view('permohonan_dokumen.edit', compact('permohonanDokumen', 'persyaratanDokumen'));
@@ -143,10 +143,10 @@ class PermohonanDokumenController extends Controller
     public function upload(Request $request, PermohonanDokumen $permohonanDokumen)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx|max:2048', // 2MB
+            'file' => 'required|file|mimes:pdf,doc,docx,xlsx|max:10120', // 10MB
         ], [
             'file.required' => 'File harus diupload',
-            'file.mimes' => 'File harus berformat PDF, DOC, atau DOCX',
+            'file.mimes' => 'File harus berformat PDF, DOC, DOCX, EXCEL',
             'file.max' => 'Ukuran file maksimal 2MB'
         ]);
 
@@ -193,7 +193,6 @@ class PermohonanDokumenController extends Controller
                 'success' => true,
                 'message' => 'Dokumen berhasil diupload'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -235,12 +234,12 @@ class PermohonanDokumenController extends Controller
     private function authorizeView(PermohonanDokumen $permohonanDokumen)
     {
         $user = Auth::user();
-        
+
         // Tambahin null check
         if (!$permohonanDokumen->permohonan) {
             abort(404, 'Permohonan tidak ditemukan.');
         }
-    
+
         if ($user->hasRole('pemohon')) {
             if ($permohonanDokumen->permohonan->user_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses ke dokumen ini.');

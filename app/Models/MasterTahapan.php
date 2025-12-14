@@ -13,7 +13,7 @@ class MasterTahapan extends Model
 
     protected $fillable = [
         'kode',
-        'nama',
+        'nama_tahapan',
         'deskripsi',
         'urutan',
     ];

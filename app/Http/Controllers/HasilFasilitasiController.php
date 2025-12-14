@@ -7,6 +7,8 @@ use App\Models\HasilFasilitasi;
 use App\Models\HasilFasilitasiUrusan;
 use App\Models\HasilFasilitasiSistematika;
 use App\Models\MasterUrusan;
+use App\Models\MasterBab;
+use App\Models\MasterJenisDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,11 +72,27 @@ class HasilFasilitasiController extends Controller
         // Ambil daftar urusan
         $masterUrusanList = MasterUrusan::orderBy('urutan')->get();
 
+        // Ambil daftar bab berdasarkan jenis dokumen dari permohonan (hanya parent/level 1)
+        // Permohonan punya jenis_dokumen enum ('rkpd', 'rpd', 'rpjmd')
+        // Master bab punya jenis_dokumen_id (foreign key ke tabel jenis_dokumen)
+        $masterBabList = collect();
+        if ($permohonan->jenis_dokumen) {
+            // Cari jenis_dokumen_id berdasarkan nama jenis_dokumen
+            $jenisDokumen = \App\Models\MasterJenisDokumen::where('nama', strtoupper($permohonan->jenis_dokumen))->first();
+
+            if ($jenisDokumen) {
+                $masterBabList = MasterBab::where('jenis_dokumen_id', $jenisDokumen->id)
+                    ->whereNull('parent_id')
+                    ->orderBy('urutan')
+                    ->get();
+            }
+        }
+
         // Load hasil fasilitasi dengan relasi
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
-        $hasilFasilitasi->load('hasilSistematika', 'hasilUrusan.masterUrusan');
+        $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.user', 'hasilUrusan.masterUrusan');
 
-        return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'hasilFasilitasi'));
+        return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi'));
     }
 
     /**
@@ -198,7 +216,8 @@ class HasilFasilitasiController extends Controller
     public function storeSistematika(Request $request, Permohonan $permohonan)
     {
         $request->validate([
-            'bab_sub_bab' => 'required|string',
+            'master_bab_id' => 'required|exists:master_bab,id',
+            'sub_bab' => 'nullable|string',
             'catatan_penyempurnaan' => 'required|string',
         ]);
 
@@ -211,9 +230,14 @@ class HasilFasilitasiController extends Controller
 
             $sistematika = HasilFasilitasiSistematika::create([
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
-                'bab_sub_bab' => $request->bab_sub_bab,
+                'master_bab_id' => $request->master_bab_id,
+                'sub_bab' => $request->sub_bab,
                 'catatan_penyempurnaan' => $request->catatan_penyempurnaan,
+                'user_id' => Auth::id(),
             ]);
+
+            // Load relasi untuk response
+            $sistematika->load('masterBab', 'user');
 
             return response()->json([
                 'success' => true,
@@ -343,7 +367,11 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
-            $sistematika = $hasilFasilitasi->hasilSistematika()->orderBy('id')->get();
+            $sistematika = $hasilFasilitasi->hasilSistematika()
+                ->with('masterBab')
+                ->orderBy('master_bab_id')
+                ->orderBy('id')
+                ->get();
             $urusan = $hasilFasilitasi->hasilUrusan()->with('masterUrusan')->orderBy('id')->get();
 
             // Create Word document content
@@ -412,12 +440,53 @@ class HasilFasilitasiController extends Controller
         <tbody>';
 
         if ($sistematika->count() > 0) {
-            foreach ($sistematika as $index => $item) {
+            $counter = 1;
+            $currentBabId = null;
+
+            // Group items by bab and sub_bab
+            $groupedItems = [];
+            foreach ($sistematika as $item) {
+                $babId = $item->master_bab_id;
+                $subBab = $item->sub_bab ?: ($item->masterBab->nama_bab ?? '-');
+                $key = $babId . '|' . $subBab;
+
+                if (!isset($groupedItems[$key])) {
+                    $groupedItems[$key] = [
+                        'bab_id' => $babId,
+                        'bab_nama' => $item->masterBab->nama_bab ?? '-',
+                        'sub_bab' => $subBab,
+                        'catatan' => []
+                    ];
+                }
+                $groupedItems[$key]['catatan'][] = $item->catatan_penyempurnaan;
+            }
+
+            foreach ($groupedItems as $groupedItem) {
+                // Jika bab berubah, tampilkan header bab
+                if ($currentBabId !== $groupedItem['bab_id']) {
+                    $html .= '<tr>
+                        <td class="no-col" style="background-color: #e8f4f8;"></td>
+                        <td colspan="2" style="background-color: #e8f4f8;"><strong>' . htmlspecialchars($groupedItem['bab_nama']) . '</strong></td>
+                    </tr>';
+                    $currentBabId = $groupedItem['bab_id'];
+                }
+
+                // Gabungkan catatan dengan numbering
+                $catatanGabungan = '';
+                foreach ($groupedItem['catatan'] as $index => $catatan) {
+                    $catatanGabungan .= ($index + 1) . '. ' . nl2br(htmlspecialchars($catatan));
+                    if ($index < count($groupedItem['catatan']) - 1) {
+                        $catatanGabungan .= '<br><br>';
+                    }
+                }
+
                 $html .= '<tr>
-                    <td class="no-col">' . ($index + 1) . '</td>
-                    <td><strong>' . htmlspecialchars($item->bab_sub_bab) . '</strong></td>
-                    <td>' . nl2br(htmlspecialchars($item->catatan_penyempurnaan)) . '</td>
+                    <td class="no-col">' . $counter . '</td>
+                    <td>' . htmlspecialchars($groupedItem['sub_bab']) . '</td>
+                    <td>' . $catatanGabungan . '</td>
                 </tr>';
+
+                $counter++;
             }
         } else {
             $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
@@ -485,7 +554,11 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
-            $sistematika = $hasilFasilitasi->hasilSistematika()->orderBy('id')->get();
+            $sistematika = $hasilFasilitasi->hasilSistematika()
+                ->with('masterBab')
+                ->orderBy('master_bab_id')
+                ->orderBy('id')
+                ->get();
             $urusan = $hasilFasilitasi->hasilUrusan()
                 ->with('masterUrusan')
                 ->join('master_urusan', 'hasil_fasilitasi_urusan.master_urusan_id', '=', 'master_urusan.id')

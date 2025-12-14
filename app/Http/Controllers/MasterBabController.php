@@ -104,7 +104,7 @@ class MasterBabController extends Controller
         ]);
 
         // Prevent self-reference as parent
-        if ($validated['parent_id'] == $masterBab->id) {
+        if (isset($validated['parent_id']) && $validated['parent_id'] == $masterBab->id) {
             return back()
                 ->withInput()
                 ->withErrors(['parent_id' => 'Bab tidak dapat menjadi parent dari dirinya sendiri.']);

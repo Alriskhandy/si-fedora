@@ -73,6 +73,8 @@ class PenetapanJadwalController extends Controller
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'lokasi' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'catatan' => 'nullable|string',
         ]);
 
@@ -86,6 +88,8 @@ class PenetapanJadwalController extends Controller
                 'tanggal_mulai' => $request->tanggal_mulai,
                 'tanggal_selesai' => $request->tanggal_selesai,
                 'lokasi' => $request->lokasi,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
                 'catatan' => $request->catatan,
                 'ditetapkan_oleh' => Auth::id(),
                 'tanggal_penetapan' => now(),

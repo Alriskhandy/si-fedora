@@ -165,14 +165,11 @@
                             <!-- Catatan Admin -->
                             <div class="mb-4">
                                 <label for="catatan_admin" class="form-label">
-                                    Catatan Tambahan Admin
+                                    Catatan Tambahan (Opsional)
                                 </label>
                                 <textarea name="catatan_admin" id="catatan_admin" 
                                           class="form-control @error('catatan_admin') is-invalid @enderror" 
                                           rows="4">{{ old('catatan_admin') }}</textarea>
-                                <small class="text-muted">
-                                    Catatan khusus atau rekomendasi untuk tahap selanjutnya (opsional)
-                                </small>
                                 @error('catatan_admin')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

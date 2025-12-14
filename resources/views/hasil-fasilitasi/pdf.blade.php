@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Hasil Fasilitasi RKPD {{ $kabkota }} Tahun {{ $tahun }}</title>
     <style>
         body {
@@ -114,12 +115,53 @@
         </thead>
         <tbody>
             @if ($sistematika->count() > 0)
-                @foreach ($sistematika as $index => $item)
+                @php
+                    $counter = 1;
+                    $currentBabId = null;
+                    // Group items by bab and sub_bab
+                    $groupedItems = [];
+                    foreach ($sistematika as $item) {
+                        $babId = $item->master_bab_id;
+                        $subBab = $item->sub_bab ?: $item->masterBab->nama_bab ?? '-';
+                        $key = $babId . '|' . $subBab;
+
+                        if (!isset($groupedItems[$key])) {
+                            $groupedItems[$key] = [
+                                'bab_id' => $babId,
+                                'bab_nama' => $item->masterBab->nama_bab ?? '-',
+                                'sub_bab' => $subBab,
+                                'catatan' => [],
+                            ];
+                        }
+                        $groupedItems[$key]['catatan'][] = $item->catatan_penyempurnaan;
+                    }
+                @endphp
+                @foreach ($groupedItems as $groupedItem)
+                    {{-- Tampilkan header bab jika bab berubah --}}
+                    @if ($currentBabId !== $groupedItem['bab_id'])
+                        <tr>
+                            <td class="no-col" style="background-color: #e8f4f8;"></td>
+                            <td colspan="2" style="background-color: #e8f4f8;">
+                                <strong>{{ $groupedItem['bab_nama'] }}</strong>
+                            </td>
+                        </tr>
+                        @php $currentBabId = $groupedItem['bab_id']; @endphp
+                    @endif
+
+                    {{-- Tampilkan item dengan catatan digabung --}}
                     <tr>
-                        <td class="no-col">{{ $index + 1 }}</td>
-                        <td><strong>{{ $item->bab_sub_bab }}</strong></td>
-                        <td>{{ $item->catatan_penyempurnaan }}</td>
+                        <td class="no-col">{{ $counter }}</td>
+                        <td>{{ $groupedItem['sub_bab'] }}</td>
+                        <td>
+                            @foreach ($groupedItem['catatan'] as $index => $catatan)
+                                {{ $index + 1 }}. {{ $catatan }}
+                                @if (!$loop->last)
+                                    <br><br>
+                                @endif
+                            @endforeach
+                        </td>
                     </tr>
+                    @php $counter++; @endphp
                 @endforeach
             @else
                 <tr>
