@@ -20,7 +20,7 @@
                             <tr>
                                 <td><strong>Jenis Dokumen</strong></td>
                                 <td>:</td>
-                                <td><span class="badge bg-label-info">{{ strtoupper($jadwal->jenis_dokumen) }}</span></td>
+                                <td><span class="badge bg-label-info">{{ strtoupper($jadwal->jenisDokumen->nama) }}</span></td>
                             </tr>
                             <tr>
                                 <td><strong>Periode Fasilitasi</strong></td>
@@ -52,9 +52,9 @@
                                 <td>:</td>
                                 <td>
                                     @if ($jadwal->undangan_file)
-                                        <a href="{{ url('storage/' . $jadwal->undangan_file) }}" target="_blank"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bx bx-file-blank"></i> Lihat File
+                                        <a href="{{ route('jadwal.download', $jadwal->id) }}"
+                                            class="btn btn-sm btn-outline-success">
+                                            <i class='bx bx-download me-1'></i> Unduh File
                                         </a>
                                     @else
                                         <span class="text-muted">Tidak ada file</span>

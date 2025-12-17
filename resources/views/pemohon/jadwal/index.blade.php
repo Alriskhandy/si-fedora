@@ -103,13 +103,9 @@
 
                             @if ($jadwal->undangan_file)
                                 <div class="mb-3">
-                                    <a href="{{ url('storage/' . $jadwal->undangan_file) }}" target="_blank"
-                                        class="btn btn-sm btn-outline-info me-2">
-                                        <i class='bx bx-show me-1'></i> Lihat
-                                    </a>
-                                    <a href="{{ url('storage/' . $jadwal->undangan_file) }}" download
+                                    <a href="{{ route('pemohon.jadwal.download', $jadwal->id) }}"
                                         class="btn btn-sm btn-outline-success">
-                                        <i class='bx bx-download me-1'></i> Download
+                                        <i class='bx bx-download me-1'></i> Unduh Penyampaian Jadwal
                                     </a>
                                 </div>
                             @endif

@@ -134,28 +134,10 @@
                     <div data-i18n="Jadwal">Jadwal Fasilitasi</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('permohonan.*') ? 'active' : '' }}">
+            <li class="menu-item {{ request()->routeIs('permohonan.*', 'permohonan-dokumen.*', 'pemohon.undangan.*', 'tindak-lanjut.*') ? 'active' : '' }}">
                 <a href="{{ route('permohonan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-send"></i>
+                    <i class="menu-icon tf-icons bx bx-folder-open"></i>
                     <div data-i18n="Permohonan">Permohonan Saya</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('permohonan-dokumen.*') ? 'active' : '' }}">
-                <a href="{{ route('permohonan-dokumen.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-file-blank"></i>
-                    <div data-i18n="Dokumen Persyaratan">Dokumen Persyaratan</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('pemohon.undangan.*') ? 'active' : '' }}">
-                <a href="{{ route('pemohon.undangan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-envelope"></i>
-                    <div data-i18n="Undangan">Undangan Fasilitasi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('tindak-lanjut.*') ? 'active' : '' }}">
-                <a href="{{ route('tindak-lanjut.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-upload"></i>
-                    <div data-i18n="Tindak Lanjut">Tindak Lanjut Hasil</div>
                 </a>
             </li>
         @endif

@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('jadwal', JadwalFasilitasiController::class)->parameters(['jadwal' => 'jadwal']);
         Route::post('/jadwal/{jadwal}/publish', [JadwalFasilitasiController::class, 'publish'])->name('jadwal.publish');
         Route::post('/jadwal/{jadwal}/cancel', [JadwalFasilitasiController::class, 'cancel'])->name('jadwal.cancel');
+        Route::get('/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('jadwal.download');
 
         // Surat Pemberitahuan
         Route::resource('surat-pemberitahuan', SuratPemberitahuanController::class)->parameters(['surat-pemberitahuan' => 'suratPemberitahuan']);
@@ -168,6 +169,7 @@ Route::middleware(['auth'])->group(function () {
         // Jadwal
         Route::get('/pemohon/jadwal', [PemohonJadwalController::class, 'index'])->name('pemohon.jadwal.index');
         Route::get('/pemohon/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('pemohon.jadwal.show');
+        Route::get('/pemohon/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('pemohon.jadwal.download');
 
         // Permohonan
         Route::resource('permohonan', PermohonanController::class);

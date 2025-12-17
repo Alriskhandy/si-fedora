@@ -6,6 +6,8 @@ use App\Models\JadwalFasilitasi;
 use App\Models\MasterJenisDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class JadwalFasilitasiController extends Controller
 {
@@ -68,16 +70,11 @@ class JadwalFasilitasiController extends Controller
 
         if ($request->hasFile('undangan_file')) {
             $file = $request->file('undangan_file');
-            $filename = time() . '_' . $file->getClientOriginalName();
-
-            // Simpan ke public/undangan directory
-            $directory = public_path('undangan');
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            $file->move($directory, $filename);
-            $data['undangan_file'] = 'undangan/' . $filename;
+            $filename = Str::random(40) . '.pdf';
+            
+            // Simpan ke storage/app/public/undangan
+            $path = $file->storeAs('undangan', $filename, 'public');
+            $data['undangan_file'] = $path;
         }
 
         JadwalFasilitasi::create($data);
@@ -87,20 +84,21 @@ class JadwalFasilitasiController extends Controller
 
     public function show(JadwalFasilitasi $jadwal)
     {
-        $jadwal->load(['permohonan.kabupatenKota', 'dibuatOleh']);
+        $jadwal->load(['permohonan.kabupatenKota', 'dibuatOleh'])->with(['jenisDokumen']);
         return view('jadwal-fasilitasi.show', compact('jadwal'));
     }
 
     public function edit(JadwalFasilitasi $jadwal)
     {
-        return view('jadwal-fasilitasi.edit', compact('jadwal'));
+        $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
+        return view('jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
     }
 
     public function update(Request $request, JadwalFasilitasi $jadwal)
     {
         // Get valid jenis dokumen from database
         $validJenisDokumen = MasterJenisDokumen::where('status', true)
-            ->pluck('nama')
+            ->pluck('id')
             ->toArray();
 
         $request->validate([
@@ -124,17 +122,17 @@ class JadwalFasilitasiController extends Controller
         ];
 
         if ($request->hasFile('undangan_file')) {
-            $file = $request->file('undangan_file');
-            $filename = time() . '_' . $file->getClientOriginalName();
-
-            // Simpan ke public/undangan directory
-            $directory = public_path('undangan');
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
+            // Hapus file lama jika ada
+            if ($jadwal->undangan_file && \Illuminate\Support\Facades\Storage::disk('public')->exists($jadwal->undangan_file)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($jadwal->undangan_file);
             }
-
-            $file->move($directory, $filename);
-            $data['undangan_file'] = 'undangan/' . $filename;
+            
+            $file = $request->file('undangan_file');
+            $filename = \Illuminate\Support\Str::random(40) . '.pdf';
+            
+            // Simpan ke storage/app/public/undangan
+            $path = $file->storeAs('undangan', $filename, 'public');
+            $data['undangan_file'] = $path;
         }
 
         $jadwal->update($data);
@@ -146,5 +144,30 @@ class JadwalFasilitasiController extends Controller
     {
         $jadwal->delete();
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil dihapus.');
+    }
+
+    public function download(JadwalFasilitasi $jadwal)
+    {
+        if (!$jadwal->undangan_file) {
+            abort(404, 'File tidak tersedia');
+        }
+
+        $filePath = storage_path('app/public/' . $jadwal->undangan_file);
+
+        if (!file_exists($filePath)) {
+            // Log untuk debugging
+            Log::error('File not found', [
+                'jadwal_id' => $jadwal->id,
+                'undangan_file' => $jadwal->undangan_file,
+                'expected_path' => $filePath,
+                'file_exists' => file_exists($filePath)
+            ]);
+            
+            abort(404, 'File tidak ditemukan. Silakan hubungi administrator.');
+        }
+
+        $filename = 'Penyampaian_Jadwal_' . str_replace(' ', '_', $jadwal->jenisDokumen->nama) . '_' . $jadwal->tahun_anggaran . '.pdf';
+        
+        return response()->download($filePath, $filename);
     }
 }

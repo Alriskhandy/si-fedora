@@ -32,15 +32,12 @@
                                 <select class="form-select @error('jenis_dokumen') is-invalid @enderror" id="jenis_dokumen"
                                     name="jenis_dokumen" required>
                                     <option value="">Pilih Jenis Dokumen</option>
-                                    <option value="rkpd"
-                                        {{ old('jenis_dokumen', $jadwal->jenis_dokumen) == 'rkpd' ? 'selected' : '' }}>RKPD
-                                    </option>
-                                    <option value="rpd"
-                                        {{ old('jenis_dokumen', $jadwal->jenis_dokumen) == 'rpd' ? 'selected' : '' }}>RPD
-                                    </option>
-                                    <option value="rpjmd"
-                                        {{ old('jenis_dokumen', $jadwal->jenis_dokumen) == 'rpjmd' ? 'selected' : '' }}>
-                                        RPJMD</option>
+                                    @foreach ($jenisdokumen as $item)
+                                        <option value="{{ $item->id }}"
+                                            {{ old('jenis_dokumen', $item->jenis_dokumen_id) == $item->id ? 'selected' : '' }}>
+                                            {{ strtoupper($item->nama) }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('jenis_dokumen')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -83,9 +80,9 @@
                                 <label class="form-label" for="undangan_file">File Undangan (PDF)</label>
                                 @if ($jadwal->undangan_file)
                                     <div class="mb-2">
-                                        <a href="{{ url('storage/' . $jadwal->undangan_file) }}" target="_blank"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bx bx-file"></i> Lihat File Saat Ini
+                                        <a href="{{ route('jadwal.download', $jadwal->id) }}"
+                                            class="btn btn-sm btn-outline-success">
+                                            <i class='bx bx-download me-1'></i> Unduh File Saat Ini
                                         </a>
                                     </div>
                                 @endif
