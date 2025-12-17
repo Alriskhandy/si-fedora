@@ -57,6 +57,11 @@ class JadwalFasilitasi extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function jenisDokumen()
+    {
+        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen');
+    }
+
     // Accessor
     public function getStatusLabelAttribute()
     {

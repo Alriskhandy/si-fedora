@@ -97,12 +97,6 @@
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Penugasan & Validasi</span>
             </li>
-            {{-- <li class="menu-item {{ request()->routeIs('admin-peran.*') ? 'active' : '' }}">
-                <a href="{{ route('admin-peran.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-user-check"></i>
-                    <div data-i18n="Assignment">Assignment Tim</div>
-                </a>
-            </li> --}}
             <li class="menu-item {{ request()->routeIs('laporan-verifikasi.*') ? 'active' : '' }}">
                 <a href="{{ route('laporan-verifikasi.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-file-find"></i>
@@ -127,12 +121,6 @@
                     <div data-i18n="Surat Rekomendasi">Surat Rekomendasi</div>
                 </a>
             </li>
-            {{-- <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
-                <a href="{{ route('monitoring.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bar-chart"></i>
-                    <div data-i18n="Monitoring">Monitoring Progress</div>
-                </a>
-            </li> --}}
         @endif
 
         <!-- PEMOHON -->

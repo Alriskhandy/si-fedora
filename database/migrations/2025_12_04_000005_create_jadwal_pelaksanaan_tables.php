@@ -32,7 +32,7 @@ return new class extends Migration
         Schema::create('jadwal_fasilitasi', function (Blueprint $table) {
             $table->id();
             $table->integer('tahun_anggaran');
-            $table->enum('jenis_dokumen', ['rkpd', 'rpd', 'rpjmd']);
+            $table->foreignId('jenis_dokumen')->constrained('master_jenis_dokumen')->cascadeOnDelete();
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
             $table->date('batas_permohonan')->nullable(); // batas waktu kab/kota buat permohonan

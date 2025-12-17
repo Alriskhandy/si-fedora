@@ -20,10 +20,10 @@
                             <label for="jenis_dokumen" class="form-label">Jenis Dokumen</label>
                             <select name="jenis_dokumen" id="jenis_dokumen" class="form-select">
                                 <option value="">Semua Jenis Dokumen</option>
-                                @foreach ($filterOptions['jenisDokumen'] as $key => $value)
-                                    <option value="{{ $key }}"
-                                        {{ request('jenis_dokumen') == $key ? 'selected' : '' }}>
-                                        {{ $value }}
+                                @foreach ($filterJenisDokumen as $item)
+                                    <option value="{{ $item->id }}"
+                                        {{ request('jenis_dokumen') == $item->nam ? 'selected' : '' }}>
+                                        {{ $item->nama }}
                                     </option>
                                 @endforeach
                             </select>
@@ -60,10 +60,10 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h5 class="card-title mb-1">{{ $jadwal->jenis_dokumen_label }}
+                                    <h5 class="card-title mb-1">{{ $jadwal->jenisDokumen->nama }}
                                         {{ $jadwal->tahun_anggaran }}</h5>
                                     <span class="badge bg-label-primary">
-                                        {{ strtoupper($jadwal->jenis_dokumen) }}
+                                        {{ strtoupper($jadwal->jenisDokumen->nama) }}
                                     </span>
                                 </div>
                                 <span
@@ -84,6 +84,13 @@
                                             class="text-{{ $jadwal->batas_permohonan && $jadwal->batas_permohonan < now() ? 'danger' : 'success' }}">
                                             {{ $jadwal->batas_permohonan ? $jadwal->batas_permohonan->format('d M Y') : '-' }}
                                         </strong>
+                                        <span class="text-muted"> (
+                                            {{ \Carbon\Carbon::now()->diffForHumans($jadwal->batas_permohonan, [
+                                                'parts' => 2,
+                                                'short' => true,
+                                                'syntax' => \Carbon\Carbon::DIFF_ABSOLUTE,
+                                            ]) }} Lagi )
+                                        </span>
                                     </div>
                                 </div>
                             </div>

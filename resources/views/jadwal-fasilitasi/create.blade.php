@@ -31,7 +31,7 @@
                                     name="jenis_dokumen" required>
                                     <option value="">Pilih Jenis Dokumen</option>
                                     @foreach ($jenisdokumen as $item)
-                                        <option value="{{ $item->nama }}"
+                                        <option value="{{ $item->id }}"
                                             {{ old('jenis_dokumen') == $item->nama ? 'selected' : '' }}>
                                             {{ strtoupper($item->nama) }}
                                         </option>

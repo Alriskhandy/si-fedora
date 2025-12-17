@@ -77,7 +77,7 @@ class PermohonanController extends Controller
     {
         // Hanya jadwal yang published yang bisa dipilih
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')
-            ->where('batas_permohonan', '>=', now())
+            ->where('batas_permohonan', '>=', now())->with(['jenisDokumen'])
             ->get();
 
         // Pre-select jadwal if jadwal_id provided

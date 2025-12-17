@@ -17,7 +17,7 @@ class Permohonan extends Model
         'kab_kota_id',
         'jadwal_fasilitasi_id',
         'tahun',
-        'jenis_dokumen',
+        'jenis_dokumen_id',
         'status_akhir',
         'submitted_at',
     ];
@@ -26,6 +26,42 @@ class Permohonan extends Model
         'tahun' => 'integer',
         'submitted_at' => 'datetime',
     ];
+
+    // Accessor untuk backward compatibility dengan kode lama yang menggunakan 'jenis_dokumen'
+    public function getJenisDokumenAttribute()
+    {
+        // Jika ada relasi jenisDokumen yang sudah di-load, gunakan nama dari sana
+        if ($this->relationLoaded('jenisDokumen') && $this->jenisDokumen) {
+            return $this->jenisDokumen->nama;
+        }
+        
+        // Jika belum di-load, load relasi dulu
+        if ($this->jenis_dokumen_id) {
+            $jenisDokumen = \App\Models\MasterJenisDokumen::find($this->jenis_dokumen_id);
+            return $jenisDokumen ? $jenisDokumen->nama : null;
+        }
+        
+        return null;
+    }
+
+    // Mutator untuk backward compatibility
+    public function setJenisDokumenAttribute($value)
+    {
+        // Jika yang di-set adalah nama jenis dokumen (string), cari ID-nya
+        if (is_string($value)) {
+            $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($value)])->first();
+            $this->attributes['jenis_dokumen_id'] = $jenisDokumen ? $jenisDokumen->id : null;
+        } else {
+            // Jika sudah ID, langsung set
+            $this->attributes['jenis_dokumen_id'] = $value;
+        }
+    }
+
+    // Accessor untuk kabupaten_kota_id (backward compatibility)
+    public function getKabupatenKotaIdAttribute()
+    {
+        return $this->attributes['kab_kota_id'] ?? null;
+    }
 
     // Status labels dan badge class untuk status_akhir
     public function getStatusLabelAttribute()
@@ -56,6 +92,11 @@ class Permohonan extends Model
     public function kabupatenKota()
     {
         return $this->belongsTo(KabupatenKota::class, 'kab_kota_id');
+    }
+
+    public function jenisDokumen()
+    {
+        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
     }
 
     public function createdBy()
@@ -151,7 +192,14 @@ class Permohonan extends Model
     // Scope
     public function scopeByJenisDokumen($query, $jenis)
     {
-        return $query->where('jenis_dokumen', $jenis);
+        // Support both ID and name
+        if (is_numeric($jenis)) {
+            return $query->where('jenis_dokumen_id', $jenis);
+        } else {
+            // Search by name
+            $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
+            return $query->where('jenis_dokumen_id', $jenisDokumen ? $jenisDokumen->id : null);
+        }
     }
 
     public function scopeByTahun($query, $tahun)

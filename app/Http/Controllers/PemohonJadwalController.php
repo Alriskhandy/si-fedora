@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\JadwalFasilitasi;
+use App\Models\MasterJenisDokumen;
 use App\Models\Permohonan;
 
 class PemohonJadwalController extends Controller
@@ -12,7 +13,7 @@ class PemohonJadwalController extends Controller
     {
         // Tampilkan jadwal yang published dan masih aktif (batas permohonan belum lewat)
         $query = JadwalFasilitasi::where('status', 'published')
-            ->where('batas_permohonan', '>=', now());
+            ->where('batas_permohonan', '>=', now())->with(['jenisDokumen']);
 
         // Filter by jenis dokumen (filter langsung di jadwal, bukan lewat permohonan)
         if ($request->filled('jenis_dokumen')) {
@@ -30,18 +31,15 @@ class PemohonJadwalController extends Controller
 
         // Data untuk filter - ambil dari jadwal yang published
         $filterOptions = [
-            'jenisDokumen' => [
-                'rkpd' => 'RKPD',
-                'rpd' => 'RPD',
-                'rpjmd' => 'RPJMD'
-            ],
             'tahunList' => JadwalFasilitasi::where('status', 'published')
                 ->distinct()
                 ->orderBy('tahun_anggaran', 'desc')
                 ->pluck('tahun_anggaran'),
         ];
 
-        return view('pemohon.jadwal.index', compact('jadwalList', 'filterOptions'));
+        $filterJenisDokumen = MasterJenisDokumen::where('status', true)->get();
+
+        return view('pemohon.jadwal.index', compact('jadwalList', 'filterOptions', 'filterJenisDokumen'));
     }
 
     public function show(JadwalFasilitasi $jadwal)

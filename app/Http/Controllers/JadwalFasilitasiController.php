@@ -11,7 +11,7 @@ class JadwalFasilitasiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = JadwalFasilitasi::with(['dibuatOleh']);
+        $query = JadwalFasilitasi::with(['dibuatOleh', 'jenisDokumen']);
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
@@ -43,7 +43,7 @@ class JadwalFasilitasiController extends Controller
     {
         // Get valid jenis dokumen from database
         $validJenisDokumen = MasterJenisDokumen::where('status', true)
-            ->pluck('nama')
+            ->pluck('id')
             ->toArray();
 
         $request->validate([

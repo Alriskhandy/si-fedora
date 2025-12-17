@@ -23,8 +23,7 @@
                                     @foreach ($jadwalFasilitasi as $jadwal)
                                         <option value="{{ $jadwal->id }}"
                                             {{ old('jadwal_fasilitasi_id', $selectedJadwal?->id ?? null) == $jadwal->id ? 'selected' : '' }}>
-                                            {{ strtoupper($jadwal->jenis_dokumen) }} {{ $jadwal->tahun_anggaran }} -
-                                            Batas:
+                                            {{ strtoupper($jadwal->jenisDokumen->nama) }} {{ $jadwal->tahun_anggaran }} - Batas: 
                                             {{ $jadwal->batas_permohonan ? $jadwal->batas_permohonan->format('d M Y') : '-' }}
                                         </option>
                                     @endforeach
@@ -45,7 +44,7 @@
                                 <div class="alert alert-info">
                                     <h6 class="alert-heading">Info Jadwal:</h6>
                                     <ul class="mb-0">
-                                        <li><strong>Jenis Dokumen:</strong> {{ strtoupper($selectedJadwal->jenis_dokumen) }}
+                                        <li><strong>Jenis Dokumen:</strong> {{ strtoupper($selectedJadwal->jenisDokumen->nama) }}
                                         </li>
                                         <li><strong>Tahun Anggaran:</strong> {{ $selectedJadwal->tahun_anggaran }}</li>
                                         <li><strong>Periode:</strong> {{ $selectedJadwal->tanggal_mulai->format('d M Y') }}

@@ -72,7 +72,7 @@
                                             <td><strong>{{ $item->tahun_anggaran }}</strong></td>
                                             <td>
                                                 <span class="badge bg-label-primary">
-                                                    {{ strtoupper($item->jenis_dokumen) }}
+                                                    {{ strtoupper($item->jenisDokumen->nama) }}
                                                 </span>
                                             </td>
                                             <td>

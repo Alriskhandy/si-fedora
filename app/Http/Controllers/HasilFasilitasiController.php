@@ -35,19 +35,8 @@ class HasilFasilitasiController extends Controller
         // Get kabupaten_kota_id - handle both field names
         $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
         
-        // Get jenis_dokumen_id from permohonan
-        $jenisDokumenId = null;
-        if ($permohonan->jenis_dokumen) {
-            // Case-insensitive search
-            $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($permohonan->jenis_dokumen)])->first();
-            $jenisDokumenId = $jenisDokumen ? $jenisDokumen->id : null;
-            
-            Log::info('Searching Jenis Dokumen', [
-                'permohonan_jenis_dokumen' => $permohonan->jenis_dokumen,
-                'found_jenis_dokumen' => $jenisDokumen ? $jenisDokumen->nama : 'NOT FOUND',
-                'jenis_dokumen_id' => $jenisDokumenId
-            ]);
-        }
+        // Get jenis_dokumen_id directly from permohonan
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
         
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
@@ -68,7 +57,6 @@ class HasilFasilitasiController extends Controller
             'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
             'kab_kota_id' => $permohonan->kab_kota_id,
             'used_kabkota_id' => $kabkotaId,
-            'jenis_dokumen' => $permohonan->jenis_dokumen,
             'jenis_dokumen_id' => $jenisDokumenId,
             'tahun' => $permohonan->tahun,
             'assignment_found' => $assignment ? 'YES' : 'NO',
@@ -86,13 +74,8 @@ class HasilFasilitasiController extends Controller
         // Get kabupaten_kota_id - handle both field names
         $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
         
-        // Get jenis_dokumen_id from permohonan
-        $jenisDokumenId = null;
-        if ($permohonan->jenis_dokumen) {
-            // Case-insensitive search
-            $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($permohonan->jenis_dokumen)])->first();
-            $jenisDokumenId = $jenisDokumen ? $jenisDokumen->id : null;
-        }
+        // Get jenis_dokumen_id directly from permohonan
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
         
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
@@ -111,7 +94,6 @@ class HasilFasilitasiController extends Controller
             'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
             'kab_kota_id' => $permohonan->kab_kota_id,
             'used_kabkota_id' => $kabkotaId,
-            'jenis_dokumen' => $permohonan->jenis_dokumen,
             'jenis_dokumen_id' => $jenisDokumenId,
             'tahun' => $permohonan->tahun,
             'assignment_found' => $assignment ? 'YES (role: ' . $assignment->role_type . ')' : 'NO',
@@ -232,12 +214,12 @@ class HasilFasilitasiController extends Controller
 
         // Get tim info untuk ditampilkan
         $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
-        $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($permohonan->jenis_dokumen)])->first();
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
         
         $timInfo = null;
-        if ($jenisDokumen && $kabkotaId) {
+        if ($jenisDokumenId && $kabkotaId) {
             $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
-                ->where('jenis_dokumen_id', $jenisDokumen->id)
+                ->where('jenis_dokumen_id', $jenisDokumenId)
                 ->where('tahun', $permohonan->tahun)
                 ->where('is_active', true)
                 ->with('user')

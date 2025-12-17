@@ -12,16 +12,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('kab_kota_id')->constrained('kabupaten_kota')->cascadeOnDelete();
+            $table->foreignId('jenis_dokumen_id')->constrained('master_jenis_dokumen')->cascadeOnDelete();
             
             $table->integer('tahun');
-            $table->enum('jenis_dokumen', ['rkpd', 'rpd', 'rpjmd']);
             $table->enum('status_akhir', ['belum', 'proses', 'revisi', 'selesai'])->default('belum');
             
             $table->timestamps();
             $table->softDeletes();
 
             // Index
-            $table->index(['user_id', 'tahun', 'jenis_dokumen']);
+            $table->index(['user_id', 'tahun', 'jenis_dokumen_id']);
             $table->index(['kab_kota_id', 'tahun']);
             $table->index(['status_akhir']);
         });
