@@ -117,7 +117,7 @@ class PermohonanController extends Controller
             'kab_kota_id' => Auth::user()->kabupaten_kota_id,
             'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
             'tahun' => $jadwal->tahun_anggaran,
-            'jenis_dokumen' => $jadwal->jenis_dokumen,
+            'jenis_dokumen_id' => $jadwal->jenis_dokumen,
             'status_akhir' => 'belum',
         ]);
 
