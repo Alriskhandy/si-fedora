@@ -349,13 +349,15 @@
                                         style="background: #FF9800; border: 3px solid #FFF3E0; box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.1);"></span>
                                     <div class="timeline-event">
                                         <div class="timeline-header mb-2">
-                                            <h6 class="mb-1" style="color: #E65100; font-weight: 600;">Dokumen Dilengkapi & Dikirim</h6>
+                                            <h6 class="mb-1" style="color: #E65100; font-weight: 600;">Dokumen
+                                                Dilengkapi & Dikirim</h6>
                                             <small class="d-block text-muted" style="font-size: 0.75rem;">
                                                 <i
                                                     class='bx bx-calendar me-1'></i>{{ $permohonan->submitted_at->format('d M Y, H:i') }}
                                             </small>
                                         </div>
-                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Semua dokumen kelengkapan telah diupload dan permohonan dikirim untuk verifikasi
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Semua dokumen kelengkapan
+                                            telah diupload dan permohonan dikirim untuk verifikasi
                                         </p>
                                     </div>
                                 </li>
@@ -394,11 +396,105 @@
                                     </div>
                                 </li>
                             @endif
+                            @if ($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->status === 'sent')
+                                <li class="timeline-item timeline-item-transparent pb-1">
+                                    <span class="timeline-point timeline-point-info"
+                                        style="background: #00BCD4; border: 3px solid #E0F7FA; box-shadow: 0 0 0 4px rgba(0, 188, 212, 0.1);"></span>
+                                    <div class="timeline-event">
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #00838F; font-weight: 600;">Undangan
+                                                Pelaksanaan Dikirim</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->undanganPelaksanaan->created_at->format('d M Y, H:i') }}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Undangan pelaksanaan
+                                            fasilitasi telah dikirim</p>
+                                    </div>
+                                </li>
+                            @endif
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Undangan Fasilitasi -->
+        @if ($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->status === 'sent')
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center"
+                            style="background: linear-gradient(135deg, #00BCD4 0%, #00ACC1 100%); border: none;">
+                            <h5 class="mb-0 text-white">
+                                <i class='bx bx-envelope-open me-2'></i>Undangan Pelaksanaan Fasilitasi
+                            </h5>
+                            <a href="{{ route('my-undangan.view', $permohonan->undanganPelaksanaan->id) }}"
+                                class="btn btn-sm btn-light">
+                                <i class='bx bx-show'></i> Lihat Detail
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="text-muted small">Nomor Surat</label>
+                                        <p class="mb-0 fw-bold">{{ $permohonan->undanganPelaksanaan->nomor_surat ?? '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="text-muted small">Tanggal Surat</label>
+                                        <p class="mb-0 fw-bold">
+                                            {{ $permohonan->undanganPelaksanaan->tanggal_surat ? $permohonan->undanganPelaksanaan->tanggal_surat->format('d M Y') : '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="text-muted small">Waktu Pelaksanaan</label>
+                                        <p class="mb-0 fw-bold">
+                                            <i class='bx bx-calendar text-primary me-1'></i>
+                                            {{ $permohonan->undanganPelaksanaan->waktu_pelaksanaan ? $permohonan->undanganPelaksanaan->waktu_pelaksanaan->format('d M Y, H:i') : '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="text-muted small">Tempat</label>
+                                        <p class="mb-0 fw-bold">
+                                            <i class='bx bx-map text-primary me-1'></i>
+                                            {{ $permohonan->undanganPelaksanaan->tempat ?? '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                @if ($permohonan->undanganPelaksanaan->keterangan)
+                                    <div class="col-12">
+                                        <div class="mb-0">
+                                            <label class="text-muted small">Keterangan</label>
+                                            <p class="mb-0">{{ $permohonan->undanganPelaksanaan->keterangan }}</p>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="mt-3 d-flex gap-2">
+                                <a href="{{ route('undangan-pelaksanaan.download', $permohonan) }}"
+                                    class="btn btn-primary" target="_blank">
+                                    <i class='bx bx-download'></i> Download Undangan
+                                </a>
+                                <a href="{{ route('my-undangan.view', $permohonan->undanganPelaksanaan->id) }}"
+                                    class="btn btn-outline-primary">
+                                    <i class='bx bx-show'></i> Lihat Detail Lengkap
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Dokumen Persyaratan -->
         <div class="row mt-4">

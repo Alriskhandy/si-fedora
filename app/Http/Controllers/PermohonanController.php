@@ -140,6 +140,14 @@ class PermohonanController extends Controller
         // Cek hak akses
         $this->authorizeView($permohonan);
 
+        // Load relasi untuk tampilan lengkap
+        $permohonan->load([
+            'kabupatenKota',
+            'jadwalFasilitasi',
+            'permohonanDokumen.masterKelengkapan',
+            'undanganPelaksanaan'
+        ]);
+
         return view('permohonan.show', compact('permohonan'));
     }
 
