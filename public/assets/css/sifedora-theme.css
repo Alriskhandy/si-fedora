@@ -202,8 +202,43 @@ a:hover {
 }
 
 /* Timeline dengan primary color */
-.timeline-item::before {
-    background-color: var(--sifedora-primary);
+.timeline {
+    list-style: none;
+    padding: 0;
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 2.5rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 32px;
+    width: 2px;
+    height: calc(100% - 16px);
+    background: linear-gradient(180deg, #E3F2FD 0%, #F5F7FA 100%);
+}
+
+.timeline-point {
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.timeline-event {
+    margin-bottom: 0;
+}
+
+.timeline-header {
+    margin-bottom: 0.5rem;
 }
 
 /* Custom untuk status badge */

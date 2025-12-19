@@ -37,25 +37,61 @@
                         style="max-width: 1000px; margin: 0 auto; padding: 0 50px;">
                         @foreach ($steps as $index => $step)
                             <div class="text-center position-relative" style="flex: 1; margin: 0 20px;">
-                                <!-- Connector Line -->
+                                <!-- Connector Line with Gradient -->
                                 @if ($index < count($steps) - 1)
+                                    @php
+                                        $nextStep = $steps[$index + 1] ?? null;
+                                        $isConnectorActive =
+                                            $step['completed'] && ($nextStep && $nextStep['completed']);
+                                        $gradientColor = $isConnectorActive
+                                            ? 'linear-gradient(90deg, #42A5F5 0%, #64B5F6 50%, #90CAF9 100%)'
+                                            : ($step['completed']
+                                                ? 'linear-gradient(90deg, #42A5F5 0%, #64B5F6 100%)'
+                                                : '#E0E0E0');
+                                    @endphp
                                     <div class="position-absolute top-0 start-50 translate-middle-y"
-                                        style="left: 50%; right: -100%; width: calc(200% + 40px); height: 2px; background-color: {{ $step['completed'] ? '#696cff' : '#e0e0e0' }}; z-index: 0; margin-top: 30px;">
+                                        style="left: 50%; right: -100%; width: calc(200% + 40px); height: 4px; background: {{ $gradientColor }}; z-index: 0; margin-top: 30px; border-radius: 2px; box-shadow: {{ $step['completed'] ? '0 3px 8px rgba(66, 165, 245, 0.25)' : 'none' }};">
                                     </div>
                                 @endif
 
-                                <!-- Step Circle with Number -->
+                                <!-- Step Circle with Gradient -->
                                 <div class="position-relative d-inline-block" style="z-index: 1;">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center {{ $step['completed'] ? 'bg-primary' : 'bg-secondary' }} text-white fw-bold mx-auto mb-3"
-                                        style="width: 60px; height: 60px; font-size: 24px;">
-                                        
+                                    @php
+                                        $circleGradient = $step['completed']
+                                            ? 'linear-gradient(135deg, #2196F3 0%, #42A5F5 50%, #64B5F6 100%)'
+                                            : ($index === $currentIndex
+                                                ? 'linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%)'
+                                                : 'linear-gradient(135deg, #E0E0E0 0%, #EEEEEE 100%)');
+                                        $circleShadow = $step['completed']
+                                            ? '0 8px 20px rgba(33, 150, 243, 0.35), 0 0 0 4px rgba(100, 181, 246, 0.2)'
+                                            : ($index === $currentIndex
+                                                ? '0 8px 20px rgba(100, 181, 246, 0.3), 0 0 0 4px rgba(144, 202, 249, 0.25)'
+                                                : '0 4px 10px rgba(224, 224, 224, 0.3)');
+                                    @endphp
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white mx-auto mb-3"
+                                        style="width: 60px; height: 60px; font-size: 28px; background: {{ $circleGradient }}; box-shadow: {{ $circleShadow }}; transition: all 0.3s ease;">
+                                        @if ($step['completed'])
+                                            <i class='bx bx-check' style="font-weight: bold;"></i>
+                                        @elseif($index === $currentIndex)
+                                            <i class='bx bx-time-five'></i>
+                                        @else
+                                            <i class='bx bx-circle' style="font-size: 12px;"></i>
+                                        @endif
                                     </div>
                                 </div>
 
                                 <!-- Step Info -->
                                 <div class="mt-2">
-                                    <h6 class="mb-1 {{ $step['completed'] ? 'text-dark fw-bold' : 'text-muted' }}"
-                                        style="font-size: 0.9rem;">
+                                    @php
+                                        $textColor = $step['completed']
+                                            ? '#1565C0'
+                                            : ($index === $currentIndex
+                                                ? '#2196F3'
+                                                : '#9E9E9E');
+                                        $textWeight = $step['completed'] || $index === $currentIndex ? '600' : '400';
+                                    @endphp
+                                    <h6 class="mb-1"
+                                        style="font-size: 0.9rem; color: {{ $textColor }}; font-weight: {{ $textWeight }};">
                                         {{ $step['name'] }}
                                     </h6>
 
@@ -81,18 +117,45 @@
                 <div class="d-lg-none">
                     @foreach ($steps as $index => $step)
                         <div class="d-flex mb-4 position-relative">
-                            <!-- Timeline Line -->
+                            <!-- Timeline Line with Gradient -->
                             @if ($index < count($steps) - 1)
+                                @php
+                                    $nextStep = $steps[$index + 1] ?? null;
+                                    $lineGradient =
+                                        $step['completed'] && ($nextStep && $nextStep['completed'])
+                                            ? 'linear-gradient(180deg, #42A5F5 0%, #64B5F6 50%, #90CAF9 100%)'
+                                            : ($step['completed']
+                                                ? 'linear-gradient(180deg, #42A5F5 0%, #64B5F6 100%)'
+                                                : '#E0E0E0');
+                                @endphp
                                 <div class="position-absolute"
-                                    style="left: 29px; top: 60px; width: 2px; height: calc(100% - 20px); background-color: {{ $step['completed'] ? '#696cff' : '#e0e0e0' }}; z-index: 0;">
+                                    style="left: 29px; top: 60px; width: 4px; height: calc(100% - 20px); background: {{ $lineGradient }}; z-index: 0; border-radius: 2px; box-shadow: {{ $step['completed'] ? '0 3px 8px rgba(66, 165, 245, 0.25)' : 'none' }};">
                                 </div>
                             @endif
 
-                            <!-- Step Circle with Number -->
+                            <!-- Step Circle with Gradient -->
                             <div class="flex-shrink-0 position-relative" style="z-index: 1;">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center {{ $step['completed'] ? 'bg-primary' : 'bg-secondary' }} text-white fw-bold"
-                                    style="width: 60px; height: 60px; font-size: 24px;">
-                                    {{ $index + 1 }}
+                                @php
+                                    $mobileCircleGradient = $step['completed']
+                                        ? 'linear-gradient(135deg, #2196F3 0%, #42A5F5 50%, #64B5F6 100%)'
+                                        : ($index === $currentIndex
+                                            ? 'linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%)'
+                                            : 'linear-gradient(135deg, #E0E0E0 0%, #EEEEEE 100%)');
+                                    $mobileCircleShadow = $step['completed']
+                                        ? '0 8px 20px rgba(33, 150, 243, 0.35), 0 0 0 4px rgba(100, 181, 246, 0.2)'
+                                        : ($index === $currentIndex
+                                            ? '0 8px 20px rgba(100, 181, 246, 0.3), 0 0 0 4px rgba(144, 202, 249, 0.25)'
+                                            : '0 4px 10px rgba(224, 224, 224, 0.3)');
+                                @endphp
+                                <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
+                                    style="width: 60px; height: 60px; font-size: 28px; background: {{ $mobileCircleGradient }}; box-shadow: {{ $mobileCircleShadow }}; transition: all 0.3s ease;">
+                                    @if ($step['completed'])
+                                        <i class='bx bx-check' style="font-weight: bold;"></i>
+                                    @elseif($index === $currentIndex)
+                                        <i class='bx bx-time-five'></i>
+                                    @else
+                                        <i class='bx bx-circle' style="font-size: 12px;"></i>
+                                    @endif
                                 </div>
                             </div>
 
@@ -100,7 +163,17 @@
                             <div class="flex-grow-1 ms-3">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h6 class="mb-1 {{ $step['completed'] ? 'text-dark fw-bold' : 'text-muted' }}">
+                                        @php
+                                            $mobileTextColor = $step['completed']
+                                                ? '#1565C0'
+                                                : ($index === $currentIndex
+                                                    ? '#2196F3'
+                                                    : '#9E9E9E');
+                                            $mobileTextWeight =
+                                                $step['completed'] || $index === $currentIndex ? '600' : '400';
+                                        @endphp
+                                        <h6 class="mb-1"
+                                            style="color: {{ $mobileTextColor }}; font-weight: {{ $mobileTextWeight }};">
                                             {{ $step['name'] }}
                                         </h6>
 
@@ -118,7 +191,7 @@
                                     </div>
 
                                     @if ($step['completed'])
-                                        <i class='bx bx-check-circle text-primary fs-5'></i>
+                                        <i class='bx bx-check-circle fs-5' style="color: #2196F3;"></i>
                                     @endif
                                 </div>
                             </div>
@@ -144,35 +217,37 @@
                             class="badge bg-label-{{ $permohonan->status_badge_class }}">{{ $permohonan->status_label }}</span>
                     </div>
                     <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Kabupaten/Kota</label></div>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><small class="text-muted">Kabupaten/Kota</small></div>
                             <div class="col-sm-8">
-                                <strong>{{ $permohonan->kabupatenKota->nama ?? '-' }}</strong>
+                                <strong style="font-size: 0.9rem;">{{ $permohonan->kabupatenKota->nama ?? '-' }}</strong>
                             </div>
                         </div>
-                        <hr class="my-3">
-                        <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Jenis Dokumen</label></div>
+                        <hr class="my-2">
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><small class="text-muted">Jenis Dokumen</small></div>
                             <div class="col-sm-8">
-                                <span class="badge bg-primary">{{ strtoupper($permohonan->jenis_dokumen) }}</span>
+                                <span class="badge bg-primary"
+                                    style="font-size: 0.7rem;">{{ strtoupper($permohonan->jenis_dokumen) }}</span>
                             </div>
                         </div>
-                        <hr class="my-3">
-                        <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Tahun</label></div>
-                            <div class="col-sm-8"><strong>{{ $permohonan->tahun }}</strong></div>
+                        <hr class="my-2">
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><small class="text-muted">Tahun</small></div>
+                            <div class="col-sm-8"><strong style="font-size: 0.9rem;">{{ $permohonan->tahun }}</strong>
+                            </div>
                         </div>
-                        <hr class="my-3">
-                        <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Jadwal Fasilitasi</label></div>
+                        <hr class="my-2">
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><small class="text-muted">Jadwal Fasilitasi</small></div>
                             <div class="col-sm-8">
                                 @if ($permohonan->jadwalFasilitasi)
-                                    <strong>
+                                    <strong style="font-size: 0.85rem;">
                                         {{ $permohonan->jadwalFasilitasi->tanggal_mulai->format('d M Y') }} s/d
                                         {{ $permohonan->jadwalFasilitasi->tanggal_selesai->format('d M Y') }}
                                     </strong>
-                                    <br><small class="text-muted">
-                                        Batas Permohonan:
+                                    <br><small class="text-muted" style="font-size: 0.75rem;">
+                                        Batas:
                                         {{ $permohonan->jadwalFasilitasi->batas_permohonan ? $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y') : '-' }}
                                     </small>
                                 @else
@@ -180,12 +255,62 @@
                                 @endif
                             </div>
                         </div>
-                        <hr class="my-3">
+                        <hr class="my-2">
                         <div class="row mb-3">
-                            <div class="col-sm-4"><label class="text-muted">Tanggal Dibuat</label></div>
+                            <div class="col-sm-4"><small class="text-muted">Tanggal Dibuat</small></div>
                             <div class="col-sm-8">
-                                <strong>{{ $permohonan->created_at->format('d M Y H:i') }}</strong>
+                                <strong
+                                    style="font-size: 0.85rem;">{{ $permohonan->created_at->format('d M Y H:i') }}</strong>
                             </div>
+                        </div>
+
+                        @if ($permohonan->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
+                            <hr class="my-3" style="border-top: 2px solid #dee2e6;">
+                            <div class="mt-3">
+                                <h6 class="mb-3" style="color: #1565C0; font-weight: 600;"><i
+                                        class='bx bx-task me-1'></i>Aksi Permohonan</h6>
+                                @php
+                                    $dokumenBelumLengkap = $permohonan->permohonanDokumen
+                                        ->where('is_ada', false)
+                                        ->count();
+                                    $totalDokumen = $permohonan->permohonanDokumen->count();
+                                    $dokumenTerlengkapi = $totalDokumen - $dokumenBelumLengkap;
+                                @endphp
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small class="text-muted">Kelengkapan Dokumen</small>
+                                        <small
+                                            class="text-muted"><strong>{{ $dokumenTerlengkapi }}/{{ $totalDokumen }}</strong></small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar {{ $dokumenBelumLengkap == 0 ? 'bg-success' : 'bg-warning' }}"
+                                            role="progressbar"
+                                            style="width: {{ $totalDokumen > 0 ? ($dokumenTerlengkapi / $totalDokumen) * 100 : 0 }}%"
+                                            aria-valuenow="{{ $dokumenTerlengkapi }}" aria-valuemin="0"
+                                            aria-valuemax="{{ $totalDokumen }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST"
+                                    class="mb-2">
+                                    @csrf
+                                    <button type="submit"
+                                        class="btn btn-success w-100 {{ $dokumenBelumLengkap > 0 ? 'disabled' : '' }}"
+                                        {{ $dokumenBelumLengkap > 0 ? 'disabled' : '' }}
+                                        onclick="return confirm('Yakin ingin mengirim permohonan ini? Setelah dikirim, dokumen tidak dapat diubah lagi.')">
+                                        <i class='bx bx-send me-1'></i>
+                                        {{ $dokumenBelumLengkap > 0 ? 'Lengkapi Dokumen' : 'Kirim Permohonan' }}
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+
+                        <div class="mt-3">
+                            <a href="{{ route('permohonan.index') }}" class="btn btn-outline-secondary w-100">
+                                <i class='bx bx-arrow-back me-1'></i> Kembali
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -193,125 +318,83 @@
 
             <div class="col-lg-4">
                 <!-- Timeline Card -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Timeline</h5>
+                <div class="card">
+                    <div class="card-header"
+                        style="background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%); border: none; padding: 0.875rem 1.25rem;">
+                        <h5 class="mb-0 text-white d-flex align-items-center">
+                            <i class='bx bx-time-five me-2' style="font-size: 1.15rem;"></i>
+                            <span style="font-weight: 600; font-size: 0.95rem;">Timeline Permohonan</span>
+                        </h5>
                     </div>
-                    <div class="card-body">
-                        <ul class="timeline">
-                            <li class="timeline-item timeline-item-transparent">
-                                <span class="timeline-point timeline-point-primary"></span>
+                    <div class="card-body" style="padding: 1.25rem; max-height: 600px; overflow-y: auto;">
+                        <ul class="timeline mb-0">
+                            <li class="timeline-item timeline-item-transparent pb-3">
+                                <span class="timeline-point timeline-point-primary"
+                                    style="background: #2196F3; border: 3px solid #E3F2FD; box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);"></span>
                                 <div class="timeline-event">
-                                    <div class="timeline-header mb-1">
-                                        <h6 class="mb-0">Dibuat</h6>
-                                        <small
-                                            class="text-muted">{{ $permohonan->created_at->format('d M Y, H:i') }}</small>
+                                    <div class="timeline-header mb-2">
+                                        <h6 class="mb-1" style="color: #1565C0; font-weight: 600;">Dibuat</h6>
+                                        <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                            <i
+                                                class='bx bx-calendar me-1'></i>{{ $permohonan->created_at->format('d M Y, H:i') }}
+                                        </small>
                                     </div>
-                                    <p class="mb-0 small">Permohonan dibuat</p>
+                                    <p class="mb-0 text-muted" style="font-size: 0.8rem;">Permohonan dibuat oleh pemohon
+                                    </p>
                                 </div>
                             </li>
                             @if ($permohonan->submitted_at)
-                                <li class="timeline-item timeline-item-transparent">
-                                    <span class="timeline-point timeline-point-warning"></span>
+                                <li class="timeline-item timeline-item-transparent pb-3">
+                                    <span class="timeline-point timeline-point-warning"
+                                        style="background: #FF9800; border: 3px solid #FFF3E0; box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.1);"></span>
                                     <div class="timeline-event">
-                                        <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Diajukan</h6>
-                                            <small
-                                                class="text-muted">{{ $permohonan->submitted_at->format('d M Y, H:i') }}</small>
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #E65100; font-weight: 600;">Dokumen Dilengkapi & Dikirim</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->submitted_at->format('d M Y, H:i') }}
+                                            </small>
                                         </div>
-                                        <p class="mb-0 small">Menunggu verifikasi</p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Semua dokumen kelengkapan telah diupload dan permohonan dikirim untuk verifikasi
+                                        </p>
                                     </div>
                                 </li>
                             @endif
                             @if ($permohonan->status_akhir === 'selesai')
-                                <li class="timeline-item timeline-item-transparent">
-                                    <span class="timeline-point timeline-point-success"></span>
+                                <li class="timeline-item timeline-item-transparent pb-3">
+                                    <span class="timeline-point timeline-point-success"
+                                        style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
                                     <div class="timeline-event">
-                                        <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Selesai Verifikasi</h6>
-                                            <small
-                                                class="text-muted">{{ $permohonan->updated_at->format('d M Y, H:i') }}</small>
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Selesai
+                                                Verifikasi</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->updated_at->format('d M Y, H:i') }}
+                                            </small>
                                         </div>
-                                        <p class="mb-0 small">Dokumen terverifikasi lengkap</p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Dokumen terverifikasi
+                                            lengkap</p>
                                     </div>
                                 </li>
                             @endif
                             @if ($permohonan->status_akhir === 'revisi')
-                                <li class="timeline-item timeline-item-transparent">
-                                    <span class="timeline-point timeline-point-warning"></span>
+                                <li class="timeline-item timeline-item-transparent pb-1">
+                                    <span class="timeline-point timeline-point-danger"
+                                        style="background: #FF5722; border: 3px solid #FBE9E7; box-shadow: 0 0 0 4px rgba(255, 87, 34, 0.1);"></span>
                                     <div class="timeline-event">
-                                        <div class="timeline-header mb-1">
-                                            <h6 class="mb-0">Perlu Revisi</h6>
-                                            <small
-                                                class="text-muted">{{ $permohonan->updated_at->format('d M Y, H:i') }}</small>
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #D84315; font-weight: 600;">Perlu Revisi</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->updated_at->format('d M Y, H:i') }}
+                                            </small>
                                         </div>
-                                        <p class="mb-0 small">Dokumen perlu diperbaiki</p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Dokumen perlu diperbaiki</p>
                                     </div>
                                 </li>
                             @endif
                         </ul>
-                    </div>
-                </div>
-
-                <!-- Action Card -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Aksi</h5>
-                    </div>
-                    <div class="card-body">
-                        @if ($permohonan->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
-                            @php
-                                $dokumenBelumLengkap = $permohonan->permohonanDokumen->where('is_ada', false)->count();
-                                $totalDokumen = $permohonan->permohonanDokumen->count();
-                                $dokumenTerlengkapi = $totalDokumen - $dokumenBelumLengkap;
-                            @endphp
-
-                            <!-- Progress Upload Dokumen -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <small class="text-muted">Kelengkapan Dokumen</small>
-                                    <small class="text-muted">{{ $dokumenTerlengkapi }}/{{ $totalDokumen }}</small>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar {{ $dokumenBelumLengkap == 0 ? 'bg-success' : 'bg-warning' }}"
-                                        role="progressbar"
-                                        style="width: {{ $totalDokumen > 0 ? ($dokumenTerlengkapi / $totalDokumen) * 100 : 0 }}%"
-                                        aria-valuenow="{{ $dokumenTerlengkapi }}" aria-valuemin="0"
-                                        aria-valuemax="{{ $totalDokumen }}">
-                                    </div>
-                                </div>
-                            </div>
-
-                            @if ($dokumenBelumLengkap > 0)
-                                <div class="alert alert-warning alert-dismissible mb-3" role="alert">
-                                    <i class='bx bx-info-circle me-2'></i>
-                                    <strong>Perhatian!</strong><br>
-                                    Masih ada <strong>{{ $dokumenBelumLengkap }} dokumen</strong> yang belum diupload.
-                                    Silakan lengkapi semua dokumen sebelum mengirim permohonan.
-                                </div>
-                            @else
-                                <div class="alert alert-success mb-3" role="alert">
-                                    <i class='bx bx-check-circle me-2'></i>
-                                    <strong>Dokumen Lengkap!</strong><br>
-                                    Semua dokumen sudah diupload. Anda dapat mengirim permohonan sekarang.
-                                </div>
-                            @endif
-
-                            <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST" class="mb-2">
-                                @csrf
-                                <button type="submit"
-                                    class="btn btn-success w-100 {{ $dokumenBelumLengkap > 0 ? 'disabled' : '' }}"
-                                    {{ $dokumenBelumLengkap > 0 ? 'disabled' : '' }}
-                                    onclick="return confirm('Yakin ingin mengirim permohonan ini? Setelah dikirim, dokumen tidak dapat diubah lagi.')">
-                                    <i class='bx bx-send me-1'></i>
-                                    {{ $dokumenBelumLengkap > 0 ? 'Lengkapi Dokumen Terlebih Dahulu' : 'Kirim Permohonan' }}
-                                </button>
-                            </form>
-                        @endif
-
-                        <a href="{{ route('permohonan.index') }}" class="btn btn-outline-secondary w-100">
-                            <i class='bx bx-arrow-back me-1'></i> Kembali
-                        </a>
                     </div>
                 </div>
             </div>
@@ -348,13 +431,13 @@
                         @if ($suratPermohonan)
                             <div class="table-responsive">
                                 <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th width="25%">Nama Dokumen</th>
-                                            <th width="20%">File</th>
-                                            <th width="12%">Status Upload</th>
-                                            <th width="15%">Status Verifikasi</th>
-                                            <th width="18%">Catatan Verifikasi</th>
+                                    <thead class="table-light">
+                                        <tr class="text-center">
+                                            <th width="40%">Nama Dokumen</th>
+                                            <th width="10%">File</th>
+                                            <th width="10%">Status Upload</th>
+                                            <th width="11%">Status Verifikasi</th>
+                                            <th width="19%">Catatan Verifikasi</th>
                                             @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                                 <th width="10%">Aksi</th>
                                             @endif
@@ -366,7 +449,8 @@
                                                 <div>
                                                     <strong>{{ $suratPermohonan->masterKelengkapan->nama_dokumen ?? 'Surat Permohonan' }}</strong>
                                                     @if ($suratPermohonan->masterKelengkapan && $suratPermohonan->masterKelengkapan->wajib)
-                                                        <span class="badge badge-sm bg-label-danger ms-1">Wajib</span>
+                                                        <span class="badge bg-label-danger ms-1"
+                                                            style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">Wajib</span>
                                                     @endif
                                                 </div>
                                                 @if ($suratPermohonan->masterKelengkapan && $suratPermohonan->masterKelengkapan->deskripsi)
@@ -376,41 +460,49 @@
                                                     </small>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if ($suratPermohonan->file_path)
                                                     <a href="{{ asset('storage/' . $suratPermohonan->file_path) }}"
-                                                        target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bx bx-download me-1"></i> Lihat
+                                                        target="_blank" class="btn btn-xs btn-outline-primary"
+                                                        style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                                        <i class="bx bx-download" style="font-size: 0.875rem;"></i> Lihat
                                                     </a>
                                                 @else
-                                                    <span class="badge bg-label-warning">
-                                                        <i class='bx bx-upload'></i> Belum upload
+                                                    <span class="badge bg-label-warning"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-upload' style="font-size: 0.75rem;"></i> Belum
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if ($suratPermohonan->is_ada)
-                                                    <span class="badge bg-label-success">
-                                                        <i class='bx bx-check'></i> Tersedia
+                                                    <span class="badge bg-label-success"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-check' style="font-size: 0.75rem;"></i> Tersedia
                                                     </span>
                                                 @else
-                                                    <span class="badge bg-label-danger">
-                                                        <i class='bx bx-x'></i> Belum Upload
+                                                    <span class="badge bg-label-danger"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-x' style="font-size: 0.75rem;"></i> Belum
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if ($suratPermohonan->status_verifikasi === 'verified')
-                                                    <span class="badge bg-success">
-                                                        <i class='bx bx-check-circle'></i> Sesuai
+                                                    <span class="badge bg-success"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-check-circle' style="font-size: 0.75rem;"></i>
+                                                        Sesuai
                                                     </span>
                                                 @elseif($suratPermohonan->status_verifikasi === 'revision')
-                                                    <span class="badge bg-danger">
-                                                        <i class='bx bx-x-circle'></i> Perlu Revisi
+                                                    <span class="badge bg-danger"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-x-circle' style="font-size: 0.75rem;"></i> Revisi
                                                     </span>
                                                 @else
-                                                    <span class="badge bg-secondary">
-                                                        <i class='bx bx-time'></i> Pending
+                                                    <span class="badge bg-secondary"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-time' style="font-size: 0.75rem;"></i> Pending
                                                     </span>
                                                 @endif
                                             </td>
@@ -441,7 +533,7 @@
                                                             @csrf
                                                             @method('PUT')
                                                             <input type="file" name="file"
-                                                                class="file-input d-none" accept=".pdf,.doc,.docx"
+                                                                class="file-input d-none" accept=".pdf,.xls,.xlsx"
                                                                 required>
                                                             <button type="button"
                                                                 class="btn btn-sm btn-{{ $suratPermohonan->status_verifikasi === 'revision' ? 'warning' : 'primary' }} btn-upload-trigger">
@@ -489,14 +581,14 @@
 
                         <div class="table-responsive">
                             <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th width="5%">No</th>
-                                        <th width="23%">Nama Dokumen</th>
-                                        <th width="17%">File</th>
+                                <thead class="table-light">
+                                    <tr class="text-center">
+                                        <th width="3%">No</th>
+                                        <th width="37%">Nama Dokumen</th>
+                                        <th width="10%">File</th>
                                         <th width="10%">Status Upload</th>
-                                        <th width="13%">Status Verifikasi</th>
-                                        <th width="17%">Catatan Verifikasi</th>
+                                        <th width="11%">Status Verifikasi</th>
+                                        <th width="19%">Catatan Verifikasi</th>
                                         @if ($permohonan->status_akhir == 'belum' || $permohonan->status_akhir == 'revisi')
                                             <th width="10%">Aksi</th>
                                         @endif
@@ -505,13 +597,10 @@
                                 <tbody>
                                     @forelse($kelengkapanVerifikasi as $index => $dokumen)
                                         <tr>
-                                            <td>{{ $index + 1 }}</td>
+                                            <td>{{ $index }}</td>
                                             <td>
                                                 <div>
                                                     <strong>{{ $dokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen Kelengkapan' }}</strong>
-                                                    @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->wajib)
-                                                        <span class="badge badge-sm bg-label-danger ms-1">Wajib</span>
-                                                    @endif
                                                 </div>
                                                 @if ($dokumen->masterKelengkapan && $dokumen->masterKelengkapan->deskripsi)
                                                     <small class="text-muted d-block mt-1">
@@ -520,41 +609,49 @@
                                                     </small>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if ($dokumen->file_path)
                                                     <a href="{{ asset('storage/' . $dokumen->file_path) }}"
-                                                        target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="bx bx-download me-1"></i> Lihat
+                                                        target="_blank" class="btn btn-xs btn-outline-primary"
+                                                        style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                                        <i class="bx bx-download" style="font-size: 0.875rem;"></i> Lihat
                                                     </a>
                                                 @else
-                                                    <span class="badge bg-label-warning">
-                                                        <i class='bx bx-upload'></i> Belum upload
+                                                    <span class="badge bg-label-warning"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-upload' style="font-size: 0.75rem;"></i> Belum
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if ($dokumen->is_ada)
-                                                    <span class="badge bg-label-success">
-                                                        <i class='bx bx-check'></i> Tersedia
+                                                    <span class="badge bg-label-success"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-check' style="font-size: 0.75rem;"></i> Tersedia
                                                     </span>
                                                 @else
-                                                    <span class="badge bg-label-danger">
-                                                        <i class='bx bx-x'></i> Belum Upload
+                                                    <span class="badge bg-label-danger"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-x' style="font-size: 0.75rem;"></i> Belum
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if ($dokumen->status_verifikasi === 'verified')
-                                                    <span class="badge bg-success">
-                                                        <i class='bx bx-check-circle'></i> Sesuai
+                                                    <span class="badge bg-success"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-check-circle' style="font-size: 0.75rem;"></i>
+                                                        Sesuai
                                                     </span>
                                                 @elseif($dokumen->status_verifikasi === 'revision')
-                                                    <span class="badge bg-danger">
-                                                        <i class='bx bx-x-circle'></i> Perlu Revisi
+                                                    <span class="badge bg-danger"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-x-circle' style="font-size: 0.75rem;"></i> Revisi
                                                     </span>
                                                 @else
-                                                    <span class="badge bg-secondary">
-                                                        <i class='bx bx-time'></i> Pending
+                                                    <span class="badge bg-secondary"
+                                                        style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+                                                        <i class='bx bx-time' style="font-size: 0.75rem;"></i> Pending
                                                     </span>
                                                 @endif
                                             </td>
@@ -584,7 +681,7 @@
                                                             @csrf
                                                             @method('PUT')
                                                             <input type="file" name="file"
-                                                                class="file-input d-none" accept=".pdf,.doc,.docx"
+                                                                class="file-input d-none" accept=".pdf,.xls,.xlsx"
                                                                 required>
                                                             <button type="button"
                                                                 class="btn btn-sm btn-{{ $dokumen->status_verifikasi === 'revision' ? 'warning' : 'primary' }} btn-upload-trigger">

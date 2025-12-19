@@ -45,10 +45,10 @@ class LaporanVerifikasiController extends Controller
      */
     public function create(Permohonan $permohonan)
     {
-        // Cek apakah sudah ada laporan
-        if ($permohonan->laporanVerifikasi) {
+        // Cek apakah sudah ada laporan dengan status lengkap
+        if ($permohonan->laporanVerifikasi && $permohonan->laporanVerifikasi->status_kelengkapan === 'lengkap') {
             return redirect()->route('laporan-verifikasi.show', $permohonan)
-                ->with('info', 'Laporan verifikasi sudah dibuat sebelumnya.');
+                ->with('info', 'Laporan verifikasi sudah dibuat dan berstatus lengkap.');
         }
 
         // Ambil data dokumen untuk statistik
@@ -56,7 +56,7 @@ class LaporanVerifikasiController extends Controller
             ->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN status_verifikasi = 'verified' THEN 1 ELSE 0 END) as verified,
-                SUM(CASE WHEN status_verifikasi = 'revision_required' THEN 1 ELSE 0 END) as revision
+                SUM(CASE WHEN status_verifikasi = 'revision' THEN 1 ELSE 0 END) as revision
             ")
             ->first();
 
@@ -82,37 +82,54 @@ class LaporanVerifikasiController extends Controller
                 ->selectRaw("
                     COUNT(*) as total,
                     SUM(CASE WHEN status_verifikasi = 'verified' THEN 1 ELSE 0 END) as verified,
-                    SUM(CASE WHEN status_verifikasi = 'revision_required' THEN 1 ELSE 0 END) as revision
+                    SUM(CASE WHEN status_verifikasi = 'revision' THEN 1 ELSE 0 END) as revision
                 ")
                 ->first();
 
-            // Buat laporan verifikasi
-            $laporan = LaporanVerifikasi::create([
-                'permohonan_id' => $permohonan->id,
-                'ringkasan_verifikasi' => $request->ringkasan_verifikasi,
-                'catatan_admin' => $request->catatan_admin,
-                'status_kelengkapan' => $request->status_kelengkapan,
-                'jumlah_dokumen_verified' => $dokumenStats->verified ?? 0,
-                'jumlah_dokumen_revision' => $dokumenStats->revision ?? 0,
-                'total_dokumen' => $dokumenStats->total ?? 0,
-                'dibuat_oleh' => Auth::id(),
-                'tanggal_laporan' => now(),
-            ]);
+            // Jika sudah ada laporan dengan status tidak_lengkap, update. Jika lengkap atau belum ada, create
+            $existingLaporan = $permohonan->laporanVerifikasi;
 
-            // Update tahapan permohonan (opsional, skip jika error)
+            if ($existingLaporan && $existingLaporan->status_kelengkapan === 'tidak_lengkap') {
+                // Update laporan yang sudah ada
+                $existingLaporan->update([
+                    'ringkasan_verifikasi' => $request->ringkasan_verifikasi,
+                    'catatan_admin' => $request->catatan_admin,
+                    'status_kelengkapan' => $request->status_kelengkapan,
+                    'jumlah_dokumen_verified' => $dokumenStats->verified ?? 0,
+                    'jumlah_dokumen_revision' => $dokumenStats->revision ?? 0,
+                    'total_dokumen' => $dokumenStats->total ?? 0,
+                    'dibuat_oleh' => Auth::id(),
+                    'tanggal_laporan' => now(),
+                ]);
+                $laporan = $existingLaporan;
+            } else {
+                // Buat laporan verifikasi baru
+                $laporan = LaporanVerifikasi::create([
+                    'permohonan_id' => $permohonan->id,
+                    'ringkasan_verifikasi' => $request->ringkasan_verifikasi,
+                    'catatan_admin' => $request->catatan_admin,
+                    'status_kelengkapan' => $request->status_kelengkapan,
+                    'jumlah_dokumen_verified' => $dokumenStats->verified ?? 0,
+                    'jumlah_dokumen_revision' => $dokumenStats->revision ?? 0,
+                    'total_dokumen' => $dokumenStats->total ?? 0,
+                    'dibuat_oleh' => Auth::id(),
+                    'tanggal_laporan' => now(),
+                ]);
+            }
+
+            // Update tahapan permohonan
             try {
                 $tahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
                 if ($tahapanVerifikasi) {
-                    $permohonan->tahapan()->updateOrCreate(
+                    \App\Models\PermohonanTahapan::updateOrCreate(
                         [
                             'permohonan_id' => $permohonan->id,
                             'tahapan_id' => $tahapanVerifikasi->id
                         ],
                         [
                             'status' => 'selesai',
-                            'tgl_mulai' => $permohonan->submitted_at ?? now(),
-                            'tgl_selesai' => now(),
-                            'catatan' => 'Laporan verifikasi telah dibuat',
+                            'catatan' => 'Laporan verifikasi telah dibuat pada ' . now()->format('d M Y H:i'),
+                            'updated_by' => Auth::id(),
                         ]
                     );
                 }
@@ -124,7 +141,7 @@ class LaporanVerifikasiController extends Controller
             DB::commit();
 
             return redirect()->route('laporan-verifikasi.show', $permohonan)
-                ->with('success', 'Laporan verifikasi berhasil dibuat.');
+                ->with('success', 'Laporan verifikasi berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error membuat laporan verifikasi: ' . $e->getMessage());

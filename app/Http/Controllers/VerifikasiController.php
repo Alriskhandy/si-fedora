@@ -151,9 +151,8 @@ class VerifikasiController extends Controller
                     ],
                     [
                         'status' => 'selesai',
-                        'tgl_mulai' => $permohonan->submitted_at ?? now(),
-                        'tgl_selesai' => now(),
-                        'catatan' => 'Verifikasi dokumen selesai - semua dokumen terverifikasi',
+                        'catatan' => 'Verifikasi dokumen selesai - semua dokumen terverifikasi pada ' . now()->format('d M Y H:i'),
+                        'updated_by' => Auth::id(),
                     ]
                 );
             }
@@ -172,9 +171,8 @@ class VerifikasiController extends Controller
                     ],
                     [
                         'status' => 'revisi',
-                        'tgl_mulai' => $permohonan->submitted_at ?? now(),
-                        'tgl_selesai' => null,
-                        'catatan' => 'Dokumen perlu revisi - pemohon diminta memperbaiki dokumen',
+                        'catatan' => 'Dokumen perlu revisi - pemohon diminta memperbaiki dokumen pada ' . now()->format('d M Y H:i'),
+                        'updated_by' => Auth::id(),
                     ]
                 );
             }

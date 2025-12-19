@@ -134,6 +134,7 @@ class PermohonanController extends Controller
 
         return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
     }
+
     public function show(Permohonan $permohonan)
     {
         // Cek hak akses
@@ -198,9 +199,8 @@ class PermohonanController extends Controller
                 ],
                 [
                     'status' => 'selesai',
-                    'tgl_mulai' => $permohonan->created_at,
-                    'tgl_selesai' => now(),
-                    'catatan' => 'Permohonan dibuat dan diajukan',
+                    'catatan' => 'Permohonan dibuat dan diajukan pada ' . now()->format('d M Y H:i'),
+                    'updated_by' => Auth::id(),
                 ]
             );
         }
@@ -215,9 +215,8 @@ class PermohonanController extends Controller
                 ],
                 [
                     'status' => 'proses',
-                    'tgl_mulai' => now(),
-                    'tgl_selesai' => null,
                     'catatan' => 'Menunggu verifikasi dokumen',
+                    'updated_by' => Auth::id(),
                 ]
             );
         }

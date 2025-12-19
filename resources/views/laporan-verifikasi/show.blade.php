@@ -11,12 +11,18 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('laporan-verifikasi.index') }}">Laporan Verifikasi</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('laporan-verifikasi.index') }}">Laporan Verifikasi</a>
+                        </li>
                         <li class="breadcrumb-item active">Detail</li>
                     </ol>
                 </nav>
             </div>
             <div>
+                @if ($laporan->status_kelengkapan == 'tidak_lengkap')
+                    <a href="{{ route('laporan-verifikasi.create', $permohonan) }}" class="btn btn-warning me-2">
+                        <i class='bx bx-edit'></i> Perbaiki Laporan
+                    </a>
+                @endif
                 <a href="{{ route('laporan-verifikasi.download', $permohonan) }}" class="btn btn-success me-2">
                     <i class='bx bx-download'></i> Download PDF
                 </a>
@@ -54,7 +60,8 @@
                         <div class="mb-3">
                             <label class="text-muted small">Status</label>
                             <p class="mb-0">
-                                <span class="badge bg-{{ $laporan->status_kelengkapan == 'lengkap' ? 'success' : 'warning' }}">
+                                <span
+                                    class="badge bg-{{ $laporan->status_kelengkapan == 'lengkap' ? 'success' : 'warning' }}">
                                     {{ $laporan->status_kelengkapan == 'lengkap' ? 'Lengkap' : 'Tidak Lengkap' }}
                                 </span>
                             </p>
@@ -73,8 +80,8 @@
                             <small class="text-muted">Persentase Terverifikasi</small>
                         </div>
                         <div class="progress mb-3" style="height: 10px;">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: {{ $laporan->persentase_verified }}%">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                style="width: {{ $laporan->persentase_verified }}%">
                             </div>
                         </div>
                         <hr>
@@ -133,7 +140,7 @@
                 </div>
 
                 <!-- Catatan Admin -->
-                @if($laporan->catatan_admin)
+                @if ($laporan->catatan_admin)
                     <div class="card mb-4">
                         <div class="card-header">
                             <h5 class="mb-0">Catatan Tambahan Admin</h5>
@@ -152,16 +159,19 @@
                         <h5 class="mb-0">Status Kelengkapan Dokumen</h5>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-{{ $laporan->status_kelengkapan == 'lengkap' ? 'success' : 'warning' }} mb-0">
+                        <div
+                            class="alert alert-{{ $laporan->status_kelengkapan == 'lengkap' ? 'success' : 'warning' }} mb-0">
                             <div class="d-flex align-items-center">
-                                <i class='bx {{ $laporan->status_kelengkapan == 'lengkap' ? 'bx-check-circle' : 'bx-error-circle' }} fs-3 me-3'></i>
+                                <i
+                                    class='bx {{ $laporan->status_kelengkapan == 'lengkap' ? 'bx-check-circle' : 'bx-error-circle' }} fs-3 me-3'></i>
                                 <div>
                                     <h5 class="mb-1">
                                         {{ $laporan->status_kelengkapan == 'lengkap' ? 'Dokumen Lengkap' : 'Dokumen Tidak Lengkap' }}
                                     </h5>
                                     <p class="mb-0">
-                                        @if($laporan->status_kelengkapan == 'lengkap')
-                                            Semua dokumen telah terverifikasi dengan baik dan dapat dilanjutkan ke tahap berikutnya.
+                                        @if ($laporan->status_kelengkapan == 'lengkap')
+                                            Semua dokumen telah terverifikasi dengan baik dan dapat dilanjutkan ke tahap
+                                            berikutnya.
                                         @else
                                             Ada beberapa dokumen yang perlu diperbaiki atau dilengkapi.
                                         @endif

@@ -11,7 +11,8 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('laporan-verifikasi.index') }}">Laporan Verifikasi</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('laporan-verifikasi.index') }}">Laporan Verifikasi</a>
+                        </li>
                         <li class="breadcrumb-item active">Buat Laporan</li>
                     </ol>
                 </nav>
@@ -92,110 +93,47 @@
                         <h5 class="mb-0">Form Laporan Verifikasi</h5>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('laporan-verifikasi.store', $permohonan) }}" method="POST">
+                        <form action="{{ route('laporan-verifikasi.store', $permohonan) }}" method="POST" id="laporanForm">
                             @csrf
+                            <input type="hidden" name="status_kelengkapan" id="status_kelengkapan" value="">
 
                             <!-- Ringkasan Verifikasi -->
                             <div class="mb-4">
                                 <label for="ringkasan_verifikasi" class="form-label">
                                     Ringkasan Hasil Verifikasi <span class="text-danger">*</span>
                                 </label>
-                                <textarea name="ringkasan_verifikasi" id="ringkasan_verifikasi" 
-                                          class="form-control @error('ringkasan_verifikasi') is-invalid @enderror" 
-                                          rows="6" required>{{ old('ringkasan_verifikasi') }}</textarea>
-                                <small class="text-muted">
-                                    Jelaskan hasil verifikasi dokumen secara keseluruhan
-                                </small>
+                                <textarea name="ringkasan_verifikasi" id="ringkasan_verifikasi"
+                                    class="form-control @error('ringkasan_verifikasi') is-invalid @enderror" rows="5" required>{{ old('ringkasan_verifikasi') }}</textarea>
                                 @error('ringkasan_verifikasi')
                                     <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <!-- Status Kelengkapan -->
-                            <div class="mb-4">
-                                <label class="form-label">
-                                    Status Kelengkapan Dokumen <span class="text-danger">*</span>
-                                </label>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-check card p-3 {{ old('status_kelengkapan') == 'lengkap' ? 'border-success' : '' }}">
-                                            <input class="form-check-input" type="radio" 
-                                                   name="status_kelengkapan" id="lengkap" 
-                                                   value="lengkap" 
-                                                   {{ old('status_kelengkapan') == 'lengkap' ? 'checked' : '' }}
-                                                   required>
-                                            <label class="form-check-label w-100" for="lengkap">
-                                                <div class="d-flex align-items-center">
-                                                    <i class='bx bx-check-circle text-success fs-4 me-2'></i>
-                                                    <div>
-                                                        <strong>Lengkap</strong>
-                                                        <p class="mb-0 small text-muted">
-                                                            Semua dokumen telah terverifikasi dengan baik
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check card p-3 {{ old('status_kelengkapan') == 'tidak_lengkap' ? 'border-warning' : '' }}">
-                                            <input class="form-check-input" type="radio" 
-                                                   name="status_kelengkapan" id="tidak_lengkap" 
-                                                   value="tidak_lengkap"
-                                                   {{ old('status_kelengkapan') == 'tidak_lengkap' ? 'checked' : '' }}>
-                                            <label class="form-check-label w-100" for="tidak_lengkap">
-                                                <div class="d-flex align-items-center">
-                                                    <i class='bx bx-error-circle text-warning fs-4 me-2'></i>
-                                                    <div>
-                                                        <strong>Tidak Lengkap</strong>
-                                                        <p class="mb-0 small text-muted">
-                                                            Ada dokumen yang perlu diperbaiki
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                @error('status_kelengkapan')
-                                    <div class="text-danger small mt-2">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <!-- Catatan Admin -->
                             <div class="mb-4">
                                 <label for="catatan_admin" class="form-label">
-                                    Catatan Tambahan (Opsional)
+                                    Catatan Tambahan
                                 </label>
-                                <textarea name="catatan_admin" id="catatan_admin" 
-                                          class="form-control @error('catatan_admin') is-invalid @enderror" 
-                                          rows="4">{{ old('catatan_admin') }}</textarea>
+                                <textarea name="catatan_admin" id="catatan_admin" class="form-control @error('catatan_admin') is-invalid @enderror"
+                                    rows="3">{{ old('catatan_admin') }}</textarea>
                                 @error('catatan_admin')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
 
-                            <!-- Informasi Statistik (Read-only) -->
-                            <div class="alert alert-info">
-                                <h6 class="alert-heading">
-                                    <i class='bx bx-info-circle'></i> Informasi Statistik
-                                </h6>
-                                <p class="mb-0">
-                                    Statistik dokumen akan otomatis tersimpan dalam laporan: <br>
-                                    <strong>{{ $dokumenStats->verified ?? 0 }}</strong> dokumen terverifikasi, 
-                                    <strong>{{ $dokumenStats->revision ?? 0 }}</strong> perlu revisi dari total 
-                                    <strong>{{ $dokumenStats->total ?? 0 }}</strong> dokumen.
-                                </p>
-                            </div>
-
                             <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between">
-                                <a href="{{ route('laporan-verifikasi.index') }}" class="btn btn-secondary">
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <a href="{{ route('laporan-verifikasi.index') }}" class="btn btn-outline-secondary">
                                     <i class='bx bx-x'></i> Batal
                                 </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class='bx bx-save'></i> Simpan Laporan
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-warning" onclick="setStatus('tidak_lengkap')">
+                                        <i class='bx bx-error-circle'></i> Simpan - Tidak Lengkap
+                                    </button>
+                                    <button type="submit" class="btn btn-success" onclick="setStatus('lengkap')">
+                                        <i class='bx bx-check-circle'></i> Simpan - Lengkap
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -203,4 +141,12 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            function setStatus(status) {
+                document.getElementById('status_kelengkapan').value = status;
+            }
+        </script>
+    @endpush
 @endsection
