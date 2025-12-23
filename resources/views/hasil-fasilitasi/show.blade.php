@@ -5,13 +5,15 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold">Detail Hasil Fasilitasi</h4>
             <div>
-                @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
-                    <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-success me-2">
-                        <i class="bx bx-file"></i> Generate Word
-                    </a>
-                    <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-primary me-2">
-                        <i class="bx bxs-file-pdf"></i> Generate PDF
-                    </a>
+                @if (!isset($isVerifikator) || !$isVerifikator)
+                    @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
+                        <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-primary me-2">
+                            <i class="bx bxs-file-doc"></i> Generate Word
+                        </a>
+                        <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-danger me-2">
+                            <i class="bx bxs-file-pdf"></i> Generate PDF
+                        </a>
+                    @endif
                 @endif
                 <a href="{{ route('hasil-fasilitasi.index') }}" class="btn btn-secondary">
                     <i class="bx bx-arrow-back"></i> Kembali
@@ -91,12 +93,14 @@
                                 {{ $hasilFasilitasi->updated_at->format('d M Y') }}
                             </dd>
                         </dl>
-                        <div class="mt-2">
-                            <a href="{{ route('hasil-fasilitasi.create', $permohonan) }}"
-                                class="btn btn-sm btn-warning w-100">
-                                <i class="bx bx-edit"></i> Edit
-                            </a>
-                        </div>
+                        @if (!isset($isVerifikator) || !$isVerifikator)
+                            <div class="mt-2">
+                                <a href="{{ route('hasil-fasilitasi.create', $permohonan) }}"
+                                    class="btn btn-sm btn-warning w-100">
+                                    <i class="bx bx-edit"></i> Edit
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -128,36 +132,91 @@
                         <div class="tab-content pt-4">
                             <!-- Tab 1: Sistematika -->
                             <div class="tab-pane fade show active" id="sistematika" role="tabpanel">
-                                @forelse ($hasilFasilitasi->hasilSistematika as $item)
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <h6 class="mb-1 text-primary">{{ $item->bab_sub_bab }}</h6>
-                                            <p class="mb-0 small">{{ $item->catatan_penyempurnaan }}</p>
-                                        </div>
+                                @if ($hasilFasilitasi->hasilSistematika->count() > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th width="5%">No</th>
+                                                    <th width="20%">Bab / Sub Bab</th>
+                                                    <th width="55%">Catatan Penyempurnaan</th>
+                                                    <th width="20%">Oleh</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($hasilFasilitasi->hasilSistematika as $item)
+                                                    <tr>
+                                                        <td class="text-center">{{ $loop->iteration }}</td>
+                                                        <td>
+                                                            <strong
+                                                                class="text-primary">{{ $item->masterBab->nama_bab ?? '-' }}</strong>
+                                                            @if ($item->sub_bab)
+                                                                <br><small class="text-muted">{{ $item->sub_bab }}</small>
+                                                            @endif
+                                                        </td>
+                                                        <td>{!! is_string($item->catatan_penyempurnaan)
+                                                            ? $item->catatan_penyempurnaan
+                                                            : $item->catatan_penyempurnaan->render() !!}</td>
+                                                        <td>
+                                                            <small class="text-muted">
+                                                                {{ $item->user->name ?? '-' }}<br>
+                                                                <span
+                                                                    class="text-secondary">{{ $item->created_at->format('d/m/Y H:i') }}</span>
+                                                            </small>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
-                                @empty
+                                @else
                                     <div class="alert alert-info">
                                         <i class="bx bx-info-circle"></i> Belum ada item sistematika.
                                     </div>
-                                @endforelse
+                                @endif
                             </div>
 
                             <!-- Tab 2: Urusan Pemerintahan -->
                             <div class="tab-pane fade" id="urusan" role="tabpanel">
-                                @forelse ($hasilFasilitasi->hasilUrusan as $item)
-                                    <div class="card mb-2">
-                                        <div class="card-body py-2">
-                                            <h6 class="mb-1 text-primary">
-                                                {{ $item->masterUrusan->urutan }}. {{ $item->masterUrusan->nama_urusan }}
-                                            </h6>
-                                            <p class="mb-0 small">{{ $item->catatan_masukan }}</p>
-                                        </div>
+                                @if ($hasilFasilitasi->hasilUrusan->count() > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th width="5%">No</th>
+                                                    <th width="25%">Urusan Pemerintahan</th>
+                                                    <th width="50%">Catatan Masukan / Saran</th>
+                                                    <th width="20%">Oleh</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($hasilFasilitasi->hasilUrusan as $item)
+                                                    <tr>
+                                                        <td class="text-center">{{ $loop->iteration }}</td>
+                                                        <td>
+                                                            <strong class="text-primary">
+                                                                {{ $item->masterUrusan->urutan }}.
+                                                                {{ $item->masterUrusan->nama_urusan }}
+                                                            </strong>
+                                                        </td>
+                                                        <td>{!! is_string($item->catatan_masukan) ? $item->catatan_masukan : $item->catatan_masukan->render() !!}</td>
+                                                        <td>
+                                                            <small class="text-muted">
+                                                                {{ $item->user->name ?? '-' }}<br>
+                                                                <span
+                                                                    class="text-secondary">{{ $item->created_at->format('d/m/Y H:i') }}</span>
+                                                            </small>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
-                                @empty
+                                @else
                                     <div class="alert alert-info">
                                         <i class="bx bx-info-circle"></i> Belum ada item urusan.
                                     </div>
-                                @endforelse
+                                @endif
                             </div>
                         </div>
                     </div>

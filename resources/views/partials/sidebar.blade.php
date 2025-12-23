@@ -171,6 +171,12 @@
                     <div data-i18n="Undangan">Undangan Fasilitasi</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
+                <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-file-find"></i>
+                    <div data-i18n="Hasil Fasilitasi">Hasil Fasilitasi</div>
+                </a>
+            </li>
         @endif
 
         <!-- FASILITATOR -->

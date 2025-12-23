@@ -1,70 +1,88 @@
-<!DOCTYPE html>
-<html lang="id" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default"
-    data-assets-path="/assets/">
+@extends('layouts.app')
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-    <title>500 - Kesalahan Server | {{ config('app.name') }}</title>
+@push('styles')
+    <style>
+        .error-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 200px);
+        }
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico" />
+        .misc-wrapper {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
-        rel="stylesheet" />
+        .error-code {
+            font-size: 6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+    </style>
+@endpush
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="/assets/vendor/fonts/boxicons.css" />
-
-    <!-- Core CSS -->
-    <link rel="stylesheet" href="/assets/vendor/css/core.css" class="template-customizer-core-css" />
-    <link rel="stylesheet" href="/assets/vendor/css/theme-default.css" class="template-customizer-theme-css" />
-    <link rel="stylesheet" href="/assets/css/demo.css" />
-</head>
-
-<body>
-    <!-- Content -->
-    <div class="container-xxl container-p-y">
-        <div class="misc-wrapper">
-            <h2 class="mb-2 mx-2" style="font-size: 6rem; line-height: 6rem;">500</h2>
-            <h4 class="mb-2 mx-2">Terjadi Kesalahan Server 🔧</h4>
-            <p class="mb-4 mx-2">Maaf, terjadi kesalahan pada sistem kami.</p>
-            <p class="mb-4 mx-2 text-muted">
-                Tim teknis kami telah diberitahu dan sedang menangani masalah ini. Silakan coba lagi dalam beberapa
-                saat.
-            </p>
-            @if (config('app.debug') && isset($exception))
-                <div class="alert alert-danger mx-2 text-start" style="max-width: 600px; margin: 0 auto;">
-                    <strong>Debug Info:</strong><br>
-                    <small>{{ $exception->getMessage() }}</small>
+@section('main')
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <div class="error-wrapper">
+            <div class="misc-wrapper">
+                <div class="error-code">500</div>
+                <h4 class="mb-3">Terjadi Kesalahan Server 🔧</h4>
+                <p class="mb-4">Maaf, terjadi kesalahan pada sistem kami.</p>
+                <p class="text-muted mb-4">
+                    Tim teknis kami telah diberitahu dan sedang menangani masalah ini.<br>
+                    Silakan coba lagi dalam beberapa saat.
+                </p>
+                @if (config('app.debug') && isset($exception))
+                    <div class="alert alert-danger text-start mb-4">
+                        <strong>Debug Info:</strong><br>
+                        <small>{{ $exception->getMessage() }}</small>
+                    </div>
+                @endif
+                <div class="mt-4">
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
+                        <i class="bx bx-arrow-back"></i> Kembali
+                    </a>
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="btn btn-primary">
+                            <i class="bx bx-home"></i> Ke Dashboard
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-primary">
+                            <i class="bx bx-log-in"></i> Login
+                        </a>
+                    @endauth
                 </div>
-            @endif
-            <div class="mt-4">
-                <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
-                    <i class="bx bx-arrow-back"></i> Kembali
-                </a>
-                <a href="{{ auth()->check() ? route('dashboard') : route('home') }}" class="btn btn-primary">
-                    <i class="bx bx-home"></i> Ke Beranda
-                </a>
-            </div>
-            <div class="mt-5">
-                <img src="/assets/img/illustrations/page-misc-error-light.png" alt="page-misc-error-light"
-                    width="500" class="img-fluid" data-app-dark-img="illustrations/page-misc-error-dark.png"
-                    data-app-light-img="illustrations/page-misc-error-light.png" />
             </div>
         </div>
     </div>
-    <!-- / Content -->
+@endsection
+<i class="bx bx-home"></i> Ke Beranda
+</a>
+</div>
+<div class="mt-5">
+    <img src="/assets/img/illustrations/page-misc-error-light.png" alt="page-misc-error-light" width="500"
+        class="img-fluid" data-app-dark-img="illustrations/page-misc-error-dark.png"
+        data-app-light-img="illustrations/page-misc-error-light.png" />
+</div>
+</div>
+</div>
+<!-- / Content -->
 
-    <!-- Core JS -->
-    <script src="/assets/vendor/libs/jquery/jquery.js"></script>
-    <script src="/assets/vendor/libs/popper/popper.js"></script>
-    <script src="/assets/vendor/js/bootstrap.js"></script>
+<!-- Core JS -->
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
 </body>
 
 </html>

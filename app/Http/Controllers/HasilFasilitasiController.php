@@ -34,7 +34,7 @@ class HasilFasilitasiController extends Controller
     {
         // Get jenis_dokumen_id directly from permohonan
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
-        
+
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
             ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
@@ -44,10 +44,10 @@ class HasilFasilitasiController extends Controller
             ->where('is_pic', true)
             ->where('is_active', true)
             ->first();
-        
+
         // Check if user is fasilitator with is_pic = true (koordinator) for this specific team
         $isKoord = $assignment !== null;
-            
+
         Log::info('isKoordinator Check', [
             'user_id' => Auth::id(),
             'permohonan_id' => $permohonan->id,
@@ -57,7 +57,7 @@ class HasilFasilitasiController extends Controller
             'assignment_found' => $assignment ? 'YES' : 'NO',
             'result' => $isKoord
         ]);
-        
+
         return $isKoord;
     }
 
@@ -68,7 +68,7 @@ class HasilFasilitasiController extends Controller
     {
         // Get jenis_dokumen_id directly from permohonan
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
-        
+
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
             ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
@@ -77,9 +77,9 @@ class HasilFasilitasiController extends Controller
             ->whereIn('role_type', ['fasilitator', 'verifikator'])
             ->where('is_active', true)
             ->first();
-        
+
         $isMember = $assignment !== null;
-        
+
         Log::info('isTimMember Check', [
             'user_id' => Auth::id(),
             'permohonan_id' => $permohonan->id,
@@ -89,7 +89,7 @@ class HasilFasilitasiController extends Controller
             'assignment_found' => $assignment ? 'YES (role: ' . $assignment->role_type . ')' : 'NO',
             'result' => $isMember
         ]);
-        
+
         // Check if user is member of this specific team
         return $isMember;
     }
@@ -103,20 +103,38 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
-     * Tampilkan daftar permohonan untuk input hasil fasilitasi (Fasilitator)
+     * Check if user is verifikator for this permohonan
+     */
+    private function isVerifikator(Permohonan $permohonan)
+    {
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->where('role_type', 'verifikator')
+            ->where('is_active', true)
+            ->first();
+
+        return $assignment !== null;
+    }
+
+    /**
+     * Tampilkan daftar permohonan untuk input hasil fasilitasi (Fasilitator & Verifikator)
      */
     public function index(Request $request)
     {
-        // Get user's tim assignments
+        // Get user's tim assignments (fasilitator or verifikator)
         $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->where('role_type', 'fasilitator')
+            ->whereIn('role_type', ['fasilitator', 'verifikator'])
             ->where('is_active', true)
             ->get();
 
         $query = Permohonan::with(['kabupatenKota', 'undanganPelaksanaan', 'hasilFasilitasi'])
-            ->where(function($q) use ($userAssignments) {
+            ->where(function ($q) use ($userAssignments) {
                 foreach ($userAssignments as $assignment) {
-                    $q->orWhere(function($subQ) use ($assignment) {
+                    $q->orWhere(function ($subQ) use ($assignment) {
                         // Use correct column name: kab_kota_id (not kabupaten_kota_id)
                         $subQ->where('permohonan.kab_kota_id', $assignment->kabupaten_kota_id)
                             ->where('permohonan.tahun', $assignment->tahun)
@@ -153,7 +171,19 @@ class HasilFasilitasiController extends Controller
      */
     public function create(Permohonan $permohonan)
     {
-        // Check if user is member of this tim
+        // Prevent verifikator from accessing create/edit (only fasilitator allowed)
+        if ($this->isVerifikator($permohonan)) {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if ($hasilFasilitasi) {
+                return redirect()->route('hasil-fasilitasi.show', $permohonan)
+                    ->with('info', 'Verifikator hanya dapat melihat hasil fasilitasi.');
+            } else {
+                return redirect()->route('hasil-fasilitasi.index')
+                    ->with('info', 'Hasil fasilitasi belum dibuat. Verifikator tidak dapat membuat hasil fasilitasi.');
+            }
+        }
+
+        // Check if user is member of this tim (fasilitator)
         if (!$this->isTimMember($permohonan)) {
             abort(403, 'Anda bukan anggota tim untuk permohonan ini.');
         }
@@ -171,19 +201,12 @@ class HasilFasilitasiController extends Controller
         $masterUrusanList = MasterUrusan::orderBy('urutan')->get();
 
         // Ambil daftar bab berdasarkan jenis dokumen dari permohonan (hanya parent/level 1)
-        // Permohonan punya jenis_dokumen enum ('rkpd', 'rpd', 'rpjmd')
-        // Master bab punya jenis_dokumen_id (foreign key ke tabel jenis_dokumen)
         $masterBabList = collect();
-        if ($permohonan->jenis_dokumen) {
-            // Cari jenis_dokumen_id berdasarkan nama jenis_dokumen
-            $jenisDokumen = \App\Models\MasterJenisDokumen::where('nama', strtoupper($permohonan->jenis_dokumen))->first();
-
-            if ($jenisDokumen) {
-                $masterBabList = MasterBab::where('jenis_dokumen_id', $jenisDokumen->id)
-                    ->whereNull('parent_id')
-                    ->orderBy('urutan')
-                    ->get();
-            }
+        if ($permohonan->jenis_dokumen_id) {
+            $masterBabList = MasterBab::where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
+                ->whereNull('parent_id')
+                ->orderBy('urutan')
+                ->get();
         }
 
         // Load hasil fasilitasi dengan relasi
@@ -196,7 +219,7 @@ class HasilFasilitasiController extends Controller
         // Get tim info untuk ditampilkan
         $kabkotaId = $permohonan->kab_kota_id;
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
-        
+
         $timInfo = null;
         if ($jenisDokumenId && $kabkotaId) {
             $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
@@ -205,7 +228,7 @@ class HasilFasilitasiController extends Controller
                 ->where('is_active', true)
                 ->with('user')
                 ->get();
-            
+
             $timInfo = [
                 'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
                 'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
@@ -280,16 +303,30 @@ class HasilFasilitasiController extends Controller
      */
     public function show(Permohonan $permohonan)
     {
+        // Check if user is member or verifikator
+        $isVerifikator = $this->isVerifikator($permohonan);
+        $isTimMember = $this->isTimMember($permohonan);
+
+        if (!$isTimMember && !$isVerifikator) {
+            abort(403, 'Anda tidak memiliki akses untuk melihat hasil fasilitasi ini.');
+        }
+
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
         if (!$hasilFasilitasi) {
+            // Verifikator tidak bisa create, redirect ke index
+            if ($isVerifikator && !$isTimMember) {
+                return redirect()->route('hasil-fasilitasi.index')
+                    ->with('info', 'Hasil fasilitasi belum dibuat.');
+            }
             return redirect()->route('hasil-fasilitasi.create', $permohonan)
                 ->with('info', 'Hasil fasilitasi belum dibuat.');
         }
 
-        $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilSistematika');
+        $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilUrusan.user', 'hasilSistematika.masterBab', 'hasilSistematika.user', 'pembuat');
 
-        return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi'));
+        // Pass isVerifikator to view
+        return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator'));
     }
 
     /**
@@ -379,11 +416,12 @@ class HasilFasilitasiController extends Controller
                 'master_bab_id' => $sistematika->master_bab_id,
                 'sub_bab' => $sistematika->sub_bab,
                 'user_id' => $sistematika->user_id,
-                'catatan_penyempurnaan' => is_object($sistematika->catatan_penyempurnaan) && method_exists($sistematika->catatan_penyempurnaan, 'render') 
-                    ? $sistematika->catatan_penyempurnaan->render() 
+                'catatan_penyempurnaan' => is_object($sistematika->catatan_penyempurnaan) && method_exists($sistematika->catatan_penyempurnaan, 'render')
+                    ? $sistematika->catatan_penyempurnaan->render()
                     : $sistematika->catatan_penyempurnaan,
                 'masterBab' => $sistematika->masterBab,
                 'user' => $sistematika->user,
+                'created_at' => $sistematika->created_at->format('d/m/Y H:i'),
             ];
 
             return response()->json([
@@ -477,11 +515,12 @@ class HasilFasilitasiController extends Controller
                 'id' => $urusan->id,
                 'master_urusan_id' => $urusan->master_urusan_id,
                 'user_id' => $urusan->user_id,
-                'catatan_masukan' => is_object($urusan->catatan_masukan) && method_exists($urusan->catatan_masukan, 'render') 
-                    ? $urusan->catatan_masukan->render() 
+                'catatan_masukan' => is_object($urusan->catatan_masukan) && method_exists($urusan->catatan_masukan, 'render')
+                    ? $urusan->catatan_masukan->render()
                     : $urusan->catatan_masukan,
                 'masterUrusan' => $urusan->masterUrusan,
                 'user' => $urusan->user,
+                'created_at' => $urusan->created_at->format('d/m/Y H:i'),
             ];
 
             return response()->json([

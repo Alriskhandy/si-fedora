@@ -60,20 +60,26 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('hasil-fasilitasi.create', $item) }}"
-                                            class="btn btn-sm btn-primary">
-                                            <i class="bx bx-edit"></i>
-                                            @if ($item->hasilFasilitasi)
-                                                Edit Hasil
-                                            @else
-                                                Input Hasil
-                                            @endif
-                                        </a>
+                                        @if (auth()->user()->hasRole('fasilitator'))
+                                            <a href="{{ route('hasil-fasilitasi.create', $item) }}"
+                                                class="btn btn-sm btn-primary">
+                                                <i class="bx bx-edit"></i>
+                                                @if ($item->hasilFasilitasi)
+                                                    Edit Hasil
+                                                @else
+                                                    Input Hasil
+                                                @endif
+                                            </a>
+                                        @endif
                                         @if ($item->hasilFasilitasi)
                                             <a href="{{ route('hasil-fasilitasi.show', $item) }}"
                                                 class="btn btn-sm btn-info">
                                                 <i class="bx bx-show"></i> Lihat
                                             </a>
+                                        @else
+                                            @if (auth()->user()->hasRole('verifikator'))
+                                                <span class="badge bg-secondary">Belum Ada Hasil</span>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>

@@ -205,21 +205,27 @@ Route::middleware(['auth'])->group(function () {
     // FASILITATOR ROUTES
     // =====================================================
     Route::middleware(['role:fasilitator'])->group(function () {
-        // Hasil Fasilitasi
-        Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
+        // Hasil Fasilitasi (Create/Edit - Fasilitator only)
         Route::get('/hasil-fasilitasi/{permohonan}/create', [HasilFasilitasiController::class, 'create'])->name('hasil-fasilitasi.create');
         Route::post('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'store'])->name('hasil-fasilitasi.store');
-        Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
         Route::post('/hasil-fasilitasi/{permohonan}/submit', [HasilFasilitasiController::class, 'submit'])->name('hasil-fasilitasi.submit');
-        Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
         Route::get('/hasil-fasilitasi/{permohonan}/generate', [HasilFasilitasiController::class, 'generate'])->name('hasil-fasilitasi.generate');
         Route::get('/hasil-fasilitasi/{permohonan}/generate-pdf', [HasilFasilitasiController::class, 'generatePdf'])->name('hasil-fasilitasi.generate-pdf');
 
-        // Sistematika & Urusan
+        // Sistematika & Urusan (Fasilitator only)
         Route::post('/hasil-fasilitasi/{permohonan}/sistematika', [HasilFasilitasiController::class, 'storeSistematika'])->name('hasil-fasilitasi.sistematika.store');
         Route::delete('/hasil-fasilitasi/{permohonan}/sistematika/{id}', [HasilFasilitasiController::class, 'deleteSistematika'])->name('hasil-fasilitasi.sistematika.delete');
         Route::post('/hasil-fasilitasi/{permohonan}/urusan', [HasilFasilitasiController::class, 'storeUrusan'])->name('hasil-fasilitasi.urusan.store');
         Route::delete('/hasil-fasilitasi/{permohonan}/urusan/{id}', [HasilFasilitasiController::class, 'deleteUrusan'])->name('hasil-fasilitasi.urusan.delete');
+    });
+
+    // FASILITATOR & VERIFIKATOR ROUTES (Read-only untuk Verifikator)
+    // =====================================================
+    Route::middleware(['role:fasilitator|verifikator'])->group(function () {
+        // Hasil Fasilitasi (View - Both can access)
+        Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
+        Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
+        Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
     });
 
     // =====================================================
