@@ -18,8 +18,10 @@ class SuratPenyampaianHasilController extends Controller
     public function index(Request $request)
     {
         $query = HasilFasilitasi::with(['permohonan.kabupatenKota', 'pembuat'])
-            ->whereNotNull('draft_file')
-            ->orWhereNotNull('final_file');
+            ->where(function ($q) {
+                $q->whereNotNull('draft_file')
+                    ->orWhereNotNull('final_file');
+            });
 
         // Filter pencarian
         if ($request->filled('search')) {
