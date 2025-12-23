@@ -262,6 +262,7 @@ class Permohonan extends Model
             'Penetapan Jadwal' => 'bx-calendar',
             'Pelaksanaan' => 'bx-briefcase',
             'Hasil Fasilitasi' => 'bx-file',
+            'Tindak Lanjut Hasil' => 'bx-task',
             'Penetapan PERDA/PERKADA' => 'bx-check-shield',
         ];
 
@@ -339,6 +340,7 @@ class Permohonan extends Model
             'Penetapan Jadwal' => 'Penetapan jadwal fasilitasi',
             'Pelaksanaan' => 'Pelaksanaan fasilitasi',
             'Hasil Fasilitasi' => 'Penyusunan hasil fasilitasi',
+            'Tindak Lanjut Hasil' => 'Tindak lanjut hasil fasilitasi',
             'Penetapan PERDA/PERKADA' => 'Penetapan peraturan daerah',
         ];
 

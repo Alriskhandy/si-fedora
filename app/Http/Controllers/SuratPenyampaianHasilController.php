@@ -78,6 +78,40 @@ class SuratPenyampaianHasilController extends Controller
                 'surat_tanggal' => now(),
             ]);
 
+            // Update tahapan Hasil Fasilitasi menjadi selesai
+            $masterTahapanHasil = \App\Models\MasterTahapan::where('nama_tahapan', 'Hasil Fasilitasi')->first();
+            if ($masterTahapanHasil) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanHasil->id,
+                    ],
+                    [
+                        'status' => 'selesai',
+                        'tgl_selesai' => now(),
+                        'catatan' => 'Surat penyampaian hasil fasilitasi diupload pada ' . now()->format('d M Y H:i'),
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
+
+            // Mulai tahapan Tindak Lanjut Hasil
+            $masterTahapanTindakLanjut = \App\Models\MasterTahapan::where('nama_tahapan', 'Tindak Lanjut Hasil')->first();
+            if ($masterTahapanTindakLanjut) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanTindakLanjut->id,
+                    ],
+                    [
+                        'status' => 'proses',
+                        'tgl_mulai' => now(),
+                        'catatan' => 'Menunggu pemohon mengupload laporan tindak lanjut',
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
+
             DB::commit();
 
             return redirect()->route('surat-penyampaian-hasil.index')

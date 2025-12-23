@@ -397,7 +397,7 @@
                                 </li>
                             @endif
                             @if ($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->status === 'sent')
-                                <li class="timeline-item timeline-item-transparent pb-1">
+                                <li class="timeline-item timeline-item-transparent pb-3">
                                     <span class="timeline-point timeline-point-info"
                                         style="background: #00BCD4; border: 3px solid #E0F7FA; box-shadow: 0 0 0 4px rgba(0, 188, 212, 0.1);"></span>
                                     <div class="timeline-event">
@@ -411,6 +411,38 @@
                                         </div>
                                         <p class="mb-0 text-muted" style="font-size: 0.8rem;">Undangan pelaksanaan
                                             fasilitasi telah dikirim</p>
+                                    </div>
+                                </li>
+                            @endif
+                            @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->surat_penyampaian)
+                                <li class="timeline-item timeline-item-transparent pb-3">
+                                    <span class="timeline-point timeline-point-success"
+                                        style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
+                                    <div class="timeline-event">
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Surat Penyampaian Hasil</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->hasilFasilitasi->surat_tanggal->format('d M Y, H:i') }}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Surat penyampaian hasil fasilitasi telah diupload</p>
+                                    </div>
+                                </li>
+                            @endif
+                            @if ($permohonan->tindakLanjut)
+                                <li class="timeline-item timeline-item-transparent pb-1">
+                                    <span class="timeline-point timeline-point-success"
+                                        style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
+                                    <div class="timeline-event">
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Tindak Lanjut Hasil</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->tindakLanjut->tanggal_upload->format('d M Y, H:i') }}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Laporan tindak lanjut telah diupload</p>
                                     </div>
                                 </li>
                             @endif

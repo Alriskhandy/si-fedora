@@ -88,6 +88,23 @@ class TindakLanjutController extends Controller
                 ]
             );
 
+            // Update tahapan Tindak Lanjut Hasil
+            $masterTahapanTindakLanjut = \App\Models\MasterTahapan::where('nama_tahapan', 'Tindak Lanjut Hasil')->first();
+            if ($masterTahapanTindakLanjut) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanTindakLanjut->id,
+                    ],
+                    [
+                        'status' => 'selesai',
+                        'tgl_selesai' => now(),
+                        'catatan' => 'Laporan tindak lanjut diupload pada ' . now()->format('d M Y H:i'),
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
+
             DB::commit();
 
             return redirect()->route('tindak-lanjut.index')

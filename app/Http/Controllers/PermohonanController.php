@@ -145,7 +145,9 @@ class PermohonanController extends Controller
             'kabupatenKota',
             'jadwalFasilitasi',
             'permohonanDokumen.masterKelengkapan',
-            'undanganPelaksanaan'
+            'undanganPelaksanaan',
+            'hasilFasilitasi',
+            'tindakLanjut'
         ]);
 
         return view('permohonan.show', compact('permohonan'));
