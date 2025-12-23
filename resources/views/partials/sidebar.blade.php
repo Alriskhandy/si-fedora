@@ -32,12 +32,6 @@
                 <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
             </a>
         </li>
-        <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
-            <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-folder-open"></i>
-                <div data-i18n="Dokumen PERDA">PERDA / PERKADA</div>
-            </a>
-        </li>
 
         <!-- KABAN -->
         @if (auth()->user()->hasRole('kaban'))
@@ -62,12 +56,6 @@
                     <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
                 </a>
             </li>
-            {{-- <li class="menu-item {{ request()->routeIs('penetapan-perda.*') ? 'active' : '' }}">
-                <a href="{{ route('penetapan-perda.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-file-blank"></i>
-                    <div data-i18n="Penetapan PERDA">Penetapan PERDA/PERKADA</div>
-                </a>
-            </li> --}}
             <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
                 <a href="{{ route('monitoring.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bar-chart"></i>
@@ -150,6 +138,12 @@
                 <a href="{{ route('tindak-lanjut.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-task"></i>
                     <div data-i18n="Tindak Lanjut">Tindak Lanjut</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('penetapan-perda.*') ? 'active' : '' }}">
+                <a href="{{ route('penetapan-perda.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-check-shield"></i>
+                    <div data-i18n="Penetapan PERDA">PERDA/PERKADA</div>
                 </a>
             </li>
         @endif

@@ -143,13 +143,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/surat-penyampaian-hasil/{permohonan}', [SuratPenyampaianHasilController::class, 'store'])->name('surat-penyampaian-hasil.store');
         Route::get('/surat-penyampaian-hasil/{permohonan}', [SuratPenyampaianHasilController::class, 'show'])->name('surat-penyampaian-hasil.show');
 
-        // Penetapan PERDA/PERKADA
-        Route::get('/penetapan-perda', [PenetapanPerdaController::class, 'index'])->name('penetapan-perda.index');
-        Route::get('/penetapan-perda/{permohonan}/create', [PenetapanPerdaController::class, 'create'])->name('penetapan-perda.create');
-        Route::post('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'store'])->name('penetapan-perda.store');
-        Route::get('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'show'])->name('penetapan-perda.show');
-        Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
-
         // Surat Rekomendasi
         Route::get('/surat-rekomendasi', [SuratRekomendasiController::class, 'index'])->name('surat-rekomendasi.index');
         Route::get('/surat-rekomendasi/{permohonan}/create', [SuratRekomendasiController::class, 'create'])->name('surat-rekomendasi.create');
@@ -189,6 +182,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/tindak-lanjut/{permohonan}', [TindakLanjutController::class, 'store'])->name('tindak-lanjut.store');
         Route::get('/tindak-lanjut/{permohonan}', [TindakLanjutController::class, 'show'])->name('tindak-lanjut.show');
         Route::get('/tindak-lanjut/{permohonan}/download', [TindakLanjutController::class, 'download'])->name('tindak-lanjut.download');
+
+        // Penetapan PERDA/PERKADA
+        Route::get('/penetapan-perda', [PenetapanPerdaController::class, 'index'])->name('penetapan-perda.index');
+        Route::get('/penetapan-perda/{permohonan}/create', [PenetapanPerdaController::class, 'create'])->name('penetapan-perda.create');
+        Route::post('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'store'])->name('penetapan-perda.store');
+        Route::get('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'show'])->name('penetapan-perda.show');
+        Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
     });
 
     // =====================================================

@@ -147,7 +147,8 @@ class PermohonanController extends Controller
             'permohonanDokumen.masterKelengkapan',
             'undanganPelaksanaan',
             'hasilFasilitasi',
-            'tindakLanjut'
+            'tindakLanjut',
+            'penetapanPerda'
         ]);
 
         return view('permohonan.show', compact('permohonan'));

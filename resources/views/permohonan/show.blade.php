@@ -431,7 +431,7 @@
                                 </li>
                             @endif
                             @if ($permohonan->tindakLanjut)
-                                <li class="timeline-item timeline-item-transparent pb-1">
+                                <li class="timeline-item timeline-item-transparent pb-3">
                                     <span class="timeline-point timeline-point-success"
                                         style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
                                     <div class="timeline-event">
@@ -443,6 +443,24 @@
                                             </small>
                                         </div>
                                         <p class="mb-0 text-muted" style="font-size: 0.8rem;">Laporan tindak lanjut telah diupload</p>
+                                    </div>
+                                </li>
+                            @endif
+                            @if ($permohonan->penetapanPerda)
+                                <li class="timeline-item timeline-item-transparent pb-1">
+                                    <span class="timeline-point timeline-point-success"
+                                        style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
+                                    <div class="timeline-event">
+                                        <div class="timeline-header mb-2">
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Penetapan PERDA/PERKADA</h6>
+                                            <small class="d-block text-muted" style="font-size: 0.75rem;">
+                                                <i
+                                                    class='bx bx-calendar me-1'></i>{{ $permohonan->penetapanPerda->tanggal_penetapan->format('d M Y') }}
+                                            </small>
+                                        </div>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">
+                                            {{ $permohonan->penetapanPerda->nomor_perda }} - {{ $permohonan->penetapanPerda->keterangan }}
+                                        </p>
                                     </div>
                                 </li>
                             @endif

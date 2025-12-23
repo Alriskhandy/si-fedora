@@ -13,11 +13,12 @@ use Illuminate\Support\Facades\Storage;
 class PenetapanPerdaController extends Controller
 {
     /**
-     * Tampilkan daftar permohonan untuk penetapan PERDA (Kaban)
+     * Tampilkan daftar permohonan untuk penetapan PERDA (Pemohon)
      */
     public function index(Request $request)
     {
         $query = Permohonan::with(['kabupatenKota', 'tindakLanjut', 'penetapanPerda'])
+            ->where('user_id', Auth::id())
             ->whereHas('tindakLanjut');
 
         // Filter pencarian
@@ -37,10 +38,16 @@ class PenetapanPerdaController extends Controller
      */
     public function create(Permohonan $permohonan)
     {
+        // Pastikan permohonan milik user yang login
+        if ($permohonan->user_id !== Auth::id()) {
+            return redirect()->route('penetapan-perda.index')
+                ->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
+        }
+
         // Pastikan tindak lanjut sudah ada
         if (!$permohonan->tindakLanjut) {
             return redirect()->route('penetapan-perda.index')
-                ->with('error', 'Tindak lanjut belum ada.');
+                ->with('error', 'Tindak lanjut belum diupload.');
         }
 
         $penetapanPerda = $permohonan->penetapanPerda;
@@ -53,6 +60,11 @@ class PenetapanPerdaController extends Controller
      */
     public function store(Request $request, Permohonan $permohonan)
     {
+        // Pastikan permohonan milik user yang login
+        if ($permohonan->user_id !== Auth::id()) {
+            return back()->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
+        }
+
         $request->validate([
             'jenis_penetapan' => 'required|in:perda,perkada',
             'nomor_penetapan' => 'required|string',
@@ -79,6 +91,28 @@ class PenetapanPerdaController extends Controller
                 ]
             );
 
+            // Update tahapan Penetapan PERDA/PERKADA menjadi selesai
+            $masterTahapanPerda = \App\Models\MasterTahapan::where('nama_tahapan', 'Penetapan PERDA/PERKADA')->first();
+            if ($masterTahapanPerda) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanPerda->id,
+                    ],
+                    [
+                        'status' => 'selesai',
+                        'tgl_selesai' => now(),
+                        'catatan' => strtoupper($request->jenis_penetapan) . ' No. ' . $request->nomor_penetapan . ' ditetapkan pada ' . now()->format('d M Y H:i'),
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
+
+            // Update status akhir permohonan menjadi selesai
+            $permohonan->update([
+                'status_akhir' => 'selesai',
+            ]);
+
             DB::commit();
 
             return redirect()->route('penetapan-perda.index')
@@ -95,6 +129,12 @@ class PenetapanPerdaController extends Controller
      */
     public function show(Permohonan $permohonan)
     {
+        // Pastikan permohonan milik user yang login
+        if ($permohonan->user_id !== Auth::id()) {
+            return redirect()->route('penetapan-perda.index')
+                ->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
+        }
+
         $penetapanPerda = $permohonan->penetapanPerda;
 
         if (!$penetapanPerda) {
