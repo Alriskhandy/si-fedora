@@ -90,11 +90,14 @@
                                         <p class="mb-0">
                                             {{ basename($tindakLanjut->file_laporan) }}
                                         </p>
-                                        @if (Storage::exists($tindakLanjut->file_laporan))
+                                        @php
+                                            $filePath = 'public/' . $tindakLanjut->file_laporan;
+                                            $fileExists = \Illuminate\Support\Facades\Storage::exists($filePath);
+                                            $fileSize = $fileExists ? \Illuminate\Support\Facades\Storage::size($filePath) : 0;
+                                        @endphp
+                                        @if ($fileExists)
                                             <small class="text-muted">
-                                                Size:
-                                                {{ number_format(Storage::size($tindakLanjut->file_laporan) / 1024 / 1024, 2) }}
-                                                MB
+                                                Size: {{ number_format($fileSize / 1024 / 1024, 2) }} MB
                                             </small>
                                         @endif
                                     </div>
