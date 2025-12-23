@@ -26,12 +26,14 @@
         </li>
 
         <!-- PUBLIC MENU (All Authenticated Users) -->
-        <li class="menu-item {{ request()->routeIs('public.surat-penyampaian-hasil*') ? 'active' : '' }}">
-            <a href="{{ route('public.surat-penyampaian-hasil') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-file-find"></i>
-                <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
-            </a>
-        </li>
+        @if (!auth()->user()->hasRole('kaban'))
+            <li class="menu-item {{ request()->routeIs('public.surat-penyampaian-hasil*') ? 'active' : '' }}">
+                <a href="{{ route('public.surat-penyampaian-hasil') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-file-find"></i>
+                    <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
+                </a>
+            </li>
+        @endif
         @if (!auth()->user()->hasRole('pemohon'))
             <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
                 <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
