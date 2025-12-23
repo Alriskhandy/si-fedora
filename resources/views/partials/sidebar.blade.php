@@ -67,7 +67,7 @@
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
-                <a href="{{ route('monitoring.index') }}" class="menu-link">
+                <a href="#" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bar-chart"></i>
                     <div data-i18n="Monitoring">Monitoring Progress</div>
                 </a>
