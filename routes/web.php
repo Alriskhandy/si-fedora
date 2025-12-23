@@ -188,7 +188,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/penetapan-perda/{permohonan}/create', [PenetapanPerdaController::class, 'create'])->name('penetapan-perda.create');
         Route::post('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'store'])->name('penetapan-perda.store');
         Route::get('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'show'])->name('penetapan-perda.show');
-        Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
     });
 
     // =====================================================
@@ -238,6 +237,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
     Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
     Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
+    Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
 
     // Download undangan - accessible by all authenticated users
     Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
