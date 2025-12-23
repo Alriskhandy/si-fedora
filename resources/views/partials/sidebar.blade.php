@@ -32,6 +32,14 @@
                 <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
             </a>
         </li>
+        @if (!auth()->user()->hasRole('pemohon'))
+            <li class="menu-item {{ request()->routeIs('public.penetapan-perda') ? 'active' : '' }}">
+                <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-folder-open"></i>
+                    <div data-i18n="Dokumen PERDA">PERDA / PERKADA</div>
+                </a>
+            </li>
+        @endif
 
         <!-- KABAN -->
         @if (auth()->user()->hasRole('kaban'))
