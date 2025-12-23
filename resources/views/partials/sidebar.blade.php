@@ -62,12 +62,12 @@
                     <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('penetapan-perda.*') ? 'active' : '' }}">
+            {{-- <li class="menu-item {{ request()->routeIs('penetapan-perda.*') ? 'active' : '' }}">
                 <a href="{{ route('penetapan-perda.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-file-blank"></i>
                     <div data-i18n="Penetapan PERDA">Penetapan PERDA/PERKADA</div>
                 </a>
-            </li>
+            </li> --}}
             <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
                 <a href="{{ route('monitoring.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bar-chart"></i>

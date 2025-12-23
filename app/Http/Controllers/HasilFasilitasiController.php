@@ -32,15 +32,12 @@ class HasilFasilitasiController extends Controller
      */
     private function isKoordinator(Permohonan $permohonan)
     {
-        // Get kabupaten_kota_id - handle both field names
-        $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
-        
         // Get jenis_dokumen_id directly from permohonan
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
         
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->where('kabupaten_kota_id', $kabkotaId)
+            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
             ->where('jenis_dokumen_id', $jenisDokumenId)
             ->where('tahun', $permohonan->tahun)
             ->where('role_type', 'fasilitator')
@@ -54,9 +51,7 @@ class HasilFasilitasiController extends Controller
         Log::info('isKoordinator Check', [
             'user_id' => Auth::id(),
             'permohonan_id' => $permohonan->id,
-            'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
             'kab_kota_id' => $permohonan->kab_kota_id,
-            'used_kabkota_id' => $kabkotaId,
             'jenis_dokumen_id' => $jenisDokumenId,
             'tahun' => $permohonan->tahun,
             'assignment_found' => $assignment ? 'YES' : 'NO',
@@ -71,15 +66,12 @@ class HasilFasilitasiController extends Controller
      */
     private function isTimMember(Permohonan $permohonan)
     {
-        // Get kabupaten_kota_id - handle both field names
-        $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
-        
         // Get jenis_dokumen_id directly from permohonan
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
         
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->where('kabupaten_kota_id', $kabkotaId)
+            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
             ->where('jenis_dokumen_id', $jenisDokumenId)
             ->where('tahun', $permohonan->tahun)
             ->whereIn('role_type', ['fasilitator', 'verifikator'])
@@ -91,9 +83,7 @@ class HasilFasilitasiController extends Controller
         Log::info('isTimMember Check', [
             'user_id' => Auth::id(),
             'permohonan_id' => $permohonan->id,
-            'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
             'kab_kota_id' => $permohonan->kab_kota_id,
-            'used_kabkota_id' => $kabkotaId,
             'jenis_dokumen_id' => $jenisDokumenId,
             'tahun' => $permohonan->tahun,
             'assignment_found' => $assignment ? 'YES (role: ' . $assignment->role_type . ')' : 'NO',
@@ -126,20 +116,11 @@ class HasilFasilitasiController extends Controller
         $query = Permohonan::with(['kabupatenKota', 'undanganPelaksanaan', 'hasilFasilitasi'])
             ->where(function($q) use ($userAssignments) {
                 foreach ($userAssignments as $assignment) {
-                    // Get jenis_dokumen name from id
-                    $jenisDokumen = MasterJenisDokumen::find($assignment->jenis_dokumen_id);
-                    
-                    $q->orWhere(function($subQ) use ($assignment, $jenisDokumen) {
-                        // Check both field names for kabupaten_kota_id
-                        $subQ->where(function($kabQ) use ($assignment) {
-                            $kabQ->where('kabupaten_kota_id', $assignment->kabupaten_kota_id)
-                                ->orWhere('kab_kota_id', $assignment->kabupaten_kota_id);
-                        });
-                        $subQ->where('tahun', $assignment->tahun);
-                        
-                        if ($jenisDokumen) {
-                            $subQ->where('jenis_dokumen', $jenisDokumen->nama);
-                        }
+                    $q->orWhere(function($subQ) use ($assignment) {
+                        // Use correct column name: kab_kota_id (not kabupaten_kota_id)
+                        $subQ->where('permohonan.kab_kota_id', $assignment->kabupaten_kota_id)
+                            ->where('permohonan.tahun', $assignment->tahun)
+                            ->where('permohonan.jenis_dokumen_id', $assignment->jenis_dokumen_id);
                     });
                 }
             });
@@ -213,7 +194,7 @@ class HasilFasilitasiController extends Controller
         $isKoordinator = $this->isKoordinator($permohonan);
 
         // Get tim info untuk ditampilkan
-        $kabkotaId = $permohonan->kabupaten_kota_id ?? $permohonan->kab_kota_id;
+        $kabkotaId = $permohonan->kab_kota_id;
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
         
         $timInfo = null;
