@@ -2,6 +2,18 @@
 
 @section('title', 'Jadwal Fasilitasi')
 
+@push('styles')
+    <style>
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .card-body {
+            overflow: visible !important;
+        }
+    </style>
+@endpush
+
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="row">
@@ -102,7 +114,8 @@
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow"
-                                                        data-bs-toggle="dropdown">
+                                                        data-bs-toggle="dropdown" data-bs-container="body"
+                                                        data-bs-boundary="viewport">
                                                         <i class="bx bx-dots-vertical-rounded"></i>
                                                     </button>
                                                     <div class="dropdown-menu">
