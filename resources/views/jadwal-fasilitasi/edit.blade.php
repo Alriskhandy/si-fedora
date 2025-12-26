@@ -34,7 +34,7 @@
                                     <option value="">Pilih Jenis Dokumen</option>
                                     @foreach ($jenisdokumen as $item)
                                         <option value="{{ $item->id }}"
-                                            {{ old('jenis_dokumen', $item->jenis_dokumen_id) == $item->id ? 'selected' : '' }}>
+                                            {{ old('jenis_dokumen', $jadwal->jenis_dokumen) == $item->id ? 'selected' : '' }}>
                                             {{ strtoupper($item->nama) }}
                                         </option>
                                     @endforeach

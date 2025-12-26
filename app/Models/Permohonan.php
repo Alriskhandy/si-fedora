@@ -34,13 +34,13 @@ class Permohonan extends Model
         if ($this->relationLoaded('jenisDokumen') && $this->jenisDokumen) {
             return $this->jenisDokumen->nama;
         }
-        
+
         // Jika belum di-load, load relasi dulu
         if ($this->jenis_dokumen_id) {
             $jenisDokumen = \App\Models\MasterJenisDokumen::find($this->jenis_dokumen_id);
             return $jenisDokumen ? $jenisDokumen->nama : null;
         }
-        
+
         return null;
     }
 
@@ -345,5 +345,47 @@ class Permohonan extends Model
         ];
 
         return $descriptions[$tahapanName] ?? '';
+    }
+
+    // Helper method untuk cek apakah batas waktu upload dokumen sudah lewat
+    public function isUploadDeadlinePassed()
+    {
+        if (!$this->jadwalFasilitasi || !$this->jadwalFasilitasi->batas_permohonan) {
+            return false;
+        }
+
+        return now()->isAfter($this->jadwalFasilitasi->batas_permohonan);
+    }
+
+    // Helper method untuk cek apakah masih bisa upload dokumen
+    public function canUploadDocuments()
+    {
+        // Cek status permohonan - hanya bisa upload jika status belum atau revisi
+        if (!in_array($this->status_akhir, ['belum', 'revisi'])) {
+            return false;
+        }
+
+        // Cek deadline
+        if ($this->isUploadDeadlinePassed()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Getter untuk pesan deadline
+    public function getUploadDeadlineMessage()
+    {
+        if (!$this->jadwalFasilitasi || !$this->jadwalFasilitasi->batas_permohonan) {
+            return null;
+        }
+
+        $deadline = $this->jadwalFasilitasi->batas_permohonan;
+
+        if ($this->isUploadDeadlinePassed()) {
+            return 'Batas waktu upload dokumen telah berakhir pada ' . $deadline->format('d M Y');
+        }
+
+        return 'Batas waktu upload dokumen: ' . $deadline->format('d M Y');
     }
 }

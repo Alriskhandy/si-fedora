@@ -54,12 +54,19 @@ class PermohonanDokumenController extends Controller
             'file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB
         ]);
 
-        $permohonan = Permohonan::findOrFail($request->permohonan_id);
+        $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($request->permohonan_id);
 
         // Cek akses
         if (Auth::user()->hasRole('pemohon')) {
             if ($permohonan->user_id !== Auth::id()) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
+            }
+        }
+
+        // Cek batas permohonan/verifikasi dokumen
+        if ($permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
+            if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
+                return redirect()->back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
             }
         }
 
@@ -112,6 +119,14 @@ class PermohonanDokumenController extends Controller
             }
         }
 
+        // Cek batas permohonan/verifikasi dokumen
+        $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
+        if ($permohonan && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
+            if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
+                return redirect()->back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
+            }
+        }
+
         $oldFilePath = $permohonanDokumen->file_path;
 
         if ($request->hasFile('file')) {
@@ -157,6 +172,17 @@ class PermohonanDokumenController extends Controller
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses ke dokumen ini.'
                 ], 403);
+            }
+        }
+
+        // Cek batas permohonan/verifikasi dokumen
+        $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
+        if ($permohonan && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
+            if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y')
+                ], 400);
             }
         }
 

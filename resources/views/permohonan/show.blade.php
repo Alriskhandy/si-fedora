@@ -420,13 +420,15 @@
                                         style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
                                     <div class="timeline-event">
                                         <div class="timeline-header mb-2">
-                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Surat Penyampaian Hasil</h6>
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Surat Penyampaian
+                                                Hasil</h6>
                                             <small class="d-block text-muted" style="font-size: 0.75rem;">
                                                 <i
                                                     class='bx bx-calendar me-1'></i>{{ $permohonan->hasilFasilitasi->surat_tanggal->format('d M Y, H:i') }}
                                             </small>
                                         </div>
-                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Surat penyampaian hasil fasilitasi telah diupload</p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Surat penyampaian hasil
+                                            fasilitasi telah diupload</p>
                                     </div>
                                 </li>
                             @endif
@@ -436,13 +438,15 @@
                                         style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
                                     <div class="timeline-event">
                                         <div class="timeline-header mb-2">
-                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Tindak Lanjut Hasil</h6>
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Tindak Lanjut
+                                                Hasil</h6>
                                             <small class="d-block text-muted" style="font-size: 0.75rem;">
                                                 <i
                                                     class='bx bx-calendar me-1'></i>{{ $permohonan->tindakLanjut->tanggal_upload->format('d M Y, H:i') }}
                                             </small>
                                         </div>
-                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Laporan tindak lanjut telah diupload</p>
+                                        <p class="mb-0 text-muted" style="font-size: 0.8rem;">Laporan tindak lanjut telah
+                                            diupload</p>
                                     </div>
                                 </li>
                             @endif
@@ -452,14 +456,16 @@
                                         style="background: #4CAF50; border: 3px solid #E8F5E9; box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);"></span>
                                     <div class="timeline-event">
                                         <div class="timeline-header mb-2">
-                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Penetapan PERDA/PERKADA</h6>
+                                            <h6 class="mb-1" style="color: #2E7D32; font-weight: 600;">Penetapan
+                                                PERDA/PERKADA</h6>
                                             <small class="d-block text-muted" style="font-size: 0.75rem;">
                                                 <i
                                                     class='bx bx-calendar me-1'></i>{{ $permohonan->penetapanPerda->tanggal_penetapan->format('d M Y') }}
                                             </small>
                                         </div>
                                         <p class="mb-0 text-muted" style="font-size: 0.8rem;">
-                                            {{ $permohonan->penetapanPerda->nomor_perda }} - {{ $permohonan->penetapanPerda->keterangan }}
+                                            {{ $permohonan->penetapanPerda->nomor_perda }} -
+                                            {{ $permohonan->penetapanPerda->keterangan }}
                                         </p>
                                     </div>
                                 </li>
@@ -544,6 +550,32 @@
                     </div>
                 </div>
             </div>
+        @endif
+
+        <!-- Deadline Alert for Document Upload -->
+        @if ($permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan)
+            @if ($permohonan->isUploadDeadlinePassed())
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class='bx bx-error-circle me-2'></i>
+                            <strong>Batas Waktu Terlewati!</strong><br>
+                            {{ $permohonan->getUploadDeadlineMessage() }}. Upload dokumen sudah tidak diperbolehkan.
+                        </div>
+                    </div>
+                </div>
+            @elseif (in_array($permohonan->status_akhir, ['belum', 'revisi']))
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <i class='bx bx-time-five me-2'></i>
+                            <strong>Perhatian!</strong><br>
+                            {{ $permohonan->getUploadDeadlineMessage() }}. Pastikan semua dokumen sudah diunggah sebelum
+                            batas waktu berakhir.
+                        </div>
+                    </div>
+                </div>
+            @endif
         @endif
 
         <!-- Dokumen Persyaratan -->
@@ -669,6 +701,14 @@
                                                     @if ($suratPermohonan->status_verifikasi === 'verified')
                                                         <span class="badge bg-success">
                                                             <i class='bx bx-lock'></i> Terverifikasi
+                                                        </span>
+                                                    @elseif ($suratPermohonan->file_path && $suratPermohonan->status_verifikasi !== 'revision')
+                                                        <span class="badge bg-success">
+                                                            <i class='bx bx-check'></i> Selesai Upload
+                                                        </span>
+                                                    @elseif ($permohonan->isUploadDeadlinePassed())
+                                                        <span class="badge bg-danger">
+                                                            <i class='bx bx-lock'></i> Batas Waktu Terlewati
                                                         </span>
                                                     @else
                                                         <form
@@ -818,6 +858,14 @@
                                                     @if ($dokumen->status_verifikasi === 'verified')
                                                         <span class="badge bg-success">
                                                             <i class='bx bx-lock'></i> Terverifikasi
+                                                        </span>
+                                                    @elseif ($dokumen->file_path && $dokumen->status_verifikasi !== 'revision')
+                                                        <span class="badge bg-success">
+                                                            <i class='bx bx-check'></i> Selesai Upload
+                                                        </span>
+                                                    @elseif ($permohonan->isUploadDeadlinePassed())
+                                                        <span class="badge bg-danger">
+                                                            <i class='bx bx-lock'></i> Batas Waktu Terlewati
                                                         </span>
                                                     @else
                                                         <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
