@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use App\Models\PerpanjanganWaktu;
+use App\Policies\PerpanjanganWaktuPolicy;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Notification;
@@ -24,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Register policies
+        Gate::policy(PerpanjanganWaktu::class, PerpanjanganWaktuPolicy::class);
+
         // Register custom WhatsApp notification channel
         Notification::extend('whatsapp', function ($app) {
             return $app->make(WhatsAppChannel::class);

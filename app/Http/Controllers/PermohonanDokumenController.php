@@ -217,7 +217,10 @@ class PermohonanDokumenController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Dokumen berhasil diupload'
+                'message' => 'Dokumen berhasil diupload',
+                'file_url' => asset('storage/' . $filePath),
+                'file_name' => $fileName,
+                'dokumen_id' => $permohonanDokumen->id
             ]);
         } catch (\Exception $e) {
             return response()->json([

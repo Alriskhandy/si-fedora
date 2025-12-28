@@ -145,13 +145,37 @@ class PermohonanController extends Controller
             'kabupatenKota',
             'jadwalFasilitasi',
             'permohonanDokumen.masterKelengkapan',
+            'perpanjanganWaktu',
             'undanganPelaksanaan',
             'hasilFasilitasi',
             'tindakLanjut',
             'penetapanPerda'
         ]);
 
-        return view('permohonan.show', compact('permohonan'));
+        return view('permohonan.show-with-tabs', compact('permohonan'));
+    }
+
+    /**
+     * Show permohonan with tab-based layout (alternate view for testing)
+     */
+    public function showWithTabs(Permohonan $permohonan)
+    {
+        // Cek hak akses
+        $this->authorizeView($permohonan);
+
+        // Load relasi untuk tampilan lengkap
+        $permohonan->load([
+            'kabupatenKota',
+            'jadwalFasilitasi',
+            'permohonanDokumen.masterKelengkapan',
+            'perpanjanganWaktu',
+            'undanganPelaksanaan',
+            'hasilFasilitasi',
+            'tindakLanjut',
+            'penetapanPerda'
+        ]);
+
+        return view('permohonan.show-with-tabs', compact('permohonan'));
     }
 
     public function edit(Permohonan $permohonan)
@@ -178,9 +202,15 @@ class PermohonanController extends Controller
         return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil diperbarui.');
     }
 
-    public function submit(Permohonan $permohonan)
+    public function submit(Request $request, Permohonan $permohonan)
     {
         if ($permohonan->status_akhir !== 'belum') {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permohonan sudah dikirim sebelumnya.'
+                ], 400);
+            }
             return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
         }
 
@@ -190,6 +220,12 @@ class PermohonanController extends Controller
             ->exists();
 
         if ($dokumenBelumLengkap) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.'
+                ], 400);
+            }
             return redirect()->route('permohonan.show', $permohonan)
                 ->with('error', 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.');
         }
@@ -234,6 +270,13 @@ class PermohonanController extends Controller
 
         // Log activity atau kirim notifikasi ke verifikator (opsional)
         // TODO: Implement notification system
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.'
+            ]);
+        }
 
         return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
     }

@@ -27,36 +27,6 @@ class Permohonan extends Model
         'submitted_at' => 'datetime',
     ];
 
-    // Accessor untuk backward compatibility dengan kode lama yang menggunakan 'jenis_dokumen'
-    public function getJenisDokumenAttribute()
-    {
-        // Jika ada relasi jenisDokumen yang sudah di-load, gunakan nama dari sana
-        if ($this->relationLoaded('jenisDokumen') && $this->jenisDokumen) {
-            return $this->jenisDokumen->nama;
-        }
-
-        // Jika belum di-load, load relasi dulu
-        if ($this->jenis_dokumen_id) {
-            $jenisDokumen = \App\Models\MasterJenisDokumen::find($this->jenis_dokumen_id);
-            return $jenisDokumen ? $jenisDokumen->nama : null;
-        }
-
-        return null;
-    }
-
-    // Mutator untuk backward compatibility
-    public function setJenisDokumenAttribute($value)
-    {
-        // Jika yang di-set adalah nama jenis dokumen (string), cari ID-nya
-        if (is_string($value)) {
-            $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($value)])->first();
-            $this->attributes['jenis_dokumen_id'] = $jenisDokumen ? $jenisDokumen->id : null;
-        } else {
-            // Jika sudah ID, langsung set
-            $this->attributes['jenis_dokumen_id'] = $value;
-        }
-    }
-
     // Accessor untuk kabupaten_kota_id (backward compatibility)
     public function getKabupatenKotaIdAttribute()
     {
@@ -158,6 +128,11 @@ class Permohonan extends Model
     public function penetapanPerda()
     {
         return $this->hasOne(PenetapanPerda::class);
+    }
+
+    public function perpanjanganWaktu()
+    {
+        return $this->hasMany(PerpanjanganWaktu::class);
     }
 
     public function fasilitasiBab()

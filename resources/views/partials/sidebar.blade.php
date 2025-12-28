@@ -113,6 +113,12 @@
                     <div data-i18n="Validasi Hasil">Validasi Hasil Fasilitasi</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->routeIs('perpanjangan-waktu.*') ? 'active' : '' }}">
+                <a href="{{ route('perpanjangan-waktu.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-time-five"></i>
+                    <div data-i18n="Perpanjangan Waktu">Perpanjangan Waktu</div>
+                </a>
+            </li>
             <li class="menu-item {{ request()->routeIs('surat-rekomendasi.*') ? 'active' : '' }}">
                 <a href="{{ route('surat-rekomendasi.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-paper-plane"></i>
@@ -124,7 +130,7 @@
         <!-- PEMOHON -->
         @if (auth()->user()->hasRole('pemohon'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Permohonan</span>
+                <span class="menu-header-text">Menu Utama</span>
             </li>
             <li class="menu-item {{ request()->routeIs('pemohon.jadwal.*') ? 'active' : '' }}">
                 <a href="{{ route('pemohon.jadwal.index') }}" class="menu-link">
@@ -132,28 +138,11 @@
                     <div data-i18n="Jadwal">Jadwal Fasilitasi</div>
                 </a>
             </li>
-            <li class="menu-item {{ request()->routeIs('permohonan.*', 'permohonan-dokumen.*') ? 'active' : '' }}">
+            <li
+                class="menu-item {{ request()->routeIs('permohonan.*', 'permohonan-dokumen.*', 'tindak-lanjut.*', 'penetapan-perda.*') ? 'active' : '' }}">
                 <a href="{{ route('permohonan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-folder-open"></i>
                     <div data-i18n="Permohonan">Permohonan Saya</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('my-undangan.*') ? 'active' : '' }}">
-                <a href="{{ route('my-undangan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-envelope-open"></i>
-                    <div data-i18n="Undangan">Undangan Fasilitasi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('tindak-lanjut.*') ? 'active' : '' }}">
-                <a href="{{ route('tindak-lanjut.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-task"></i>
-                    <div data-i18n="Tindak Lanjut">Tindak Lanjut</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('penetapan-perda.*') ? 'active' : '' }}">
-                <a href="{{ route('penetapan-perda.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-check-shield"></i>
-                    <div data-i18n="Penetapan PERDA">PERDA/PERKADA</div>
                 </a>
             </li>
         @endif

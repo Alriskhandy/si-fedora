@@ -28,6 +28,7 @@ use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
 use App\Http\Controllers\SuratPenyampaianHasilController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\PerpanjanganWaktuController;
 use App\Http\Controllers\TimAssignmentController;
 use App\Http\Controllers\MasterBabController;
 use App\Http\Controllers\MasterJenisDokumenController;
@@ -119,6 +120,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/validasi-hasil/{permohonan}/revise', [ValidasiHasilController::class, 'revise'])->name('validasi-hasil.revise');
         Route::get('/validasi-hasil/{permohonan}/generate', [ValidasiHasilController::class, 'generate'])->name('validasi-hasil.generate');
         Route::get('/validasi-hasil/{permohonan}/generate-pdf', [ValidasiHasilController::class, 'generatePdf'])->name('validasi-hasil.generate-pdf');
+
+        // Perpanjangan Waktu (Admin can view and process)
+        Route::get('/perpanjangan-waktu', [PerpanjanganWaktuController::class, 'index'])->name('perpanjangan-waktu.index');
+        Route::get('/perpanjangan-waktu/{perpanjanganWaktu}', [PerpanjanganWaktuController::class, 'show'])->name('perpanjangan-waktu.show');
+        Route::get('/perpanjangan-waktu/{perpanjanganWaktu}/download', [PerpanjanganWaktuController::class, 'download'])->name('perpanjangan-waktu.download');
+        Route::put('/perpanjangan-waktu/{perpanjanganWaktu}/process', [PerpanjanganWaktuController::class, 'process'])->name('perpanjangan-waktu.process');
     });
 
     // =====================================================
@@ -167,10 +174,17 @@ Route::middleware(['auth'])->group(function () {
         // Permohonan
         Route::resource('permohonan', PermohonanController::class);
         Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
+        Route::get('/permohonan/{permohonan}/tab', [PermohonanController::class, 'showWithTabs'])->name('permohonan.show-tabs');
 
         // Dokumen Permohonan
         Route::resource('permohonan-dokumen', PermohonanDokumenController::class)->parameters(['permohonan-dokumen' => 'permohonanDokumen']);
         Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])->name('permohonan-dokumen.upload');
+
+        // Perpanjangan Waktu (Pemohon can create and delete their own)
+        Route::get('/perpanjangan-waktu/create', [PerpanjanganWaktuController::class, 'create'])->name('perpanjangan-waktu.create');
+        Route::post('/perpanjangan-waktu', [PerpanjanganWaktuController::class, 'store'])->name('perpanjangan-waktu.store');
+        Route::delete('/perpanjangan-waktu/{perpanjanganWaktu}', [PerpanjanganWaktuController::class, 'destroy'])->name('perpanjangan-waktu.destroy');
+        Route::put('/perpanjangan-waktu/{perpanjanganWaktu}/upload-surat', [PerpanjanganWaktuController::class, 'uploadSurat'])->name('perpanjangan-waktu.upload-surat');
 
         // Undangan
         Route::get('/pemohon/undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('pemohon.undangan.index');
