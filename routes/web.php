@@ -171,8 +171,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pemohon/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('pemohon.jadwal.show');
         Route::get('/pemohon/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('pemohon.jadwal.download');
 
-        // Permohonan
-        Route::resource('permohonan', PermohonanController::class);
+        // Permohonan (create, edit, delete hanya untuk pemohon)
+        Route::get('/permohonan/create', [PermohonanController::class, 'create'])->name('permohonan.create');
+        Route::post('/permohonan', [PermohonanController::class, 'store'])->name('permohonan.store');
+        Route::get('/permohonan/{permohonan}/edit', [PermohonanController::class, 'edit'])->name('permohonan.edit');
+        Route::put('/permohonan/{permohonan}', [PermohonanController::class, 'update'])->name('permohonan.update');
+        Route::delete('/permohonan/{permohonan}', [PermohonanController::class, 'destroy'])->name('permohonan.destroy');
         Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
         Route::get('/permohonan/{permohonan}/tab', [PermohonanController::class, 'showWithTabs'])->name('permohonan.show-tabs');
 
@@ -208,10 +212,18 @@ Route::middleware(['auth'])->group(function () {
     // VERIFIKATOR ROUTES
     // =====================================================
     Route::middleware(['role:verifikator'])->group(function () {
-        Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
-        Route::get('/verifikasi/{permohonan}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
+        // Verifikasi Dokumen
         Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
         Route::post('/verifikasi/{permohonan}/verifikasi-dokumen', [VerifikasiController::class, 'verifikasiDokumen'])->name('verifikasi.verifikasi-dokumen');
+    });
+
+    // =====================================================
+    // PEMOHON & VERIFIKATOR ROUTES (Shared Access to Permohonan)
+    // =====================================================
+    Route::middleware(['role:pemohon|verifikator'])->group(function () {
+        // Permohonan (accessible by both pemohon and verifikator)
+        Route::get('/permohonan', [PermohonanController::class, 'index'])->name('permohonan.index');
+        Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
     });
 
     // =====================================================

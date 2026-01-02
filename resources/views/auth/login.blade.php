@@ -53,7 +53,7 @@
 
         /* Light Mode (Default) */
         body:not(.dark-mode) {
-            background-color: #f5f5f9;
+            background-color: #cfecf7;
         }
 
         /* Dark Mode */

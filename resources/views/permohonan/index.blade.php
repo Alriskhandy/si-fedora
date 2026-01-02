@@ -71,7 +71,9 @@
                                 <thead>
                                     <tr>
                                         <th width="5%">No</th>
-                                        <th>Kabupaten/Kota</th>
+                                        @if (!auth()->user()->hasRole('pemohon'))
+                                            <th>Kabupaten/Kota</th>
+                                        @endif
                                         <th>Jenis Dokumen</th>
                                         <th>Tahun</th>
                                         <th>Status</th>
@@ -83,10 +85,12 @@
                                     @forelse($permohonan as $index => $item)
                                         <tr>
                                             <td>{{ $index + $permohonan->firstItem() }}</td>
-                                            <td>{{ $item->kabupatenKota?->nama ?? '-' }}</td>
+                                            @if (!auth()->user()->hasRole('pemohon'))
+                                                <td>{{ $item->kabupatenKota?->nama ?? '-' }}</td>
+                                            @endif
                                             <td>
                                                 <span class="badge bg-label-primary">
-                                                    {{ strtoupper($item->jenis_dokumen) }}
+                                                    {{ strtoupper($item->jenisDokumen->nama ?? 'N/A') }}
                                                 </span>
                                             </td>
                                             <td><strong>{{ $item->tahun }}</strong></td>
@@ -95,7 +99,7 @@
                                                     {{ $item->status_label }}
                                                 </span>
                                             </td>
-                                            <td>{{ $item->created_at->format('d M Y') }}</td>
+                                            <td>{{ $item->created_at->format('d M Y, H:i') }} WIT</td>
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow"
@@ -129,7 +133,20 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">Tidak ada data permohonan</td>
+                                            <td colspan="{{ auth()->user()->hasRole('pemohon') ? '6' : '7' }}"
+                                                class="text-center py-4">
+                                                <i class='bx bx-folder-open' style='font-size: 48px; opacity: 0.3;'></i>
+                                                <p class="text-muted mt-2 mb-0">
+                                                    @if (auth()->user()->hasRole('verifikator'))
+                                                        <strong>Belum ada permohonan</strong>
+                                                    @elseif(auth()->user()->hasRole('pemohon'))
+                                                        <strong>Belum ada permohonan</strong>
+                                                        <br><small>Klik tombol "Buat Permohonan Baru" untuk memulai.</small>
+                                                    @else
+                                                        Tidak ada data permohonan
+                                                    @endif
+                                                </p>
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>

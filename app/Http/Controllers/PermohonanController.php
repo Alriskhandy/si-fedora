@@ -26,15 +26,56 @@ class PermohonanController extends Controller
         } elseif (Auth::user()->hasRole('admin_peran')) {
             // Admin bisa liat semua permohonan
         } elseif (Auth::user()->hasRole('verifikator')) {
-            // Verifikator sekarang lewat assignment table
-            $permohonanIds = \App\Models\TimVerifikasiAssignment::where('user_id', Auth::id())
-                ->pluck('permohonan_id');
-            $query->whereIn('id', $permohonanIds);
+            // Verifikator lewat UserKabkotaAssignment
+            $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
+                ->where('is_active', true)
+                ->get();
+
+            if ($assignments->isNotEmpty()) {
+                $query->where(function ($q) use ($assignments) {
+                    foreach ($assignments as $assignment) {
+                        $q->orWhere(function ($qq) use ($assignment) {
+                            $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                                ->where('tahun', $assignment->tahun);
+
+                            // Filter by jenis dokumen jika ada
+                            if ($assignment->jenis_dokumen_id) {
+                                $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                            }
+                        });
+                    }
+                });
+                // Hanya tampilkan permohonan yang sudah disubmit
+                $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+            } else {
+                // Jika tidak ada assignment, tampilkan hasil kosong
+                $query->whereRaw('1 = 0');
+            }
         } elseif (Auth::user()->hasRole('fasilitator')) {
-            // Fasilitator sekarang lewat assignment table
-            $permohonanIds = \App\Models\TimFasilitasiAssignment::where('user_id', Auth::id())
-                ->pluck('permohonan_id');
-            $query->whereIn('id', $permohonanIds);
+            // Fasilitator lewat UserKabkotaAssignment
+            $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
+                ->where('is_active', true)
+                ->get();
+
+            if ($assignments->isNotEmpty()) {
+                $query->where(function ($q) use ($assignments) {
+                    foreach ($assignments as $assignment) {
+                        $q->orWhere(function ($qq) use ($assignment) {
+                            $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                                ->where('tahun', $assignment->tahun);
+
+                            // Filter by jenis dokumen jika ada
+                            if ($assignment->jenis_dokumen_id) {
+                                $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                            }
+                        });
+                    }
+                });
+                // Fasilitator lihat permohonan yang sudah terverifikasi atau lebih
+                $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Search
@@ -304,8 +345,14 @@ class PermohonanController extends Controller
         }
         // Verifikator bisa lihat permohonan yang di-assign
         elseif ($user->hasRole('verifikator')) {
-            $hasAccess = \App\Models\TimVerifikasiAssignment::where('permohonan_id', $permohonan->id)
-                ->where('user_id', $user->id)
+            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->where(function ($q) use ($permohonan) {
+                    $q->whereNull('jenis_dokumen_id')
+                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
+                })
                 ->exists();
             if (!$hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
@@ -313,8 +360,14 @@ class PermohonanController extends Controller
         }
         // Fasilitator bisa lihat permohonan yang di-assign
         elseif ($user->hasRole('fasilitator')) {
-            $hasAccess = \App\Models\TimFasilitasiAssignment::where('permohonan_id', $permohonan->id)
-                ->where('user_id', $user->id)
+            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->where(function ($q) use ($permohonan) {
+                    $q->whereNull('jenis_dokumen_id')
+                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
+                })
                 ->exists();
             if (!$hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');

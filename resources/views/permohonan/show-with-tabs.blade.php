@@ -264,16 +264,7 @@
             <!-- Tab 6: Tindak Lanjut -->
             <div class="tab-pane fade" id="tindak-lanjut" role="tabpanel" aria-labelledby="tindak-lanjut-tab">
                 @include('permohonan.tabs.tindak-lanjut')
-            </div>
-
-            <!-- Tab 7: Penetapan PERDA -->
-            <div class="tab-pane fade" id="penetapan" role="tabpanel" aria-labelledby="penetapan-tab">
-                @include('permohonan.tabs.penetapan')
-            </div>
-        </div>
-    </div>
-
-    @push('scripts')
+     @push('scripts')
         <script>
             $(document).ready(function() {
                 // Initialize first tab as active
@@ -488,6 +479,21 @@
 
                 // Initial bind for submit permohonan
                 bindSubmitPermohonan();
+
+                        }
+                    });
+                });
+
+                // Show/hide catatan based on status
+                $('input[name="status_verifikasi"]').on('change', function() {
+                    if ($(this).val() === 'revision') {
+                        $('#catatanContainer').slideDown();
+                        $('#catatan_verifikasi').prop('required', true);
+                    } else {
+                        $('#catatanContainer').slideUp();
+                        $('#catatan_verifikasi').prop('required', false);
+                    }
+                });
             });
         </script>
     @endpush

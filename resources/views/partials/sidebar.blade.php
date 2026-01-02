@@ -150,24 +150,18 @@
         <!-- VERIFIKATOR -->
         @if (auth()->user()->hasRole('verifikator'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Verifikasi</span>
+                <span class="menu-header-text">Menu Utama</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('verifikasi.*') ? 'active' : '' }}">
-                <a href="{{ route('verifikasi.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-check-circle"></i>
-                    <div data-i18n="Verifikasi">Verifikasi Dokumen</div>
+            <li class="menu-item {{ request()->routeIs('permohonan.*', 'permohonan-dokumen.*', 'verifikasi.*') ? 'active' : '' }}">
+                <a href="{{ route('permohonan.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-folder-open"></i>
+                    <div data-i18n="Permohonan">Fasilitasi / Evaluasi</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('my-undangan.*') ? 'active' : '' }}">
                 <a href="{{ route('my-undangan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-envelope"></i>
                     <div data-i18n="Undangan">Undangan Fasilitasi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
-                <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-file-find"></i>
-                    <div data-i18n="Hasil Fasilitasi">Hasil Fasilitasi</div>
                 </a>
             </li>
         @endif
