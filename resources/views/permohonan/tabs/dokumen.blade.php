@@ -1,18 +1,21 @@
 <!-- Deadline Alert for Document Upload -->
 @if ($permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan)
-    @if ($permohonan->isUploadDeadlinePassed())
-        <div class="alert alert-danger">
-            <i class='bx bx-error-circle me-2'></i>
-            <strong>Batas Waktu Terlewati!</strong><br>
-            {{ $permohonan->getUploadDeadlineMessage() }}. Upload dokumen sudah tidak diperbolehkan.
-        </div>
-    @elseif (in_array($permohonan->status_akhir, ['belum', 'revisi']))
-        <div class="alert alert-warning">
-            <i class='bx bx-time-five me-2'></i>
-            <strong>Perhatian!</strong><br>
-            {{ $permohonan->getUploadDeadlineMessage() }}. Pastikan semua dokumen sudah diunggah sebelum batas waktu
-            berakhir.
-        </div>
+    @if (auth()->user()->hasRole('pemohon'))
+
+        @if ($permohonan->isUploadDeadlinePassed())
+            <div class="alert alert-danger">
+                <i class='bx bx-error-circle me-2'></i>
+                <strong>Batas Waktu Terlewati!</strong><br>
+                {{ $permohonan->getUploadDeadlineMessage() }}. Upload dokumen sudah tidak diperbolehkan.
+            </div>
+        @elseif (in_array($permohonan->status_akhir, ['belum', 'revisi']))
+            <div class="alert alert-warning">
+                <i class='bx bx-time-five me-2'></i>
+                <strong>Perhatian!</strong><br>
+                {{ $permohonan->getUploadDeadlineMessage() }}. Pastikan semua dokumen sudah diunggah sebelum batas waktu
+                berakhir.
+            </div>
+        @endif
     @endif
 @endif
 
@@ -40,9 +43,8 @@
                             class="text-{{ $progress == 100 ? 'success' : 'warning' }}">{{ $dokumenLengkap }}/{{ $totalDokumen }}</strong></small>
                 </div>
                 <div class="progress" style="height: 6px;">
-                    <div class="progress-bar" role="progressbar"
-                        style="width: {{ $progress }}%" aria-valuenow="{{ $progress }}" aria-valuemin="0"
-                        aria-valuemax="100">
+                    <div class="progress-bar" role="progressbar" style="width: {{ $progress }}%"
+                        aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100">
                     </div>
                 </div>
             </div>

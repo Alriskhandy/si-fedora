@@ -62,6 +62,23 @@
             color: #1565C0 !important;
             font-weight: 600 !important;
         }
+
+        /* Fix button primary active/focus state */
+        .btn-primary:active,
+        .btn-primary.active,
+        .btn-primary:focus,
+        .btn-primary.focus {
+            background-color: #7bc4e3 !important;
+            border-color: #7bc4e3 !important;
+            color: #0d3b4d !important;
+            box-shadow: 0 0 0 0.2rem rgba(160, 217, 239, 0.5) !important;
+        }
+
+        .btn-primary:not(:disabled):not(.disabled):active,
+        .btn-primary:not(:disabled):not(.disabled).active {
+            background-color: #5eb5d4 !important;
+            border-color: #5eb5d4 !important;
+        }
     </style>
 @endpush
 
@@ -230,20 +247,6 @@
                         </div>
                     @endif
                 @endif
-
-                <!-- Hasil Verifikasi (hanya tampil jika sudah ada hasil) -->
-                @if (!in_array($permohonan->status_akhir, ['belum', 'proses']))
-                    <div class="mt-4">
-                        <div class="card">
-                            <div class="card-header bg-success text-white">
-                                <h5 class="mb-0"><i class='bx bx-check-circle me-2'></i>Hasil Verifikasi</h5>
-                            </div>
-                            <div class="card-body">
-                                @include('permohonan.tabs.verifikasi')
-                            </div>
-                        </div>
-                    </div>
-                @endif
             </div>
 
             <!-- Tab 3: Penetapan Jadwal -->
@@ -264,114 +267,124 @@
             <!-- Tab 6: Tindak Lanjut -->
             <div class="tab-pane fade" id="tindak-lanjut" role="tabpanel" aria-labelledby="tindak-lanjut-tab">
                 @include('permohonan.tabs.tindak-lanjut')
-     @push('scripts')
-        <script>
-            $(document).ready(function() {
-                // Initialize first tab as active
-                let activeTab = window.location.hash || localStorage.getItem('permohonan_active_tab') || '#permohonan';
+            </div>
 
-                if (activeTab && $(activeTab).length) {
-                    // Show the tab content
-                    $('.tab-pane').removeClass('show active');
-                    $(activeTab).addClass('show active');
+        </div>
+    </div>
+@endsection
 
-                    // Highlight progress step
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            // Initialize first tab as active
+            let activeTab = window.location.hash || localStorage.getItem('permohonan_active_tab') || '#permohonan';
+
+            if (activeTab && $(activeTab).length) {
+                // Show the tab content
+                $('.tab-pane').removeClass('show active');
+                $(activeTab).addClass('show active');
+
+                // Highlight progress step
+                $('.step-item').removeClass('active-step');
+                $('.step-item[data-bs-target="' + activeTab + '"]').addClass('active-step');
+            }
+
+            // Handle click on progress tracker steps
+            $('.step-clickable').on('click', function() {
+                const target = $(this).data('bs-target');
+                if (target) {
+                    // Save to localStorage and URL
+                    localStorage.setItem('permohonan_active_tab', target);
+                    window.location.hash = target;
+
+                    // Remove active from all steps and tabs
                     $('.step-item').removeClass('active-step');
-                    $('.step-item[data-bs-target="' + activeTab + '"]').addClass('active-step');
+                    $('.tab-pane').removeClass('show active');
+
+                    // Add active to clicked step and corresponding tab
+                    $(this).addClass('active-step');
+                    $(target).addClass('show active');
                 }
+            });
 
-                // Handle click on progress tracker steps
-                $('.step-clickable').on('click', function() {
-                    const target = $(this).data('bs-target');
-                    if (target) {
-                        // Save to localStorage and URL
-                        localStorage.setItem('permohonan_active_tab', target);
-                        window.location.hash = target;
+            // Save active tab to localStorage and URL
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+                let tabId = $(e.target).attr('data-bs-target');
+                localStorage.setItem('permohonan_active_tab', tabId);
+                window.location.hash = tabId;
+            });
 
-                        // Remove active from all steps and tabs
-                        $('.step-item').removeClass('active-step');
-                        $('.tab-pane').removeClass('show active');
+            // Upload dokumen form handling
+            $('.upload-dokumen-form').on('submit', function(e) {
+                e.preventDefault();
+                let form = $(this);
+                let formData = new FormData(form[0]);
+                let button = form.find('.btn-upload-trigger');
+                let row = form.closest('tr');
+                let dokumenId = form.data('dokumen-id');
 
-                        // Add active to clicked step and corresponding tab
-                        $(this).addClass('active-step');
-                        $(target).addClass('show active');
-                    }
-                });
+                button.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...');
 
-                // Save active tab to localStorage and URL
-                $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
-                    let tabId = $(e.target).attr('data-bs-target');
-                    localStorage.setItem('permohonan_active_tab', tabId);
-                    window.location.hash = tabId;
-                });
-
-                // Upload dokumen form handling
-                $('.upload-dokumen-form').on('submit', function(e) {
-                    e.preventDefault();
-                    let form = $(this);
-                    let formData = new FormData(form[0]);
-                    let button = form.find('.btn-upload-trigger');
-                    let row = form.closest('tr');
-                    let dokumenId = form.data('dokumen-id');
-
-                    button.prop('disabled', true).html(
-                        '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...');
-
-                    $.ajax({
-                        url: form.attr('action'),
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(response) {
-                            if (response.success) {
-                                // Update file link
-                                let fileCell = row.find('td').eq(1);
-                                fileCell.html(`
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            // Update file link
+                            let fileCell = row.find('td').eq(1);
+                            fileCell.html(`
                                     <a href="${response.file_url}" target="_blank" class="btn btn-xs btn-outline-primary" 
                                        style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
                                         <i class="bx bx-download" style="font-size: 0.875rem;"></i> Lihat
                                     </a>
                                 `);
 
-                                // Update status upload badge
-                                let statusCell = row.find('td').eq(2);
-                                statusCell.html(`
+                            // Update status upload badge
+                            let statusCell = row.find('td').eq(2);
+                            statusCell.html(`
                                     <span class="badge bg-label-success" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
                                         <i class='bx bx-check' style="font-size: 0.75rem;"></i> Tersedia
                                     </span>
                                 `);
 
-                                // Update action button to "Selesai"
-                                let actionCell = row.find('td').last();
-                                actionCell.html(`
+                            // Update action button to "Selesai"
+                            let actionCell = row.find('td').last();
+                            actionCell.html(`
                                     <span class="badge bg-success">
                                         <i class='bx bx-check'></i> Selesai
                                     </span>
                                 `);
 
-                                // Update progress bar
-                                let progressText = $('.card-header small strong');
-                                let currentComplete = parseInt(progressText.text().split('/')[0]) + 1;
-                                let totalDocs = parseInt(progressText.text().split('/')[1]);
-                                let newProgress = (currentComplete / totalDocs) * 100;
-                                
-                                progressText.text(`${currentComplete}/${totalDocs}`);
-                                progressText.removeClass('text-warning').addClass(newProgress == 100 ? 'text-success' : 'text-warning');
-                                
-                                $('.progress-bar').css('width', newProgress + '%')
-                                    .attr('aria-valuenow', newProgress);
+                            // Update progress bar
+                            let progressText = $('.card-header small strong');
+                            let currentComplete = parseInt(progressText.text().split('/')[0]) +
+                                1;
+                            let totalDocs = parseInt(progressText.text().split('/')[1]);
+                            let newProgress = (currentComplete / totalDocs) * 100;
 
-                                // Enable submit button if 100%
-                                if (newProgress == 100) {
-                                    let submitBtn = $('#submitPermohonanBtn');
-                                    if (submitBtn.length) {
-                                        submitBtn.prop('disabled', false)
-                                            .removeClass('btn-outline-secondary').addClass('btn-success')
-                                            .html('<i class="bx bx-send me-1"></i>Kirim Permohonan');
-                                    } else {
-                                        // Jika button tidak ada, replace disabled button dengan active button
-                                        let form = `
+                            progressText.text(`${currentComplete}/${totalDocs}`);
+                            progressText.removeClass('text-warning').addClass(newProgress ==
+                                100 ? 'text-success' : 'text-warning');
+
+                            $('.progress-bar').css('width', newProgress + '%')
+                                .attr('aria-valuenow', newProgress);
+
+                            // Enable submit button if 100%
+                            if (newProgress == 100) {
+                                let submitBtn = $('#submitPermohonanBtn');
+                                if (submitBtn.length) {
+                                    submitBtn.prop('disabled', false)
+                                        .removeClass('btn-outline-secondary').addClass(
+                                            'btn-success')
+                                        .html(
+                                            '<i class="bx bx-send me-1"></i>Kirim Permohonan');
+                                } else {
+                                    // Jika button tidak ada, replace disabled button dengan active button
+                                    let form = `
                                             <form action="${$('#submitPermohonanForm').length ? $('#submitPermohonanForm').attr('action') : ''}" 
                                                   method="POST" id="submitPermohonanForm" class="d-inline">
                                                 <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
@@ -380,121 +393,205 @@
                                                 </button>
                                             </form>
                                         `;
-                                        $('.card-header button[disabled]').replaceWith(form);
-                                        
-                                        // Re-bind submit event
-                                        bindSubmitPermohonan();
-                                    }
+                                    $('.card-header button[disabled]').replaceWith(form);
+
+                                    // Re-bind submit event
+                                    bindSubmitPermohonan();
                                 }
-
-                                // Show success notification
-                                showNotification('success', 'Dokumen berhasil diupload!');
                             }
-                        },
-                        error: function(xhr) {
-                            let message = xhr.responseJSON?.message || 'Terjadi kesalahan saat upload';
-                            showNotification('error', message);
-                            button.prop('disabled', false).html(
-                                '<i class="bx bx-upload"></i> Upload');
+
+                            // Show success notification
+                            showNotification('success', 'Dokumen berhasil diupload!');
                         }
-                    });
-                });
-
-                $('.btn-upload-trigger').on('click', function() {
-                    $(this).closest('form').find('.file-input').click();
-                });
-
-                $('.file-input').on('change', function() {
-                    if (this.files.length > 0) {
-                        $(this).closest('form').submit();
+                    },
+                    error: function(xhr) {
+                        let message = xhr.responseJSON?.message ||
+                            'Terjadi kesalahan saat upload';
+                        showNotification('error', message);
+                        button.prop('disabled', false).html(
+                            '<i class="bx bx-upload"></i> Upload');
                     }
                 });
+            });
 
-                // Notification helper
-                function showNotification(type, message) {
-                    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-                    const icon = type === 'success' ? 'bx-check-circle' : 'bx-error-circle';
-                    
-                    const notification = $(`
+            $('.btn-upload-trigger').on('click', function() {
+                $(this).closest('form').find('.file-input').click();
+            });
+
+            $('.file-input').on('change', function() {
+                if (this.files.length > 0) {
+                    $(this).closest('form').submit();
+                }
+            });
+
+            // Notification helper
+            function showNotification(type, message) {
+                const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+                const icon = type === 'success' ? 'bx-check-circle' : 'bx-error-circle';
+
+                const notification = $(`
                         <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed" 
                              role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
                             <i class='bx ${icon} me-2'></i>${message}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     `);
-                    
-                    $('body').append(notification);
-                    
-                    setTimeout(function() {
-                        notification.fadeOut(function() {
-                            $(this).remove();
-                        });
-                    }, 3000);
-                }
 
-                // Function to bind submit permohonan handler
-                function bindSubmitPermohonan() {
-                    $('#submitPermohonanBtn').off('click').on('click', function(e) {
-                        e.preventDefault();
+                $('body').append(notification);
 
-                        if (confirm('Apakah Anda yakin ingin mengirim permohonan ini? Setelah dikirim, Anda tidak dapat mengubah dokumen.')) {
-                            const form = $('#submitPermohonanForm');
-                            const button = $(this);
-                            const originalText = button.html();
+                setTimeout(function() {
+                    notification.fadeOut(function() {
+                        $(this).remove();
+                    });
+                }, 3000);
+            }
 
-                            button.prop('disabled', true).html(
-                                '<span class="spinner-border spinner-border-sm me-1"></span>Mengirim...'
-                            );
+            // Function to bind submit permohonan handler
+            function bindSubmitPermohonan() {
+                $('#submitPermohonanBtn').off('click').on('click', function(e) {
+                    e.preventDefault();
 
-                            $.ajax({
-                                url: form.attr('action'),
-                                type: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                                    'Accept': 'application/json'
-                                },
-                                data: {
-                                    _token: $('meta[name="csrf-token"]').attr('content')
-                                },
-                                success: function(response) {
-                                    if (response.success) {
-                                        showNotification('success', response.message || 'Permohonan berhasil dikirim');
-                                        setTimeout(function() {
-                                            location.reload();
-                                        }, 1500);
-                                    } else {
-                                        showNotification('error', response.message || 'Gagal mengirim permohonan');
-                                        button.prop('disabled', false).html(originalText);
-                                    }
-                                },
-                                error: function(xhr) {
-                                    let message = xhr.responseJSON?.message || 'Terjadi kesalahan';
-                                    showNotification('error', message);
+                    if (confirm(
+                            'Apakah Anda yakin ingin mengirim permohonan ini? Setelah dikirim, Anda tidak dapat mengubah dokumen.'
+                        )) {
+                        const form = $('#submitPermohonanForm');
+                        const button = $(this);
+                        const originalText = button.html();
+
+                        button.prop('disabled', true).html(
+                            '<span class="spinner-border spinner-border-sm me-1"></span>Mengirim...'
+                        );
+
+                        $.ajax({
+                            url: form.attr('action'),
+                            type: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                                'Accept': 'application/json'
+                            },
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    showNotification('success', response.message ||
+                                        'Permohonan berhasil dikirim');
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 1500);
+                                } else {
+                                    showNotification('error', response.message ||
+                                        'Gagal mengirim permohonan');
                                     button.prop('disabled', false).html(originalText);
                                 }
-                            });
-                        }
-                    });
+                            },
+                            error: function(xhr) {
+                                let message = xhr.responseJSON?.message || 'Terjadi kesalahan';
+                                showNotification('error', message);
+                                button.prop('disabled', false).html(originalText);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Initial bind for submit permohonan
+            bindSubmitPermohonan();
+
+            // ===== HANDLER UNTUK VERIFIKATOR =====
+            // Handle verifikasi per dokumen dari dokumen-table
+            $('.btn-verifikasi-dokumen-table').on('click', function() {
+                const button = $(this);
+                const dokumenId = button.data('dokumen-id');
+                const status = $('.verifikasi-status[data-dokumen-id="' + dokumenId + '"]').val();
+                const catatan = $('.catatan-verifikasi[data-dokumen-id="' + dokumenId + '"]').val();
+                const buttonText = button.html();
+
+                // Validasi
+                if (!status || status === 'pending') {
+                    alert('Silakan pilih status verifikasi terlebih dahulu');
+                    return;
                 }
 
-                // Initial bind for submit permohonan
-                bindSubmitPermohonan();
+                if (status === 'revision' && !catatan.trim()) {
+                    alert('Catatan wajib diisi jika dokumen perlu revisi');
+                    return;
+                }
 
+                // Disable button dan show loading
+                button.prop('disabled', true).html('<i class="bx bx-loader bx-spin"></i> Menyimpan...');
+
+                // Submit via AJAX
+                $.ajax({
+                    url: '{{ route('verifikasi.verifikasi-dokumen', $permohonan) }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        dokumen_id: dokumenId,
+                        status_verifikasi: status,
+                        catatan: catatan
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Update button to success state
+                            button.removeClass('btn-primary').addClass('btn-success')
+                                .html('<i class="bx bx-check-circle"></i> Selesai')
+                                .prop('disabled', true);
+
+                            // Disable dropdown dan textarea
+                            const row = button.closest('tr');
+                            row.find('.verifikasi-status[data-dokumen-id="' + dokumenId + '"]')
+                                .prop('disabled', true);
+                            row.find('.catatan-verifikasi[data-dokumen-id="' + dokumenId + '"]')
+                                .prop('disabled', true);
+
+                            // Update badge sesuai status
+                            const badge = row.find('td').eq(3);
+                            if (status === 'verified') {
+                                badge.html('<span class="badge bg-label-success"><i class="bx bx-check"></i> Ada</span>');
+                            } else if (status === 'revision') {
+                                badge.html('<span class="badge bg-label-danger"><i class="bx bx-x"></i> Tidak</span>');
+                            }
+
+                            // Show notification
+                            showNotification('success', 'Verifikasi dokumen berhasil disimpan');
                         }
-                    });
-                });
+                    },
+                    error: function(xhr) {
+                        // Show error
+                        button.removeClass('btn-primary').addClass('btn-danger').html(
+                            '<i class="bx bx-x-circle"></i> Gagal'
+                        );
 
-                // Show/hide catatan based on status
-                $('input[name="status_verifikasi"]').on('change', function() {
-                    if ($(this).val() === 'revision') {
-                        $('#catatanContainer').slideDown();
-                        $('#catatan_verifikasi').prop('required', true);
-                    } else {
-                        $('#catatanContainer').slideUp();
-                        $('#catatan_verifikasi').prop('required', false);
+                        // Reset after 2 seconds
+                        setTimeout(function() {
+                            button.prop('disabled', false)
+                                .removeClass('btn-danger')
+                                .addClass('btn-primary')
+                                .html(buttonText);
+                        }, 2000);
+
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan verifikasi';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        showNotification('error', errorMessage);
+                        console.error('Error:', errorMessage);
                     }
                 });
             });
-        </script>
-    @endpush
-@endsection
+
+            // Show/hide catatan based on status
+            $('input[name="status_verifikasi"]').on('change', function() {
+                if ($(this).val() === 'revision') {
+                    $('#catatanContainer').slideDown();
+                    $('#catatan_verifikasi').prop('required', true);
+                } else {
+                    $('#catatanContainer').slideUp();
+                    $('#catatan_verifikasi').prop('required', false);
+                }
+            });
+        });
+    </script>
+@endpush

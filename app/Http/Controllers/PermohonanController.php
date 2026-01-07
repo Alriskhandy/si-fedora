@@ -207,13 +207,17 @@ class PermohonanController extends Controller
         // Load relasi untuk tampilan lengkap
         $permohonan->load([
             'kabupatenKota',
+            'jenisDokumen',
             'jadwalFasilitasi',
+            'penetapanJadwal',
+            'koordinator.koordinator',
             'permohonanDokumen.masterKelengkapan',
             'perpanjanganWaktu',
             'undanganPelaksanaan',
             'hasilFasilitasi',
             'tindakLanjut',
-            'penetapanPerda'
+            'penetapanPerda',
+            'activityLogs.causer'
         ]);
 
         return view('permohonan.show-with-tabs', compact('permohonan'));
