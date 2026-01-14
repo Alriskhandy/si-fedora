@@ -3,8 +3,14 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use App\Models\PerpanjanganWaktu;
+use App\Policies\PerpanjanganWaktuPolicy;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\Channels\WhatsAppChannel;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -12,7 +18,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register WhatsApp Service as singleton
+        $this->app->singleton(\App\Services\WhatsAppService::class);
     }
 
     /**
@@ -20,12 +27,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Blade::if('hastemporary', function ($role) {
-            return auth()->check() && 
-                   auth()->user()->activeTemporaryRoles()->whereHas('role', function($q) use ($role) { 
-                       $q->where('name', $role); 
-                   })->exists();
+        // Register policies
+        Gate::policy(PerpanjanganWaktu::class, PerpanjanganWaktuPolicy::class);
+
+        // Register custom WhatsApp notification channel
+        Notification::extend('whatsapp', function ($app) {
+            return $app->make(WhatsAppChannel::class);
         });
+
+        Blade::if('hastemporary', function ($role) {
+            return auth()->check() &&
+                auth()->user()->activeTemporaryRoles()->whereHas('role', function ($q) use ($role) {
+                    $q->where('name', $role);
+                })->exists();
+        });
+
         Paginator::useBootstrapFive();
     }
 }

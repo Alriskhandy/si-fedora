@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KabupatenKota;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -17,26 +18,38 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
+
+        // Exclude superadmin users
+        $query->whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'superadmin');
+        });
+
         // Filter by role
         if ($request->filled('role')) {
             $query->role($request->role);
         }
+
         // Search
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+                ->orWhere('email', 'like', '%' . $request->search . '%');
         }
+
         $users = $query->with('roles')->latest()->paginate(10);
-        $roles = Role::all();
+        $roles = Role::whereNotIn('name', ['superadmin'])->orderBy('name')->get();
+
         return view('users.index', compact('users', 'roles'));
     }
-    /**
+    /** 
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        $roles = Role::all();
-        return view('users.create', compact('roles'));
+        $roles = Role::whereNotIn('name', ['superadmin', 'kaban', 'admin_peran'])->get();
+        $kab_kota = KabupatenKota::all();
+
+        // dd($roles);
+        return view('users.create', compact('roles', 'kab_kota'));
     }
     /**
      * Store a newly created resource in storage.
@@ -48,6 +61,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'role' => 'required|exists:roles,name',
+            'kabupaten_kota_id' => 'nullable|exists:kabupaten_kota,id',
         ], [
             'name.required' => 'Nama wajib diisi.',
             'email.required' => 'Email wajib diisi.',
@@ -57,13 +71,14 @@ class UserController extends Controller
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
             'role.required' => 'Role wajib dipilih.',
             'role.exists' => 'Role yang dipilih tidak valid.',
+            'kabupaten_kota_id.exists' => 'Kabupaten/Kota yang dipilih tidak valid.',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'is_active' => true,
+            'kabupaten_kota_id' => $request->kabupaten_kota_id,
         ]);
 
         $user->assignRole($request->role);
@@ -84,7 +99,7 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $roles = Role::all();
+        $roles = Role::whereNotIn('name', ['superadmin'])->get();
         $currentRole = $user->roles->first()?->name;
         return view('users.edit', compact('user', 'roles', 'currentRole'));
     }
@@ -148,7 +163,4 @@ class UserController extends Controller
 
         return redirect()->back()->with('success', 'Password berhasil direset.');
     }
-
-
-    
 }

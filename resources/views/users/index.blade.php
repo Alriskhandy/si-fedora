@@ -53,7 +53,6 @@
                                     <th>Nama</th>
                                     <th>Email</th>
                                     <th>Role</th>
-                                    <th>Status</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -70,13 +69,6 @@
                                             </span>
                                         @else
                                             <span class="badge bg-label-secondary">Tidak ada role</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($user->is_active)
-                                            <span class="badge bg-label-success">Aktif</span>
-                                        @else
-                                            <span class="badge bg-label-danger">Nonaktif</span>
                                         @endif
                                     </td>
                                     <td>

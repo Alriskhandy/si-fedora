@@ -8,6 +8,12 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @method bool hasRole($roles, $guard = null)
+ * @method bool hasAnyRole($roles, $guard = null)
+ * @method bool hasAllRoles($roles, $guard = null)
+ * @method \Illuminate\Database\Eloquent\Relations\MorphToMany roles()
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles, SoftDeletes;
@@ -17,12 +23,8 @@ class User extends Authenticatable
         'email',
         'password',
         'kabupaten_kota_id',
-        'phone',
-        'nip',
-        'jabatan',
-        'alamat',
-        'foto',
-        'is_active',
+        'no_hp',
+        'foto_profile',
         'last_login_at',
     ];
 
@@ -37,7 +39,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_login_at' => 'datetime',
-            'is_active' => 'boolean',
         ];
     }
 
@@ -46,7 +47,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
     }
-    
+
 
     public function permohonanCreated()
     {
@@ -61,11 +62,6 @@ class User extends Authenticatable
     public function evaluasi()
     {
         return $this->hasMany(Evaluasi::class, 'evaluator_id');
-    }
-
-    public function pokjaAnggota()
-    {
-        return $this->hasMany(PokjaAnggota::class);
     }
 
     public function notifikasi()
@@ -89,11 +85,6 @@ class User extends Authenticatable
         return $this->hasRole('verifikator');
     }
 
-    public function isPokja(): bool
-    {
-        return $this->hasRole('pokja');
-    }
-
     public function isAdminPeran(): bool
     {
         return $this->hasRole('admin_peran');
@@ -114,12 +105,72 @@ class User extends Authenticatable
         $this->update(['last_login_at' => now()]);
     }
     public function temporaryRoles()
-{
-    return $this->hasMany(TemporaryRoleAssignment::class);
-}
+    {
+        return $this->hasMany(TemporaryRoleAssignment::class);
+    }
 
-public function activeTemporaryRoles()
-{
-    return $this->temporaryRoles()->where('end_date', '>', now());
-}
+    public function activeTemporaryRoles()
+    {
+        return $this->temporaryRoles()->where('end_date', '>', now());
+    }
+
+    // Assignment Kabupaten/Kota Relations
+    public function kabkotaAssignments()
+    {
+        return $this->hasMany(UserKabkotaAssignment::class);
+    }
+
+    public function assignedKabkota()
+    {
+        return $this->belongsToMany(KabupatenKota::class, 'user_kabkota_assignments')
+            ->withPivot(['role_type', 'is_pic', 'is_active', 'assigned_from', 'assigned_until', 'notes'])
+            ->withTimestamps();
+    }
+
+    // Helper Methods untuk Assignment
+    public function isAssignedToKabkota(int $kabkotaId, string $roleType = null): bool
+    {
+        $query = $this->kabkotaAssignments()
+            ->active()
+            ->where('kabupaten_kota_id', $kabkotaId);
+
+        if ($roleType) {
+            $query->where('role_type', $roleType);
+        }
+
+        return $query->exists();
+    }
+
+    public function isPicForKabkota(int $kabkotaId): bool
+    {
+        return $this->kabkotaAssignments()
+            ->active()
+            ->where('kabupaten_kota_id', $kabkotaId)
+            ->where('is_pic', true)
+            ->exists();
+    }
+
+    public function getAssignedKabkotaIds(string $roleType = null): array
+    {
+        $query = $this->kabkotaAssignments()->active();
+
+        if ($roleType) {
+            $query->where('role_type', $roleType);
+        }
+
+        return $query->pluck('kabupaten_kota_id')->toArray();
+    }
+
+    public function getAssignmentForKabkota(int $kabkotaId, string $roleType = null)
+    {
+        $query = $this->kabkotaAssignments()
+            ->active()
+            ->where('kabupaten_kota_id', $kabkotaId);
+
+        if ($roleType) {
+            $query->where('role_type', $roleType);
+        }
+
+        return $query->first();
+    }
 }

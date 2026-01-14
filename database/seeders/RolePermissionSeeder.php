@@ -141,7 +141,7 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // 5. Tim Pokja/Evaluasi
-        $pokja = Role::create(['name' => 'pokja']);
+        $pokja = Role::create(['name' => 'fasilitator']);
         $pokja->givePermissionTo([
             'dashboard.admin',
             'permohonan.view',
@@ -151,7 +151,7 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // 6. Kabupaten/Kota
-        $kabkota = Role::create(['name' => 'kabkota']);
+        $kabkota = Role::create(['name' => 'pemohon']);
         $kabkota->givePermissionTo([
             'dashboard.kabkota',
             'permohonan.view',
@@ -160,14 +160,13 @@ class RolePermissionSeeder extends Seeder
             'permohonan.submit',
             'surat-rekomendasi.view',
         ]);
-        // Tambah role monitoring
-        $monitoring = Role::create(['name' => 'monitoring']);
+        // 7. Auditor/Monitoring
+        $monitoring = Role::create(['name' => 'auditor']);
         $monitoring->givePermissionTo([
-            'dashboard.admin', // Bisa lihat dashboard admin
+            'dashboard.admin',
             'permohonan.view',
             'surat-pemberitahuan.view',
             'surat-rekomendasi.view',
-            'verifikasi.view',
             'evaluasi.view',
             'laporan.view',
         ]);

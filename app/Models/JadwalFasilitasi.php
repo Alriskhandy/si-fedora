@@ -12,38 +12,86 @@ class JadwalFasilitasi extends Model
 
     protected $table = 'jadwal_fasilitasi';
 
+    // Status constants
+    const STATUS_DRAFT = 'draft';
+    const STATUS_PUBLISHED = 'published';
+    const STATUS_CLOSED = 'closed';
+
     protected $fillable = [
-        'tahun_anggaran_id',
-        'jenis_dokumen_id',
-        'nama_kegiatan',      // ← ganti dari nama_jadwal
+        'tahun_anggaran',
+        'jenis_dokumen',
         'tanggal_mulai',
         'tanggal_selesai',
-        'batas_permohonan',   // ← tambah
-        'keterangan',         // ← ganti dari deskripsi
+        'batas_permohonan',
+        'undangan_file',
         'status',
-        'created_by',
+        'dibuat_oleh',
         'updated_by',
     ];
 
     protected $casts = [
+        'tahun_anggaran' => 'integer',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
-        'batas_permohonan' => 'date',  // ← tambah
+        'batas_permohonan' => 'date',
     ];
 
-    // Relasi tetap sama...
-    public function tahunAnggaran()
+    // Relasi
+    public function permohonan()
     {
-        return $this->belongsTo(TahunAnggaran::class, 'tahun_anggaran_id');
+        return $this->hasMany(Permohonan::class);
+    }
+
+    public function suratPemberitahuan()
+    {
+        return $this->hasMany(SuratPemberitahuan::class);
+    }
+
+    public function dibuatOleh()
+    {
+        return $this->belongsTo(User::class, 'dibuat_oleh');
+    }
+
+    public function diupdateOleh()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function jenisDokumen()
     {
-        return $this->belongsTo(JenisDokumen::class, 'jenis_dokumen_id');
+        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen');
     }
 
-    public function createdBy()
+    // Accessor
+    public function getStatusLabelAttribute()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return match($this->status) {
+            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_PUBLISHED => 'Published',
+            self::STATUS_CLOSED => 'Closed',
+            default => $this->status,
+        };
+    }
+
+    public function getJenisDokumenLabelAttribute()
+    {
+        return match($this->jenis_dokumen) {
+            'rkpd' => 'RKPD',
+            'rpd' => 'RPD',
+            'rpjmd' => 'RPJMD',
+            default => strtoupper($this->jenis_dokumen),
+        };
+    }
+
+    // Scope
+    public function scopePublished($query)
+    {
+        return $query->where('status', self::STATUS_PUBLISHED);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_PUBLISHED)
+                    ->where('batas_permohonan', '>=', now());
     }
 }

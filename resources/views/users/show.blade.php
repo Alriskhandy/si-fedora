@@ -44,13 +44,13 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Status</strong></td>
+                                    <td><strong>Kab / Kota</strong></td>
                                     <td>:</td>
                                     <td>
-                                        @if($user->is_active)
-                                            <span class="badge bg-label-success">Aktif</span>
+                                        @if($user->kabupatenKota)
+                                            {{ $user->kabupatenKota->getFullNameAttribute() }}
                                         @else
-                                            <span class="badge bg-label-danger">Nonaktif</span>
+                                            -
                                         @endif
                                     </td>
                                 </tr>

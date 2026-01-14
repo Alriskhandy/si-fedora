@@ -3,13 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permohonan;
-use App\Models\JenisDokumen;
 use Illuminate\Http\Request;
-use App\Models\KabupatenKota;
-use App\Models\TahunAnggaran;
 use App\Models\JadwalFasilitasi;
 use App\Models\PermohonanDokumen;
-use App\Models\PersyaratanDokumen;
+use App\Models\MasterKelengkapanVerifikasi;
 use Illuminate\Support\Facades\Auth;
 
 class PermohonanController extends Controller
@@ -21,241 +18,122 @@ class PermohonanController extends Controller
 
     public function index(Request $request)
     {
-        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'tahunAnggaran']);
+        $query = Permohonan::with(['kabupatenKota', 'jadwalFasilitasi']);
 
         // Filter berdasarkan role
-        if (Auth::user()->hasRole('kabkota')) {
-            $query->where('created_by', Auth::id());
+        if (Auth::user()->hasRole('pemohon')) {
+            $query->where('user_id', Auth::id());
         } elseif (Auth::user()->hasRole('admin_peran')) {
             // Admin bisa liat semua permohonan
         } elseif (Auth::user()->hasRole('verifikator')) {
-            $query->where('verifikator_id', Auth::id());
-        } elseif (Auth::user()->hasRole('pokja')) {
-            $query->where('pokja_id', Auth::id());
+            // Verifikator lewat UserKabkotaAssignment
+            $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
+                ->where('is_active', true)
+                ->get();
+
+            if ($assignments->isNotEmpty()) {
+                $query->where(function ($q) use ($assignments) {
+                    foreach ($assignments as $assignment) {
+                        $q->orWhere(function ($qq) use ($assignment) {
+                            $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                                ->where('tahun', $assignment->tahun);
+
+                            // Filter by jenis dokumen jika ada
+                            if ($assignment->jenis_dokumen_id) {
+                                $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                            }
+                        });
+                    }
+                });
+                // Hanya tampilkan permohonan yang sudah disubmit
+                $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+            } else {
+                // Jika tidak ada assignment, tampilkan hasil kosong
+                $query->whereRaw('1 = 0');
+            }
+        } elseif (Auth::user()->hasRole('fasilitator')) {
+            // Fasilitator lewat UserKabkotaAssignment
+            $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
+                ->where('is_active', true)
+                ->get();
+
+            if ($assignments->isNotEmpty()) {
+                $query->where(function ($q) use ($assignments) {
+                    foreach ($assignments as $assignment) {
+                        $q->orWhere(function ($qq) use ($assignment) {
+                            $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                                ->where('tahun', $assignment->tahun);
+
+                            // Filter by jenis dokumen jika ada
+                            if ($assignment->jenis_dokumen_id) {
+                                $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                            }
+                        });
+                    }
+                });
+                // Fasilitator lihat permohonan yang sudah terverifikasi atau lebih
+                $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Search
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('nomor_permohonan', 'like', '%' . $request->search . '%')
-                  ->orWhere('nama_dokumen', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('kabupatenKota', function($qq) use ($request) {
-                      $qq->where('nama', 'like', '%' . $request->search . '%');
-                  })
-                  ->orWhereHas('jenisDokumen', function($qq) use ($request) {
-                      $qq->where('nama', 'like', '%' . $request->search . '%');
-                  });
+            $query->where(function ($q) use ($request) {
+                $q->where('tahun', 'like', '%' . $request->search . '%')
+                    ->orWhere('jenis_dokumen', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('kabupatenKota', function ($qq) use ($request) {
+                        $qq->where('nama', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
         // Filter by status
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->where('status_akhir', $request->status);
         }
 
         // Filter by tahun
-        if ($request->filled('tahun_anggaran_id')) {
-            $query->where('tahun_anggaran_id', $request->tahun_anggaran_id);
+        if ($request->filled('tahun')) {
+            $query->where('tahun', $request->tahun);
         }
 
         $permohonan = $query->latest()->paginate(10);
 
         $filterOptions = [
-            'tahunAnggaran' => TahunAnggaran::where('is_active', true)->get(),
+            'tahunList' => Permohonan::distinct('tahun')->orderBy('tahun', 'desc')->pluck('tahun'),
             'statusOptions' => [
-                'draft' => 'Draft',
-                'submitted' => 'Menunggu Verifikasi',
-                'verified' => 'Terverifikasi',
-                'revision_required' => 'Perlu Revisi',
-                'assigned' => 'Ditugaskan',
-                'in_evaluation' => 'Sedang Dievaluasi',
-                'draft_recommendation' => 'Draft Rekomendasi',
-                'approved_by_kaban' => 'Disetujui Kaban',
-                'letter_issued' => 'Surat Diterbitkan',
-                'sent' => 'Terkirim',
-                'follow_up' => 'Tindak Lanjut',
-                'completed' => 'Selesai',
-                'rejected' => 'Ditolak',
+                'belum' => 'Belum Dimulai',
+                'proses' => 'Dalam Proses',
+                'revisi' => 'Perlu Revisi',
+                'selesai' => 'Selesai',
             ]
         ];
 
         return view('permohonan.index', compact('permohonan', 'filterOptions'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $tahunAnggaran = TahunAnggaran::where('is_active', true)->get();
-        $jenisDokumen = JenisDokumen::where('is_active', true)->get();
-        
         // Hanya jadwal yang published yang bisa dipilih
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')
-            ->where('batas_permohonan', '>=', now())
-            ->with(['tahunAnggaran', 'jenisDokumen'])
+            ->where('batas_permohonan', '>=', now())->with(['jenisDokumen'])
             ->get();
 
-        return view('permohonan.create', compact('tahunAnggaran', 'jenisDokumen', 'jadwalFasilitasi'));
-    }
-
-    // public function store(Request $request)
-    // {
-    //     $request->validate([
-    //         'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
-    //         'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
-    //         'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
-    //         'nama_dokumen' => 'required|string|max:200',
-    //         'tanggal_permohonan' => 'required|date',
-    //         'keterangan' => 'nullable|string',
-    //     ]);
-
-    //     // Cek apakah jadwal masih aktif
-    //     $jadwal = JadwalFasilitasi::find($request->jadwal_fasilitasi_id);
-    //     if ($jadwal->batas_permohonan < now()) {
-    //         return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
-    //     }
-
-    //     $permohonan = Permohonan::create([
-    //         'tahun_anggaran_id' => $request->tahun_anggaran_id,
-    //         'jenis_dokumen_id' => $request->jenis_dokumen_id,
-    //         'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
-    //         'nama_dokumen' => $request->nama_dokumen,
-    //         'tanggal_permohonan' => $request->tanggal_permohonan,
-    //         'keterangan' => $request->keterangan,
-    //         'status' => 'draft',
-    //         'created_by' => Auth::id(),
-    //         'kabupaten_kota_id' => Auth::user()->kabupaten_kota_id,
-    //     ]);
-
-    //     return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
-    // }
-//     public function store(Request $request)
-// {
-    // $request->validate([
-    //     'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
-    //     'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
-    //     'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
-    //     'nama_dokumen' => 'required|string|max:200',
-    //     'tanggal_permohonan' => 'required|date',
-    //     'keterangan' => 'nullable|string',
-    // ]);
-
-    // // Cek apakah jadwal masih aktif
-    // $jadwal = JadwalFasilitasi::find($request->jadwal_fasilitasi_id);
-    // if ($jadwal->batas_permohonan < now()) {
-    //     return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
-    // }
-
-//     // Generate nomor permohonan
-//     $tahun = now()->year;
-//     $bulan = now()->format('m');
-//     $counter = Permohonan::whereYear('created_at', $tahun)->count() + 1;
-//     $nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
-
-//     $permohonan = Permohonan::create([
-//         'tahun_anggaran_id' => $request->tahun_anggaran_id,
-//         'jenis_dokumen_id' => $request->jenis_dokumen_id,
-//         'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
-//         'nama_dokumen' => $request->nama_dokumen,
-//         'tanggal_permohonan' => $request->tanggal_permohonan,
-//         'keterangan' => $request->keterangan,
-//         'nomor_permohonan' => $nomor_permohonan, // <-- Tambahin ini
-//         'status' => 'draft',
-//         'created_by' => Auth::id(),
-//         'kabupaten_kota_id' => Auth::user()->kabupaten_kota_id,
-//     ]);
-
-//     return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
-// }
-public function store(Request $request)
-{
-    $request->validate([
-        'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
-        'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
-        'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
-        'nama_dokumen' => 'required|string|max:200',
-        'tanggal_permohonan' => 'required|date',
-        'keterangan' => 'nullable|string',
-    ]);
-
-    // Cek apakah jadwal masih aktif
-    $jadwal = JadwalFasilitasi::find($request->jadwal_fasilitasi_id);
-    if ($jadwal->batas_permohonan < now()) {
-        return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
-    }
-
-    // Generate nomor permohonan
-    $tahun = now()->year;
-    $bulan = now()->format('m');
-    $counter = Permohonan::whereYear('created_at', $tahun)->count() + 1;
-    $nomor_permohonan = sprintf("%03d/%s/%s", $counter, $bulan, $tahun);
-
-    // Buat permohonan
-    $permohonan = Permohonan::create([
-        'tahun_anggaran_id' => $request->tahun_anggaran_id,
-        'jenis_dokumen_id' => $request->jenis_dokumen_id,
-        'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
-        'nama_dokumen' => $request->nama_dokumen,
-        'tanggal_permohonan' => $request->tanggal_permohonan,
-        'keterangan' => $request->keterangan,
-        'nomor_permohonan' => $nomor_permohonan,
-        'status' => 'draft',
-        'created_by' => Auth::id(),
-        'kabupaten_kota_id' => Auth::user()->kabupaten_kota_id,
-    ]);
-
-    // Auto-generate dokumen persyaratan berdasarkan jenis dokumen
-    $persyaratan = PersyaratanDokumen::where('jenis_dokumen_id', $request->jenis_dokumen_id)->get();
-    foreach ($persyaratan as $item) {
-        PermohonanDokumen::create([
-            'permohonan_id' => $permohonan->id,
-            'persyaratan_dokumen_id' => $item->id,
-            'is_ada' => false, // Default: dokumen belum diupload
-            'status_verifikasi' => 'pending',
-        ]);
-    }
-
-    return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
-}
-    public function show(Permohonan $permohonan)
-    {
-        // Cek hak akses
-        $this->authorizeView($permohonan);
-
-        return view('permohonan.show', compact('permohonan'));
-    }
-
-    public function edit(Permohonan $permohonan)
-    {
-        // Hanya bisa edit kalo status draft
-        if ($permohonan->status !== 'draft') {
-            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim dan tidak bisa diedit.');
+        // Pre-select jadwal if jadwal_id provided
+        $selectedJadwal = null;
+        if ($request->filled('jadwal_id')) {
+            $selectedJadwal = JadwalFasilitasi::find($request->jadwal_id);
         }
 
-        // Cek hak akses
-        $this->authorizeView($permohonan);
-
-        $tahunAnggaran = TahunAnggaran::where('is_active', true)->get();
-        $jenisDokumen = JenisDokumen::where('is_active', true)->get();
-        $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')
-            ->where('batas_permohonan', '>=', now())
-            ->get();
-
-        return view('permohonan.edit', compact('permohonan', 'tahunAnggaran', 'jenisDokumen', 'jadwalFasilitasi'));
+        return view('permohonan.create', compact('jadwalFasilitasi', 'selectedJadwal'));
     }
 
-    public function update(Request $request, Permohonan $permohonan)
+    public function store(Request $request)
     {
-        // Hanya bisa edit kalo status draft
-        if ($permohonan->status !== 'draft') {
-            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim dan tidak bisa diedit.');
-        }
-
         $request->validate([
-            'tahun_anggaran_id' => 'required|exists:tahun_anggaran,id',
-            'jenis_dokumen_id' => 'required|exists:jenis_dokumen,id',
             'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
-            'nama_dokumen' => 'required|string|max:200',
-            'tanggal_permohonan' => 'required|date',
-            'keterangan' => 'nullable|string',
         ]);
 
         // Cek apakah jadwal masih aktif
@@ -264,70 +142,195 @@ public function store(Request $request)
             return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
         }
 
-        $permohonan->update([
-            'tahun_anggaran_id' => $request->tahun_anggaran_id,
-            'jenis_dokumen_id' => $request->jenis_dokumen_id,
+        // Cek apakah user sudah pernah membuat permohonan untuk jadwal ini
+        $existingPermohonan = Permohonan::where('jadwal_fasilitasi_id', $request->jadwal_fasilitasi_id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if ($existingPermohonan) {
+            return redirect()->route('permohonan.show', $existingPermohonan)
+                ->with('info', 'Anda sudah memiliki permohonan untuk jadwal ini.');
+        }
+
+        // Buat permohonan dengan data dari jadwal
+        $permohonan = Permohonan::create([
+            'user_id' => Auth::id(),
+            'kab_kota_id' => Auth::user()->kabupaten_kota_id,
             'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
-            'nama_dokumen' => $request->nama_dokumen,
-            'tanggal_permohonan' => $request->tanggal_permohonan,
-            'keterangan' => $request->keterangan,
+            'tahun' => $jadwal->tahun_anggaran,
+            'jenis_dokumen_id' => $jadwal->jenis_dokumen,
+            'status_akhir' => 'belum',
         ]);
 
+        // Auto-generate dokumen persyaratan berdasarkan master_kelengkapan_verifikasi
+        $kelengkapanList = MasterKelengkapanVerifikasi::orderBy('urutan')->get();
+        foreach ($kelengkapanList as $kelengkapan) {
+            PermohonanDokumen::create([
+                'permohonan_id' => $permohonan->id,
+                'master_kelengkapan_id' => $kelengkapan->id,
+                'is_ada' => false,
+                'status_verifikasi' => 'pending',
+            ]);
+        }
+
+        return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dibuat. Silakan lengkapi dokumen persyaratan.');
+    }
+
+    public function show(Permohonan $permohonan)
+    {
+        // Cek hak akses
+        $this->authorizeView($permohonan);
+
+        // Load relasi untuk tampilan lengkap
+        $permohonan->load([
+            'kabupatenKota',
+            'jadwalFasilitasi',
+            'permohonanDokumen.masterKelengkapan',
+            'perpanjanganWaktu',
+            'undanganPelaksanaan',
+            'hasilFasilitasi',
+            'tindakLanjut',
+            'penetapanPerda'
+        ]);
+
+        return view('permohonan.show-with-tabs', compact('permohonan'));
+    }
+
+    /**
+     * Show permohonan with tab-based layout (alternate view for testing)
+     */
+    public function showWithTabs(Permohonan $permohonan)
+    {
+        // Cek hak akses
+        $this->authorizeView($permohonan);
+
+        // Load relasi untuk tampilan lengkap
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'penetapanJadwal',
+            'koordinator.koordinator',
+            'permohonanDokumen.masterKelengkapan',
+            'perpanjanganWaktu',
+            'undanganPelaksanaan',
+            'hasilFasilitasi',
+            'tindakLanjut',
+            'penetapanPerda',
+            'activityLogs.causer'
+        ]);
+
+        return view('permohonan.show-with-tabs', compact('permohonan'));
+    }
+
+    public function edit(Permohonan $permohonan)
+    {
+        // Hanya bisa edit kalo status belum
+        if ($permohonan->status_akhir !== 'belum') {
+            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa diedit.');
+        }
+
+        // Cek hak akses
+        $this->authorizeView($permohonan);
+
+        return view('permohonan.edit', compact('permohonan'));
+    }
+
+    public function update(Request $request, Permohonan $permohonan)
+    {
+        // Hanya bisa edit kalo status belum
+        if ($permohonan->status_akhir !== 'belum') {
+            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa diedit.');
+        }
+
+        // Update logic here (for now just redirect)
         return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil diperbarui.');
     }
 
-    // public function submit(Permohonan $permohonan)
-    // {
-    //     // Hanya bisa submit kalo status draft
-    //     if ($permohonan->status !== 'draft') {
-    //         return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
-    //     }
+    public function submit(Request $request, Permohonan $permohonan)
+    {
+        if ($permohonan->status_akhir !== 'belum') {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permohonan sudah dikirim sebelumnya.'
+                ], 400);
+            }
+            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
+        }
 
-    //     // Cek apakah semua dokumen persyaratan sudah diupload (ini bisa diimplementasiin nanti)
-    //     // $dokumenBelumLengkap = $permohonan->permohonanDokumen()
-    //     //     ->where('is_ada', false)
-    //     //     ->exists();
-        
-    //     // if ($dokumenBelumLengkap) {
-    //     //     return redirect()->back()->with('error', 'Silakan lengkapi semua dokumen persyaratan terlebih dahulu.');
-    //     // }
+        // Validasi: Cek apakah semua dokumen wajib sudah diupload
+        $dokumenBelumLengkap = PermohonanDokumen::where('permohonan_id', $permohonan->id)
+            ->where('is_ada', false)
+            ->exists();
 
-    //     $permohonan->update([
-    //         'status' => 'submitted',
-    //         'submitted_at' => now(),
-    //     ]);
+        if ($dokumenBelumLengkap) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.'
+                ], 400);
+            }
+            return redirect()->route('permohonan.show', $permohonan)
+                ->with('error', 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.');
+        }
 
-    //     return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
-    // }
-    public function submit(Permohonan $permohonan)
-{
-    if ($permohonan->status !== 'draft') {
-        return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim sebelumnya.');
+        // Update status ke proses
+        $permohonan->update([
+            'status_akhir' => 'proses',
+            'submitted_at' => now(),
+        ]);
+
+        // Buat tahapan Permohonan (tahapan pertama sudah selesai)
+        $masterTahapanPermohonan = \App\Models\MasterTahapan::where('nama_tahapan', 'Permohonan')->first();
+        if ($masterTahapanPermohonan) {
+            \App\Models\PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapanPermohonan->id,
+                ],
+                [
+                    'status' => 'selesai',
+                    'catatan' => 'Permohonan dibuat dan diajukan pada ' . now()->format('d M Y H:i'),
+                    'updated_by' => Auth::id(),
+                ]
+            );
+        }
+
+        // Buat tahapan Verifikasi (tahapan berikutnya dimulai)
+        $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+        if ($masterTahapanVerifikasi) {
+            \App\Models\PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapanVerifikasi->id,
+                ],
+                [
+                    'status' => 'proses',
+                    'catatan' => 'Menunggu verifikasi dokumen',
+                    'updated_by' => Auth::id(),
+                ]
+            );
+        }
+
+        // Log activity atau kirim notifikasi ke verifikator (opsional)
+        // TODO: Implement notification system
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.'
+            ]);
+        }
+
+        return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
     }
-
-    // Cari verifikator pertama (bisa random atau pake round-robin)
-    $verifikator = \App\Models\User::whereHas('roles', function($q) {
-        $q->where('name', 'verifikator');
-    })->first();
-
-    if (!$verifikator) {
-        return redirect()->back()->with('error', 'Tidak ada Tim Verifikasi yang tersedia.');
-    }
-
-    $permohonan->update([
-        'status' => 'submitted',
-        'submitted_at' => now(),
-        'verifikator_id' => $verifikator->id, // <-- Tambahin ini
-    ]);
-
-    return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
-}
 
     public function destroy(Permohonan $permohonan)
     {
-        // Hanya bisa hapus kalo status draft
-        if ($permohonan->status !== 'draft') {
-            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dikirim dan tidak bisa dihapus.');
+        // Hanya bisa hapus kalo status belum
+        if ($permohonan->status_akhir !== 'belum') {
+            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa dihapus.');
         }
 
         $permohonan->delete();
@@ -337,22 +340,40 @@ public function store(Request $request)
     private function authorizeView(Permohonan $permohonan)
     {
         $user = Auth::user();
-        
-        // Kabupaten/Kota hanya bisa lihat permohonan miliknya sendiri
-        if ($user->hasRole('kabkota')) {
-            if ($permohonan->created_by !== $user->id) {
+
+        // Pemohon (Kabupaten/Kota) hanya bisa lihat permohonan miliknya sendiri
+        if ($user->hasRole('pemohon')) {
+            if ($permohonan->user_id !== $user->id) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
-        // Verifikator hanya bisa lihat permohonan yang ditugaskan ke dia
+        // Verifikator bisa lihat permohonan yang di-assign
         elseif ($user->hasRole('verifikator')) {
-            if ($permohonan->verifikator_id !== $user->id) {
+            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->where(function ($q) use ($permohonan) {
+                    $q->whereNull('jenis_dokumen_id')
+                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
+                })
+                ->exists();
+            if (!$hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
-        // Pokja hanya bisa lihat permohonan yang ditugaskan ke dia
-        elseif ($user->hasRole('pokja')) {
-            if ($permohonan->pokja_id !== $user->id) {
+        // Fasilitator bisa lihat permohonan yang di-assign
+        elseif ($user->hasRole('fasilitator')) {
+            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->where(function ($q) use ($permohonan) {
+                    $q->whereNull('jenis_dokumen_id')
+                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
+                })
+                ->exists();
+            if (!$hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }

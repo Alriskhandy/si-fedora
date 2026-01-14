@@ -1,4 +1,3 @@
-
 <nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
     id="layout-navbar">
     <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
@@ -18,6 +17,15 @@
         </div>
 
         <ul class="navbar-nav flex-row align-items-center ms-auto">
+            {{-- Modul Pengguna --}}
+            <li class="nav-item me-2">
+                <a class="btn btn-sm btn-outline-primary" href="{{ asset('modul-pengguna/MODUL PENGGUNAAN SI FEDORA.pdf') }}" 
+                   target="_blank" title="Download Modul Pengguna">
+                    <i class="bx bx-book-open me-1"></i>
+                    <span class="d-none d-md-inline">Modul Penggunaan</span>
+                </a>
+            </li>
+
             {{-- Notifications --}}
             <li class="nav-item navbar-dropdown dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">

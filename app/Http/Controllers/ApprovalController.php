@@ -49,7 +49,7 @@ class ApprovalController extends Controller
             'kabupatenKota',
             'jenisDokumen',
             'evaluasi',
-            'permohonanDokumen.persyaratanDokumen'
+            'permohonanDokumen.masterKelengkapan'
         ]);
 
         return view('approval.show', compact('permohonan'));

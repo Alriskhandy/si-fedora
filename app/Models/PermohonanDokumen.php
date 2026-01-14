@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 // ==================== PERMOHONAN DOKUMEN ====================
 class PermohonanDokumen extends Model
@@ -15,7 +16,8 @@ class PermohonanDokumen extends Model
 
     protected $fillable = [
         'permohonan_id',
-        'persyaratan_dokumen_id',
+        'persyaratan_dokumen_id', // deprecated - untuk backward compatibility
+        'master_kelengkapan_id', // kolom baru
         'is_ada',
         'file_path',
         'file_name',
@@ -37,9 +39,15 @@ class PermohonanDokumen extends Model
         return $this->belongsTo(Permohonan::class, 'permohonan_id');
     }
 
+    public function masterKelengkapan()
+    {
+        return $this->belongsTo(MasterKelengkapanVerifikasi::class, 'master_kelengkapan_id');
+    }
+
+    // Alias untuk backward compatibility di view
     public function persyaratanDokumen()
     {
-        return $this->belongsTo(PersyaratanDokumen::class);
+        return $this->masterKelengkapan();
     }
 
     public function verifiedBy()
@@ -96,12 +104,6 @@ class Evaluasi extends Model
     {
         return $this->belongsTo(Permohonan::class);
     }
-    
-
-    public function pokja()
-    {
-        return $this->belongsTo(TimPokja::class, 'pokja_id');
-    }
 
     public function evaluator()
     {
@@ -125,8 +127,8 @@ class Evaluasi extends Model
 
     public function canSubmit(): bool
     {
-        return $this->status === self::STATUS_IN_PROGRESS && 
-               !empty($this->draft_rekomendasi);
+        return $this->status === self::STATUS_IN_PROGRESS &&
+            !empty($this->draft_rekomendasi);
     }
 }
 
@@ -198,9 +200,9 @@ class SuratRekomendasi extends Model
     public static function generateNomorSurat(): string
     {
         $tahun = date('Y');
-        
+
         $lastNumber = self::whereYear('created_at', $tahun)->count() + 1;
-        
+
         return sprintf('%03d/PERAN/REKOMENDASI/%s', $lastNumber, $tahun);
     }
 }
@@ -240,7 +242,7 @@ class ActivityLog extends Model
     public static function log($action, $description, $model = null, $properties = []): void
     {
         self::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::user()->id,
             'model_type' => $model ? get_class($model) : null,
             'model_id' => $model ? $model->id : null,
             'action' => $action,

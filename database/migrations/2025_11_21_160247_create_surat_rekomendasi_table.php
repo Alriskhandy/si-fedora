@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('surat_rekomendasi', function (Blueprint $table) {
             $table->id();
             $table->foreignId('permohonan_id');
-            $table->foreignId('evaluasi_id');
             
             $table->string('nomor_surat', 50)->unique();
             $table->date('tanggal_surat');
@@ -36,7 +35,6 @@ return new class extends Migration
         // Tambahin foreign key constraint setelah table dibuat
         Schema::table('surat_rekomendasi', function (Blueprint $table) {
             $table->foreign('permohonan_id')->references('id')->on('permohonan')->cascadeOnDelete();
-            $table->foreign('evaluasi_id')->references('id')->on('evaluasi')->cascadeOnDelete();
             $table->foreign('signed_by')->references('id')->on('users')->nullOnDelete();
             $table->foreign('created_by')->references('id')->on('users');
         });
