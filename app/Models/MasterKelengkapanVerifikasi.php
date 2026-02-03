@@ -13,8 +13,7 @@ class MasterKelengkapanVerifikasi extends Model
 
     protected $fillable = [
         'nama_dokumen',
-        'kategori',
-        'tahapan_id',
+        'jenis_dokumen_id',
         'deskripsi',
         'wajib',
         'urutan',
@@ -26,25 +25,14 @@ class MasterKelengkapanVerifikasi extends Model
     ];
 
     // Relasi
-    public function tahapan()
+    public function jenisDokumen()
     {
-        return $this->belongsTo(MasterTahapan::class, 'tahapan_id');
+        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
     }
 
     public function dokumenVerifikasiDetail()
     {
         return $this->hasMany(DokumenVerifikasiDetail::class, 'master_kelengkapan_id');
-    }
-
-    // Scope untuk kategori
-    public function scopeSuratPermohonan($query)
-    {
-        return $query->where('kategori', 'surat_permohonan');
-    }
-
-    public function scopeKelengkapanVerifikasi($query)
-    {
-        return $query->where('kategori', 'kelengkapan_verifikasi');
     }
 
     // Scope untuk dokumen wajib
@@ -59,10 +47,9 @@ class MasterKelengkapanVerifikasi extends Model
         return $query->where('wajib', false);
     }
 
-    // Scope berdasarkan tahapan
-    public function scopeByTahapan($query, $tahapanId)
+    public function scopeByJenisDokumen($query, $jenisDokumenId)
     {
-        return $query->where('tahapan_id', $tahapanId);
+        return $query->where('jenis_dokumen_id', $jenisDokumenId);
     }
 
     // Scope ordered by urutan

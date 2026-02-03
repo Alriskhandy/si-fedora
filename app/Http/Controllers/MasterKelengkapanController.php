@@ -3,27 +3,44 @@
 namespace App\Http\Controllers;
 
 use App\Models\MasterKelengkapanVerifikasi;
+use App\Models\MasterJenisDokumen;
 use Illuminate\Http\Request;
 
 class MasterKelengkapanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $kelengkapan = MasterKelengkapanVerifikasi::orderBy('id')->get();
-        return view('master-kelengkapan.index', compact('kelengkapan'));
+        $query = MasterKelengkapanVerifikasi::with(['jenisDokumen']);
+        
+        // Filter berdasarkan jenis dokumen
+        if ($request->filled('jenis_dokumen_id')) {
+            $query->where('jenis_dokumen_id', $request->jenis_dokumen_id);
+        }
+        
+        $kelengkapan = $query->orderBy('jenis_dokumen_id')
+                             ->orderBy('urutan')
+                             ->get();
+        
+        $jenisDokumen = MasterJenisDokumen::orderBy('nama')->get();
+        
+        return view('master-kelengkapan.index', compact('kelengkapan', 'jenisDokumen'));
     }
 
     public function create()
     {
-        return view('master-kelengkapan.create');
+        $jenisDokumen = MasterJenisDokumen::orderBy('nama')->get();
+        
+        return view('master-kelengkapan.create', compact('jenisDokumen'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'nama_dokumen' => 'required|string|max:255',
+            'jenis_dokumen_id' => 'required|exists:master_jenis_dokumen,id',
             'deskripsi' => 'nullable|string',
             'wajib' => 'required|boolean',
+            'urutan' => 'nullable|integer|min:1',
         ]);
 
         MasterKelengkapanVerifikasi::create($validated);
@@ -34,15 +51,19 @@ class MasterKelengkapanController extends Controller
 
     public function edit(MasterKelengkapanVerifikasi $masterKelengkapan)
     {
-        return view('master-kelengkapan.edit', compact('masterKelengkapan'));
+        $jenisDokumen = MasterJenisDokumen::orderBy('nama')->get();
+        
+        return view('master-kelengkapan.edit', compact('masterKelengkapan', 'jenisDokumen'));
     }
 
     public function update(Request $request, MasterKelengkapanVerifikasi $masterKelengkapan)
     {
         $validated = $request->validate([
             'nama_dokumen' => 'required|string|max:255',
+            'jenis_dokumen_id' => 'required|exists:master_jenis_dokumen,id',
             'deskripsi' => 'nullable|string',
             'wajib' => 'required|boolean',
+            'urutan' => 'nullable|integer|min:1',
         ]);
 
         $masterKelengkapan->update($validated);
