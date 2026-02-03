@@ -9,6 +9,7 @@ use Spatie\Permission\Models\Role;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\JadwalFasilitasi;
+use App\Models\PermohonanAssignments;
 
 class DashboardController extends Controller
 {
@@ -16,30 +17,32 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Redirect berdasarkan role
+        // Get stats based on role
         if ($user->hasRole('superadmin')) {
-            return $this->superadminDashboard($user);
+            $stats = $this->getSuperadminStats($user);
         } elseif ($user->hasRole('kaban')) {
-            return $this->kabanDashboard($user);
+            $stats = $this->getKabanStats($user);
         } elseif ($user->hasRole('admin_peran')) {
-            return $this->adminPeranDashboard($user);
+            $stats = $this->getAdminPeranStats($user);
         } elseif ($user->hasRole('verifikator')) {
-            return $this->verifikatorDashboard($user);
+            $stats = $this->getVerifikatorStats($user);
         } elseif ($user->hasRole('fasilitator')) {
-            return $this->pokjaDashboard($user);
-        } elseif ($user->hasRole('pemohon')) {  // <-- Ganti jadi ini
-            return $this->kabKotaDashboard($user);
+            $stats = $this->getFasilitatorStats($user);
+        } elseif ($user->hasRole('auditor')) {
+            $stats = $this->getAuditorStats($user);
+        } elseif ($user->hasRole('pemohon')) {
+            $stats = $this->getKabKotaStats($user);
+        } else {
+            $stats = [];
         }
 
-        // Fallback
-        return view('dashboard.default', [
-            'user' => $user
-        ]);
+        // Return single dashboard view with stats
+        return view('dashboard.index', compact('stats'));
     }
 
-    private function superadminDashboard($user)
+    private function getSuperadminStats($user)
     {
-        $stats = [
+        return [
             'total_users' => User::count(),
             'total_permohonan' => Permohonan::count(),
             'active_jadwal' => JadwalFasilitasi::count(),
@@ -48,13 +51,11 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get()
         ];
-
-        return view('dashboard.superadmin', compact('stats'));
     }
 
-    private function kabanDashboard($user)
+    private function getKabanStats($user)
     {
-        $stats = [
+        return [
             'pending_approval' => Permohonan::where('status_akhir', 'proses')->count(),
             'total_permohonan' => Permohonan::count(),
             'completed_this_month' => Permohonan::where('status_akhir', 'selesai')
@@ -66,13 +67,11 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get()
         ];
-
-        return view('dashboard.kaban', compact('stats'));
     }
 
-    private function adminPeranDashboard($user)
+    private function getAdminPeranStats($user)
     {
-        $stats = [
+        return [
             'pending_verifikasi' => Permohonan::where('status_akhir', 'belum')->count(),
             'in_evaluation' => Permohonan::where('status_akhir', 'proses')->count(),
             'pending_approval' => Permohonan::where('status_akhir', 'revisi')->count(),
@@ -83,15 +82,11 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get()
         ];
-
-        return view('dashboard.admin_peran', compact('stats'));
     }
 
-    private function verifikatorDashboard($user)
+    private function getVerifikatorStats($user)
     {
-        // Untuk sementara, verifikator bisa melihat semua permohonan dengan status proses
-        // Karena belum ada sistem assignment verifikator
-        $stats = [
+        return [
             'my_verifikasi' => Permohonan::where('status_akhir', 'proses')
                 ->count(),
             'completed_verifikasi' => Permohonan::where('status_akhir', 'selesai')
@@ -99,47 +94,51 @@ class DashboardController extends Controller
                 ->count(),
             'pending_verifikasi' => Permohonan::where('status_akhir', 'proses')
                 ->count(),
-            'my_tasks' => Permohonan::with(['kabupatenKota'])
+            'my_tasks' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
                 ->where('status_akhir', 'proses')
                 ->latest()
                 ->limit(5)
                 ->get()
         ];
-
-        return view('dashboard.verifikator', compact('stats'));
     }
 
-    private function pokjaDashboard($user)
+    private function getFasilitatorStats($user)
     {
-        // Fasilitator sekarang menggunakan tim_fasilitasi_assignment
-        $permohonanIds = \App\Models\TimFasilitasiAssignment::where('user_id', $user->id)
-            ->pluck('permohonan_id');
-
-        $stats = [
-            'my_evaluasi' => Permohonan::whereIn('id', $permohonanIds)
-                ->where('status_akhir', 'proses')
-                ->count(),
-            'completed_evaluasi' => Permohonan::whereIn('id', $permohonanIds)
-                ->where('status_akhir', 'selesai')
+        return [
+            'my_evaluasi' => Permohonan::where('status_akhir', 'proses')->count(),
+            'completed_evaluasi' => Permohonan::where('status_akhir', 'selesai')
                 ->whereMonth('updated_at', now()->month)
                 ->count(),
-            'pending_submissions' => Permohonan::whereIn('id', $permohonanIds)
-                ->where('status_akhir', 'proses')
-                ->count(),
+            'pending_submissions' => Permohonan::where('status_akhir', 'proses')->count(),
             'my_evaluasi_tasks' => Permohonan::with(['kabupatenKota'])
-                ->whereIn('id', $permohonanIds)
                 ->where('status_akhir', 'proses')
                 ->latest()
                 ->limit(5)
                 ->get()
         ];
-
-        return view('dashboard.pokja', compact('stats'));
     }
 
-    private function kabKotaDashboard($user)
+    private function getAuditorStats($user)
     {
-        $stats = [
+        return [
+            'total_permohonan' => Permohonan::count(),
+            'in_progress' => Permohonan::whereIn('status_akhir', ['proses', 'revisi'])->count(),
+            'completed' => Permohonan::where('status_akhir', 'selesai')->count(),
+            'total_kabkota' => \App\Models\KabupatenKota::count(),
+            'recent_permohonan' => Permohonan::with(['kabupatenKota'])
+                ->latest()
+                ->limit(10)
+                ->get(),
+            'monthly_stats' => Permohonan::selectRaw('status_akhir, COUNT(*) as count')
+                ->whereMonth('created_at', now()->month)
+                ->groupBy('status_akhir')
+                ->get()
+        ];
+    }
+
+    private function getKabKotaStats($user)
+    {
+        return [
             'my_permohonan' => Permohonan::where('user_id', $user->id)->count(),
             'draft_permohonan' => Permohonan::where('user_id', $user->id)
                 ->where('status_akhir', 'belum')
@@ -161,7 +160,5 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get()
         ];
-
-        return view('dashboard.kab_kota', compact('stats'));
     }
 }

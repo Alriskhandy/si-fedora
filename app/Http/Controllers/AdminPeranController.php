@@ -41,17 +41,18 @@ class AdminPeranController extends Controller
             'in_evaluation' => 'Sedang Dievaluasi',
             'draft_recommendation' => 'Draft Rekomendasi'
         ];
- // Tambahin ini
- $verifikatorList = User::whereHas('roles', function($q) {
-    $q->where('name', 'verifikator');
-})->get();
+        // Tambahin ini
+        $verifikatorList = User::whereHas('roles', function($q) {
+            $q->where('name', 'verifikator');
+        })->get();
 
-$pokjaList = User::whereHas('roles', function($q) {
-    $q->where('name', 'pokja');
-})->get();
+        $pokjaList = User::whereHas('roles', function($q) {
+            $q->where('name', 'fasilitator');
+        })->get();
 
-return view('admin-peran.index', compact('permohonan', 'statusOptions', 'status', 'verifikatorList', 'pokjaList'));
-}
+        return view('admin-peran.index', compact('permohonan', 'statusOptions', 'status', 'verifikatorList', 'pokjaList'));
+
+    }
     // public function assign(Request $request, Permohonan $permohonan)
     // {
     //     $request->validate([
