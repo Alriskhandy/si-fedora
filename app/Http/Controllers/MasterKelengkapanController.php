@@ -23,14 +23,14 @@ class MasterKelengkapanController extends Controller
         
         $jenisDokumen = MasterJenisDokumen::orderBy('nama')->get();
         
-        return view('master-kelengkapan.index', compact('kelengkapan', 'jenisDokumen'));
+        return view('pages.master-kelengkapan.index', compact('kelengkapan', 'jenisDokumen'));
     }
 
     public function create()
     {
         $jenisDokumen = MasterJenisDokumen::orderBy('nama')->get();
         
-        return view('master-kelengkapan.create', compact('jenisDokumen'));
+        return view('pages.master-kelengkapan.create', compact('jenisDokumen'));
     }
 
     public function store(Request $request)
@@ -53,7 +53,7 @@ class MasterKelengkapanController extends Controller
     {
         $jenisDokumen = MasterJenisDokumen::orderBy('nama')->get();
         
-        return view('master-kelengkapan.edit', compact('masterKelengkapan', 'jenisDokumen'));
+        return view('pages.master-kelengkapan.edit', compact('masterKelengkapan', 'jenisDokumen'));
     }
 
     public function update(Request $request, MasterKelengkapanVerifikasi $masterKelengkapan)

@@ -11,12 +11,12 @@ class MasterTahapanController extends Controller
     {
         $tahapan = MasterTahapan::orderBy('urutan')->get();
 
-        return view('master-tahapan.index', compact('tahapan'));
+        return view('pages.master-tahapan.index', compact('tahapan'));
     }
 
     public function create()
     {
-        return view('master-tahapan.create');
+        return view('pages.master-tahapan.create');
     }
 
     public function store(Request $request)
@@ -34,7 +34,7 @@ class MasterTahapanController extends Controller
 
     public function edit(MasterTahapan $masterTahapan)
     {
-        return view('master-tahapan.edit', compact('masterTahapan'));
+        return view('pages.master-tahapan.edit', compact('masterTahapan'));
     }
 
     public function update(Request $request, MasterTahapan $masterTahapan)

@@ -30,7 +30,7 @@ class PenetapanPerdaController extends Controller
 
         $permohonans = $query->latest()->paginate(10);
 
-        return view('penetapan-perda.index', compact('permohonans'));
+        return view('pages.penetapan-perda.index', compact('permohonans'));
     }
 
     /**
@@ -52,7 +52,7 @@ class PenetapanPerdaController extends Controller
 
         $penetapanPerda = $permohonan->penetapanPerda;
 
-        return view('penetapan-perda.create', compact('permohonan', 'penetapanPerda'));
+        return view('pages.penetapan-perda.create', compact('permohonan', 'penetapanPerda'));
     }
 
     /**
@@ -141,7 +141,7 @@ class PenetapanPerdaController extends Controller
             return redirect()->back()->with('error', 'Penetapan belum ada.');
         }
 
-        return view('penetapan-perda.show', compact('permohonan', 'penetapanPerda'));
+        return view('pages.penetapan-perda.show', compact('permohonan', 'penetapanPerda'));
     }
 
     /**
@@ -197,6 +197,6 @@ class PenetapanPerdaController extends Controller
 
         $penetapans = $query->latest()->paginate(15);
 
-        return view('penetapan-perda.public', compact('penetapans'));
+        return view('pages.penetapan-perda.public', compact('penetapans'));
     }
 }

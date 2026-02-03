@@ -32,13 +32,13 @@ class JadwalFasilitasiController extends Controller
 
         $jadwalFasilitasi = $query->latest()->paginate(10);
 
-        return view('jadwal-fasilitasi.index', compact('jadwalFasilitasi'));
+        return view('pages.jadwal-fasilitasi.index', compact('jadwalFasilitasi'));
     }
 
     public function create()
     {
         $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
-        return view('jadwal-fasilitasi.create', compact('jenisdokumen'));
+        return view('pages.jadwal-fasilitasi.create', compact('jenisdokumen'));
     }
 
     public function store(Request $request)
@@ -85,13 +85,13 @@ class JadwalFasilitasiController extends Controller
     public function show(JadwalFasilitasi $jadwal)
     {
         $jadwal->load(['permohonan.kabupatenKota', 'dibuatOleh'])->with(['jenisDokumen']);
-        return view('jadwal-fasilitasi.show', compact('jadwal'));
+        return view('pages.jadwal-fasilitasi.show', compact('jadwal'));
     }
 
     public function edit(JadwalFasilitasi $jadwal)
     {
         $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
-        return view('jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
+        return view('pages.jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
     }
 
     public function update(Request $request, JadwalFasilitasi $jadwal)

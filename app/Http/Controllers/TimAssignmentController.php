@@ -67,7 +67,7 @@ class TimAssignmentController extends Controller
         $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
 
         // dd($kabkotaListForm, $verifikators, $fasilitators);
-        return view('tim-assignment.index', compact(
+        return view('pages.tim-assignment.index', compact(
             'kabkotaList',
             'allKabkota',
             'kabkotaListForm',
@@ -284,7 +284,7 @@ class TimAssignmentController extends Controller
             ->get();
         $kabkotaList = KabupatenKota::orderBy('nama')->get();
 
-        return view('tim-assignment.edit', compact('timAssignment', 'users', 'kabkotaList'));
+        return view('pages.tim-assignment.edit', compact('timAssignment', 'users', 'kabkotaList'));
     }
 
     /**

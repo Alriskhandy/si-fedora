@@ -25,7 +25,7 @@ class MasterBabController extends Controller
         $babs = $query->orderBy('jenis_dokumen_id')->orderBy('urutan')->orderBy('nama_bab')->get();
         $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
 
-        return view('master-bab.index', compact('babs', 'jenisDokumenList', 'request'));
+        return view('pages.master-bab.index', compact('babs', 'jenisDokumenList', 'request'));
     }
 
     /**
@@ -36,7 +36,7 @@ class MasterBabController extends Controller
         $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
         $parentBabs = MasterBab::mainBab()->orderBy('urutan')->orderBy('nama_bab')->get();
 
-        return view('master-bab.create', compact('jenisDokumenList', 'parentBabs'));
+        return view('pages.master-bab.create', compact('jenisDokumenList', 'parentBabs'));
     }
 
     /**
@@ -83,7 +83,7 @@ class MasterBabController extends Controller
             ->orderBy('nama_bab')
             ->get();
 
-        return view('master-bab.edit', compact('masterBab', 'jenisDokumenList', 'parentBabs'));
+        return view('pages.master-bab.edit', compact('masterBab', 'jenisDokumenList', 'parentBabs'));
     }
 
     /**

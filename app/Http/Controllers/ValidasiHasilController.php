@@ -31,7 +31,7 @@ class ValidasiHasilController extends Controller
 
         $hasilList = $query->latest('updated_at')->paginate(10);
 
-        return view('validasi-hasil.index', compact('hasilList'));
+        return view('pages.validasi-hasil.index', compact('hasilList'));
     }
 
     /**
@@ -48,7 +48,7 @@ class ValidasiHasilController extends Controller
 
         $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilSistematika');
 
-        return view('validasi-hasil.show', compact('permohonan', 'hasilFasilitasi'));
+        return view('pages.validasi-hasil.show', compact('permohonan', 'hasilFasilitasi'));
     }
 
     /**

@@ -40,7 +40,7 @@ class PenetapanJadwalController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('penetapan-jadwal.index', compact('permohonan'));
+        return view('pages.penetapan-jadwal.index', compact('permohonan'));
     }
 
     /**
@@ -60,7 +60,7 @@ class PenetapanJadwalController extends Controller
             ->orderBy('tanggal_mulai')
             ->get();
 
-        return view('penetapan-jadwal.create', compact('permohonan', 'jadwalTersedia'));
+        return view('pages.penetapan-jadwal.create', compact('permohonan', 'jadwalTersedia'));
     }
 
     /**
@@ -156,6 +156,6 @@ class PenetapanJadwalController extends Controller
                 ->with('info', 'Jadwal fasilitasi belum ditetapkan.');
         }
 
-        return view('penetapan-jadwal.show', compact('permohonan', 'penetapan'));
+        return view('pages.penetapan-jadwal.show', compact('permohonan', 'penetapan'));
     }
 }

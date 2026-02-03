@@ -35,7 +35,7 @@ class ApprovalController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('approval.index', compact('permohonan'));
+        return view('pages.approval.index', compact('permohonan'));
     }
 
     public function show(Permohonan $permohonan)
@@ -52,7 +52,7 @@ class ApprovalController extends Controller
             'permohonanDokumen.masterKelengkapan'
         ]);
 
-        return view('approval.show', compact('permohonan'));
+        return view('pages.approval.show', compact('permohonan'));
     }
 
     public function approve(Request $request, Permohonan $permohonan)

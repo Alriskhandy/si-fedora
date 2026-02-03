@@ -26,7 +26,7 @@ class PerpanjanganWaktuController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('perpanjangan-waktu.index', compact('perpanjanganList'));
+        return view('pages.perpanjangan-waktu.index', compact('perpanjanganList'));
     }
 
     /**
@@ -45,7 +45,7 @@ class PerpanjanganWaktuController extends Controller
         // Cek authorization
         $this->authorize('create', [PerpanjanganWaktu::class, $permohonan]);
 
-        return view('perpanjangan-waktu.create', compact('permohonan'));
+        return view('pages.perpanjangan-waktu.create', compact('permohonan'));
     }
 
     /**
@@ -99,7 +99,7 @@ class PerpanjanganWaktuController extends Controller
 
         $perpanjanganWaktu->load(['permohonan.kabupatenKota', 'user', 'admin']);
 
-        return view('perpanjangan-waktu.show', compact('perpanjanganWaktu'));
+        return view('pages.perpanjangan-waktu.show', compact('perpanjanganWaktu'));
     }
 
     /**

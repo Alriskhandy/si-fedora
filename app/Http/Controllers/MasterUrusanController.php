@@ -24,12 +24,12 @@ class MasterUrusanController extends Controller
             END"
         )->orderBy('urutan')->get();
         
-        return view('master-urusan.index', compact('urusan'));
+        return view('pages.master-urusan.index', compact('urusan'));
     }
 
     public function create()
     {
-        return view('master-urusan.create');
+        return view('pages.master-urusan.create');
     }
 
     public function store(Request $request)
@@ -48,7 +48,7 @@ class MasterUrusanController extends Controller
 
     public function edit(MasterUrusan $masterUrusan)
     {
-        return view('master-urusan.edit', compact('masterUrusan'));
+        return view('pages.master-urusan.edit', compact('masterUrusan'));
     }
 
     public function update(Request $request, MasterUrusan $masterUrusan)

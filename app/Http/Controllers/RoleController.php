@@ -16,13 +16,13 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::with('permissions')->get();
-        return view('admin.roles.index', compact('roles'));
+        return view('pages.admin.roles.index', compact('roles'));
     }
 
     public function create()
     {
         $permissions = Permission::all();
-        return view('admin.roles.create', compact('permissions'));
+        return view('pages.admin.roles.create', compact('permissions'));
     }
 
     // public function store(Request $request)

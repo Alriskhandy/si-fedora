@@ -36,7 +36,7 @@ class VerifikasiController extends Controller
 
         $permohonan = $query->latest('submitted_at')->paginate(10);
 
-        return view('verifikasi.index', compact('permohonan'));
+        return view('pages.verifikasi.index', compact('permohonan'));
     }
 
     public function show(Permohonan $permohonan)
@@ -48,7 +48,7 @@ class VerifikasiController extends Controller
             'dokumen.kelengkapan'
         ]);
 
-        return view('verifikasi.show', compact('permohonan'));
+        return view('pages.verifikasi.show', compact('permohonan'));
     }
 
     public function verifikasi(Request $request, Permohonan $permohonan)

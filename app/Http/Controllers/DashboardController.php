@@ -37,7 +37,7 @@ class DashboardController extends Controller
         }
 
         // Return single dashboard view with stats
-        return view('dashboard.index', compact('stats'));
+        return view('pages.dashboard.index', compact('stats'));
     }
 
     private function getSuperadminStats($user)

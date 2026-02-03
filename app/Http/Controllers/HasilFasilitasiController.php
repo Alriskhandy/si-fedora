@@ -162,7 +162,7 @@ class HasilFasilitasiController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('hasil-fasilitasi.index', compact('permohonan'));
+        return view('pages.hasil-fasilitasi.index', compact('permohonan'));
     }
 
     /**
@@ -243,7 +243,7 @@ class HasilFasilitasiController extends Controller
             'tim_found' => $timInfo !== null
         ]);
 
-        return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'timInfo'));
+        return view('pages.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'timInfo'));
     }
 
     /**
@@ -325,7 +325,7 @@ class HasilFasilitasiController extends Controller
         $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilUrusan.creator', 'hasilSistematika.masterBab', 'hasilSistematika.creator', 'creator');
 
         // Pass isVerifikator to view
-        return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator'));
+        return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator'));
     }
 
     /**

@@ -111,7 +111,7 @@ class PermohonanController extends Controller
             ]
         ];
 
-        return view('permohonan.index', compact('permohonan', 'filterOptions'));
+        return view('pages.permohonan.index', compact('permohonan', 'filterOptions'));
     }
 
     public function create(Request $request)
@@ -127,7 +127,7 @@ class PermohonanController extends Controller
             $selectedJadwal = JadwalFasilitasi::find($request->jadwal_id);
         }
 
-        return view('permohonan.create', compact('jadwalFasilitasi', 'selectedJadwal'));
+        return view('pages.permohonan.create', compact('jadwalFasilitasi', 'selectedJadwal'));
     }
 
     public function store(Request $request)
@@ -234,7 +234,7 @@ class PermohonanController extends Controller
         // Cek hak akses
         $this->authorizeView($permohonan);
 
-        return view('permohonan.edit', compact('permohonan'));
+        return view('pages.permohonan.edit', compact('permohonan'));
     }
 
     public function update(Request $request, Permohonan $permohonan)

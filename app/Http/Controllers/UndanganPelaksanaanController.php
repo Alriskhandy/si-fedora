@@ -46,7 +46,7 @@ class UndanganPelaksanaanController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('undangan-pelaksanaan.index', compact('permohonan'));
+        return view('pages.undangan-pelaksanaan.index', compact('permohonan'));
     }
 
     /**
@@ -131,7 +131,7 @@ class UndanganPelaksanaanController extends Controller
         $nomorUrut = str_pad($lastUndangan + 1, 3, '0', STR_PAD_LEFT);
         $nomorUndangan = "UND-{$nomorUrut}/BPKAD/{$bulan}/{$tahun}";
 
-        return view('undangan-pelaksanaan.create', compact(
+        return view('pages.undangan-pelaksanaan.create', compact(
             'permohonan', 
             'verifikatorList', 
             'fasilitatorList', 
@@ -220,7 +220,7 @@ class UndanganPelaksanaanController extends Controller
 
         $undangan->load('penerima.user');
 
-        return view('undangan-pelaksanaan.show', compact('permohonan', 'undangan'));
+        return view('pages.undangan-pelaksanaan.show', compact('permohonan', 'undangan'));
     }
 
     /**
@@ -311,7 +311,7 @@ class UndanganPelaksanaanController extends Controller
 
         $undanganList = $query->latest()->paginate(10);
 
-        return view('undangan-pelaksanaan.my-undangan', compact('undanganList'));
+        return view('pages.undangan-pelaksanaan.my-undangan', compact('undanganList'));
     }
 
     /**
@@ -328,6 +328,6 @@ class UndanganPelaksanaanController extends Controller
             $undanganPenerima->markAsRead();
         }
 
-        return view('undangan-pelaksanaan.view', compact('undanganPenerima'));
+        return view('pages.undangan-pelaksanaan.view', compact('undanganPenerima'));
     }
 }

@@ -29,7 +29,7 @@ class SuratRekomendasiController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('surat-rekomendasi.index', compact('permohonan'));
+        return view('pages.surat-rekomendasi.index', compact('permohonan'));
     }
 
     public function create(Permohonan $permohonan)
@@ -39,7 +39,7 @@ class SuratRekomendasiController extends Controller
             abort(403, 'Permohonan belum disetujui oleh Kaban.');
         }
 
-        return view('surat-rekomendasi.create', compact('permohonan'));
+        return view('pages.surat-rekomendasi.create', compact('permohonan'));
     }
 
     public function store(Request $request, Permohonan $permohonan)

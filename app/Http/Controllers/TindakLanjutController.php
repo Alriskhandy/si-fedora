@@ -31,7 +31,7 @@ class TindakLanjutController extends Controller
 
         $permohonans = $query->latest()->paginate(10);
         // dd($permohonans);
-        return view('tindak-lanjut.index', compact('permohonans'));
+        return view('pages.tindak-lanjut.index', compact('permohonans'));
     }
 
     /**
@@ -53,7 +53,7 @@ class TindakLanjutController extends Controller
 
         $tindakLanjut = $permohonan->tindakLanjut;
 
-        return view('tindak-lanjut.create', compact('permohonan', 'tindakLanjut'));
+        return view('pages.tindak-lanjut.create', compact('permohonan', 'tindakLanjut'));
     }
 
     /**
@@ -127,7 +127,7 @@ class TindakLanjutController extends Controller
             return redirect()->back()->with('error', 'Tindak lanjut belum ada.');
         }
 
-        return view('tindak-lanjut.show', compact('permohonan', 'tindakLanjut'));
+        return view('pages.tindak-lanjut.show', compact('permohonan', 'tindakLanjut'));
     }
 
     /**

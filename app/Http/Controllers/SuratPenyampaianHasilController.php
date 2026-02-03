@@ -32,7 +32,7 @@ class SuratPenyampaianHasilController extends Controller
 
         $hasilList = $query->latest('updated_at')->paginate(10);
 
-        return view('surat-penyampaian-hasil.index', compact('hasilList'));
+        return view('pages.surat-penyampaian-hasil.index', compact('hasilList'));
     }
 
     /**
@@ -47,7 +47,7 @@ class SuratPenyampaianHasilController extends Controller
                 ->with('error', 'Hasil fasilitasi tidak ditemukan.');
         }
 
-        return view('surat-penyampaian-hasil.create', compact('permohonan', 'hasilFasilitasi'));
+        return view('pages.surat-penyampaian-hasil.create', compact('permohonan', 'hasilFasilitasi'));
     }
 
     /**
@@ -134,7 +134,7 @@ class SuratPenyampaianHasilController extends Controller
             return redirect()->back()->with('error', 'Surat penyampaian tidak ditemukan.');
         }
 
-        return view('surat-penyampaian-hasil.show', compact('permohonan', 'hasilFasilitasi'));
+        return view('pages.surat-penyampaian-hasil.show', compact('permohonan', 'hasilFasilitasi'));
     }
 
     /**
@@ -174,6 +174,6 @@ class SuratPenyampaianHasilController extends Controller
 
         $hasilList = $query->latest('surat_tanggal')->paginate(15);
 
-        return view('surat-penyampaian-hasil.public', compact('hasilList'));
+        return view('pages.surat-penyampaian-hasil.public', compact('hasilList'));
     }
 }

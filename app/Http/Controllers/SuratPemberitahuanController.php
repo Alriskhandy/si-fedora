@@ -26,7 +26,7 @@ class SuratPemberitahuanController extends Controller
 
         $suratPemberitahuan = $query->latest()->paginate(10);
 
-        return view('surat-pemberitahuan.index', compact('suratPemberitahuan'));
+        return view('pages.surat-pemberitahuan.index', compact('suratPemberitahuan'));
     }
 
     public function create()
@@ -34,7 +34,7 @@ class SuratPemberitahuanController extends Controller
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')->get();
         $kabupatenKota = KabupatenKota::where('is_active', true)->get();
 
-        return view('surat-pemberitahuan.create', compact('jadwalFasilitasi', 'kabupatenKota'));
+        return view('pages.surat-pemberitahuan.create', compact('jadwalFasilitasi', 'kabupatenKota'));
     }
 
     public function store(Request $request)
@@ -71,7 +71,7 @@ class SuratPemberitahuanController extends Controller
 
     public function show(SuratPemberitahuan $suratPemberitahuan)
     {
-        return view('surat-pemberitahuan.show', compact('suratPemberitahuan'));
+        return view('pages.surat-pemberitahuan.show', compact('suratPemberitahuan'));
     }
 
     public function edit(SuratPemberitahuan $suratPemberitahuan)
@@ -79,7 +79,7 @@ class SuratPemberitahuanController extends Controller
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')->get();
         $kabupatenKota = KabupatenKota::where('is_active', true)->get();
 
-        return view('surat-pemberitahuan.edit', compact('suratPemberitahuan', 'jadwalFasilitasi', 'kabupatenKota'));
+        return view('pages.surat-pemberitahuan.edit', compact('suratPemberitahuan', 'jadwalFasilitasi', 'kabupatenKota'));
     }
 
     public function update(Request $request, SuratPemberitahuan $suratPemberitahuan)

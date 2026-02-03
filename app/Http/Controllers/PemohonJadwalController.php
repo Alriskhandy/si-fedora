@@ -39,7 +39,7 @@ class PemohonJadwalController extends Controller
 
         $filterJenisDokumen = MasterJenisDokumen::where('status', true)->get();
 
-        return view('pemohon.jadwal.index', compact('jadwalList', 'filterOptions', 'filterJenisDokumen'));
+        return view('pages.pemohon.jadwal.index', compact('jadwalList', 'filterOptions', 'filterJenisDokumen'));
     }
 
     public function show(JadwalFasilitasi $jadwal)
@@ -55,6 +55,6 @@ class PemohonJadwalController extends Controller
                 ->first();
         }
 
-        return view('pemohon.jadwal.show', compact('jadwal', 'existingPermohonan'));
+        return view('pages.pemohon.jadwal.show', compact('jadwal', 'existingPermohonan'));
     }
 }

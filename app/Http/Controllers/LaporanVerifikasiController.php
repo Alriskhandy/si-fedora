@@ -37,7 +37,7 @@ class LaporanVerifikasiController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('laporan-verifikasi.index', compact('permohonan'));
+        return view('pages.laporan-verifikasi.index', compact('permohonan'));
     }
 
     /**
@@ -60,7 +60,7 @@ class LaporanVerifikasiController extends Controller
             ")
             ->first();
 
-        return view('laporan-verifikasi.create', compact('permohonan', 'dokumenStats'));
+        return view('pages.laporan-verifikasi.create', compact('permohonan', 'dokumenStats'));
     }
 
     /**
@@ -162,7 +162,7 @@ class LaporanVerifikasiController extends Controller
                 ->with('info', 'Laporan verifikasi belum dibuat.');
         }
 
-        return view('laporan-verifikasi.show', compact('permohonan', 'laporan'));
+        return view('pages.laporan-verifikasi.show', compact('permohonan', 'laporan'));
     }
 
     /**

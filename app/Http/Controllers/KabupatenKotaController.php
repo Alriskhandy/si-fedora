@@ -19,12 +19,12 @@ class KabupatenKotaController extends Controller
 
         $kabupatenKota = $query->latest()->paginate(10);
 
-        return view('kabupaten-kota.index', compact('kabupatenKota'));
+        return view('pages.kabupaten-kota.index', compact('kabupatenKota'));
     }
 
     public function create()
     {
-        return view('kabupaten-kota.create');
+        return view('pages.kabupaten-kota.create');
     }
 // ... existing code ...
 
@@ -34,7 +34,7 @@ public function evaluasi(KabupatenKota $kabupatenKota)
     
     $evaluasi = $kabupatenKota->evaluasi()->latest()->get();
     
-    return view('kabupaten-kota.evaluasi', [
+    return view('pages.kabupaten-kota.evaluasi', [
         'kabupatenKota' => $kabupatenKota,
         'evaluasi' => $evaluasi
     ]);
@@ -112,12 +112,12 @@ public function destroyEvaluasi(Evaluasi $evaluasi)
 
     public function show(KabupatenKota $kabupatenKota)
     {
-        return view('kabupaten-kota.show', compact('kabupatenKota'));
+        return view('pages.kabupaten-kota.show', compact('kabupatenKota'));
     }
 
     public function edit(KabupatenKota $kabupatenKota)
     {
-        return view('kabupaten-kota.edit', compact('kabupatenKota'));
+        return view('pages.kabupaten-kota.edit', compact('kabupatenKota'));
     }
 
     public function update(Request $request, KabupatenKota $kabupatenKota)

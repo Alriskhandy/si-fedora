@@ -50,40 +50,10 @@ class AdminPeranController extends Controller
             $q->where('name', 'fasilitator');
         })->get();
 
-        return view('admin-peran.index', compact('permohonan', 'statusOptions', 'status', 'verifikatorList', 'pokjaList'));
+        return view('pages.admin-peran.index', compact('permohonan', 'statusOptions', 'status', 'verifikatorList', 'pokjaList'));
 
     }
-    // public function assign(Request $request, Permohonan $permohonan)
-    // {
-    //     $request->validate([
-    //         'assign_type' => 'required|in:verifikator,pokja',
-    //         'user_id' => 'required|exists:users,id',
-    //     ]);
-
-    //     // Cek apakah user yang dipilih punya role yang sesuai
-    //     $user = User::findOrFail($request->user_id);
-    //     if ($request->assign_type == 'verifikator' && !$user->hasRole('verifikator')) {
-    //         return back()->withErrors(['user_id' => 'User yang dipilih bukan Tim Verifikasi.']);
-    //     }
-    //     if ($request->assign_type == 'pokja' && !$user->hasRole('pokja')) {
-    //         return back()->withErrors(['user_id' => 'User yang dipilih bukan Tim Pokja.']);
-    //     }
-
-    //     // Update permohonan
-    //     if ($request->assign_type == 'verifikator') {
-    //         $permohonan->update([
-    //             'verifikator_id' => $user->id,
-    //             'status' => 'submitted', // Kembali ke submitted untuk diverifikasi ulang
-    //         ]);
-    //     } else {
-    //         $permohonan->update([
-    //             'pokja_id' => $user->id,
-    //             'status' => 'in_evaluation',
-    //         ]);
-    //     }
-
-    //     return back()->with('success', 'Permohonan berhasil diassign ke ' . $user->name);
-    // }
+    
     public function assign(Request $request, Permohonan $permohonan)
 {
     $request->validate([
