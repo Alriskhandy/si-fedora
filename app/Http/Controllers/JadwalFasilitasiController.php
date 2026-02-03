@@ -65,7 +65,7 @@ class JadwalFasilitasiController extends Controller
             'tanggal_selesai' => $request->tanggal_selesai,
             'batas_permohonan' => $request->batas_permohonan,
             'status' => $request->status,
-            'dibuat_oleh' => Auth::user()->id,
+            'created_by' => Auth::user()->id,
         ];
 
         if ($request->hasFile('undangan_file')) {

@@ -87,7 +87,7 @@ class PenetapanPerdaController extends Controller
                     'tanggal_penetapan' => $request->tanggal_penetapan,
                     'file_perda' => $filePath,
                     'keterangan' => $request->tentang,
-                    'dibuat_oleh' => Auth::id(),
+                    'created_by' => Auth::id(),
                 ]
             );
 

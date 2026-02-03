@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Permohonan;
-use App\Models\PermohonanDokumen;
-use App\Models\PersyaratanDokumen;
+use App\Models\Dokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +16,7 @@ class VerifikasiController extends Controller
 
     public function index(Request $request)
     {
-        $query = Permohonan::with(['kabupatenKota', 'permohonanDokumen.masterKelengkapan'])
+        $query = Permohonan::with(['kabupatenKota', 'dokumen.kelengkapan'])
             ->whereIn('status_akhir', ['proses', 'revisi', 'selesai']); // Tampilkan semua status verifikasi
 
         // Filter pencarian
@@ -46,7 +45,7 @@ class VerifikasiController extends Controller
         $permohonan->load([
             'kabupatenKota',
             'jadwalFasilitasi',
-            'permohonanDokumen.masterKelengkapan'
+            'dokumen.kelengkapan'
         ]);
 
         return view('verifikasi.show', compact('permohonan'));
@@ -65,10 +64,10 @@ class VerifikasiController extends Controller
         // Update dokumen verifikasi
         $allVerified = true;
         foreach ($request->dokumen as $dokumenId => $data) {
-            $dokumen = PermohonanDokumen::findOrFail($dokumenId);
+            $dokumen = Dokumen::findOrFail($dokumenId);
             $dokumen->update([
-                'status_verifikasi' => $data['status_verifikasi'],
-                'catatan_verifikasi' => $data['catatan'] ?? null,
+                'status' => $data['status_verifikasi'] === 'verified' ? 'verified' : 'revision',
+                'catatan' => $data['catatan'] ?? null,
                 'verified_by' => Auth::id(),
                 'verified_at' => now(),
             ]);
@@ -105,14 +104,14 @@ class VerifikasiController extends Controller
         ]);
 
         // Cari dokumen
-        $dokumen = PermohonanDokumen::where('id', $request->dokumen_id)
+        $dokumen = Dokumen::where('id', $request->dokumen_id)
             ->where('permohonan_id', $permohonan->id)
             ->firstOrFail();
 
         // Update status verifikasi dokumen
         $dokumen->update([
-            'status_verifikasi' => $request->status_verifikasi,
-            'catatan_verifikasi' => $request->catatan,
+            'status' => $request->status_verifikasi === 'verified' ? 'verified' : 'revision',
+            'catatan' => $request->catatan,
             'verified_by' => Auth::id(),
             'verified_at' => now(),
         ]);
@@ -122,17 +121,16 @@ class VerifikasiController extends Controller
             $dokumen->update([
                 'file_path' => null,
                 'file_name' => null,
-                'is_ada' => false,
             ]);
         }
 
         // Cek apakah semua dokumen sudah verified
-        $totalDokumen = $permohonan->permohonanDokumen->count();
-        $verifiedDokumen = $permohonan->permohonanDokumen
-            ->where('status_verifikasi', 'verified')
+        $totalDokumen = $permohonan->dokumen->count();
+        $verifiedDokumen = $permohonan->dokumen
+            ->where('status', 'verified')
             ->count();
-        $revisiDokumen = $permohonan->permohonanDokumen
-            ->where('status_verifikasi', 'revision')
+        $revisiDokumen = $permohonan->dokumen
+            ->where('status', 'revision')
             ->count();
 
         // Update status permohonan dan tahapan
@@ -182,8 +180,8 @@ class VerifikasiController extends Controller
             'success' => true,
             'message' => 'Verifikasi dokumen berhasil disimpan',
             'data' => [
-                'status_verifikasi' => $dokumen->status_verifikasi,
-                'catatan' => $dokumen->catatan_verifikasi,
+                'status' => $dokumen->status,
+                'catatan' => $dokumen->catatan,
                 'status_permohonan' => $permohonan->status_akhir,
             ]
         ]);

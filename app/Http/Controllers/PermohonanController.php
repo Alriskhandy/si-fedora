@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
 use App\Models\JadwalFasilitasi;
-use App\Models\PermohonanDokumen;
+use App\Models\Dokumen;
 use App\Models\MasterKelengkapanVerifikasi;
 use Illuminate\Support\Facades\Auth;
 
@@ -165,11 +165,12 @@ class PermohonanController extends Controller
         // Auto-generate dokumen persyaratan berdasarkan master_kelengkapan_verifikasi
         $kelengkapanList = MasterKelengkapanVerifikasi::orderBy('urutan')->get();
         foreach ($kelengkapanList as $kelengkapan) {
-            PermohonanDokumen::create([
+            Dokumen::create([
                 'permohonan_id' => $permohonan->id,
-                'master_kelengkapan_id' => $kelengkapan->id,
-                'is_ada' => false,
-                'status_verifikasi' => 'pending',
+                'kelengkapan_id' => $kelengkapan->id,
+                'kategori' => 'permohonan',
+                'status' => 'pending',
+                'nama_dokumen' => $kelengkapan->nama_kelengkapan,
             ]);
         }
 
@@ -185,7 +186,7 @@ class PermohonanController extends Controller
         $permohonan->load([
             'kabupatenKota',
             'jadwalFasilitasi',
-            'permohonanDokumen.masterKelengkapan',
+            'dokumen.kelengkapan',
             'perpanjanganWaktu',
             'undanganPelaksanaan',
             'hasilFasilitasi',
@@ -210,8 +211,8 @@ class PermohonanController extends Controller
             'jenisDokumen',
             'jadwalFasilitasi',
             'penetapanJadwal',
-            'koordinator.koordinator',
-            'permohonanDokumen.masterKelengkapan',
+            'koordinator.user',
+            'dokumen.kelengkapan',
             'perpanjanganWaktu',
             'undanganPelaksanaan',
             'hasilFasilitasi',

@@ -173,7 +173,7 @@ class UndanganPelaksanaanController extends Controller
                 'isi_undangan' => $request->isi_undangan,
                 'file_undangan' => $filePath,
                 'status' => 'draft',
-                'dibuat_oleh' => Auth::id(),
+                'created_by' => Auth::id(),
                 'tanggal_dibuat' => now(),
             ]);
 

@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Permohonan;
 use App\Models\HasilFasilitasi;
-use App\Models\HasilFasilitasiUrusan;
-use App\Models\HasilFasilitasiSistematika;
+use App\Models\HasilFasilitasiDetail;
 use App\Models\MasterUrusan;
 use App\Models\MasterBab;
 use App\Models\MasterJenisDokumen;
@@ -192,7 +191,7 @@ class HasilFasilitasiController extends Controller
         if (!$permohonan->hasilFasilitasi) {
             HasilFasilitasi::create([
                 'permohonan_id' => $permohonan->id,
-                'dibuat_oleh' => Auth::id(),
+                'created_by' => Auth::id(),
             ]);
             $permohonan->refresh();
         }
@@ -211,7 +210,7 @@ class HasilFasilitasiController extends Controller
 
         // Load hasil fasilitasi dengan relasi
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
-        $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.user', 'hasilUrusan.masterUrusan', 'hasilUrusan.user');
+        $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.creator', 'hasilUrusan.masterUrusan', 'hasilUrusan.creator');
 
         // Check if current user is koordinator (fasilitator dengan is_pic=true)
         $isKoordinator = $this->isKoordinator($permohonan);
@@ -283,7 +282,7 @@ class HasilFasilitasiController extends Controller
                     'catatan_fasilitator' => $request->catatan_fasilitator,
                     'file_draft' => $filePath,
                     'status_draft' => 'draft',
-                    'dibuat_oleh' => Auth::id(),
+                    'created_by' => Auth::id(),
                     'tanggal_dibuat' => $permohonan->hasilFasilitasi ? $permohonan->hasilFasilitasi->tanggal_dibuat : now(),
                 ]
             );
@@ -323,7 +322,7 @@ class HasilFasilitasiController extends Controller
                 ->with('info', 'Hasil fasilitasi belum dibuat.');
         }
 
-        $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilUrusan.user', 'hasilSistematika.masterBab', 'hasilSistematika.user', 'pembuat');
+        $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilUrusan.creator', 'hasilSistematika.masterBab', 'hasilSistematika.creator', 'creator');
 
         // Pass isVerifikator to view
         return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator'));
@@ -399,28 +398,29 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
             }
 
-            $sistematika = HasilFasilitasiSistematika::create([
+            $sistematika = HasilFasilitasiDetail::create([
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'tipe' => 'sistematika',
                 'master_bab_id' => $request->master_bab_id,
                 'sub_bab' => $request->sub_bab,
-                'catatan_penyempurnaan' => $request->catatan_penyempurnaan,
-                'user_id' => Auth::id(),
+                'catatan' => $request->catatan_penyempurnaan,
+                'created_by' => Auth::id(),
             ]);
 
             // Load relasi untuk response
-            $sistematika->load('masterBab', 'user');
+            $sistematika->load('masterBab', 'creator');
 
             // Convert to array with rendered rich text
             $data = [
                 'id' => $sistematika->id,
                 'master_bab_id' => $sistematika->master_bab_id,
                 'sub_bab' => $sistematika->sub_bab,
-                'user_id' => $sistematika->user_id,
-                'catatan_penyempurnaan' => is_object($sistematika->catatan_penyempurnaan) && method_exists($sistematika->catatan_penyempurnaan, 'render')
-                    ? $sistematika->catatan_penyempurnaan->render()
-                    : $sistematika->catatan_penyempurnaan,
+                'created_by' => $sistematika->created_by,
+                'catatan' => is_object($sistematika->catatan) && method_exists($sistematika->catatan, 'render')
+                    ? $sistematika->catatan->render()
+                    : $sistematika->catatan,
                 'masterBab' => $sistematika->masterBab,
-                'user' => $sistematika->user,
+                'creator' => $sistematika->creator,
                 'created_at' => $sistematika->created_at->format('d/m/Y H:i'),
             ];
 
@@ -446,7 +446,8 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
-            $sistematika = HasilFasilitasiSistematika::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+            $sistematika = HasilFasilitasiDetail::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('tipe', 'sistematika')
                 ->where('id', $id)
                 ->first();
 
@@ -493,7 +494,8 @@ class HasilFasilitasiController extends Controller
             }
 
             // Cek duplikat urusan
-            $exists = HasilFasilitasiUrusan::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+            $exists = HasilFasilitasiDetail::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('tipe', 'urusan')
                 ->where('master_urusan_id', $request->master_urusan_id)
                 ->exists();
 
@@ -501,25 +503,26 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Urusan ini sudah ditambahkan'], 400);
             }
 
-            $urusan = HasilFasilitasiUrusan::create([
+            $urusan = HasilFasilitasiDetail::create([
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'tipe' => 'urusan',
                 'master_urusan_id' => $request->master_urusan_id,
-                'catatan_masukan' => $request->catatan_masukan,
-                'user_id' => Auth::id(),
+                'catatan' => $request->catatan_masukan,
+                'created_by' => Auth::id(),
             ]);
 
-            $urusan->load('masterUrusan', 'user');
+            $urusan->load('masterUrusan', 'creator');
 
             // Convert to array with rendered rich text
             $data = [
                 'id' => $urusan->id,
                 'master_urusan_id' => $urusan->master_urusan_id,
-                'user_id' => $urusan->user_id,
-                'catatan_masukan' => is_object($urusan->catatan_masukan) && method_exists($urusan->catatan_masukan, 'render')
-                    ? $urusan->catatan_masukan->render()
-                    : $urusan->catatan_masukan,
+                'created_by' => $urusan->created_by,
+                'catatan' => is_object($urusan->catatan) && method_exists($urusan->catatan, 'render')
+                    ? $urusan->catatan->render()
+                    : $urusan->catatan,
                 'masterUrusan' => $urusan->masterUrusan,
-                'user' => $urusan->user,
+                'creator' => $urusan->creator,
                 'created_at' => $urusan->created_at->format('d/m/Y H:i'),
             ];
 
@@ -545,7 +548,8 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
-            $urusan = HasilFasilitasiUrusan::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+            $urusan = HasilFasilitasiDetail::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('tipe', 'urusan')
                 ->where('id', $id)
                 ->first();
 

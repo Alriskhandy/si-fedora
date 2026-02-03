@@ -84,7 +84,7 @@ class TindakLanjutController extends Controller
                     'keterangan' => $request->keterangan,
                     'file_laporan' => $filePath,
                     'tanggal_upload' => now(),
-                    'diupload_oleh' => Auth::id(),
+                    'created_by' => Auth::id(),
                 ]
             );
 

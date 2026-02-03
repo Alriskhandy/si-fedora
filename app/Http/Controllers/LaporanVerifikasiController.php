@@ -52,11 +52,11 @@ class LaporanVerifikasiController extends Controller
         }
 
         // Ambil data dokumen untuk statistik
-        $dokumenStats = $permohonan->permohonanDokumen()
+        $dokumenStats = $permohonan->dokumen()
             ->selectRaw("
                 COUNT(*) as total,
-                SUM(CASE WHEN status_verifikasi = 'verified' THEN 1 ELSE 0 END) as verified,
-                SUM(CASE WHEN status_verifikasi = 'revision' THEN 1 ELSE 0 END) as revision
+                SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified,
+                SUM(CASE WHEN status = 'revision' THEN 1 ELSE 0 END) as revision
             ")
             ->first();
 
@@ -78,11 +78,11 @@ class LaporanVerifikasiController extends Controller
             DB::beginTransaction();
 
             // Hitung statistik dokumen
-            $dokumenStats = $permohonan->permohonanDokumen()
+            $dokumenStats = $permohonan->dokumen()
                 ->selectRaw("
                     COUNT(*) as total,
-                    SUM(CASE WHEN status_verifikasi = 'verified' THEN 1 ELSE 0 END) as verified,
-                    SUM(CASE WHEN status_verifikasi = 'revision' THEN 1 ELSE 0 END) as revision
+                    SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified,
+                    SUM(CASE WHEN status = 'revision' THEN 1 ELSE 0 END) as revision
                 ")
                 ->first();
 
@@ -98,7 +98,7 @@ class LaporanVerifikasiController extends Controller
                     'jumlah_dokumen_verified' => $dokumenStats->verified ?? 0,
                     'jumlah_dokumen_revision' => $dokumenStats->revision ?? 0,
                     'total_dokumen' => $dokumenStats->total ?? 0,
-                    'dibuat_oleh' => Auth::id(),
+                    'created_by' => Auth::id(),
                     'tanggal_laporan' => now(),
                 ]);
                 $laporan = $existingLaporan;
@@ -112,7 +112,7 @@ class LaporanVerifikasiController extends Controller
                     'jumlah_dokumen_verified' => $dokumenStats->verified ?? 0,
                     'jumlah_dokumen_revision' => $dokumenStats->revision ?? 0,
                     'total_dokumen' => $dokumenStats->total ?? 0,
-                    'dibuat_oleh' => Auth::id(),
+                    'created_by' => Auth::id(),
                     'tanggal_laporan' => now(),
                 ]);
             }

@@ -91,7 +91,7 @@ class PenetapanJadwalController extends Controller
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'catatan' => $request->catatan,
-                'ditetapkan_oleh' => Auth::id(),
+                'created_by' => Auth::id(),
                 'tanggal_penetapan' => now(),
             ]);
 
