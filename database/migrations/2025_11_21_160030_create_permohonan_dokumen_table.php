@@ -8,42 +8,44 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('permohonan_dokumen', function (Blueprint $table) {
+        Schema::create('dokumen', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('permohonan_id');
-            $table->foreignId('master_kelengkapan_id');
-
-            $table->boolean('is_ada')->default(false);
-            $table->string('file_path')->nullable();
+            $table->foreignId('permohonan_id')->constrained('permohonan')->cascadeOnDelete();
+            $table->foreignId('tahapan_id')->nullable()->constrained('master_tahapan')->nullOnDelete();
+            $table->foreignId('kelengkapan_id')->nullable()->constrained('master_kelengkapan_verifikasi')->nullOnDelete();
+            
+            // Kategori dokumen
+            $table->enum('kategori', ['permohonan', 'verifikasi', 'pelaksanaan', 'hasil'])->default('permohonan');
+            
+            // Informasi dokumen
+            $table->string('nama_dokumen');
+            $table->text('file_path');
             $table->string('file_name')->nullable();
-            $table->string('file_size')->nullable();
-            $table->string('file_type')->nullable();
-
-            // Verifikasi
-            $table->enum('status_verifikasi', ['pending', 'verified', 'rejected', 'revision'])->default('pending');
-            $table->text('catatan_verifikasi')->nullable();
-            $table->foreignId('verified_by')->nullable();
+            $table->bigInteger('file_size')->nullable()->comment('Ukuran file dalam bytes');
+            $table->string('file_type', 100)->nullable()->comment('MIME type');
+            
+            // Status verifikasi
+            $table->enum('status', ['pending', 'verified', 'rejected', 'revision'])->default('pending');
+            $table->text('catatan')->nullable();
+            
+            // Tracking
+            $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('verified_at')->nullable();
-
+            
             $table->timestamps();
             $table->softDeletes();
-        });
 
-        // Tambahin foreign key constraint setelah table dibuat
-        Schema::table('permohonan_dokumen', function (Blueprint $table) {
-            $table->foreign('permohonan_id')->references('id')->on('permohonan')->cascadeOnDelete();
-            $table->foreign('master_kelengkapan_id')->references('id')->on('master_kelengkapan_verifikasi')->cascadeOnDelete();
-            $table->foreign('verified_by')->references('id')->on('users')->nullOnDelete();
-        });
-
-        // Tambahin unique constraint setelah foreign key dibuat
-        Schema::table('permohonan_dokumen', function (Blueprint $table) {
-            $table->unique(['permohonan_id', 'master_kelengkapan_id'], 'permohonan_kelengkapan_unique');
+            // Indexes
+            $table->index(['permohonan_id', 'kategori']);
+            $table->index(['permohonan_id', 'tahapan_id']);
+            $table->index(['status']);
+            $table->index(['created_at']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('permohonan_dokumen');
+        Schema::dropIfExists('dokumen');
     }
 };

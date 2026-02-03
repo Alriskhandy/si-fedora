@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('keterangan');
             $table->string('file_laporan');
             $table->timestamp('tanggal_upload')->useCurrent();
-            $table->foreignId('diupload_oleh')->constrained('users')->onDelete('cascade');
+            $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

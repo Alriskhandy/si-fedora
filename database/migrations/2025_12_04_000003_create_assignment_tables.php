@@ -8,56 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Penugasan koordinator untuk permohonan
-        Schema::create('koordinator_assignment', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('permohonan_id')->constrained('permohonan')->cascadeOnDelete();
-            $table->foreignId('koordinator_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('created_at');
-
-            // Index
-            $table->index(['permohonan_id']);
-            $table->index(['koordinator_id']);
-
-            // Satu permohonan hanya bisa punya 1 koordinator aktif
-            $table->unique(['permohonan_id']);
-        });
-
-        // Anggota tim fasilitasi yang menangani permohonan
-        Schema::create('tim_fasilitasi_assignment', function (Blueprint $table) {
+        // Tabel assignment terpadu untuk semua role (koordinator, verifikator, fasilitator)
+        Schema::create('permohonan_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('permohonan_id')->constrained('permohonan')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('created_at');
+            $table->enum('role', ['koordinator', 'verifikator', 'fasilitator']);
+            $table->boolean('is_pic')->default(false)->comment('Person in Charge / Ketua Tim');
+            $table->foreignId('assigned_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
 
-            // Index
-            $table->index(['permohonan_id']);
-            $table->index(['user_id']);
+            // Index untuk performa
+            $table->index(['permohonan_id', 'role']);
+            $table->index(['user_id', 'role']);
 
-            // Unique: satu user tidak bisa ditugaskan 2x di permohonan yang sama
-            $table->unique(['permohonan_id', 'user_id']);
-        });
-
-        // Verifikator dokumen
-        Schema::create('tim_verifikasi_assignment', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('permohonan_id')->constrained('permohonan')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('created_at');
-
-            // Index
-            $table->index(['permohonan_id']);
-            $table->index(['user_id']);
-
-            // Unique constraint
-            $table->unique(['permohonan_id', 'user_id']);
+            // Unique: satu user tidak bisa ditugaskan 2x dengan role yang sama di permohonan yang sama
+            $table->unique(['permohonan_id', 'user_id', 'role'], 'permohonan_user_role_unique');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tim_verifikasi_assignment');
-        Schema::dropIfExists('tim_fasilitasi_assignment');
-        Schema::dropIfExists('koordinator_assignment');
+        Schema::dropIfExists('permohonan_assignments');
     }
 };

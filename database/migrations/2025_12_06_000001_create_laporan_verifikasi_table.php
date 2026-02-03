@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('jumlah_dokumen_verified')->default(0);
             $table->integer('jumlah_dokumen_revision')->default(0);
             $table->integer('total_dokumen')->default(0);
-            $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('tanggal_laporan')->nullable();
             $table->timestamps();
         });

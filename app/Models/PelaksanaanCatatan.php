@@ -17,7 +17,7 @@ class PelaksanaanCatatan extends Model
         'peserta',
         'hasil_pembahasan',
         'dokumentasi',
-        'dibuat_oleh',
+        'created_by',
     ];
 
     protected $casts = [
@@ -32,6 +32,6 @@ class PelaksanaanCatatan extends Model
 
     public function dibuatOleh()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

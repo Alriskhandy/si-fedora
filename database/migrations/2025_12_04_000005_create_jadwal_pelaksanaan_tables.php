@@ -39,7 +39,7 @@ return new class extends Migration
             $table->text('undangan_file')->nullable();
             $table->enum('status', ['draft', 'published', 'closed'])->default('draft');
 
-            $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
@@ -79,7 +79,7 @@ return new class extends Migration
             $table->text('absensi_file')->nullable();
             $table->text('keterangan')->nullable();
 
-            $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
             // Index
@@ -98,7 +98,7 @@ return new class extends Migration
             $table->timestamp('surat_tanggal')->nullable();
             $table->text('catatan')->nullable();
 
-            $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
@@ -119,7 +119,7 @@ return new class extends Migration
             $table->text('file_perda');
             $table->text('keterangan')->nullable();
 
-            $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
             // Index

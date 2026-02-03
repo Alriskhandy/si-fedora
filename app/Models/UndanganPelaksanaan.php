@@ -19,7 +19,7 @@ class UndanganPelaksanaan extends Model
         'isi_undangan',
         'file_undangan',
         'status',
-        'dibuat_oleh',
+        'created_by',
         'tanggal_dibuat',
         'tanggal_dikirim',
     ];
@@ -42,7 +42,7 @@ class UndanganPelaksanaan extends Model
 
     public function pembuat()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function penerima()

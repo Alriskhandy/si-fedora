@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date('tanggal_selesai');
             $table->string('lokasi')->nullable();
             $table->text('catatan')->nullable();
-            $table->foreignId('ditetapkan_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('tanggal_penetapan')->nullable();
             $table->timestamps();
         });

@@ -19,7 +19,7 @@ class HasilFasilitasi extends Model
         'surat_dibuat_oleh',
         'surat_tanggal',
         'catatan',
-        'dibuat_oleh',
+        'created_by',
         'updated_by',
     ];
 
@@ -35,10 +35,11 @@ class HasilFasilitasi extends Model
         return $this->belongsTo(Permohonan::class, 'permohonan_id');
     }
 
-    public function pembuat()
+    public function creator()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
+
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
@@ -49,13 +50,20 @@ class HasilFasilitasi extends Model
         return $this->belongsTo(User::class, 'surat_dibuat_oleh');
     }
 
-    public function hasilUrusan()
+    public function hasilDetail()
     {
-        return $this->hasMany(HasilFasilitasiUrusan::class, 'hasil_fasilitasi_id');
+        return $this->hasMany(HasilFasilitasiDetail::class, 'hasil_fasilitasi_id');
     }
 
     public function hasilSistematika()
     {
-        return $this->hasMany(HasilFasilitasiSistematika::class, 'hasil_fasilitasi_id');
+        return $this->hasMany(HasilFasilitasiDetail::class, 'hasil_fasilitasi_id')
+            ->where('tipe', 'sistematika');
+    }
+
+    public function hasilUrusan()
+    {
+        return $this->hasMany(HasilFasilitasiDetail::class, 'hasil_fasilitasi_id')
+            ->where('tipe', 'urusan');
     }
 }

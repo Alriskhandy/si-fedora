@@ -19,7 +19,7 @@ class LaporanVerifikasi extends Model
         'jumlah_dokumen_verified',
         'jumlah_dokumen_revision',
         'total_dokumen',
-        'dibuat_oleh',
+        'created_by',
         'tanggal_laporan',
     ];
 
@@ -35,7 +35,7 @@ class LaporanVerifikasi extends Model
 
     public function pembuatLaporan()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     // Helper methods

@@ -25,7 +25,7 @@ class JadwalFasilitasi extends Model
         'batas_permohonan',
         'undangan_file',
         'status',
-        'dibuat_oleh',
+        'created_by',
         'updated_by',
     ];
 
@@ -47,12 +47,12 @@ class JadwalFasilitasi extends Model
         return $this->hasMany(SuratPemberitahuan::class);
     }
 
-    public function dibuatOleh()
+    public function creator()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function diupdateOleh()
+    public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by');
     }

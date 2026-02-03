@@ -12,26 +12,30 @@ class DokumenRevisi extends Model
     protected $table = 'dokumen_revisi';
 
     protected $fillable = [
-        'dokumen_tahapan_id',
+        'dokumen_id',
         'versi',
         'catatan_revisi',
         'file_path',
-        'diunggah_oleh',
+        'file_name',
+        'file_size',
+        'file_type',
+        'created_by',
     ];
 
     protected $casts = [
         'versi' => 'integer',
+        'file_size' => 'integer',
     ];
 
     // Relasi
-    public function dokumenTahapan()
+    public function dokumen()
     {
-        return $this->belongsTo(DokumenTahapan::class);
+        return $this->belongsTo(Dokumen::class);
     }
 
-    public function diunggahOleh()
+    public function creator()
     {
-        return $this->belongsTo(User::class, 'diunggah_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     // Scope

@@ -16,7 +16,7 @@ class TindakLanjut extends Model
         'keterangan',
         'file_laporan',
         'tanggal_upload',
-        'diupload_oleh',
+        'created_by',
     ];
 
     protected $casts = [
@@ -32,6 +32,6 @@ class TindakLanjut extends Model
     // Relasi ke User (yang upload)
     public function uploader()
     {
-        return $this->belongsTo(User::class, 'diupload_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

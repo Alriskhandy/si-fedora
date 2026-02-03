@@ -17,7 +17,7 @@ class PenetapanPerda extends Model
         'tanggal_penetapan',
         'file_perda',
         'keterangan',
-        'dibuat_oleh',
+        'created_by',
     ];
 
     protected $casts = [
@@ -32,6 +32,6 @@ class PenetapanPerda extends Model
 
     public function pembuat()
     {
-        return $this->belongsTo(User::class, 'dibuat_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

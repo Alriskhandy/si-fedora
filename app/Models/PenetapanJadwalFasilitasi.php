@@ -20,7 +20,7 @@ class PenetapanJadwalFasilitasi extends Model
         'latitude',
         'longitude',
         'catatan',
-        'ditetapkan_oleh',
+        'created_by',
         'tanggal_penetapan',
     ];
 
@@ -45,7 +45,7 @@ class PenetapanJadwalFasilitasi extends Model
 
     public function penetap()
     {
-        return $this->belongsTo(User::class, 'ditetapkan_oleh');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     // Helper methods

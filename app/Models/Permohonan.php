@@ -85,24 +85,33 @@ class Permohonan extends Model
         return $this->hasMany(PermohonanTahapan::class);
     }
 
+    public function assignments()
+    {
+        return $this->hasMany(PermohonanAssignments::class);
+    }
+
     public function koordinator()
     {
-        return $this->hasOne(KoordinatorAssignment::class);
+        return $this->hasOne(PermohonanAssignments::class)
+            ->where('role', 'koordinator')
+            ->where('is_pic', true);
     }
 
     public function timFasilitasi()
     {
-        return $this->hasMany(TimFasilitasiAssignment::class);
+        return $this->hasMany(PermohonanAssignments::class)
+            ->where('role', 'fasilitasi');
     }
 
     public function timVerifikasi()
     {
-        return $this->hasMany(TimVerifikasiAssignment::class);
+        return $this->hasMany(PermohonanAssignments::class)
+            ->where('role', 'verifikasi');
     }
 
-    public function dokumenTahapan()
+    public function dokumen()
     {
-        return $this->hasMany(DokumenTahapan::class);
+        return $this->hasMany(Dokumen::class);
     }
 
     public function jadwalFasilitasi()
@@ -135,14 +144,14 @@ class Permohonan extends Model
         return $this->hasMany(PerpanjanganWaktu::class);
     }
 
-    public function fasilitasiBab()
+    public function fasilitasiDetail()
     {
-        return $this->hasMany(FasilitasiBab::class);
-    }
-
-    public function fasilitasiUrusan()
-    {
-        return $this->hasMany(FasilitasiUrusan::class);
+        return $this->hasManyThrough(
+            HasilFasilitasiDetail::class,
+            HasilFasilitasi::class,
+            'permohonan_id',
+            'hasil_fasilitasi_id'
+        );
     }
 
     // Helper method untuk mendapatkan tahapan saat ini
@@ -204,11 +213,6 @@ class Permohonan extends Model
     }
 
     // app/Models/Permohonan.php
-    public function permohonanDokumen()
-    {
-        return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
-    }
-
     public function laporanVerifikasi()
     {
         return $this->hasOne(LaporanVerifikasi::class, 'permohonan_id');

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('isi_undangan')->nullable();
             $table->string('file_undangan')->nullable();
             $table->enum('status', ['draft', 'terkirim'])->default('draft');
-            $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('tanggal_dibuat')->nullable();
             $table->timestamp('tanggal_dikirim')->nullable();
             $table->timestamps();
