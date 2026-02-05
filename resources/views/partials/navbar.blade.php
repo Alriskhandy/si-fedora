@@ -28,36 +28,10 @@
 
             {{-- Notifications --}}
             <li class="nav-item navbar-dropdown dropdown">
-                <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+                <a class="nav-link dropdown-toggle hide-arrow" href="{{ route('notifikasi.index') }}" >
                     <i class="bx bx-bell bx-sm"></i>
                     <span class="badge bg-danger rounded-pill badge-notifications">3</span>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <h6 class="dropdown-header">Notifikasi</h6>
-                    </li>
-                    <li>
-                        <div class="dropdown-divider"></div>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="#">
-                            <div class="d-flex">
-                                <div class="flex-grow-1">
-                                    <span class="fw-semibold d-block">Permohonan Baru</span>
-                                    <small class="text-muted">Ada permohonan baru dari Kota Ternate</small>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <div class="dropdown-divider"></div>
-                    </li>
-                    <li>
-                        <a class="dropdown-item text-center" href="#">
-                            Lihat Semua Notifikasi
-                        </a>
-                    </li>
-                </ul>
             </li>
 
             {{-- User Profile --}}

@@ -46,6 +46,14 @@ Route::get('/logo/index', [LogoController::class, 'index'])->name('logo.index');
 // Protected routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // =====================================================
+    // NOTIFIKASI (All Authenticated Users)
+    // =====================================================
+    Route::get('/notifikasi', [\App\Http\Controllers\NotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::delete('/notifikasi/{id}', [\App\Http\Controllers\NotifikasiController::class, 'destroy'])->name('notifikasi.destroy');
+    Route::delete('/notifikasi', [\App\Http\Controllers\NotifikasiController::class, 'destroyAll'])->name('notifikasi.destroy-all');
+    Route::post('/notifikasi/mark-all-read', [\App\Http\Controllers\NotifikasiController::class, 'markAllAsRead'])->name('notifikasi.mark-all-read');
 
     // =====================================================
     // SUPERADMIN ROUTES

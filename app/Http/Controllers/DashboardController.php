@@ -27,6 +27,8 @@ class DashboardController extends Controller
             return $this->verifikatorDashboard($user);
         } elseif ($user->hasRole('fasilitator')) {
             return $this->pokjaDashboard($user);
+        } elseif ($user->hasRole('auditor')) {
+            return $this->auditorDashboard($user);
         } elseif ($user->hasRole('pemohon')) {  // <-- Ganti jadi ini
             return $this->kabKotaDashboard($user);
         }
@@ -163,5 +165,37 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard.kab_kota', compact('stats'));
+    }
+
+    private function auditorDashboard($user)
+    {
+        $stats = [
+            'total_permohonan' => Permohonan::count(),
+            'in_process' => Permohonan::whereIn('status_akhir', ['proses', 'revisi'])->count(),
+            'completed_this_month' => Permohonan::where('status_akhir', 'selesai')
+                ->whereMonth('updated_at', now()->month)
+                ->count(),
+            'total_activities' => DB::table('activity_log')
+                ->where('created_at', '>=', now()->subDays(7))
+                ->count(),
+            'recent_activities' => DB::table('activity_log')
+                ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
+                ->select('activity_log.*', 'users.name as causer_name')
+                ->orderBy('activity_log.created_at', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function ($activity) {
+                    $activity->causer = (object) ['name' => $activity->causer_name];
+                    return $activity;
+                }),
+            'total_users' => User::count(),
+            'total_kabkota' => \App\Models\KabupatenKota::count(),
+            'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
+                ->latest()
+                ->limit(10)
+                ->get()
+        ];
+
+        return view('dashboard.auditor', compact('stats'));
     }
 }
