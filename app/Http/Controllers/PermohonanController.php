@@ -194,7 +194,7 @@ class PermohonanController extends Controller
             'penetapanPerda'
         ]);
 
-        return view('permohonan.show-with-tabs', compact('permohonan'));
+        return view('pages.permohonan.show-with-tabs', compact('permohonan'));
     }
 
     /**

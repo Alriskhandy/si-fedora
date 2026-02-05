@@ -9,7 +9,6 @@ use App\Http\Controllers\JadwalFasilitasiController;
 use App\Http\Controllers\SuratPemberitahuanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermohonanController;
-use App\Http\Controllers\PermohonanDokumenController;
 use App\Http\Controllers\VerifikasiController;
 use App\Http\Controllers\AdminPeranController;
 use App\Http\Controllers\ApprovalController;
@@ -45,7 +44,32 @@ Route::get('/logo/index', [LogoController::class, 'index'])->name('logo.index');
 
 // Protected routes
 Route::middleware(['auth'])->group(function () {
+    
+    // =====================================================
+    // PUBLIC ROUTES (All Authenticated Users)
+    // =====================================================
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Profile Management - All authenticated users
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Permohonan - Read access for all authenticated users
+    Route::get('/permohonan', [PermohonanController::class, 'index'])->name('permohonan.index');
+    // Note: Route {permohonan} is placed LAST to avoid catching specific routes like 'create', 'edit'
+    // Those specific routes are defined in role-specific sections and will be matched first
+
+    // Public Documents - All authenticated users can view
+    Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
+    Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
+    Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
+    Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
+
+    // My Undangan - accessible by all authenticated users
+    Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
+    Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
+    Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
 
     // =====================================================
     // SUPERADMIN ROUTES
@@ -56,12 +80,14 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // =====================================================
-    // MASTER DATA (Superadmin & Admin PERAN)
+    // SUPERADMIN & ADMIN PERAN ROUTES (Master Data & Management)
     // =====================================================
     Route::middleware(['role:superadmin|admin_peran'])->group(function () {
+        // User Management
         Route::resource('users', UserController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
+        // Master Data
         Route::resource('kabupaten-kota', KabupatenKotaController::class)->parameters(['kabupaten-kota' => 'kabupatenKota']);
         Route::resource('master-tahapan', MasterTahapanController::class)->parameters(['master-tahapan' => 'masterTahapan']);
         Route::resource('master-urusan', MasterUrusanController::class)->parameters(['master-urusan' => 'masterUrusan']);
@@ -77,13 +103,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/tim-assignment/toggle-tim-status', [TimAssignmentController::class, 'toggleTimStatus'])->name('tim-assignment.toggle-tim-status');
         Route::get('/tim-assignment/{timAssignment}/download-sk', [TimAssignmentController::class, 'downloadSk'])->name('tim-assignment.download-sk');
         Route::get('/api/tim-assignment/users', [TimAssignmentController::class, 'getAssignedUsers'])->name('tim-assignment.get-users');
-    });
 
-    // =====================================================
-    // ADMIN PERAN ROUTES
-    // =====================================================
-    Route::middleware(['role:admin_peran'])->group(function () {
-        // Jadwal Fasilitasi
+        // Jadwal Fasilitasi Management
         Route::resource('jadwal', JadwalFasilitasiController::class)->parameters(['jadwal' => 'jadwal']);
         Route::post('/jadwal/{jadwal}/publish', [JadwalFasilitasiController::class, 'publish'])->name('jadwal.publish');
         Route::post('/jadwal/{jadwal}/cancel', [JadwalFasilitasiController::class, 'cancel'])->name('jadwal.cancel');
@@ -121,7 +142,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/validasi-hasil/{permohonan}/generate', [ValidasiHasilController::class, 'generate'])->name('validasi-hasil.generate');
         Route::get('/validasi-hasil/{permohonan}/generate-pdf', [ValidasiHasilController::class, 'generatePdf'])->name('validasi-hasil.generate-pdf');
 
-        // Perpanjangan Waktu (Admin can view and process)
+        // Perpanjangan Waktu - View & Process
         Route::get('/perpanjangan-waktu', [PerpanjanganWaktuController::class, 'index'])->name('perpanjangan-waktu.index');
         Route::get('/perpanjangan-waktu/{perpanjanganWaktu}', [PerpanjanganWaktuController::class, 'show'])->name('perpanjangan-waktu.show');
         Route::get('/perpanjangan-waktu/{perpanjanganWaktu}/download', [PerpanjanganWaktuController::class, 'download'])->name('perpanjangan-waktu.download');
@@ -129,10 +150,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // =====================================================
-    // KABAN ROUTES
+    // KABAN ROUTES (Kepala Badan)
     // =====================================================
     Route::middleware(['role:kaban'])->group(function () {
-        // Approval
+        // Approval Permohonan
         Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
         Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
         Route::post('/approval/{permohonan}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
@@ -156,43 +177,38 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'store'])->name('surat-rekomendasi.store');
         Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])->name('surat-rekomendasi.show');
 
-        // Monitoring (placeholder)
+        // Monitoring
         Route::get('/monitoring', function () {
-            return 'Monitoring Management';
+            return view('pages.monitoring.index');
         })->name('monitoring.index');
     });
 
     // =====================================================
-    // PEMOHON ROUTES
+    // PEMOHON ROUTES (Kabupaten/Kota)
     // =====================================================
     Route::middleware(['role:pemohon'])->group(function () {
-        // Jadwal
-        Route::get('/pemohon/jadwal', [PemohonJadwalController::class, 'index'])->name('pemohon.jadwal.index');
-        Route::get('/pemohon/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('pemohon.jadwal.show');
-        Route::get('/pemohon/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('pemohon.jadwal.download');
-
-        // Permohonan (create, edit, delete hanya untuk pemohon)
+        // Permohonan Management - Create, Edit, Delete (only own data)
         Route::get('/permohonan/create', [PermohonanController::class, 'create'])->name('permohonan.create');
         Route::post('/permohonan', [PermohonanController::class, 'store'])->name('permohonan.store');
         Route::get('/permohonan/{permohonan}/edit', [PermohonanController::class, 'edit'])->name('permohonan.edit');
         Route::put('/permohonan/{permohonan}', [PermohonanController::class, 'update'])->name('permohonan.update');
         Route::delete('/permohonan/{permohonan}', [PermohonanController::class, 'destroy'])->name('permohonan.destroy');
         Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
-        Route::get('/permohonan/{permohonan}/tab', [PermohonanController::class, 'showWithTabs'])->name('permohonan.show-tabs');
 
-        // Dokumen Permohonan
-        Route::resource('permohonan-dokumen', PermohonanDokumenController::class)->parameters(['permohonan-dokumen' => 'permohonanDokumen']);
-        Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])->name('permohonan-dokumen.upload');
+        // Jadwal (View Only)
+        Route::get('/pemohon/jadwal', [PemohonJadwalController::class, 'index'])->name('pemohon.jadwal.index');
+        Route::get('/pemohon/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('pemohon.jadwal.show');
+        Route::get('/pemohon/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('pemohon.jadwal.download');
 
-        // Perpanjangan Waktu (Pemohon can create and delete their own)
+        // Undangan (View Only)
+        Route::get('/pemohon/undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('pemohon.undangan.index');
+        Route::get('/pemohon/undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('pemohon.undangan.view');
+
+        // Perpanjangan Waktu - Create & Manage (only own data)
         Route::get('/perpanjangan-waktu/create', [PerpanjanganWaktuController::class, 'create'])->name('perpanjangan-waktu.create');
         Route::post('/perpanjangan-waktu', [PerpanjanganWaktuController::class, 'store'])->name('perpanjangan-waktu.store');
         Route::delete('/perpanjangan-waktu/{perpanjanganWaktu}', [PerpanjanganWaktuController::class, 'destroy'])->name('perpanjangan-waktu.destroy');
         Route::put('/perpanjangan-waktu/{perpanjanganWaktu}/upload-surat', [PerpanjanganWaktuController::class, 'uploadSurat'])->name('perpanjangan-waktu.upload-surat');
-
-        // Undangan
-        Route::get('/pemohon/undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('pemohon.undangan.index');
-        Route::get('/pemohon/undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('pemohon.undangan.view');
 
         // Tindak Lanjut
         Route::get('/tindak-lanjut', [TindakLanjutController::class, 'index'])->name('tindak-lanjut.index');
@@ -212,68 +228,47 @@ Route::middleware(['auth'])->group(function () {
     // VERIFIKATOR ROUTES
     // =====================================================
     Route::middleware(['role:verifikator'])->group(function () {
-        // Verifikasi Dokumen
+        // Verifikasi Dokumen - Verification Actions
         Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
         Route::post('/verifikasi/{permohonan}/verifikasi-dokumen', [VerifikasiController::class, 'verifikasiDokumen'])->name('verifikasi.verifikasi-dokumen');
-    });
-
-    // =====================================================
-    // PEMOHON & VERIFIKATOR ROUTES (Shared Access to Permohonan)
-    // =====================================================
-    Route::middleware(['role:pemohon|verifikator'])->group(function () {
-        // Permohonan (accessible by both pemohon and verifikator)
-        Route::get('/permohonan', [PermohonanController::class, 'index'])->name('permohonan.index');
-        Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
     });
 
     // =====================================================
     // FASILITATOR ROUTES
     // =====================================================
     Route::middleware(['role:fasilitator'])->group(function () {
-        // Hasil Fasilitasi (Create/Edit - Fasilitator only)
+        // Hasil Fasilitasi - Create & Edit (Fasilitator Only)
+        Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
+        Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
         Route::get('/hasil-fasilitasi/{permohonan}/create', [HasilFasilitasiController::class, 'create'])->name('hasil-fasilitasi.create');
         Route::post('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'store'])->name('hasil-fasilitasi.store');
         Route::post('/hasil-fasilitasi/{permohonan}/submit', [HasilFasilitasiController::class, 'submit'])->name('hasil-fasilitasi.submit');
+        Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
         Route::get('/hasil-fasilitasi/{permohonan}/generate', [HasilFasilitasiController::class, 'generate'])->name('hasil-fasilitasi.generate');
         Route::get('/hasil-fasilitasi/{permohonan}/generate-pdf', [HasilFasilitasiController::class, 'generatePdf'])->name('hasil-fasilitasi.generate-pdf');
 
-        // Sistematika & Urusan (Fasilitator only)
+        // Sistematika & Urusan Management
         Route::post('/hasil-fasilitasi/{permohonan}/sistematika', [HasilFasilitasiController::class, 'storeSistematika'])->name('hasil-fasilitasi.sistematika.store');
         Route::delete('/hasil-fasilitasi/{permohonan}/sistematika/{id}', [HasilFasilitasiController::class, 'deleteSistematika'])->name('hasil-fasilitasi.sistematika.delete');
         Route::post('/hasil-fasilitasi/{permohonan}/urusan', [HasilFasilitasiController::class, 'storeUrusan'])->name('hasil-fasilitasi.urusan.store');
         Route::delete('/hasil-fasilitasi/{permohonan}/urusan/{id}', [HasilFasilitasiController::class, 'deleteUrusan'])->name('hasil-fasilitasi.urusan.delete');
     });
 
-    // FASILITATOR & VERIFIKATOR ROUTES (Read-only untuk Verifikator)
     // =====================================================
-    Route::middleware(['role:fasilitator|verifikator'])->group(function () {
-        // Hasil Fasilitasi (View - Both can access)
-        Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
-        Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
-        Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
+    // AUDITOR ROUTES
+    // =====================================================
+    Route::middleware(['role:auditor'])->group(function () {
+        // Auditor can view all process (read-only)
+        // Routes will be added as needed
     });
 
     // =====================================================
-    // PUBLIC ROUTES (All Authenticated Users)
+    // PERMOHONAN WILDCARD ROUTES (Must be LAST to avoid conflicts)
     // =====================================================
-    // My Undangan - accessible by verifikator, fasilitator, pemohon
-    Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
-    Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
-
-    Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
-    Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
-    Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
-    Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
-
-    // Download undangan - accessible by all authenticated users
-    Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
-
-    // =====================================================
-    // PROFILE ROUTES
-    // =====================================================
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // These routes use wildcard {permohonan} and must be placed after all specific routes
+    // like 'create', 'edit' to prevent matching conflicts
+    Route::get('/permohonan/{permohonan}/tab', [PermohonanController::class, 'showWithTabs'])->name('permohonan.show-tabs');
+    Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
 });
 
 

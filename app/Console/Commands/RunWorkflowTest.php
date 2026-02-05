@@ -5,9 +5,8 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use App\Models\Permohonan;
-use App\Models\PermohonanDokumen;
-use App\Models\JenisDokumen;
-use App\Models\TahunAnggaran;
+use App\Models\Dokumen;
+use App\Models\MasterJenisDokumen;
 use App\Models\JadwalFasilitasi;
 use App\Models\Evaluasi;
 
@@ -49,26 +48,22 @@ class RunWorkflowTest extends Command
         $this->info('✅ User ditemukan untuk semua role.');
 
         // 2. Ambil master data
-        $jenisDokumen = JenisDokumen::first();
-        $tahunAnggaran = TahunAnggaran::where('is_active', true)->first();
-        $jadwal = JadwalFasilitasi::where('status', 'published')->first();
+        $jenisDokumen = MasterJenisDokumen::first();
+        $jadwal = JadwalFasilitasi::first();
 
-        if (!$jenisDokumen || !$tahunAnggaran || !$jadwal) {
+        if (!$jenisDokumen || !$jadwal) {
             $this->error('❌ Master data tidak lengkap!');
             return;
         }
 
         // 3. Buat permohonan (Kab/Kota)
         $permohonan = Permohonan::create([
-            'tahun_anggaran_id' => $tahunAnggaran->id,
+            'user_id' => $kabkota->id,
+            'kab_kota_id' => $kabkota->kab_kota_id ?? 1,
             'jenis_dokumen_id' => $jenisDokumen->id,
             'jadwal_fasilitasi_id' => $jadwal->id,
-            'nama_dokumen' => 'Dokumen RKPD Ternate 2025',
-            'tanggal_permohonan' => now(),
-            'keterangan' => 'Permohonan fasilitasi RKPD Ternate tahun 2025',
-            'status' => 'draft',
-            'created_by' => $kabkota->id,
-            'kabupaten_kota_id' => $kabkota->kabupaten_kota_id,
+            'tahun' => now()->year,
+            'status_akhir' => 'proses',
         ]);
 
         $this->info('✅ Permohonan berhasil dibuat: ' . $permohonan->id);
@@ -82,18 +77,21 @@ class RunWorkflowTest extends Command
         ]);
 
         // 6. Buat dokumen persyaratan dummy jika belum ada
-        $dokumen = $permohonan->permohonanDokumen()->first();
+        $dokumen = $permohonan->dokumen()->first();
         if (!$dokumen) {
-            $persyaratan = $jenisDokumen->persyaratan()->first();
-            if ($persyaratan) {
-                $dokumen = PermohonanDokumen::create([
+            $kelengkapan = \App\Models\MasterKelengkapanVerifikasi::first();
+            if ($kelengkapan) {
+                $dokumen = Dokumen::create([
                     'permohonan_id' => $permohonan->id,
-                    'persyaratan_dokumen_id' => $persyaratan->id,
-                    'is_ada' => true,
+                    'kelengkapan_id' => $kelengkapan->id,
+                    'nama_dokumen' => $kelengkapan->nama_dokumen,
+                    'kategori' => 'permohonan',
+                    'file_path' => 'dummy/path/file.pdf',
+                    'status' => 'pending',
                 ]);
                 $this->info('✅ Dokumen persyaratan dummy berhasil dibuat.');
             } else {
-                $this->error('❌ Tidak ada persyaratan dokumen untuk jenis ini!');
+                $this->error('❌ Tidak ada kelengkapan dokumen!');
                 return;
             }
         }
@@ -104,7 +102,7 @@ class RunWorkflowTest extends Command
         $request->merge([
             'dokumen' => [
                 $dokumen->id => [
-                    'is_ada' => true,
+                    'status' => 'revisi',
                     'catatan' => 'Dokumen perlu direvisi sesuai panduan'
                 ]
             ],

@@ -13,7 +13,7 @@ class JadwalFasilitasiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = JadwalFasilitasi::with(['dibuatOleh', 'jenisDokumen']);
+        $query = JadwalFasilitasi::with(['creator', 'jenisDokumen']);
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
@@ -84,7 +84,7 @@ class JadwalFasilitasiController extends Controller
 
     public function show(JadwalFasilitasi $jadwal)
     {
-        $jadwal->load(['permohonan.kabupatenKota', 'dibuatOleh'])->with(['jenisDokumen']);
+        $jadwal->load(['permohonan.kabupatenKota', 'creator'])->with(['jenisDokumen']);
         return view('pages.jadwal-fasilitasi.show', compact('jadwal'));
     }
 

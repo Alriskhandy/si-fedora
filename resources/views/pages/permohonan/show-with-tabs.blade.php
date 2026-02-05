@@ -106,7 +106,7 @@
         <!-- Progress Tracker as Navigation -->
         <div class="card mb-4">
             <div class="card-body p-4">
-                @include('permohonan.partials.progress-tracker')
+                @include('pages.permohonan.partials.progress-tracker')
             </div>
         </div>
 
@@ -231,7 +231,7 @@
             <div class="tab-pane fade" id="verifikasi" role="tabpanel" aria-labelledby="verifikasi-tab">
 
                 <!-- Upload & Kelengkapan Dokumen -->
-                @include('permohonan.tabs.dokumen')
+                @include('pages.permohonan.tabs.dokumen')
 
                 <!-- Perpanjangan Waktu (jika dokumen belum lengkap dan batas waktu terlewat) -->
                 @if (auth()->user()->hasRole(['pemohon', 'admin_peran', 'superadmin']) && $permohonan->jadwalFasilitasi)
@@ -243,7 +243,7 @@
 
                     @if ($batasWaktuTerlewat && $dokumenBelumLengkap)
                         <div class="mt-4">
-                            @include('permohonan.tabs.perpanjangan')
+                            @include('pages.permohonan.tabs.perpanjangan')
                         </div>
                     @endif
                 @endif
@@ -251,22 +251,22 @@
 
             <!-- Tab 3: Penetapan Jadwal -->
             <div class="tab-pane fade" id="jadwal" role="tabpanel" aria-labelledby="jadwal-tab">
-                @include('permohonan.tabs.jadwal')
+                @include('pages.permohonan.tabs.jadwal')
             </div>
 
             <!-- Tab 4: Pelaksanaan (Dokumen Luring) -->
             <div class="tab-pane fade" id="pelaksanaan" role="tabpanel" aria-labelledby="pelaksanaan-tab">
-                @include('permohonan.tabs.pelaksanaan')
+                @include('pages.permohonan.tabs.pelaksanaan')
             </div>
 
             <!-- Tab 5: Hasil Fasilitasi -->
             <div class="tab-pane fade" id="hasil" role="tabpanel" aria-labelledby="hasil-tab">
-                @include('permohonan.tabs.hasil')
+                @include('pages.permohonan.tabs.hasil')
             </div>
 
             <!-- Tab 6: Tindak Lanjut -->
             <div class="tab-pane fade" id="tindak-lanjut" role="tabpanel" aria-labelledby="tindak-lanjut-tab">
-                @include('permohonan.tabs.tindak-lanjut')
+                @include('pages.permohonan.tabs.tindak-lanjut')
             </div>
 
         </div>

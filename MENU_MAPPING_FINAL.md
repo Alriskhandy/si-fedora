@@ -20,8 +20,39 @@ Struktur menu sudah disederhanakan dan semua proses granular dipindahkan ke **TA
 - ⚠️ **Tidak ada proses detail di sini**
 
 Hasil Implementasi:
-- Tampilan dashboard di file resources/views/dashboard/index
-- Memanggil partial sesuai role di ../dashboard/partials
+- Tampilan dashboard di file resources/views/pages/dashboard/index
+- Memanggil partial sesuai role di ../pages/dashboard/partials
+
+---
+
+### � PERSIAPAN FASILITASI (Menu Admin)
+
+#### 📅 Jadwal Fasilitasi (Menu Terpisah)
+**Route**: `jadwal.index`  
+**File**: `resources/views/jadwal/index.blade.php`
+
+**Konten**:
+- Buat jadwal fasilitasi global (RKPD 2026, RPJMD, dll)
+- Tentukan periode waktu penerimaan permohonan
+- Status aktif/tidak aktif
+- Publikasi jadwal untuk semua Pemda
+
+**Alur**: Admin membuat jadwal → Pemohon melihat jadwal → Pemohon ajukan permohonan
+
+---
+
+#### 👥 Tim FEDORA (Menu Terpisah)
+**Route**: `tim-assignment.index`  
+**File**: `resources/views/tim-assignment/index.blade.php`
+
+**Konten**:
+- Bentuk tim fasilitator untuk periode tertentu
+- Assign koordinator tim
+- Assign fasilitator per urusan pemerintahan
+- Generate SK Tim
+- Status tim: Aktif/Tidak Aktif
+
+**Alur**: Admin bentuk tim → Tim siap → Admin assign tim ke permohonan yang masuk
 
 ---
 
@@ -32,15 +63,15 @@ Hasil Implementasi:
 **File**: `resources/views/permohonan/index.blade.php`
 
 **Konten**:
-- Tabel daftar fasilitasi
+- Tabel daftar permohonan yang masuk
 - Filter: Status, Tahun, Pemda
 - Kolom: Pemda, Tahun, Jenis, Status, Tahapan Aktif
 
 **Menggantikan Menu Lama**:
 - ❌ Permohonan (menu terpisah)
-- ❌ Jadwal (menu terpisah)
+- ❌ ~~Jadwal (menu terpisah)~~ → **TETAP TERPISAH** ✅
 - ❌ Surat Pemberitahuan (menu terpisah)
-- ❌ Tim FEDORA (menu terpisah)
+- ❌ ~~Tim FEDORA (menu terpisah)~~ → **TETAP TERPISAH** ✅
 - ❌ Undangan Pelaksanaan (menu terpisah)
 - ❌ Validasi Hasil (menu terpisah)
 - ❌ Perpanjangan Waktu (menu terpisah)
@@ -105,18 +136,21 @@ Hasil Implementasi:
 **ID**: `#jadwal`
 
 **Konten**:
-- Penetapan jadwal fasilitasi
-- Batas waktu permohonan
-- Tanggal pelaksanaan
-- Daftar Tim Fasilitator
-- Assignment koordinator
-- Assignment fasilitator per urusan
-- Generate undangan otomatis
+- **Pilih jadwal fasilitasi** yang sudah dibuat (dropdown)
+- **Assign tim** yang sudah dibentuk ke permohonan ini
+- Lihat detail tim yang bertugas (koordinator & fasilitator)
+- Lihat jadwal pelaksanaan
+- Generate undangan khusus untuk permohonan ini
+- Kirim notifikasi ke tim & pemohon
+
+**CATATAN PENTING**:
+- ⚠️ **Jadwal Fasilitasi** tetap sebagai **MENU TERPISAH** (buat jadwal global)
+- ⚠️ **Tim FEDORA** tetap sebagai **MENU TERPISAH** (bentuk tim)
+- ✅ Tab ini hanya untuk **ASSIGN** jadwal & tim yang sudah ada ke permohonan ini
 
 **Menggantikan**:
-- ❌ Menu "Jadwal Fasilitasi"
-- ❌ Menu "Tim FEDORA" / "Tim Assignment"
 - ❌ Menu "Surat Pemberitahuan" (undangan)
+- ❌ Menu "Undangan Pelaksanaan"
 
 ---
 
@@ -317,12 +351,48 @@ Hasil Implementasi:
 - Daftar tugas
 
 **Note**: Untuk role Verifikator & Fasilitator
+🔄 ALUR KERJA YANG BENAR
+
+### Admin PERAN:
+1. **Buat Jadwal Fasilitasi** (Menu: Jadwal Fasilitasi)
+   - Contoh: Jadwal Fasilitasi RKPD 2026
+   - Tentukan periode: 1 Jan - 31 Mar 2026
+   - Publikasi jadwal
+
+2. **Bentuk Tim FEDORA** (Menu: Tim FEDORA)
+   - Bentuk tim untuk periode 2026
+   - Assign koordinator: User A
+   - Assign fasilitator per urusan
+   - Generate SK Tim
+   - Aktifkan tim
+
+3. **Tunggu Permohonan Masuk** (Menu: Fasilitasi / Evaluasi)
+   - Pemohon lihat jadwal yang sudah dipublikasi
+   - Pemohon ajukan permohonan sesuai jadwal
+   - Admin lihat permohonan masuk di tabel
+
+4. **Proses Permohonan** (Klik Detail → Tab-tab)
+   - Tab Verifikasi: Verifikasi dokumen
+   - Tab Jadwal & Tim: **Assign** jadwal & tim yang sudah dibuat
+   - Tab Pelaksanaan: Proses pelaksanaan
+   - Tab Hasil: Input hasil fasilitasi
+   - Tab Penetapan: Terbitkan surat hasil
+
+### Pemohon:
+1. **Lihat Jadwal** (Menu: Jadwal - jika ada akses, atau info dari dashboard)
+2.✅ **Jadwal Fasilitasi** → **TETAP MENU TERPISAH** (buat jadwal global)
+- ✅ **Tim FEDORA** → **TETAP MENU TERPISAH** (bentuk tim)
+- ❌ ~~Surat Pemberitahuan~~ → Tab Jadwal & Tim (assign & undangan)
 
 ---
 
 ## ✅ KESIMPULAN
 
 ### Prinsip Arsitektur Final:
+1. **Menu Master** = Persiapan (Jadwal & Tim dibuat dulu)
+2. **Menu Fasilitasi** = Entry point permohonan
+3. **Detail Fasilitasi** (`permohonan.show`) = Workflow lengkap per permohonan
+4. **Tab** = Tahapan proses (assign, bukan create)l:
 1. **Menu** = Konteks kerja
 2. **Detail Fasilitasi** (`permohonan.show`) = Workflow lengkap
 3. **Tab** = Tahapan proses
