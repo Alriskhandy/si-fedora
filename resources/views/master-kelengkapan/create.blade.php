@@ -25,6 +25,24 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="jenis_dokumen_id" class="form-label">Jenis Dokumen</label>
+                                <select class="form-select @error('jenis_dokumen_id') is-invalid @enderror"
+                                    id="jenis_dokumen_id" name="jenis_dokumen_id">
+                                    <option value="">Pilih Jenis Dokumen (Opsional)</option>
+                                    @foreach ($jenisDokumen as $jenis)
+                                        <option value="{{ $jenis->id }}"
+                                            {{ old('jenis_dokumen_id') == $jenis->id ? 'selected' : '' }}>
+                                            {{ $jenis->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('jenis_dokumen_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Pilih jenis dokumen yang sesuai (RKPD, KUA-PPAS, dll)</small>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="deskripsi" class="form-label">Deskripsi</label>
                                 <textarea class="form-control @error('deskripsi') is-invalid @enderror" id="deskripsi" name="deskripsi" rows="3">{{ old('deskripsi') }}</textarea>
                                 @error('deskripsi')

@@ -16,9 +16,9 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             MasterDataSeeder::class,
             MasterTahapanSeeder::class,
-            MasterKelengkapanSeeder::class,
             MasterUrusanSeeder::class,
             MasterJenisDokumenSeeder::class,
+            MasterKelengkapanSeeder::class,
             MasterBabSeeder::class,
             UserSeeder::class,
         ]);
