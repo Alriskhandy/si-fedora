@@ -1,168 +1,283 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\KabupatenKotaController;
-use App\Http\Controllers\JadwalFasilitasiController;
-use App\Http\Controllers\SuratPemberitahuanController;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+
+
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PermohonanController;
-use App\Http\Controllers\PermohonanDokumenController;
-use App\Http\Controllers\VerifikasiController;
-use App\Http\Controllers\AdminPeranController;
-use App\Http\Controllers\ApprovalController;
-use App\Http\Controllers\SuratRekomendasiController;
-use App\Http\Controllers\LogoController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\KabupatenKotaController;
 use App\Http\Controllers\MasterTahapanController;
 use App\Http\Controllers\MasterUrusanController;
 use App\Http\Controllers\MasterKelengkapanController;
-use App\Http\Controllers\PemohonJadwalController;
+use App\Http\Controllers\MasterBabController;
+use App\Http\Controllers\MasterJenisDokumenController;
+use App\Http\Controllers\PermohonanController;
+use App\Http\Controllers\PermohonanDokumenController;
+use App\Http\Controllers\VerifikasiController;
 use App\Http\Controllers\LaporanVerifikasiController;
+use App\Http\Controllers\ValidasiHasilController;
+use App\Http\Controllers\JadwalFasilitasiController;
+use App\Http\Controllers\PemohonJadwalController;
 use App\Http\Controllers\PenetapanJadwalController;
 use App\Http\Controllers\UndanganPelaksanaanController;
 use App\Http\Controllers\HasilFasilitasiController;
-use App\Http\Controllers\ValidasiHasilController;
+use App\Http\Controllers\TimAssignmentController;
+use App\Http\Controllers\AdminPeranController;
+use App\Http\Controllers\SuratPemberitahuanController;
+use App\Http\Controllers\SuratRekomendasiController;
+use App\Http\Controllers\SuratPenyampaianHasilController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\PerpanjanganWaktuController;
 use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
-use App\Http\Controllers\SuratPenyampaianHasilController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\PerpanjanganWaktuController;
-use App\Http\Controllers\TimAssignmentController;
-use App\Http\Controllers\MasterBabController;
-use App\Http\Controllers\MasterJenisDokumenController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\LogoController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
+| Struktur route dikelompokkan berdasarkan:
+| 1. Authentication (Public)
+| 2. Core System (All Authenticated Users)
+| 3. Role-Based Routes (Berdasarkan hak akses)
+| 4. Shared Resources (Multi-role access)
 */
+
+// ========================================
+// PUBLIC ROUTES
+// ========================================
+Route::get('/', function () {
+    return Auth::check() ? redirect()->route('dashboard') : view('auth.login');
+})->name('home');
 
 Route::get('/logo/index', [LogoController::class, 'index'])->name('logo.index');
 
-// Protected routes
+// ========================================
+// AUTHENTICATION ROUTES
+// ========================================
+Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('login', [LoginController::class, 'login']);
+Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+
+// ========================================
+// PROTECTED ROUTES - ALL AUTHENTICATED USERS
+// ========================================
 Route::middleware(['auth'])->group(function () {
+    
+    // ------------------------------------------------------------
+    // CORE SYSTEM - Dashboard & Profile
+    // ------------------------------------------------------------
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // =====================================================
-    // NOTIFIKASI (All Authenticated Users)
-    // =====================================================
-    Route::get('/notifikasi', [\App\Http\Controllers\NotifikasiController::class, 'index'])->name('notifikasi.index');
-    Route::delete('/notifikasi/{id}', [\App\Http\Controllers\NotifikasiController::class, 'destroy'])->name('notifikasi.destroy');
-    Route::delete('/notifikasi', [\App\Http\Controllers\NotifikasiController::class, 'destroyAll'])->name('notifikasi.destroy-all');
-    Route::post('/notifikasi/mark-all-read', [\App\Http\Controllers\NotifikasiController::class, 'markAllAsRead'])->name('notifikasi.mark-all-read');
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
 
-    // =====================================================
-    // SUPERADMIN ROUTES
-    // =====================================================
+    // ------------------------------------------------------------
+    // NOTIFIKASI - Accessible by all authenticated users
+    // ------------------------------------------------------------
+    Route::prefix('notifikasi')->name('notifikasi.')->controller(NotifikasiController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::delete('/', 'destroyAll')->name('destroy-all');
+        Route::post('/mark-all-read', 'markAllAsRead')->name('mark-all-read');
+    });
+
+    // ------------------------------------------------------------
+    // PUBLIC ACCESS - All authenticated users
+    // ------------------------------------------------------------
+    Route::prefix('my-undangan')->name('my-undangan.')->controller(UndanganPelaksanaanController::class)->group(function () {
+        Route::get('/', 'myUndangan')->name('index');
+        Route::get('/{id}', 'view')->name('view');
+    });
+
+    Route::prefix('public')->name('public.')->group(function () {
+        Route::get('/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('surat-penyampaian-hasil');
+        Route::get('/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('surat-penyampaian-hasil.download');
+        Route::get('/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('penetapan-perda');
+    });
+
+    Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
+    Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
+
+    // ============================================================
+    // ROLE-BASED ROUTES
+    // ============================================================
+
+    // ------------------------------------------------------------
+    // SUPERADMIN ROUTES - Full System Access
+    // ------------------------------------------------------------
     Route::middleware(['role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
     });
 
-    // =====================================================
-    // MASTER DATA (Superadmin & Admin PERAN)
-    // =====================================================
+    // ------------------------------------------------------------
+    // SUPERADMIN & ADMIN PERAN - Master Data & User Management
+    // ------------------------------------------------------------
     Route::middleware(['role:superadmin|admin_peran'])->group(function () {
+        
+        // User Management
         Route::resource('users', UserController::class);
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
+        // Master Data - Kabupaten/Kota
         Route::resource('kabupaten-kota', KabupatenKotaController::class)->parameters(['kabupaten-kota' => 'kabupatenKota']);
+
+        // Master Data - Tahapan
         Route::resource('master-tahapan', MasterTahapanController::class)->parameters(['master-tahapan' => 'masterTahapan']);
+
+        // Master Data - Urusan
         Route::resource('master-urusan', MasterUrusanController::class)->parameters(['master-urusan' => 'masterUrusan']);
+
+        // Master Data - Kelengkapan Verifikasi
         Route::resource('master-kelengkapan', MasterKelengkapanController::class)->parameters(['master-kelengkapan' => 'masterKelengkapan']);
+
+        // Master Data - Jenis Dokumen
         Route::resource('master-jenis-dokumen', MasterJenisDokumenController::class)->parameters(['master-jenis-dokumen' => 'masterJenisDokuman']);
         Route::post('/master-jenis-dokumen/{masterJenisDokuman}/toggle-status', [MasterJenisDokumenController::class, 'toggleStatus'])->name('master-jenis-dokumen.toggle-status');
+
+        // Master Data - Bab (Sistematika)
         Route::resource('master-bab', MasterBabController::class)->parameters(['master-bab' => 'masterBab']);
 
         // Tim Assignment Management
-        Route::resource('tim-assignment', TimAssignmentController::class)->parameters(['tim-assignment' => 'timAssignment']);
-        Route::post('/tim-assignment/{timAssignment}/activate', [TimAssignmentController::class, 'activate'])->name('tim-assignment.activate');
-        Route::post('/tim-assignment/{timAssignment}/toggle-status', [TimAssignmentController::class, 'toggleStatus'])->name('tim-assignment.toggle-status');
-        Route::post('/tim-assignment/toggle-tim-status', [TimAssignmentController::class, 'toggleTimStatus'])->name('tim-assignment.toggle-tim-status');
-        Route::get('/tim-assignment/{timAssignment}/download-sk', [TimAssignmentController::class, 'downloadSk'])->name('tim-assignment.download-sk');
+        Route::prefix('tim-assignment')->name('tim-assignment.')->controller(TimAssignmentController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{timAssignment}', 'show')->name('show');
+            Route::get('/{timAssignment}/edit', 'edit')->name('edit');
+            Route::put('/{timAssignment}', 'update')->name('update');
+            Route::delete('/{timAssignment}', 'destroy')->name('destroy');
+            Route::post('/{timAssignment}/activate', 'activate')->name('activate');
+            Route::post('/{timAssignment}/toggle-status', 'toggleStatus')->name('toggle-status');
+            Route::post('/toggle-tim-status', 'toggleTimStatus')->name('toggle-tim-status');
+            Route::get('/{timAssignment}/download-sk', 'downloadSk')->name('download-sk');
+        });
+
         Route::get('/api/tim-assignment/users', [TimAssignmentController::class, 'getAssignedUsers'])->name('tim-assignment.get-users');
     });
 
-    // =====================================================
-    // ADMIN PERAN ROUTES
-    // =====================================================
+    // ------------------------------------------------------------
+    // ADMIN PERAN ROUTES - Penjadwalan, Verifikasi, Validasi
+    // ------------------------------------------------------------
     Route::middleware(['role:admin_peran'])->group(function () {
+        
         // Jadwal Fasilitasi
-        Route::resource('jadwal', JadwalFasilitasiController::class)->parameters(['jadwal' => 'jadwal']);
-        Route::post('/jadwal/{jadwal}/publish', [JadwalFasilitasiController::class, 'publish'])->name('jadwal.publish');
-        Route::post('/jadwal/{jadwal}/cancel', [JadwalFasilitasiController::class, 'cancel'])->name('jadwal.cancel');
-        Route::get('/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('jadwal.download');
+        Route::prefix('jadwal')->name('jadwal.')->controller(JadwalFasilitasiController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{jadwal}', 'show')->name('show');
+            Route::get('/{jadwal}/edit', 'edit')->name('edit');
+            Route::put('/{jadwal}', 'update')->name('update');
+            Route::delete('/{jadwal}', 'destroy')->name('destroy');
+            Route::post('/{jadwal}/publish', 'publish')->name('publish');
+            Route::post('/{jadwal}/cancel', 'cancel')->name('cancel');
+            Route::get('/{jadwal}/download', 'download')->name('download');
+        });
 
         // Surat Pemberitahuan
-        Route::resource('surat-pemberitahuan', SuratPemberitahuanController::class)->parameters(['surat-pemberitahuan' => 'suratPemberitahuan']);
-        Route::post('/surat-pemberitahuan/{suratPemberitahuan}/send', [SuratPemberitahuanController::class, 'send'])->name('surat-pemberitahuan.send');
-        Route::get('/surat-pemberitahuan/{suratPemberitahuan}/download', [SuratPemberitahuanController::class, 'download'])->name('surat-pemberitahuan.download');
+        Route::prefix('surat-pemberitahuan')->name('surat-pemberitahuan.')->controller(SuratPemberitahuanController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{suratPemberitahuan}', 'show')->name('show');
+            Route::get('/{suratPemberitahuan}/edit', 'edit')->name('edit');
+            Route::put('/{suratPemberitahuan}', 'update')->name('update');
+            Route::delete('/{suratPemberitahuan}', 'destroy')->name('destroy');
+            Route::post('/{suratPemberitahuan}/send', 'send')->name('send');
+            Route::get('/{suratPemberitahuan}/download', 'download')->name('download');
+        });
 
         // Assignment Tim
-        Route::get('/admin-peran', [AdminPeranController::class, 'index'])->name('admin-peran.index');
-        Route::post('/admin-peran/{permohonan}/assign', [AdminPeranController::class, 'assign'])->name('admin-peran.assign');
-        Route::post('/admin-peran/{permohonan}/unassign', [AdminPeranController::class, 'unassign'])->name('admin-peran.unassign');
+        Route::prefix('admin-peran')->name('admin-peran.')->controller(AdminPeranController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/{permohonan}/assign', 'assign')->name('assign');
+            Route::post('/{permohonan}/unassign', 'unassign')->name('unassign');
+        });
 
         // Laporan Verifikasi
-        Route::get('/laporan-verifikasi', [LaporanVerifikasiController::class, 'index'])->name('laporan-verifikasi.index');
-        Route::get('/laporan-verifikasi/{permohonan}/create', [LaporanVerifikasiController::class, 'create'])->name('laporan-verifikasi.create');
-        Route::post('/laporan-verifikasi/{permohonan}', [LaporanVerifikasiController::class, 'store'])->name('laporan-verifikasi.store');
-        Route::get('/laporan-verifikasi/{permohonan}', [LaporanVerifikasiController::class, 'show'])->name('laporan-verifikasi.show');
-        Route::get('/laporan-verifikasi/{permohonan}/download', [LaporanVerifikasiController::class, 'download'])->name('laporan-verifikasi.download');
+        Route::prefix('laporan-verifikasi')->name('laporan-verifikasi.')->controller(LaporanVerifikasiController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+            Route::get('/{permohonan}/download', 'download')->name('download');
+        });
 
         // Undangan Pelaksanaan
-        Route::get('/undangan-pelaksanaan', [UndanganPelaksanaanController::class, 'index'])->name('undangan-pelaksanaan.index');
-        Route::get('/undangan-pelaksanaan/{permohonan}/create', [UndanganPelaksanaanController::class, 'create'])->name('undangan-pelaksanaan.create');
-        Route::post('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'store'])->name('undangan-pelaksanaan.store');
-        Route::get('/undangan-pelaksanaan/{permohonan}', [UndanganPelaksanaanController::class, 'show'])->name('undangan-pelaksanaan.show');
-        Route::post('/undangan-pelaksanaan/{permohonan}/send', [UndanganPelaksanaanController::class, 'send'])->name('undangan-pelaksanaan.send');
+        Route::prefix('undangan-pelaksanaan')->name('undangan-pelaksanaan.')->controller(UndanganPelaksanaanController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+            Route::post('/{permohonan}/send', 'send')->name('send');
+        });
 
         // Validasi Hasil Fasilitasi
-        Route::get('/validasi-hasil', [ValidasiHasilController::class, 'index'])->name('validasi-hasil.index');
-        Route::get('/validasi-hasil/{permohonan}', [ValidasiHasilController::class, 'show'])->name('validasi-hasil.show');
-        Route::post('/validasi-hasil/{permohonan}/approve', [ValidasiHasilController::class, 'approve'])->name('validasi-hasil.approve');
-        Route::post('/validasi-hasil/{permohonan}/revise', [ValidasiHasilController::class, 'revise'])->name('validasi-hasil.revise');
-        Route::get('/validasi-hasil/{permohonan}/generate', [ValidasiHasilController::class, 'generate'])->name('validasi-hasil.generate');
-        Route::get('/validasi-hasil/{permohonan}/generate-pdf', [ValidasiHasilController::class, 'generatePdf'])->name('validasi-hasil.generate-pdf');
+        Route::prefix('validasi-hasil')->name('validasi-hasil.')->controller(ValidasiHasilController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}', 'show')->name('show');
+            Route::post('/{permohonan}/approve', 'approve')->name('approve');
+            Route::post('/{permohonan}/revise', 'revise')->name('revise');
+            Route::get('/{permohonan}/generate', 'generate')->name('generate');
+            Route::get('/{permohonan}/generate-pdf', 'generatePdf')->name('generate-pdf');
+        });
 
         // Perpanjangan Waktu (Admin can view and process)
-        Route::get('/perpanjangan-waktu', [PerpanjanganWaktuController::class, 'index'])->name('perpanjangan-waktu.index');
-        Route::get('/perpanjangan-waktu/{perpanjanganWaktu}', [PerpanjanganWaktuController::class, 'show'])->name('perpanjangan-waktu.show');
-        Route::get('/perpanjangan-waktu/{perpanjanganWaktu}/download', [PerpanjanganWaktuController::class, 'download'])->name('perpanjangan-waktu.download');
-        Route::put('/perpanjangan-waktu/{perpanjanganWaktu}/process', [PerpanjanganWaktuController::class, 'process'])->name('perpanjangan-waktu.process');
+        Route::prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{perpanjanganWaktu}', 'show')->name('show');
+            Route::get('/{perpanjanganWaktu}/download', 'download')->name('download');
+            Route::put('/{perpanjanganWaktu}/process', 'process')->name('process');
+        });
     });
 
-    // =====================================================
-    // KABAN ROUTES
-    // =====================================================
+    // ------------------------------------------------------------
+    // KABAN ROUTES - Approval & Penetapan
+    // ------------------------------------------------------------
     Route::middleware(['role:kaban'])->group(function () {
-        // Approval
-        Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
-        Route::get('/approval/{permohonan}', [ApprovalController::class, 'show'])->name('approval.show');
-        Route::post('/approval/{permohonan}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
-        Route::post('/approval/{permohonan}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
+        
+        // Approval Draft Fasilitasi
+        Route::prefix('approval')->name('approval.')->controller(ApprovalController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}', 'show')->name('show');
+            Route::post('/{permohonan}/approve', 'approve')->name('approve');
+            Route::post('/{permohonan}/reject', 'reject')->name('reject');
+        });
 
         // Penetapan Jadwal
-        Route::get('/penetapan-jadwal', [PenetapanJadwalController::class, 'index'])->name('penetapan-jadwal.index');
-        Route::get('/penetapan-jadwal/{permohonan}/create', [PenetapanJadwalController::class, 'create'])->name('penetapan-jadwal.create');
-        Route::post('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'store'])->name('penetapan-jadwal.store');
-        Route::get('/penetapan-jadwal/{permohonan}', [PenetapanJadwalController::class, 'show'])->name('penetapan-jadwal.show');
+        Route::prefix('penetapan-jadwal')->name('penetapan-jadwal.')->controller(PenetapanJadwalController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+        });
 
         // Surat Penyampaian Hasil
-        Route::get('/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'index'])->name('surat-penyampaian-hasil.index');
-        Route::get('/surat-penyampaian-hasil/{permohonan}/create', [SuratPenyampaianHasilController::class, 'create'])->name('surat-penyampaian-hasil.create');
-        Route::post('/surat-penyampaian-hasil/{permohonan}', [SuratPenyampaianHasilController::class, 'store'])->name('surat-penyampaian-hasil.store');
-        Route::get('/surat-penyampaian-hasil/{permohonan}', [SuratPenyampaianHasilController::class, 'show'])->name('surat-penyampaian-hasil.show');
+        Route::prefix('surat-penyampaian-hasil')->name('surat-penyampaian-hasil.')->controller(SuratPenyampaianHasilController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+        });
 
         // Surat Rekomendasi
-        Route::get('/surat-rekomendasi', [SuratRekomendasiController::class, 'index'])->name('surat-rekomendasi.index');
-        Route::get('/surat-rekomendasi/{permohonan}/create', [SuratRekomendasiController::class, 'create'])->name('surat-rekomendasi.create');
-        Route::post('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'store'])->name('surat-rekomendasi.store');
-        Route::get('/surat-rekomendasi/{permohonan}', [SuratRekomendasiController::class, 'show'])->name('surat-rekomendasi.show');
+        Route::prefix('surat-rekomendasi')->name('surat-rekomendasi.')->controller(SuratRekomendasiController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+        });
 
         // Monitoring (placeholder)
         Route::get('/monitoring', function () {
@@ -170,128 +285,108 @@ Route::middleware(['auth'])->group(function () {
         })->name('monitoring.index');
     });
 
-    // =====================================================
-    // PEMOHON ROUTES
-    // =====================================================
+    // ------------------------------------------------------------
+    // PEMOHON ROUTES - Permohonan & Dokumen
+    // ------------------------------------------------------------
     Route::middleware(['role:pemohon'])->group(function () {
-        // Jadwal
-        Route::get('/pemohon/jadwal', [PemohonJadwalController::class, 'index'])->name('pemohon.jadwal.index');
-        Route::get('/pemohon/jadwal/{jadwal}', [PemohonJadwalController::class, 'show'])->name('pemohon.jadwal.show');
-        Route::get('/pemohon/jadwal/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('pemohon.jadwal.download');
+        
+        // Jadwal (View only for Pemohon)
+        Route::prefix('pemohon/jadwal')->name('pemohon.jadwal.')->group(function () {
+            Route::get('/', [PemohonJadwalController::class, 'index'])->name('index');
+            Route::get('/{jadwal}', [PemohonJadwalController::class, 'show'])->name('show');
+            Route::get('/{jadwal}/download', [JadwalFasilitasiController::class, 'download'])->name('download');
+        });
 
-        // Permohonan (create, edit, delete hanya untuk pemohon)
-        Route::get('/permohonan/create', [PermohonanController::class, 'create'])->name('permohonan.create');
-        Route::post('/permohonan', [PermohonanController::class, 'store'])->name('permohonan.store');
-        Route::get('/permohonan/{permohonan}/edit', [PermohonanController::class, 'edit'])->name('permohonan.edit');
-        Route::put('/permohonan/{permohonan}', [PermohonanController::class, 'update'])->name('permohonan.update');
-        Route::delete('/permohonan/{permohonan}', [PermohonanController::class, 'destroy'])->name('permohonan.destroy');
-        Route::post('/permohonan/{permohonan}/submit', [PermohonanController::class, 'submit'])->name('permohonan.submit');
-        Route::get('/permohonan/{permohonan}/tab', [PermohonanController::class, 'showWithTabs'])->name('permohonan.show-tabs');
+        // Permohonan (Create, Edit, Delete - Pemohon only)
+        Route::prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{permohonan}/edit', 'edit')->name('edit');
+            Route::put('/{permohonan}', 'update')->name('update');
+            Route::delete('/{permohonan}', 'destroy')->name('destroy');
+            Route::post('/{permohonan}/submit', 'submit')->name('submit');
+            Route::get('/{permohonan}/tab', 'showWithTabs')->name('show-tabs');
+        });
 
         // Dokumen Permohonan
         Route::resource('permohonan-dokumen', PermohonanDokumenController::class)->parameters(['permohonan-dokumen' => 'permohonanDokumen']);
         Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])->name('permohonan-dokumen.upload');
 
         // Perpanjangan Waktu (Pemohon can create and delete their own)
-        Route::get('/perpanjangan-waktu/create', [PerpanjanganWaktuController::class, 'create'])->name('perpanjangan-waktu.create');
-        Route::post('/perpanjangan-waktu', [PerpanjanganWaktuController::class, 'store'])->name('perpanjangan-waktu.store');
-        Route::delete('/perpanjangan-waktu/{perpanjanganWaktu}', [PerpanjanganWaktuController::class, 'destroy'])->name('perpanjangan-waktu.destroy');
-        Route::put('/perpanjangan-waktu/{perpanjanganWaktu}/upload-surat', [PerpanjanganWaktuController::class, 'uploadSurat'])->name('perpanjangan-waktu.upload-surat');
+        Route::prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::delete('/{perpanjanganWaktu}', 'destroy')->name('destroy');
+            Route::put('/{perpanjanganWaktu}/upload-surat', 'uploadSurat')->name('upload-surat');
+        });
 
-        // Undangan
-        Route::get('/pemohon/undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('pemohon.undangan.index');
-        Route::get('/pemohon/undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('pemohon.undangan.view');
+        // Undangan (Pemohon view)
+        Route::prefix('pemohon/undangan')->name('pemohon.undangan.')->controller(UndanganPelaksanaanController::class)->group(function () {
+            Route::get('/', 'myUndangan')->name('index');
+            Route::get('/{id}', 'view')->name('view');
+        });
 
         // Tindak Lanjut
-        Route::get('/tindak-lanjut', [TindakLanjutController::class, 'index'])->name('tindak-lanjut.index');
-        Route::get('/tindak-lanjut/{permohonan}/create', [TindakLanjutController::class, 'create'])->name('tindak-lanjut.create');
-        Route::post('/tindak-lanjut/{permohonan}', [TindakLanjutController::class, 'store'])->name('tindak-lanjut.store');
-        Route::get('/tindak-lanjut/{permohonan}', [TindakLanjutController::class, 'show'])->name('tindak-lanjut.show');
-        Route::get('/tindak-lanjut/{permohonan}/download', [TindakLanjutController::class, 'download'])->name('tindak-lanjut.download');
+        Route::prefix('tindak-lanjut')->name('tindak-lanjut.')->controller(TindakLanjutController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+            Route::get('/{permohonan}/download', 'download')->name('download');
+        });
 
         // Penetapan PERDA/PERKADA
-        Route::get('/penetapan-perda', [PenetapanPerdaController::class, 'index'])->name('penetapan-perda.index');
-        Route::get('/penetapan-perda/{permohonan}/create', [PenetapanPerdaController::class, 'create'])->name('penetapan-perda.create');
-        Route::post('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'store'])->name('penetapan-perda.store');
-        Route::get('/penetapan-perda/{permohonan}', [PenetapanPerdaController::class, 'show'])->name('penetapan-perda.show');
+        Route::prefix('penetapan-perda')->name('penetapan-perda.')->controller(PenetapanPerdaController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{permohonan}/create', 'create')->name('create');
+            Route::post('/{permohonan}', 'store')->name('store');
+            Route::get('/{permohonan}', 'show')->name('show');
+        });
     });
 
-    // =====================================================
-    // VERIFIKATOR ROUTES
-    // =====================================================
-    Route::middleware(['role:verifikator'])->group(function () {
-        // Verifikasi Dokumen
-        Route::post('/verifikasi/{permohonan}/verifikasi', [VerifikasiController::class, 'verifikasi'])->name('verifikasi.verifikasi');
-        Route::post('/verifikasi/{permohonan}/verifikasi-dokumen', [VerifikasiController::class, 'verifikasiDokumen'])->name('verifikasi.verifikasi-dokumen');
+    // ------------------------------------------------------------
+    // VERIFIKATOR ROUTES - Verifikasi Dokumen
+    // ------------------------------------------------------------
+    Route::middleware(['role:verifikator'])->prefix('verifikasi')->name('verifikasi.')->controller(VerifikasiController::class)->group(function () {
+        Route::post('/{permohonan}/verifikasi', 'verifikasi')->name('verifikasi');
+        Route::post('/{permohonan}/verifikasi-dokumen', 'verifikasiDokumen')->name('verifikasi-dokumen');
     });
 
-    // =====================================================
-    // PEMOHON & VERIFIKATOR ROUTES (Shared Access to Permohonan)
-    // =====================================================
-    Route::middleware(['role:pemohon|verifikator'])->group(function () {
-        // Permohonan (accessible by both pemohon and verifikator)
-        Route::get('/permohonan', [PermohonanController::class, 'index'])->name('permohonan.index');
-        Route::get('/permohonan/{permohonan}', [PermohonanController::class, 'show'])->name('permohonan.show');
+    // ------------------------------------------------------------
+    // FASILITATOR ROUTES - Hasil Fasilitasi (Create/Edit)
+    // ------------------------------------------------------------
+    Route::middleware(['role:fasilitator'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+        Route::get('/{permohonan}/create', 'create')->name('create');
+        Route::post('/{permohonan}', 'store')->name('store');
+        Route::post('/{permohonan}/submit', 'submit')->name('submit');
+        Route::get('/{permohonan}/generate', 'generate')->name('generate');
+        Route::get('/{permohonan}/generate-pdf', 'generatePdf')->name('generate-pdf');
+        
+        // Sistematika & Urusan
+        Route::post('/{permohonan}/sistematika', 'storeSistematika')->name('sistematika.store');
+        Route::delete('/{permohonan}/sistematika/{id}', 'deleteSistematika')->name('sistematika.delete');
+        Route::post('/{permohonan}/urusan', 'storeUrusan')->name('urusan.store');
+        Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
     });
 
-    // =====================================================
-    // FASILITATOR ROUTES
-    // =====================================================
-    Route::middleware(['role:fasilitator'])->group(function () {
-        // Hasil Fasilitasi (Create/Edit - Fasilitator only)
-        Route::get('/hasil-fasilitasi/{permohonan}/create', [HasilFasilitasiController::class, 'create'])->name('hasil-fasilitasi.create');
-        Route::post('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'store'])->name('hasil-fasilitasi.store');
-        Route::post('/hasil-fasilitasi/{permohonan}/submit', [HasilFasilitasiController::class, 'submit'])->name('hasil-fasilitasi.submit');
-        Route::get('/hasil-fasilitasi/{permohonan}/generate', [HasilFasilitasiController::class, 'generate'])->name('hasil-fasilitasi.generate');
-        Route::get('/hasil-fasilitasi/{permohonan}/generate-pdf', [HasilFasilitasiController::class, 'generatePdf'])->name('hasil-fasilitasi.generate-pdf');
+    // ============================================================
+    // SHARED ACCESS ROUTES - Multiple Roles
+    // ============================================================
 
-        // Sistematika & Urusan (Fasilitator only)
-        Route::post('/hasil-fasilitasi/{permohonan}/sistematika', [HasilFasilitasiController::class, 'storeSistematika'])->name('hasil-fasilitasi.sistematika.store');
-        Route::delete('/hasil-fasilitasi/{permohonan}/sistematika/{id}', [HasilFasilitasiController::class, 'deleteSistematika'])->name('hasil-fasilitasi.sistematika.delete');
-        Route::post('/hasil-fasilitasi/{permohonan}/urusan', [HasilFasilitasiController::class, 'storeUrusan'])->name('hasil-fasilitasi.urusan.store');
-        Route::delete('/hasil-fasilitasi/{permohonan}/urusan/{id}', [HasilFasilitasiController::class, 'deleteUrusan'])->name('hasil-fasilitasi.urusan.delete');
+    // ------------------------------------------------------------
+    // PEMOHON & VERIFIKATOR - Permohonan (Read Access)
+    // ------------------------------------------------------------
+    Route::middleware(['role:pemohon|verifikator'])->prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{permohonan}', 'show')->name('show');
     });
 
-    // FASILITATOR & VERIFIKATOR ROUTES (Read-only untuk Verifikator)
-    // =====================================================
-    Route::middleware(['role:fasilitator|verifikator'])->group(function () {
-        // Hasil Fasilitasi (View - Both can access)
-        Route::get('/hasil-fasilitasi', [HasilFasilitasiController::class, 'index'])->name('hasil-fasilitasi.index');
-        Route::get('/hasil-fasilitasi/{permohonan}', [HasilFasilitasiController::class, 'show'])->name('hasil-fasilitasi.show');
-        Route::get('/hasil-fasilitasi/{permohonan}/download', [HasilFasilitasiController::class, 'download'])->name('hasil-fasilitasi.download');
+    // ------------------------------------------------------------
+    // FASILITATOR & VERIFIKATOR - Hasil Fasilitasi (Read Access)
+    // ------------------------------------------------------------
+    Route::middleware(['role:fasilitator|verifikator'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{permohonan}', 'show')->name('show');
+        Route::get('/{permohonan}/download', 'download')->name('download');
     });
-
-    // =====================================================
-    // PUBLIC ROUTES (All Authenticated Users)
-    // =====================================================
-    // My Undangan - accessible by verifikator, fasilitator, pemohon
-    Route::get('/my-undangan', [UndanganPelaksanaanController::class, 'myUndangan'])->name('my-undangan.index');
-    Route::get('/my-undangan/{id}', [UndanganPelaksanaanController::class, 'view'])->name('my-undangan.view');
-
-    Route::get('/public/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('public.surat-penyampaian-hasil');
-    Route::get('/public/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('public.surat-penyampaian-hasil.download');
-    Route::get('/public/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('public.penetapan-perda');
-    Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
-
-    // Download undangan - accessible by all authenticated users
-    Route::get('/undangan-pelaksanaan/{permohonan}/download', [UndanganPelaksanaanController::class, 'download'])->name('undangan-pelaksanaan.download');
-
-    // =====================================================
-    // PROFILE ROUTES
-    // =====================================================
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
-
-// =====================================================
-// ROOT & AUTHENTICATION ROUTES
-// =====================================================
-Route::get('/', function () {
-    return Auth::check() ? redirect()->route('dashboard') : view('auth.login');
-})->name('home');
-
-Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [LoginController::class, 'login']);
-Route::post('logout', [LoginController::class, 'logout'])->name('logout');
