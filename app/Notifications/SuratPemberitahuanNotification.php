@@ -47,7 +47,7 @@ class SuratPemberitahuanNotification extends Notification implements ShouldQueue
 
         // Add URL if available
         if (config('app.url')) {
-            $message .= "Link: " . route('pemohon.jadwal.show', $this->suratPemberitahuan->jadwal_fasilitasi_id) . "\n\n";
+            $message .= "Link: " . route('jadwal.show', $this->suratPemberitahuan->jadwal_fasilitasi_id) . "\n\n";
         }
 
         $message .= "Silakan login ke sistem untuk melihat detail lengkap.\n\n";

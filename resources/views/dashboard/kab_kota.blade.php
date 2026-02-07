@@ -22,7 +22,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Jadwal Fasilitasi Aktif</h5>
-                        <a href="{{ route('pemohon.jadwal.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
+                        <a href="{{ route('jadwal.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
                     </div>
                     <div class="card-body">
                         @if (isset($stats['jadwal_aktif']) && $stats['jadwal_aktif']->count() > 0)

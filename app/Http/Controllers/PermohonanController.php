@@ -111,7 +111,7 @@ class PermohonanController extends Controller
             ]
         ];
 
-        return view('permohonan.index', compact('permohonan', 'filterOptions'));
+        return view('pages.fasilitasi.index', compact('permohonan', 'filterOptions'));
     }
 
     public function create(Request $request)

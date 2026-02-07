@@ -13,13 +13,12 @@ class JadwalFasilitasiController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
         $query = JadwalFasilitasi::with(['dibuatOleh', 'jenisDokumen']);
 
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('tahun_anggaran', 'like', '%' . $request->search . '%')
-                    ->orWhere('jenis_dokumen', 'like', '%' . $request->search . '%');
-            });
+        // Untuk non-admin, hanya tampilkan jadwal yang sudah published
+        if (!$user->hasRole('admin_peran')) {
+            $query->where('status', 'published');
         }
 
         if ($request->filled('status')) {
@@ -30,15 +29,27 @@ class JadwalFasilitasiController extends Controller
             $query->where('jenis_dokumen', $request->jenis_dokumen);
         }
 
+        if ($request->filled('tahun_anggaran')) {
+            $query->where('tahun_anggaran', $request->tahun_anggaran);
+        }
+
         $jadwalFasilitasi = $query->latest()->paginate(10);
 
-        return view('jadwal-fasilitasi.index', compact('jadwalFasilitasi'));
+        $filterOptions = [
+            'tahunList' => JadwalFasilitasi::where('status', 'published')
+                ->distinct()
+                ->orderBy('tahun_anggaran', 'desc')
+                ->pluck('tahun_anggaran'),
+            'jenisDokumenList' => MasterJenisDokumen::all()
+        ];
+
+        return view('pages.jadwal-fasilitasi.index', compact('jadwalFasilitasi', 'filterOptions'));
     }
 
     public function create()
     {
         $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
-        return view('jadwal-fasilitasi.create', compact('jenisdokumen'));
+        return view('pages.jadwal-fasilitasi.create', compact('jenisdokumen'));
     }
 
     public function store(Request $request)
@@ -77,21 +88,44 @@ class JadwalFasilitasiController extends Controller
             $data['undangan_file'] = $path;
         }
 
-        JadwalFasilitasi::create($data);
+        $jadwal = JadwalFasilitasi::create($data);
+
+        // Activity Log
+        activity()
+            ->performedOn($jadwal)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'tahun_anggaran' => $jadwal->tahun_anggaran,
+                'jenis_dokumen' => $jadwal->jenisDokumen->nama,
+                'tanggal_mulai' => $jadwal->tanggal_mulai->format('Y-m-d'),
+                'tanggal_selesai' => $jadwal->tanggal_selesai->format('Y-m-d'),
+                'status' => $jadwal->status,
+            ])
+            ->log('Membuat jadwal fasilitasi baru');
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil ditambahkan.');
     }
 
     public function show(JadwalFasilitasi $jadwal)
     {
-        $jadwal->load(['permohonan.kabupatenKota', 'dibuatOleh'])->with(['jenisDokumen']);
-        return view('jadwal-fasilitasi.show', compact('jadwal'));
+        $user = Auth::user();
+        
+        // Load relationships based on role
+        if ($user->hasAnyRole(['auditor', 'kaban', 'admin_peran', 'superadmin'])) {
+            // Auditor, Kaban, Admin can see creator info
+            $jadwal->load(['permohonan.kabupatenKota', 'dibuatOleh', 'jenisDokumen']);
+        } else {
+            // Other roles can't see creator info
+            $jadwal->load(['permohonan.kabupatenKota', 'jenisDokumen']);
+        }
+        
+        return view('pages.jadwal-fasilitasi.show', compact('jadwal'));
     }
 
     public function edit(JadwalFasilitasi $jadwal)
     {
         $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
-        return view('jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
+        return view('pages.jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
     }
 
     public function update(Request $request, JadwalFasilitasi $jadwal)
@@ -135,14 +169,50 @@ class JadwalFasilitasiController extends Controller
             $data['undangan_file'] = $path;
         }
 
+        // Simpan data lama untuk log
+        $oldData = [
+            'tahun_anggaran' => $jadwal->tahun_anggaran,
+            'jenis_dokumen' => $jadwal->jenisDokumen->nama,
+            'status' => $jadwal->status,
+        ];
+
         $jadwal->update($data);
+        $jadwal->refresh();
+
+        // Activity Log
+        activity()
+            ->performedOn($jadwal)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'old' => $oldData,
+                'new' => [
+                    'tahun_anggaran' => $jadwal->tahun_anggaran,
+                    'jenis_dokumen' => $jadwal->jenisDokumen->nama,
+                    'tanggal_mulai' => $jadwal->tanggal_mulai->format('Y-m-d'),
+                    'tanggal_selesai' => $jadwal->tanggal_selesai->format('Y-m-d'),
+                    'status' => $jadwal->status,
+                ]
+            ])
+            ->log('Mengupdate jadwal fasilitasi');
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil diperbarui.');
     }
 
     public function destroy(JadwalFasilitasi $jadwal)
     {
+        // Activity Log sebelum delete
+        activity()
+            ->performedOn($jadwal)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'tahun_anggaran' => $jadwal->tahun_anggaran,
+                'jenis_dokumen' => $jadwal->jenisDokumen->nama,
+                'status' => $jadwal->status,
+            ])
+            ->log('Menghapus jadwal fasilitasi');
+
         $jadwal->delete();
+        
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil dihapus.');
     }
 
@@ -153,6 +223,17 @@ class JadwalFasilitasiController extends Controller
         }
 
         $filePath = storage_path('app/public/' . $jadwal->undangan_file);
+
+        // Activity Log untuk download
+        activity()
+            ->performedOn($jadwal)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'tahun_anggaran' => $jadwal->tahun_anggaran,
+                'jenis_dokumen' => $jadwal->jenisDokumen->nama,
+                'file' => $jadwal->undangan_file,
+            ])
+            ->log('Mengunduh file jadwal fasilitasi');
 
         if (!file_exists($filePath)) {
             // Log untuk debugging

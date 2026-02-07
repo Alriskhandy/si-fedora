@@ -30,20 +30,15 @@
         @if (!auth()->user()->hasRole('superadmin'))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">
-                    @if (auth()->user()->hasRole('pemohon'))
-                        Permohonan Saya
-                    @elseif(auth()->user()->hasRole('verifikator'))
-                        Verifikasi & Evaluasi
-                    @elseif(auth()->user()->hasRole('fasilitator'))
-                        Fasilitasi
-                    @elseif(auth()->user()->hasRole('pokja'))
-                        Evaluasi
-                    @elseif(auth()->user()->hasRole('auditor'))
-                        Audit & Monitoring
-                    @else
-                        Proses Fasilitasi
-                    @endif
+                    Fasilitasi/Evaluasi
                 </span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('jadwal.*') ? 'active' : '' }}">
+                <a href="{{ route('jadwal.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-event"></i>
+                    <div data-i18n="Jadwal">Jadwal Pelaksanaan</div>
+                </a>
             </li>
 
             <li class="menu-item {{ request()->routeIs('permohonan.*', 'permohonan-dokumen.*') ? 'active' : '' }}">
@@ -52,24 +47,12 @@
                     <div data-i18n="Permohonan">
                         @if (auth()->user()->hasRole('pemohon'))
                             Permohonan Saya
-                        @elseif(auth()->user()->hasRole('auditor'))
-                            Data Permohonan
                         @else
                             Daftar Permohonan
                         @endif
                     </div>
                 </a>
             </li>
-
-            @if (auth()->user()->hasAnyRole(['admin_peran', 'pemohon', 'verifikator', 'fasilitator']))
-                <li class="menu-item {{ request()->routeIs('jadwal.*', 'pemohon.jadwal.*') ? 'active' : '' }}">
-                    <a href="{{ auth()->user()->hasRole('pemohon') ? route('pemohon.jadwal.index') : route('jadwal.index') }}"
-                        class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-calendar-event"></i>
-                        <div data-i18n="Jadwal">Jadwal Fasilitasi</div>
-                    </a>
-                </li>
-            @endif
 
             @if (auth()->user()->hasAnyRole(['pemohon', 'verifikator', 'fasilitator']))
                 <li
@@ -365,6 +348,21 @@
                 <a href="{{ route('notifikasi.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bell"></i>
                     <div data-i18n="Notifikasi">Notifikasi Sistem</div>
+                </a>
+            </li>
+        @endif
+
+        <!-- ============================================= -->
+        <!-- MONITORING & AUDIT -->
+        <!-- ============================================= -->
+        @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor']))
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Monitoring & Audit</span>
+            </li>
+            <li class="menu-item {{ request()->routeIs('activity-log.*') ? 'active' : '' }}">
+                <a href="{{ route('activity-log.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-history"></i>
+                    <div data-i18n="Activity Log">Log Aktivitas</div>
                 </a>
             </li>
         @endif
