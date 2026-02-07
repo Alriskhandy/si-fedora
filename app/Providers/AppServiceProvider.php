@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\Channels\WhatsAppChannel;
+use Illuminate\Support\Facades\View;
+use App\View\Composers\NavbarComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,5 +45,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Paginator::useBootstrapFive();
+
+        // Register view composer for navbar
+        View::composer('partials.navbar', NavbarComposer::class);
     }
 }

@@ -147,28 +147,33 @@
             <div class="card-body p-0">
                 <div class="list-group list-group-flush">
                     @forelse($notifikasi as $item)
-                        <div class="list-group-item {{ !$item['dibaca'] ? 'bg-light' : '' }}">
+                        <div class="list-group-item {{ !$item->is_read ? 'bg-light' : '' }}">
                             <div class="d-flex align-items-start">
                                 <div class="flex-shrink-0 me-3">
                                     <div class="avatar">
                                         <span
                                             class="avatar-initial rounded-circle 
-                                        @if ($item['jenis'] == 'success') bg-label-success
-                                        @elseif($item['jenis'] == 'warning') bg-label-warning
-                                        @elseif($item['jenis'] == 'danger') bg-label-danger
+                                        @if ($item->type == 'success') bg-label-success
+                                        @elseif($item->type == 'warning') bg-label-warning
+                                        @elseif($item->type == 'danger') bg-label-danger
                                         @else bg-label-info @endif">
-                                            <i class="bx {{ $item['icon'] }} bx-sm"></i>
+                                            <i
+                                                class="bx 
+                                            @if ($item->type == 'success') bx-check-circle
+                                            @elseif($item->type == 'warning') bx-error
+                                            @elseif($item->type == 'danger') bx-x-circle
+                                            @else bx-info-circle @endif bx-sm"></i>
                                         </span>
                                     </div>
                                 </div>
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <h6 class="mb-0">{{ $item['judul'] }}</h6>
+                                        <h6 class="mb-0">{{ $item->title }}</h6>
                                         <div class="d-flex align-items-center gap-2">
-                                            @if (!$item['dibaca'])
+                                            @if (!$item->is_read)
                                                 <span class="badge bg-primary badge-sm">Baru</span>
                                             @endif
-                                            <form action="{{ route('notifikasi.destroy', $item['id']) }}" method="POST"
+                                            <form action="{{ route('notifikasi.destroy', $item->id) }}" method="POST"
                                                 onsubmit="return confirm('Apakah Anda yakin ingin menghapus notifikasi ini?')">
                                                 @csrf
                                                 @method('DELETE')
@@ -179,11 +184,18 @@
                                             </form>
                                         </div>
                                     </div>
-                                    <p class="mb-1 text-muted">{{ $item['pesan'] }}</p>
+                                    <p class="mb-1 text-muted">{{ $item->message }}</p>
                                     <small class="text-muted">
                                         <i class="bx bx-time-five"></i>
-                                        {{ $item['tanggal']->diffForHumans() }}
+                                        {{ $item->created_at->diffForHumans() }}
                                     </small>
+                                    @if ($item->action_url)
+                                        <div class="mt-2">
+                                            <a href="{{ $item->action_url }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bx bx-link-external"></i> Lihat Detail
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -196,14 +208,20 @@
                 </div>
             </div>
 
-            @if (count($notifikasi) > 0)
-                <div class="card-footer text-center">
-                    <form action="{{ route('notifikasi.mark-all-read') }}" method="POST" style="display: inline;">
-                        @csrf
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                            <i class="bx bx-check-double"></i> Tandai Semua Sudah Dibaca
-                        </button>
-                    </form>
+            @if ($notifikasi->total() > 0)
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <form action="{{ route('notifikasi.mark-all-read') }}" method="POST" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="bx bx-check-double"></i> Tandai Semua Sudah Dibaca
+                            </button>
+                        </form>
+
+                        <div>
+                            {{ $notifikasi->links() }}
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>

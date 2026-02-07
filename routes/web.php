@@ -146,8 +146,6 @@ Route::middleware(['auth'])->group(function () {
     // JadwalFasilitasiController (All can view, Admin can manage)
     Route::prefix('jadwal')->name('jadwal.')->controller(JadwalFasilitasiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/{jadwal}', 'show')->name('show');
-        Route::get('/{jadwal}/download', 'download')->name('download');
         
         Route::middleware(['role:admin_peran'])->group(function () {
             Route::get('/create', 'create')->name('create');
@@ -156,6 +154,9 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/{jadwal}', 'update')->name('update');
             Route::delete('/{jadwal}', 'destroy')->name('destroy');
         });
+        
+        Route::get('/{jadwal}', 'show')->name('show');
+        Route::get('/{jadwal}/download', 'download')->name('download');
     });
 
     // PenetapanJadwalController (Kaban only)

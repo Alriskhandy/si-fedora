@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\JadwalFasilitasi;
 use App\Models\MasterJenisDokumen;
+use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -103,6 +104,24 @@ class JadwalFasilitasiController extends Controller
             ])
             ->log('Membuat jadwal fasilitasi baru');
 
+        // Kirim notifikasi ke semua user (kecuali superadmin)
+        $users = \App\Models\User::whereHas('roles', function($query) {
+            $query->where('name', '!=', 'superadmin')
+            ->where('name', '!=', 'auditor');
+        })->get();
+
+        foreach ($users as $user) {
+            Notifikasi::create([
+                'user_id' => $user->id,
+                'title' => 'Jadwal Fasilitasi Baru',
+                'message' => 'Jadwal fasilitasi ' . $jadwal->jenisDokumen->nama . ' tahun ' . $jadwal->tahun_anggaran . ' telah ditambahkan.',
+                'type' => 'info',
+                'model_type' => get_class($jadwal),
+                'model_id' => $jadwal->id,
+                'action_url' => route('jadwal.show', $jadwal->id),
+            ]);
+        }
+
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil ditambahkan.');
     }
 
@@ -194,6 +213,24 @@ class JadwalFasilitasiController extends Controller
                 ]
             ])
             ->log('Mengupdate jadwal fasilitasi');
+
+        // Kirim notifikasi ke semua user (kecuali superadmin)
+        $users = \App\Models\User::whereHas('roles', function($query) {
+            $query->where('name', '!=', 'superadmin')
+            ->where('name', '!=', 'auditor');
+        })->get();
+
+        foreach ($users as $user) {
+            Notifikasi::create([
+                'user_id' => $user->id,
+                'title' => 'Jadwal Fasilitasi Diperbarui',
+                'message' => 'Jadwal fasilitasi ' . $jadwal->jenisDokumen->nama . ' tahun ' . $jadwal->tahun_anggaran . ' telah diperbarui.',
+                'type' => 'warning',
+                'model_type' => get_class($jadwal),
+                'model_id' => $jadwal->id,
+                'action_url' => route('jadwal.show', $jadwal->id),
+            ]);
+        }
 
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil diperbarui.');
     }

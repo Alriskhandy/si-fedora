@@ -30,7 +30,9 @@
             <li class="nav-item navbar-dropdown dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow" href="{{ route('notifikasi.index') }}" >
                     <i class="bx bx-bell bx-sm"></i>
-                    <span class="badge bg-danger rounded-pill badge-notifications">3</span>
+                    @if($unreadNotifications > 0)
+                        <span class="badge bg-danger rounded-pill badge-notifications">{{ $unreadNotifications }}</span>
+                    @endif
                 </a>
             </li>
 
