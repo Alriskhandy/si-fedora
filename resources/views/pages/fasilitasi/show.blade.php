@@ -149,7 +149,7 @@
                     <!-- Desktop View - Horizontal -->
                     <div class="d-none d-lg-block">
                         <div class="d-flex justify-content-between align-items-start position-relative"
-                            style="max-width: 1000px; margin: 0 auto; padding: 0 50px;">
+                            style="width: 100%; margin: 0 auto;">
                             @foreach ($steps as $index => $step)
                                 @php
                                     $routeName = $tahapanRoutes[$step['name']] ?? null;
@@ -161,9 +161,10 @@
                                     $routeUrl = $routeName && !$isDisabled ? route($routeName, $permohonan) : '#';
                                 @endphp
 
-                                <a href="{{ $routeUrl }}"
-                                    class="text-decoration-none step-item {{ $isDisabled ? 'step-disabled' : 'step-clickable' }}"
-                                    style="flex: 1; margin: 0 20px; cursor: {{ $isDisabled ? 'not-allowed' : 'pointer' }}; pointer-events: {{ $isDisabled ? 'none' : 'auto' }};">
+                                <div class="position-relative text-decoration-none step-item {{ $isDisabled ? 'step-disabled' : 'step-clickable' }}"
+                                    style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+
+                                    <!-- Connector Line -->
                                     @if ($index < count($steps) - 1)
                                         @php
                                             $nextStep = $steps[$index + 1] ?? null;
@@ -175,12 +176,14 @@
                                                     ? 'linear-gradient(90deg, #42A5F5 0%, #64B5F6 100%)'
                                                     : '#E0E0E0');
                                         @endphp
-                                        <div class="position-absolute top-0 start-50 translate-middle-y"
-                                            style="left: 50%; right: -100%; width: calc(200% + 40px); height: 4px; background: {{ $gradientColor }}; z-index: 0; margin-top: 30px; border-radius: 2px; box-shadow: {{ $step['completed'] ? '0 3px 8px rgba(66, 165, 245, 0.25)' : 'none' }};">
+                                        <div class="position-absolute"
+                                            style="left: 50%; top: 30px; width: 100%; height: 4px; background: {{ $gradientColor }}; z-index: 0; border-radius: 2px; box-shadow: {{ $step['completed'] ? '0 3px 8px rgba(66, 165, 245, 0.25)' : 'none' }};">
                                         </div>
                                     @endif
 
-                                    <div class="position-relative d-inline-block" style="z-index: 1;">
+                                    <!-- Circle Icon -->
+                                    <a href="{{ $routeUrl }}" class="d-block text-decoration-none position-relative"
+                                        style="z-index: 1; cursor: {{ $isDisabled ? 'not-allowed' : 'pointer' }}; pointer-events: {{ $isDisabled ? 'none' : 'auto' }};">
                                         @php
                                             $circleGradient = $step['completed']
                                                 ? 'linear-gradient(135deg, #2196F3 0%, #42A5F5 50%, #64B5F6 100%)'
@@ -203,9 +206,10 @@
                                                 <i class='bx bx-lock-alt' style="font-size: 12px;"></i>
                                             @endif
                                         </div>
-                                    </div>
+                                    </a>
 
-                                    <div class="mt-2 text-center">
+                                    <!-- Step Label -->
+                                    <div class="mt-2 text-center px-2" style="min-height: 60px;">
                                         @php
                                             $textColor = $step['completed']
                                                 ? '#1565C0'
@@ -216,23 +220,23 @@
                                                 $step['completed'] || $index === $currentIndex ? '600' : '400';
                                         @endphp
                                         <h6 class="mb-1 step-name"
-                                            style="font-size: 0.9rem; color: {{ $textColor }}; font-weight: {{ $textWeight }};">
+                                            style="font-size: 0.85rem; color: {{ $textColor }}; font-weight: {{ $textWeight }}; line-height: 1.3;">
                                             {{ $step['name'] }}
                                         </h6>
 
                                         @if ($index === $currentIndex && !$step['completed'])
-                                            <div class="mt-2">
-                                                <span class="badge bg-warning d-block mb-1">Sedang Berjalan</span>
+                                            <div class="mt-1">
+                                                <span class="badge bg-warning" style="font-size: 0.7rem;">Aktif</span>
                                             </div>
                                         @endif
 
                                         @if ($step['date'])
-                                            <small class="text-muted" style="font-size: 0.75rem;">
+                                            <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
                                                 {{ \Carbon\Carbon::parse($step['date'])->format('d M Y') }}
                                             </small>
                                         @endif
                                     </div>
-                                </a>
+                                </div>
                             @endforeach
                         </div>
                     </div>
