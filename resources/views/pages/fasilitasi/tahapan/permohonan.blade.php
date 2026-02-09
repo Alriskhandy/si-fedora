@@ -114,17 +114,19 @@
                     </small>
                 </div>
 
-                @if ($isPemohon && $permohonan->status_akhir == 'belum' && $progress == 100)
-                    <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST" id="submitPermohonanForm">
-                        @csrf
-                        <button type="submit" class="btn btn-success" id="submitPermohonanBtn">
-                            <i class='bx bx-check-circle me-1'></i>Submit Dokumen
-                        </button>
-                    </form>
-                @elseif($permohonan->status_akhir != 'belum')
-                    <span class="badge bg-success">
-                        <i class='bx bx-check-circle'></i> Dokumen Telah Disubmit
-                    </span>
+                @if ($isPemohon)
+                    @if ($permohonan->status_akhir == 'belum' && $progress == 100)
+                        <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST" id="submitPermohonanForm">
+                            @csrf
+                            <button type="submit" class="btn btn-success" id="submitPermohonanBtn">
+                                <i class='bx bx-check-circle me-1'></i>Submit Dokumen
+                            </button>
+                        </form>
+                    @elseif($permohonan->status_akhir != 'belum')
+                        <span class="badge bg-success">
+                            <i class='bx bx-check-circle'></i> Dokumen Telah Disubmit
+                        </span>
+                    @endif
                 @endif
             </div>
             <div class="card-body">
