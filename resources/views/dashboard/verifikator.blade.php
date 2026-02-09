@@ -104,7 +104,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="{{ route('verifikasi.show', $permohonan->id) }}"
+                                            <a href="#"
                                                 class="btn btn-sm btn-primary">Verifikasi</a>
                                         </td>
                                     </tr>

@@ -221,6 +221,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:verifikator'])->prefix('verifikasi')->name('verifikasi.')->controller(VerifikasiController::class)->group(function () {
         Route::post('/{permohonan}/verifikasi', 'verifikasi')->name('verifikasi');
         Route::post('/{permohonan}/verifikasi-dokumen', 'verifikasiDokumen')->name('verifikasi-dokumen');
+        Route::post('/{permohonan}/submit', 'submit')->name('submit');
     });
 
     // LaporanVerifikasiController (Admin only)
