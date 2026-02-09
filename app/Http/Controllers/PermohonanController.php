@@ -7,7 +7,13 @@ use Illuminate\Http\Request;
 use App\Models\JadwalFasilitasi;
 use App\Models\PermohonanDokumen;
 use App\Models\MasterKelengkapanVerifikasi;
+use App\Models\Notifikasi;
+use App\Models\User;
+use App\Models\UserKabkotaAssignment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Spatie\Activitylog\Models\Activity;
 
 class PermohonanController extends Controller
 {
@@ -166,6 +172,16 @@ class PermohonanController extends Controller
             'status_akhir' => 'belum',
         ]);
 
+        // Buat record tahapan pertama (Permohonan) dengan status proses
+        $tahapanPermohonan = \App\Models\MasterTahapan::where('urutan', 1)->first();
+        if ($tahapanPermohonan) {
+            \App\Models\PermohonanTahapan::create([
+                'permohonan_id' => $permohonan->id,
+                'tahapan_id' => $tahapanPermohonan->id,
+                'status' => 'proses',
+            ]);
+        }
+
         // Auto-generate dokumen persyaratan berdasarkan master_kelengkapan_verifikasi
         $kelengkapanList = MasterKelengkapanVerifikasi::orderBy('urutan')->get();
         foreach ($kelengkapanList as $kelengkapan) {
@@ -174,6 +190,32 @@ class PermohonanController extends Controller
                 'master_kelengkapan_id' => $kelengkapan->id,
                 'is_ada' => false,
                 'status_verifikasi' => 'pending',
+            ]);
+        }
+
+        // Log activity
+        activity()
+            ->performedOn($permohonan)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'kabupaten_kota' => $permohonan->kabupatenKota->nama ?? '-',
+                'tahun' => $permohonan->tahun,
+                'jenis_dokumen' => $permohonan->jenisDokumen->nama ?? '-',
+            ])
+            ->log('Permohonan fasilitasi dibuat oleh ' . Auth::user()->name);
+
+        // Kirim notifikasi ke admin
+        $admins = User::role(['admin_peran', 'kaban', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            Notifikasi::create([
+                'user_id' => $admin->id,
+                'title' => 'Permohonan Baru Dibuat',
+                'message' => 'Permohonan fasilitasi baru dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' untuk tahun ' . $permohonan->tahun . ' telah dibuat dan sedang dalam tahap pengisian dokumen.',
+                'type' => 'info',
+                'model_type' => Permohonan::class,
+                'model_id' => $permohonan->id,
+                'action_url' => route('permohonan.show', $permohonan),
+                'is_read' => false,
             ]);
         }
 
@@ -189,12 +231,14 @@ class PermohonanController extends Controller
         $permohonan->load([
             'kabupatenKota',
             'jadwalFasilitasi',
+            'jenisDokumen',
             'permohonanDokumen.masterKelengkapan',
             'perpanjanganWaktu',
             'undanganPelaksanaan',
             'hasilFasilitasi',
             'tindakLanjut',
-            'penetapanPerda'
+            'penetapanPerda',
+            'activityLogs.causer'
         ]);
 
         return view('pages.fasilitasi.show', compact('permohonan'));
@@ -253,7 +297,8 @@ class PermohonanController extends Controller
 
     public function submit(Request $request, Permohonan $permohonan)
     {
-        if ($permohonan->status_akhir !== 'belum') {
+        // Allow resubmit if status is 'proses' but submitted_at is null (failed submission)
+        if ($permohonan->status_akhir !== 'belum' && !($permohonan->status_akhir === 'proses' && is_null($permohonan->submitted_at))) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -279,55 +324,134 @@ class PermohonanController extends Controller
                 ->with('error', 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.');
         }
 
-        // Update status ke proses
-        $permohonan->update([
-            'status_akhir' => 'proses',
-            'submitted_at' => now(),
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Buat tahapan Permohonan (tahapan pertama sudah selesai)
-        $masterTahapanPermohonan = \App\Models\MasterTahapan::where('nama_tahapan', 'Permohonan')->first();
-        if ($masterTahapanPermohonan) {
-            \App\Models\PermohonanTahapan::updateOrCreate(
-                [
-                    'permohonan_id' => $permohonan->id,
-                    'tahapan_id' => $masterTahapanPermohonan->id,
-                ],
-                [
-                    'status' => 'selesai',
-                    'catatan' => 'Permohonan dibuat dan diajukan pada ' . now()->format('d M Y H:i'),
-                    'updated_by' => Auth::id(),
-                ]
-            );
-        }
+            // Load relationships yang diperlukan
+            $permohonan->load(['kabupatenKota', 'jenisDokumen']);
 
-        // Buat tahapan Verifikasi (tahapan berikutnya dimulai)
-        $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
-        if ($masterTahapanVerifikasi) {
-            \App\Models\PermohonanTahapan::updateOrCreate(
-                [
-                    'permohonan_id' => $permohonan->id,
-                    'tahapan_id' => $masterTahapanVerifikasi->id,
-                ],
-                [
-                    'status' => 'proses',
-                    'catatan' => 'Menunggu verifikasi dokumen',
-                    'updated_by' => Auth::id(),
-                ]
-            );
-        }
+            // Update status ke proses
+            $permohonan->status_akhir = 'proses';
+            $permohonan->submitted_at = now();
+            $permohonan->save();
+            $permohonan->refresh();
 
-        // Log activity atau kirim notifikasi ke verifikator (opsional)
-        // TODO: Implement notification system
+            // Update tahapan Permohonan menjadi selesai
+            $masterTahapanPermohonan = \App\Models\MasterTahapan::where('nama_tahapan', 'Permohonan')->first();
+            if ($masterTahapanPermohonan) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanPermohonan->id,
+                    ],
+                    [
+                        'status' => 'selesai',
+                        'catatan' => 'Permohonan berhasil diajukan dengan semua dokumen lengkap',
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.'
+            // Buat tahapan Verifikasi (tahapan berikutnya dimulai)
+            $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+            if ($masterTahapanVerifikasi) {
+                \App\Models\PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $masterTahapanVerifikasi->id,
+                    ],
+                    [
+                        'status' => 'proses',
+                        'catatan' => 'Menunggu verifikasi dokumen oleh verifikator',
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
+
+            // Log activity
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'kabupaten_kota' => $permohonan->kabupatenKota->nama ?? '-',
+                    'tahun' => $permohonan->tahun,
+                    'jenis_dokumen' => $permohonan->jenisDokumen->nama ?? '-',
+                    'status_lama' => 'belum',
+                    'status_baru' => 'proses',
+                ])
+                ->log('Permohonan fasilitasi diajukan oleh ' . Auth::user()->name . ' dan menunggu verifikasi');
+
+            // Kirim notifikasi ke verifikator yang ditugaskan
+            $verifikators = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->where(function ($q) use ($permohonan) {
+                    $q->whereNull('jenis_dokumen_id')
+                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
+                })
+                ->with('user')
+                ->get();
+
+            foreach ($verifikators as $assignment) {
+                if ($assignment->user && $assignment->user->hasRole('verifikator')) {
+                    Notifikasi::create([
+                        'user_id' => $assignment->user_id,
+                        'title' => 'Permohonan Baru Perlu Diverifikasi',
+                        'message' => 'Permohonan fasilitasi dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' untuk tahun ' . $permohonan->tahun . ' memerlukan verifikasi Anda.',
+                        'type' => 'info',
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => route('permohonan.show', $permohonan),
+                        'is_read' => false,
+                    ]);
+                }
+            }
+
+            // Kirim notifikasi ke admin
+            $admins = User::role(['admin_peran', 'kaban', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                Notifikasi::create([
+                    'user_id' => $admin->id,
+                    'title' => 'Permohonan Baru Diajukan',
+                    'message' => 'Permohonan fasilitasi baru dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' untuk tahun ' . $permohonan->tahun . ' telah diajukan.',
+                    'type' => 'info',
+                    'model_type' => Permohonan::class,
+                    'model_id' => $permohonan->id,
+                    'action_url' => route('permohonan.show', $permohonan),
+                    'is_read' => false,
+                ]);
+            }
+
+            DB::commit();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.'
+                ]);
+            }
+
+            return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error submit permohonan: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
             ]);
-        }
 
-        return redirect()->route('permohonan.show', $permohonan)->with('success', 'Permohonan berhasil dikirim dan sedang menunggu verifikasi.');
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat mengirim permohonan. Silakan coba lagi.'
+                ], 500);
+            }
+
+            return redirect()->route('permohonan.tahapan.permohonan', $permohonan)
+                ->with('error', 'Terjadi kesalahan saat mengirim permohonan. Silakan coba lagi.');
+        }
     }
 
     public function destroy(Permohonan $permohonan)

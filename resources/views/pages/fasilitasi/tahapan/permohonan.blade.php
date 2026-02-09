@@ -2,6 +2,18 @@
 
 @section('title', 'Tahapan Permohonan - Upload Dokumen')
 
+@push('styles')
+<style>
+    /* SweetAlert2 z-index fix */
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+    .swal2-backdrop-show {
+        z-index: 9998 !important;
+    }
+</style>
+@endpush
+
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <!-- Header -->
@@ -105,13 +117,13 @@
                 @if ($isPemohon && $permohonan->status_akhir == 'belum' && $progress == 100)
                     <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST" id="submitPermohonanForm">
                         @csrf
-                        <button type="button" class="btn btn-success" id="submitPermohonanBtn">
-                            <i class='bx bx-send me-1'></i>Kirim Permohonan
+                        <button type="submit" class="btn btn-success" id="submitPermohonanBtn">
+                            <i class='bx bx-check-circle me-1'></i>Submit Dokumen
                         </button>
                     </form>
                 @elseif($permohonan->status_akhir != 'belum')
                     <span class="badge bg-success">
-                        <i class='bx bx-check-circle'></i> Permohonan Telah Dikirim
+                        <i class='bx bx-check-circle'></i> Dokumen Telah Disubmit
                     </span>
                 @endif
             </div>
@@ -127,8 +139,8 @@
                 @if ($isPemohon && $permohonan->status_akhir == 'belum' && $progress < 100)
                     <div class="alert alert-info mb-4">
                         <i class='bx bx-info-circle me-2'></i>
-                        Silakan upload semua dokumen kelengkapan. Setelah semua dokumen terupload, Anda dapat mengirim
-                        permohonan.
+                        Silakan upload semua dokumen kelengkapan. Setelah semua dokumen terupload, Anda dapat submit dokumen
+                        untuk diverifikasi.
                     </div>
                 @elseif(!$isPemohon)
                     <div class="alert alert-secondary mb-4">
@@ -176,11 +188,9 @@
                                                     <i class="bx bx-show"></i>
                                                 </a>
                                             @else
-                                                <button type="button"
-                                                    class="btn btn-icon btn-primary btn-preview-excel"
+                                                <button type="button" class="btn btn-icon btn-primary btn-preview-excel"
                                                     data-file-url="{{ asset('storage/' . $dokumen->file_path) }}"
-                                                    data-file-name="{{ $dokumen->file_name }}"
-                                                    title="Lihat Excel">
+                                                    data-file-name="{{ $dokumen->file_name }}" title="Lihat Excel">
                                                     <i class="bx bx-show"></i>
                                                 </button>
                                             @endif
@@ -275,7 +285,8 @@
                             <select id="sheetSelector" class="form-select form-select-sm" style="width: 250px;">
                             </select>
                         </div>
-                        <div id="excelTableContainer" class="table-responsive" style="max-height: 500px; overflow: auto;">
+                        <div id="excelTableContainer" class="table-responsive"
+                            style="max-height: 500px; overflow: auto;">
                         </div>
                     </div>
                     <div id="excelErrorMessage" style="display: none;" class="alert alert-danger">
@@ -295,9 +306,12 @@
 @endsection
 
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- SheetJS Library -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    
+
     <script>
         // Handle file upload button trigger
         document.querySelectorAll('.btn-upload-trigger').forEach(button => {
@@ -359,35 +373,49 @@
         });
 
         // Handle submit permohonan
-        const submitBtn = document.getElementById('submitPermohonanBtn');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function() {
-                Swal.fire({
-                    title: 'Kirim Permohonan?',
-                    text: 'Pastikan semua dokumen sudah lengkap dan benar. Setelah dikirim, permohonan akan diproses oleh tim verifikator.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, Kirim',
-                    cancelButtonText: 'Batal',
-                    confirmButtonColor: '#28a745',
-                    cancelButtonColor: '#6c757d'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Show loading
+        document.addEventListener('DOMContentLoaded', function() {
+            const submitBtn = document.getElementById('submitPermohonanBtn');
+            const submitForm = document.getElementById('submitPermohonanForm');
+
+            if (submitBtn && submitForm) {
+                submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Mengirim...',
-                            text: 'Mohon tunggu',
-                            allowOutsideClick: false,
-                            allowEscapeKey: false,
-                            didOpen: () => {
-                                Swal.showLoading();
+                            title: 'Submit Dokumen?',
+                            text: 'Pastikan semua dokumen sudah lengkap dan benar. Setelah disubmit, dokumen akan diverifikasi.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Submit',
+                            cancelButtonText: 'Batal',
+                            confirmButtonColor: '#28a745',
+                            cancelButtonColor: '#6c757d'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Show loading
+                                Swal.fire({
+                                    title: 'Memproses...',
+                                    text: 'Mohon tunggu',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                                // Submit form
+                                submitForm.submit();
                             }
                         });
-                        document.getElementById('submitPermohonanForm').submit();
+                    } else {
+                        // Fallback jika SweetAlert tidak ada
+                        if (confirm('Submit dokumen? Pastikan semua dokumen sudah lengkap dan benar.')) {
+                            submitForm.submit();
+                        }
                     }
                 });
-            });
-        }
+            }
+        });
 
         // ============================================
         // EXCEL PREVIEW FUNCTIONALITY
@@ -400,29 +428,31 @@
             button.addEventListener('click', async function() {
                 const fileUrl = this.dataset.fileUrl;
                 const fileName = this.dataset.fileName;
-                
+
                 currentFileUrl = fileUrl;
-                
+
                 // Show modal
                 const modal = new bootstrap.Modal(document.getElementById('excelPreviewModal'));
                 modal.show();
-                
+
                 // Reset modal content
                 document.getElementById('excelFileName').textContent = fileName;
                 document.getElementById('excelLoadingSpinner').style.display = 'block';
                 document.getElementById('excelPreviewContent').style.display = 'none';
                 document.getElementById('excelErrorMessage').style.display = 'none';
                 document.getElementById('downloadExcelBtn').style.display = 'none';
-                
+
                 try {
                     // Fetch and parse Excel file
                     const response = await fetch(fileUrl);
                     if (!response.ok) throw new Error('Gagal memuat file');
-                    
+
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
-                    currentWorkbook = XLSX.read(data, { type: 'array' });
-                    
+                    currentWorkbook = XLSX.read(data, {
+                        type: 'array'
+                    });
+
                     // Populate sheet selector
                     const sheetSelector = document.getElementById('sheetSelector');
                     sheetSelector.innerHTML = '';
@@ -432,20 +462,21 @@
                         option.textContent = sheetName;
                         sheetSelector.appendChild(option);
                     });
-                    
+
                     // Show first sheet
                     displaySheet(0);
-                    
+
                     // Show preview content
                     document.getElementById('excelLoadingSpinner').style.display = 'none';
                     document.getElementById('excelPreviewContent').style.display = 'block';
                     document.getElementById('downloadExcelBtn').style.display = 'inline-block';
-                    
+
                 } catch (error) {
                     console.error('Error loading Excel:', error);
                     document.getElementById('excelLoadingSpinner').style.display = 'none';
                     document.getElementById('excelErrorMessage').style.display = 'block';
-                    document.getElementById('errorText').textContent = 'Gagal memuat file Excel: ' + error.message;
+                    document.getElementById('errorText').textContent = 'Gagal memuat file Excel: ' +
+                        error.message;
                 }
             });
         });
@@ -458,22 +489,22 @@
         // Display selected sheet
         function displaySheet(sheetIndex) {
             if (!currentWorkbook) return;
-            
+
             const sheetName = currentWorkbook.SheetNames[sheetIndex];
             const worksheet = currentWorkbook.Sheets[sheetName];
-            
+
             // Convert to HTML table
             const html = XLSX.utils.sheet_to_html(worksheet, {
                 header: '',
                 footer: ''
             });
-            
+
             // Apply Bootstrap table classes
             const styledHtml = html.replace(
                 '<table>',
                 '<table class="table table-bordered table-striped table-hover table-sm">'
             );
-            
+
             document.getElementById('excelTableContainer').innerHTML = styledHtml;
         }
 

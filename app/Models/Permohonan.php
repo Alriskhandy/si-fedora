@@ -5,10 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Permohonan extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
+
+    // ============================================================
+    // PROPERTIES
+    // ============================================================
 
     protected $table = 'permohonan';
 
@@ -27,13 +33,15 @@ class Permohonan extends Model
         'submitted_at' => 'datetime',
     ];
 
-    // Accessor untuk kabupaten_kota_id (backward compatibility)
+    // ============================================================
+    // ACCESSORS & MUTATORS
+    // ============================================================
+
     public function getKabupatenKotaIdAttribute()
     {
         return $this->attributes['kab_kota_id'] ?? null;
     }
 
-    // Status labels dan badge class untuk status_akhir
     public function getStatusLabelAttribute()
     {
         $labels = [
@@ -58,17 +66,29 @@ class Permohonan extends Model
         return $classes[$this->status_akhir] ?? 'secondary';
     }
 
-    // Relasi
-    public function kabupatenKota()
+    // ============================================================
+    // ACTIVITY LOG
+    // ============================================================
+
+    public function getActivitylogOptions(): LogOptions
     {
-        return $this->belongsTo(KabupatenKota::class, 'kab_kota_id');
+        return LogOptions::defaults()
+            ->logOnly(['status_akhir', 'submitted_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
-    public function jenisDokumen()
+    public function activityLogs()
     {
-        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
+        return $this->morphMany(\Spatie\Activitylog\Models\Activity::class, 'subject')
+            ->orderBy('created_at', 'desc');
     }
 
+    // ============================================================
+    // RELATIONSHIPS
+    // ============================================================
+
+    // User & Admin Relations
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -79,12 +99,34 @@ class Permohonan extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    // Relasi ke tabel baru
+    public function verifikator()
+    {
+        return $this->belongsTo(User::class, 'verifikator_id');
+    }
+
+    // Master Data Relations
+    public function kabupatenKota()
+    {
+        return $this->belongsTo(KabupatenKota::class, 'kab_kota_id');
+    }
+
+    public function jenisDokumen()
+    {
+        return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
+    }
+
+    public function jadwalFasilitasi()
+    {
+        return $this->belongsTo(JadwalFasilitasi::class);
+    }
+
+    // Tahapan Relations
     public function tahapan()
     {
         return $this->hasMany(PermohonanTahapan::class);
     }
 
+    // Tim Relations
     public function koordinator()
     {
         return $this->hasOne(KoordinatorAssignment::class);
@@ -100,14 +142,31 @@ class Permohonan extends Model
         return $this->hasMany(TimVerifikasiAssignment::class);
     }
 
+    // Dokumen Relations
+    public function permohonanDokumen()
+    {
+        return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
+    }
+
     public function dokumenTahapan()
     {
         return $this->hasMany(DokumenTahapan::class);
     }
 
-    public function jadwalFasilitasi()
+    // Proses Relations
+    public function laporanVerifikasi()
     {
-        return $this->belongsTo(JadwalFasilitasi::class);
+        return $this->hasOne(LaporanVerifikasi::class, 'permohonan_id');
+    }
+
+    public function penetapanJadwal()
+    {
+        return $this->hasOne(PenetapanJadwalFasilitasi::class, 'permohonan_id');
+    }
+
+    public function undanganPelaksanaan()
+    {
+        return $this->hasOne(UndanganPelaksanaan::class, 'permohonan_id');
     }
 
     public function pelaksanaanCatatan()
@@ -120,21 +179,6 @@ class Permohonan extends Model
         return $this->hasOne(HasilFasilitasi::class);
     }
 
-    public function tindakLanjut()
-    {
-        return $this->hasOne(TindakLanjut::class);
-    }
-
-    public function penetapanPerda()
-    {
-        return $this->hasOne(PenetapanPerda::class);
-    }
-
-    public function perpanjanganWaktu()
-    {
-        return $this->hasMany(PerpanjanganWaktu::class);
-    }
-
     public function fasilitasiBab()
     {
         return $this->hasMany(FasilitasiBab::class);
@@ -145,36 +189,40 @@ class Permohonan extends Model
         return $this->hasMany(FasilitasiUrusan::class);
     }
 
-    // Helper method untuk mendapatkan tahapan saat ini
-    public function getCurrentTahapan()
+    // Tindak Lanjut Relations
+    public function tindakLanjut()
     {
-        return $this->tahapan()
-            ->with('masterTahapan')
-            ->whereIn('status', ['proses', 'revisi'])
-            ->orderBy('id', 'desc')
-            ->first();
+        return $this->hasOne(TindakLanjut::class);
     }
 
-    // Helper method untuk cek apakah tahapan sudah selesai
-    public function isTahapanSelesai($tahapanId)
+    public function penetapanPerda()
     {
-        return $this->tahapan()
-            ->where('tahapan_id', $tahapanId)
-            ->where('status', 'selesai')
-            ->exists();
+        return $this->hasOne(PenetapanPerda::class);
     }
 
-    // Scope
+    public function suratRekomendasi()
+    {
+        return $this->hasOne(SuratRekomendasi::class, 'permohonan_id');
+    }
+
+    // Other Relations
+    public function perpanjanganWaktu()
+    {
+        return $this->hasMany(PerpanjanganWaktu::class);
+    }
+
+    // ============================================================
+    // SCOPES
+    // ============================================================
+
     public function scopeByJenisDokumen($query, $jenis)
     {
-        // Support both ID and name
         if (is_numeric($jenis)) {
             return $query->where('jenis_dokumen_id', $jenis);
-        } else {
-            // Search by name
-            $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
-            return $query->where('jenis_dokumen_id', $jenisDokumen ? $jenisDokumen->id : null);
         }
+
+        $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
+        return $query->where('jenis_dokumen_id', $jenisDokumen ? $jenisDokumen->id : null);
     }
 
     public function scopeByTahun($query, $tahun)
@@ -192,45 +240,14 @@ class Permohonan extends Model
         return $query->where('status_akhir', $status);
     }
 
-    // app/Models/Permohonan.php
-    public function suratRekomendasi()
-    {
-        return $this->hasOne(SuratRekomendasi::class, 'permohonan_id');
-    }
+    // ============================================================
+    // PROGRESS TRACKING METHODS
+    // ============================================================
 
-    public function verifikator()
-    {
-        return $this->belongsTo(User::class, 'verifikator_id');
-    }
-
-    // app/Models/Permohonan.php
-    public function permohonanDokumen()
-    {
-        return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
-    }
-
-    public function laporanVerifikasi()
-    {
-        return $this->hasOne(LaporanVerifikasi::class, 'permohonan_id');
-    }
-
-    public function penetapanJadwal()
-    {
-        return $this->hasOne(PenetapanJadwalFasilitasi::class, 'permohonan_id');
-    }
-
-    public function undanganPelaksanaan()
-    {
-        return $this->hasOne(UndanganPelaksanaan::class, 'permohonan_id');
-    }
-
-    // Method untuk mendapatkan progress tahapan dari master_tahapan
     public function getProgressSteps()
     {
-        // Ambil semua tahapan dari master_tahapan
         $masterTahapan = \App\Models\MasterTahapan::orderBy('urutan')->get();
 
-        // Icon mapping untuk setiap tahapan
         $iconMap = [
             'Permohonan' => 'bx-send',
             'Verifikasi' => 'bx-check-circle',
@@ -242,25 +259,58 @@ class Permohonan extends Model
         ];
 
         $steps = [];
+        $lastCompletedIndex = -1; // Track index tahapan terakhir yang selesai
+
         foreach ($masterTahapan as $index => $tahapan) {
-            // Cek apakah tahapan ini sudah ada di permohonan_tahapan
             $permohonanTahapan = $this->tahapan()
                 ->where('tahapan_id', $tahapan->id)
                 ->first();
 
-            // Tentukan status completed berdasarkan permohonan_tahapan
+            // Determine status: pending, active, or completed
+            $status = 'pending';
             $completed = false;
+            $isActive = false;
             $date = null;
 
-            if ($permohonanTahapan) {
-                // Jika ada record di permohonan_tahapan dan statusnya selesai
-                $completed = $permohonanTahapan->status === 'selesai';
-                $date = $permohonanTahapan->tgl_selesai ?? $permohonanTahapan->tgl_mulai;
-            } else {
-                // Untuk tahapan pertama (Permohonan), dianggap selesai jika permohonan sudah dibuat
-                if ($index === 0) {
-                    $completed = true;
+            // Tahap 1 (Permohonan) - Otomatis active saat permohonan dibuat
+            if ($index === 0 && $this->exists) {
+                if ($permohonanTahapan) {
+                    if ($permohonanTahapan->status === 'selesai') {
+                        $status = 'completed';
+                        $completed = true;
+                        $lastCompletedIndex = $index;
+                        $date = $permohonanTahapan->updated_at;
+                    } else {
+                        // Masih proses atau revisi
+                        $status = 'active';
+                        $isActive = true;
+                        $date = $permohonanTahapan->created_at;
+                    }
+                } else {
+                    // Permohonan baru dibuat, belum ada record di permohonan_tahapan
+                    // Set sebagai active (on proses)
+                    $status = 'active';
+                    $isActive = true;
                     $date = $this->created_at;
+                }
+            } else {
+                // Tahap lainnya (Verifikasi dst)
+                if ($permohonanTahapan) {
+                    if ($permohonanTahapan->status === 'selesai') {
+                        $status = 'completed';
+                        $completed = true;
+                        $lastCompletedIndex = $index;
+                        $date = $permohonanTahapan->updated_at;
+                    } elseif (in_array($permohonanTahapan->status, ['proses', 'revisi'])) {
+                        $status = 'active';
+                        $isActive = true;
+                        $date = $permohonanTahapan->created_at;
+                    }
+                } else {
+                    // Belum ada record, cek apakah tahap sebelumnya sudah selesai
+                    // Jika index === lastCompletedIndex + 1, maka bisa active
+                    // Jika tidak, tetap pending
+                    $status = 'pending';
                 }
             }
 
@@ -270,8 +320,10 @@ class Permohonan extends Model
                 'icon' => $iconMap[$tahapan->nama_tahapan] ?? 'bx-file',
                 'date' => $date,
                 'completed' => $completed,
+                'isActive' => $isActive,
+                'status' => $status, // pending | active | completed
                 'tahapan_id' => $tahapan->id,
-                'status' => $permohonanTahapan->status ?? null,
+                'db_status' => $permohonanTahapan->status ?? null,
             ];
         }
 
@@ -280,7 +332,6 @@ class Permohonan extends Model
 
     public function getCurrentStepIndex()
     {
-        // Cari tahapan terakhir yang sedang berjalan
         $currentTahapan = $this->tahapan()
             ->with('masterTahapan')
             ->whereIn('status', ['proses', 'revisi'])
@@ -288,10 +339,9 @@ class Permohonan extends Model
             ->first();
 
         if ($currentTahapan) {
-            return $currentTahapan->masterTahapan->urutan - 1; // Array index dimulai dari 0
+            return $currentTahapan->masterTahapan->urutan - 1;
         }
 
-        // Jika belum ada tahapan yang berjalan, cek apakah sudah ada tahapan yang selesai
         $lastCompletedTahapan = $this->tahapan()
             ->with('masterTahapan')
             ->where('status', 'selesai')
@@ -299,11 +349,9 @@ class Permohonan extends Model
             ->first();
 
         if ($lastCompletedTahapan) {
-            // Return index tahapan berikutnya setelah yang terakhir selesai
             return $lastCompletedTahapan->masterTahapan->urutan;
         }
 
-        // Default: tahapan pertama (Permohonan)
         return 0;
     }
 
@@ -322,7 +370,31 @@ class Permohonan extends Model
         return $descriptions[$tahapanName] ?? '';
     }
 
-    // Helper method untuk cek apakah batas waktu upload dokumen sudah lewat
+    // ============================================================
+    // TAHAPAN HELPER METHODS
+    // ============================================================
+
+    public function getCurrentTahapan()
+    {
+        return $this->tahapan()
+            ->with('masterTahapan')
+            ->whereIn('status', ['proses', 'revisi'])
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    public function isTahapanSelesai($tahapanId)
+    {
+        return $this->tahapan()
+            ->where('tahapan_id', $tahapanId)
+            ->where('status', 'selesai')
+            ->exists();
+    }
+
+    // ============================================================
+    // UPLOAD DOCUMENT HELPER METHODS
+    // ============================================================
+
     public function isUploadDeadlinePassed()
     {
         if (!$this->jadwalFasilitasi || !$this->jadwalFasilitasi->batas_permohonan) {
@@ -332,15 +404,12 @@ class Permohonan extends Model
         return now()->isAfter($this->jadwalFasilitasi->batas_permohonan);
     }
 
-    // Helper method untuk cek apakah masih bisa upload dokumen
     public function canUploadDocuments()
     {
-        // Cek status permohonan - hanya bisa upload jika status belum atau revisi
         if (!in_array($this->status_akhir, ['belum', 'revisi'])) {
             return false;
         }
 
-        // Cek deadline
         if ($this->isUploadDeadlinePassed()) {
             return false;
         }
@@ -348,7 +417,6 @@ class Permohonan extends Model
         return true;
     }
 
-    // Getter untuk pesan deadline
     public function getUploadDeadlineMessage()
     {
         if (!$this->jadwalFasilitasi || !$this->jadwalFasilitasi->batas_permohonan) {

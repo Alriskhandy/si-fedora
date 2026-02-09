@@ -52,55 +52,86 @@
             }
         }
 
-        /* Active step highlight */
-        .active-step .step-circle {
-            box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.3) !important;
-            transform: scale(1.05);
+        /* Step Status Styles */
+        /* Pending - Abu-abu, tidak bisa akses */
+        .step-pending .step-circle {
+            background: linear-gradient(135deg, #E0E0E0 0%, #EEEEEE 100%) !important;
+            border: 2px solid #E0E0E0 !important;
+            color: #BDBDBD !important;
+            box-shadow: 0 4px 10px rgba(224, 224, 224, 0.3) !important;
         }
 
-        .active-step .step-name {
+        .step-pending .step-name {
+            color: #9E9E9E !important;
+            font-weight: 400 !important;
+        }
+
+        .step-pending {
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.6;
+        }
+
+        /* On Proses - Kuning, bisa akses */
+        .step-active .step-circle {
+            background: linear-gradient(135deg, #FFA726 0%, #FFB74D 100%) !important;
+            border: 2px solid #FF9800 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 8px 20px rgba(255, 152, 0, 0.4), 0 0 0 4px rgba(255, 167, 38, 0.2) !important;
+        }
+
+        .step-active .step-name {
+            color: #F57C00 !important;
+            font-weight: 600 !important;
+        }
+
+        .step-active:hover .step-circle {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(255, 152, 0, 0.5), 0 0 0 4px rgba(255, 167, 38, 0.3) !important;
+        }
+
+        .step-active:hover .step-name {
+            color: #EF6C00 !important;
+        }
+
+        /* Selesai - Biru, bisa akses */
+        .step-completed .step-circle {
+            background: linear-gradient(135deg, #2196F3 0%, #42A5F5 50%, #64B5F6 100%) !important;
+            border: 2px solid #1976D2 !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 8px 20px rgba(33, 150, 243, 0.35), 0 0 0 4px rgba(100, 181, 246, 0.2) !important;
+        }
+
+        .step-completed .step-name {
             color: #1565C0 !important;
             font-weight: 600 !important;
         }
 
-        /* Fix button primary active/focus state */
-        .btn-primary:active,
-        .btn-primary.active,
-        .btn-primary:focus,
-        .btn-primary.focus {
-            background-color: #7bc4e3 !important;
-            border-color: #7bc4e3 !important;
-            color: #0d3b4d !important;
-            box-shadow: 0 0 0 0.2rem rgba(160, 217, 239, 0.5) !important;
-        }
-
-        .btn-primary:not(:disabled):not(.disabled):active,
-        .btn-primary:not(:disabled):not(.disabled).active {
-            background-color: #5eb5d4 !important;
-            border-color: #5eb5d4 !important;
-        }
-
-        .step-clickable:hover .step-circle {
+        .step-completed:hover .step-circle {
             transform: scale(1.1);
             box-shadow: 0 10px 25px rgba(33, 150, 243, 0.4) !important;
         }
 
-        .step-clickable:hover .step-name {
-            color: #1976D2 !important;
-        }
-
-        .step-disabled .step-circle {
-            background: #F5F5F5 !important;
-            border: 2px solid #E0E0E0 !important;
-            color: #BDBDBD !important;
-        }
-
-        .step-disabled .step-name {
-            color: #9E9E9E !important;
+        .step-completed:hover .step-name {
+            color: #0D47A1 !important;
         }
 
         .step-item {
             transition: all 0.3s ease;
+        }
+
+        /* Connector Line Colors */
+        .connector-completed {
+            background: linear-gradient(90deg, #42A5F5 0%, #64B5F6 100%) !important;
+            box-shadow: 0 3px 8px rgba(66, 165, 245, 0.25) !important;
+        }
+
+        .connector-active {
+            background: linear-gradient(90deg, #42A5F5 0%, #FFB74D 50%, #E0E0E0 100%) !important;
+        }
+
+        .connector-pending {
+            background: #E0E0E0 !important;
         }
     </style>
 @endpush
@@ -153,80 +184,80 @@
                             @foreach ($steps as $index => $step)
                                 @php
                                     $routeName = $tahapanRoutes[$step['name']] ?? null;
-                                    // Step Permohonan dan Verifikasi selalu bisa diklik
-                                    $isDisabled =
-                                        $index > $currentIndex &&
-                                        !in_array($step['name'], ['Permohonan', 'Verifikasi']);
-                                    $isActive = $index === $currentIndex;
-                                    $routeUrl = $routeName && !$isDisabled ? route($routeName, $permohonan) : '#';
+                                    // Gunakan status dari model: pending, active, completed
+                                    $stepStatus = $step['status']; // pending | active | completed
+                                    $isAccessible = in_array($stepStatus, ['active', 'completed']);
+                                    $routeUrl = $routeName && $isAccessible ? route($routeName, $permohonan) : '#';
+
+                                    // CSS class berdasarkan status
+                                    $stepClass = 'step-' . $stepStatus; // step-pending | step-active | step-completed
                                 @endphp
 
-                                <div class="position-relative text-decoration-none step-item {{ $isDisabled ? 'step-disabled' : 'step-clickable' }}"
+                                <div class="position-relative text-decoration-none step-item {{ $stepClass }}"
                                     style="flex: 1; display: flex; flex-direction: column; align-items: center;">
 
                                     <!-- Connector Line -->
                                     @if ($index < count($steps) - 1)
                                         @php
                                             $nextStep = $steps[$index + 1] ?? null;
-                                            $isConnectorActive =
-                                                $step['completed'] && ($nextStep && $nextStep['completed']);
-                                            $gradientColor = $isConnectorActive
-                                                ? 'linear-gradient(90deg, #42A5F5 0%, #64B5F6 50%, #90CAF9 100%)'
-                                                : ($step['completed']
-                                                    ? 'linear-gradient(90deg, #42A5F5 0%, #64B5F6 100%)'
-                                                    : '#E0E0E0');
+                                            // Line biru jika kedua step completed
+                                            // Line gradient jika current completed dan next active
+                                            // Line abu jika pending
+                                            if (
+                                                $step['status'] === 'completed' &&
+                                                $nextStep &&
+                                                $nextStep['status'] === 'completed'
+                                            ) {
+                                                $connectorClass = 'connector-completed';
+                                            } elseif (
+                                                $step['status'] === 'completed' &&
+                                                $nextStep &&
+                                                $nextStep['status'] === 'active'
+                                            ) {
+                                                $connectorClass = 'connector-active';
+                                            } else {
+                                                $connectorClass = 'connector-pending';
+                                            }
                                         @endphp
-                                        <div class="position-absolute"
-                                            style="left: 50%; top: 30px; width: 100%; height: 4px; background: {{ $gradientColor }}; z-index: 0; border-radius: 2px; box-shadow: {{ $step['completed'] ? '0 3px 8px rgba(66, 165, 245, 0.25)' : 'none' }};">
+                                        <div class="position-absolute {{ $connectorClass }}"
+                                            style="left: 50%; top: 30px; width: 100%; height: 4px; z-index: 0; border-radius: 2px;">
                                         </div>
                                     @endif
 
                                     <!-- Circle Icon -->
                                     <a href="{{ $routeUrl }}" class="d-block text-decoration-none position-relative"
-                                        style="z-index: 1; cursor: {{ $isDisabled ? 'not-allowed' : 'pointer' }}; pointer-events: {{ $isDisabled ? 'none' : 'auto' }};">
-                                        @php
-                                            $circleGradient = $step['completed']
-                                                ? 'linear-gradient(135deg, #2196F3 0%, #42A5F5 50%, #64B5F6 100%)'
-                                                : ($index === $currentIndex
-                                                    ? 'linear-gradient(135deg, #64B5F6 0%, #90CAF9 100%)'
-                                                    : 'linear-gradient(135deg, #E0E0E0 0%, #EEEEEE 100%)');
-                                            $circleShadow = $step['completed']
-                                                ? '0 8px 20px rgba(33, 150, 243, 0.35), 0 0 0 4px rgba(100, 181, 246, 0.2)'
-                                                : ($index === $currentIndex
-                                                    ? '0 8px 20px rgba(100, 181, 246, 0.3), 0 0 0 4px rgba(144, 202, 249, 0.25)'
-                                                    : '0 4px 10px rgba(224, 224, 224, 0.3)');
-                                        @endphp
+                                        style="z-index: 1; cursor: {{ $isAccessible ? 'pointer' : 'not-allowed' }}; pointer-events: {{ $isAccessible ? 'auto' : 'none' }};">
                                         <div class="rounded-circle d-flex align-items-center justify-content-center text-white mx-auto mb-3 step-circle"
-                                            style="width: 60px; height: 60px; font-size: 28px; background: {{ $circleGradient }}; box-shadow: {{ $circleShadow }}; transition: all 0.3s ease;">
-                                            @if ($step['completed'])
+                                            style="width: 60px; height: 60px; font-size: 28px; transition: all 0.3s ease;">
+                                            @if ($step['status'] === 'completed')
                                                 <i class='bx bx-check' style="font-weight: bold;"></i>
-                                            @elseif($index === $currentIndex)
+                                            @elseif($step['status'] === 'active')
                                                 <i class='bx bx-time-five'></i>
                                             @else
-                                                <i class='bx bx-lock-alt' style="font-size: 12px;"></i>
+                                                <i class='bx bx-lock-alt'></i>
                                             @endif
                                         </div>
                                     </a>
 
                                     <!-- Step Label -->
                                     <div class="mt-2 text-center px-2" style="min-height: 60px;">
-                                        @php
-                                            $textColor = $step['completed']
-                                                ? '#1565C0'
-                                                : ($index === $currentIndex
-                                                    ? '#2196F3'
-                                                    : '#9E9E9E');
-                                            $textWeight =
-                                                $step['completed'] || $index === $currentIndex ? '600' : '400';
-                                        @endphp
-                                        <h6 class="mb-1 step-name"
-                                            style="font-size: 0.85rem; color: {{ $textColor }}; font-weight: {{ $textWeight }}; line-height: 1.3;">
+                                        <h6 class="mb-1 step-name" style="font-size: 0.85rem; line-height: 1.3;">
                                             {{ $step['name'] }}
                                         </h6>
 
-                                        @if ($index === $currentIndex && !$step['completed'])
+                                        @if ($step['status'] === 'active')
                                             <div class="mt-1">
-                                                <span class="badge bg-warning" style="font-size: 0.7rem;">Aktif</span>
+                                                <span class="badge bg-warning" style="font-size: 0.7rem;">Sedang
+                                                    Proses</span>
+                                            </div>
+                                        @elseif($step['status'] === 'completed')
+                                            <div class="mt-1">
+                                                <span class="badge bg-primary" style="font-size: 0.7rem;">Selesai</span>
+                                            </div>
+                                        @elseif($step['status'] === 'pending')
+                                            <div class="mt-1">
+                                                <span class="badge bg-secondary" style="font-size: 0.7rem;">Belum
+                                                    Aktif</span>
                                             </div>
                                         @endif
 
@@ -246,33 +277,36 @@
                         @foreach ($steps as $index => $step)
                             @php
                                 $routeName = $tahapanRoutes[$step['name']] ?? null;
-                                // Step Permohonan dan Verifikasi selalu bisa diklik
-                                $isDisabled =
-                                    $index > $currentIndex && !in_array($step['name'], ['Permohonan', 'Verifikasi']);
-                                $routeUrl = $routeName && !$isDisabled ? route($routeName, $permohonan) : '#';
+                                $stepStatus = $step['status']; // pending | active | completed
+                                $isAccessible = in_array($stepStatus, ['active', 'completed']);
+                                $routeUrl = $routeName && $isAccessible ? route($routeName, $permohonan) : '#';
+                                $stepClass = 'step-' . $stepStatus;
                             @endphp
 
                             <a href="{{ $routeUrl }}"
-                                class="d-flex mb-3 text-decoration-none step-item {{ $isDisabled ? 'step-disabled' : 'step-clickable' }}"
-                                style="cursor: {{ $isDisabled ? 'not-allowed' : 'pointer' }}; pointer-events: {{ $isDisabled ? 'none' : 'auto' }};">
+                                class="d-flex mb-3 text-decoration-none step-item {{ $stepClass }}"
+                                style="cursor: {{ $isAccessible ? 'pointer' : 'not-allowed' }}; pointer-events: {{ $isAccessible ? 'auto' : 'none' }};">
                                 <div class="me-3">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center step-circle {{ $step['completed'] ? 'bg-primary text-white' : ($index === $currentIndex ? 'bg-info text-white' : 'bg-light text-muted') }}"
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center step-circle"
                                         style="width: 40px; height: 40px;">
-                                        @if ($step['completed'])
+                                        @if ($step['status'] === 'completed')
                                             <i class='bx bx-check'></i>
-                                        @elseif($index === $currentIndex)
+                                        @elseif($step['status'] === 'active')
                                             <i class='bx bx-time-five'></i>
                                         @else
-                                            <i class='bx bx-circle' style="font-size: 8px;"></i>
+                                            <i class='bx bx-lock-alt'></i>
                                         @endif
                                     </div>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h6
-                                        class="mb-0 step-name {{ $step['completed'] ? 'text-primary fw-semibold' : ($index === $currentIndex ? 'text-info fw-semibold' : 'text-muted') }}">
+                                    <h6 class="mb-0 step-name">
                                         {{ $step['name'] }}
-                                        @if ($index === $currentIndex && !$step['completed'])
-                                            <span class="badge bg-warning ms-1">Aktif</span>
+                                        @if ($step['status'] === 'active')
+                                            <span class="badge bg-warning ms-1">Sedang Proses</span>
+                                        @elseif($step['status'] === 'completed')
+                                            <span class="badge bg-primary ms-1">Selesai</span>
+                                        @elseif($step['status'] === 'pending')
+                                            <span class="badge bg-secondary ms-1">Belum Aktif</span>
                                         @endif
                                     </h6>
                                     @if ($step['date'])
@@ -409,36 +443,54 @@
             <div class="col-lg-4">
                 <div class="card sticky-top" style="top: 100px;">
                     <div class="card-header">
-                        <h6 class="mb-0"><i class='bx bx-time-five me-1'></i>Status Fasilitasi / Evaluasi</h6>
+                        <h6 class="mb-0"><i class='bx bx-time-five me-1'></i>Riwayat Tahapan</h6>
                     </div>
-                    <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                        @if ($permohonan->activityLogs && $permohonan->activityLogs->count() > 0)
-                            <div class="timeline">
-                                @foreach ($permohonan->activityLogs->sortByDesc('created_at') as $log)
-                                    <div class="timeline-item mb-3">
-                                        <div class="d-flex">
-                                            <div class="timeline-icon me-2">
-                                                <i
-                                                    class='bx bx-{{ $log->event == 'created' ? 'plus-circle' : ($log->event == 'updated' ? 'edit' : 'info-circle') }} text-primary'></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block">
-                                                    {{ $log->created_at->diffForHumans() }}
-                                                </small>
-                                                <p class="mb-0">{{ $log->description }}</p>
-                                                @if ($log->causer)
-                                                    <small class="text-muted">oleh
-                                                        {{ $log->causer->name }}</small>
-                                                @endif
-                                            </div>
-                                        </div>
+                    <div class="card-body p-3" style="max-height: 600px; overflow-y: auto;">
+                        @php
+                            // Ambil semua tahapan yang sudah dimulai (ada di permohonan_tahapan)
+                            $tahapanHistory = $permohonan->tahapan()
+                                ->with('masterTahapan')
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+                        @endphp
+
+                        @if ($tahapanHistory->count() > 0)
+                            @foreach ($tahapanHistory as $index => $history)
+                                <div class="mb-3 pb-3 {{ $index < $tahapanHistory->count() - 1 ? 'border-bottom' : '' }}">
+                                    <div class="mb-1">
+                                        <strong style="font-size: 0.85rem;">{{ $history->masterTahapan->nama_tahapan }}</strong>
                                     </div>
-                                @endforeach
-                            </div>
+                                    <div class="text-muted" style="font-size: 0.8rem; line-height: 1.6;">
+                                        Status: 
+                                        @if ($history->status === 'selesai')
+                                            <span class="text-primary fw-semibold">Selesai</span>
+                                        @elseif ($history->status === 'proses')
+                                            <span class="text-warning fw-semibold">Sedang Proses</span>
+                                        @elseif ($history->status === 'revisi')
+                                            <span class="text-danger fw-semibold">Perlu Revisi</span>
+                                        @else
+                                            <span class="text-secondary">{{ ucfirst($history->status) }}</span>
+                                        @endif
+                                        
+                                        <br>
+                                        Dimulai: <span class="text-dark">{{ $history->created_at->format('d M Y, H:i') }}</span>
+                                        
+                                        @if ($history->status === 'selesai')
+                                            <br>
+                                            Selesai: <span class="text-dark">{{ $history->updated_at->format('d M Y, H:i') }}</span>
+                                        @endif
+
+                                        @if ($history->catatan)
+                                            <br>
+                                            <small class="text-info fst-italic">{{ $history->catatan }}</small>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
                         @else
                             <div class="text-center text-muted py-4">
-                                <i class='bx bx-time-five bx-lg mb-2 d-block'></i>
-                                <p class="mb-0">Belum ada aktivitas</p>
+                                <i class='bx bx-info-circle bx-lg mb-2 d-block'></i>
+                                <p class="mb-0" style="font-size: 0.85rem;">Belum ada riwayat tahapan</p>
                             </div>
                         @endif
                     </div>

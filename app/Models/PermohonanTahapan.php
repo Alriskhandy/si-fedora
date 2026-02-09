@@ -15,15 +15,13 @@ class PermohonanTahapan extends Model
         'permohonan_id',
         'tahapan_id',
         'status',
-        'tgl_mulai',
-        'tgl_selesai',
         'catatan',
-        'koordinator_id',
+        'updated_by',
     ];
 
     protected $casts = [
-        'tgl_mulai' => 'date',
-        'tgl_selesai' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     // Relasi
