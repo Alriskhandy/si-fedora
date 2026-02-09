@@ -27,9 +27,7 @@
     @php
         $isPemohon = auth()->user()->hasRole('pemohon');
         $isVerifikator = auth()->user()->hasRole('verifikator');
-        $isAdmin = auth()
-            ->user()
-            ->hasAnyRole(['admin_peran', 'kaban', 'superadmin']);
+        $isAdmin = auth()->user()->hasRole('admin_peran');
     @endphp
 
     <div class="container-xxl flex-grow-1 container-p-y">
@@ -37,7 +35,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-1">
-                    Tahapan Verifikasi - {{ $isVerifikator ? 'Verifikasi Dokumen' : 'Status Verifikasi' }}
+                    Verifikasi Dokumen
                 </h4>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
@@ -146,69 +144,165 @@
             @endif
         @endif
 
-        <!-- Informasi Verifikasi -->
-        @if ($permohonan->laporanVerifikasi)
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class='bx bx-check-shield me-2'></i>Hasil Verifikasi
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tr>
-                                    <th width="40%">Status Verifikasi:</th>
-                                    <td>
-                                        @php
-                                            $statusLabel = [
-                                                'lengkap' => ['text' => 'Lengkap', 'class' => 'success'],
-                                                'tidak_lengkap' => ['text' => 'Tidak Lengkap', 'class' => 'danger'],
-                                                'perlu_revisi' => ['text' => 'Perlu Revisi', 'class' => 'warning'],
-                                            ];
-                                            $current = $statusLabel[
-                                                $permohonan->laporanVerifikasi->status_kelengkapan
-                                            ] ?? [
-                                                'text' => 'Unknown',
-                                                'class' => 'secondary',
-                                            ];
-                                        @endphp
-                                        <span class="badge bg-{{ $current['class'] }}">
-                                            <i
-                                                class='bx bx-{{ $current['class'] == 'success' ? 'check-circle' : 'x-circle' }}'></i>
-                                            {{ $current['text'] }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Diverifikasi Oleh:</th>
-                                    <td>{{ $permohonan->laporanVerifikasi->verifikator->name ?? '-' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Tanggal Verifikasi:</th>
-                                    <td>{{ $permohonan->laporanVerifikasi->tanggal_verifikasi ? \Carbon\Carbon::parse($permohonan->laporanVerifikasi->tanggal_verifikasi)->format('d F Y') : '-' }}
-                                    </td>
-                                </tr>
-                            </table>
+        <!-- Laporan Verifikasi untuk Admin -->
+        @if ($isAdmin && $permohonan->status_akhir === 'selesai')
+            <div class="row mb-4">
+                <!-- Statistik Verifikasi -->
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class='bx bx-pie-chart-alt-2 me-2'></i>Statistik Verifikasi
+                            </h5>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="mb-2"><i class='bx bx-note me-1'></i>Catatan Verifikator:</h6>
-                                    <p class="mb-0">{{ $permohonan->laporanVerifikasi->catatan ?? 'Tidak ada catatan' }}
-                                    </p>
+                        <div class="card-body">
+                            @php
+                                $totalDokumen = $permohonan->permohonanDokumen->count();
+                                $verifiedDokumen = $permohonan->permohonanDokumen
+                                    ->where('status_verifikasi', 'verified')
+                                    ->count();
+                                $revisionDokumen = $permohonan->permohonanDokumen
+                                    ->where('status_verifikasi', 'revision')
+                                    ->count();
+                                $persentaseVerified =
+                                    $totalDokumen > 0 ? round(($verifiedDokumen / $totalDokumen) * 100, 2) : 0;
+                            @endphp
+
+                            <div class="text-center mb-3">
+                                <h2 class="mb-0">{{ $persentaseVerified }}%</h2>
+                                <small class="text-muted">Persentase Terverifikasi</small>
+                            </div>
+                            <div class="progress mb-3" style="height: 10px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                    style="width: {{ $persentaseVerified }}%">
                                 </div>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-muted">Total Dokumen</span>
+                                <h4 class="mb-0">{{ $totalDokumen }}</h4>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-success">
+                                    <i class='bx bx-check-circle'></i> Terverifikasi
+                                </span>
+                                <h5 class="mb-0 text-success">{{ $verifiedDokumen }}</h5>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-warning">
+                                    <i class='bx bx-error-circle'></i> Perlu Revisi
+                                </span>
+                                <h5 class="mb-0 text-warning">{{ $revisionDokumen }}</h5>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    @if ($permohonan->laporanVerifikasi->file_laporan)
-                        <div class="mt-3">
-                            <a href="{{ asset('storage/' . $permohonan->laporanVerifikasi->file_laporan) }}"
-                                target="_blank" class="btn btn-primary">
-                                <i class='bx bx-download'></i> Download Laporan Verifikasi
-                            </a>
+                <!-- Form Laporan Verifikasi -->
+                <div class="col-lg-8">
+                    @if ($permohonan->laporanVerifikasi)
+                        <!-- Tampilkan Laporan yang Sudah Dibuat -->
+                        <div class="card h-100">
+                            <div
+                                class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class='bx bx-check-shield me-2'></i>Laporan Verifikasi
+                                </h5>
+                                <span class="badge bg-white text-success">
+                                    <i class='bx bx-calendar'></i>
+                                    {{ $permohonan->laporanVerifikasi->tanggal_laporan ? \Carbon\Carbon::parse($permohonan->laporanVerifikasi->tanggal_laporan)->format('d M Y, H:i') : '-' }}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="text-muted small">Dibuat Oleh</label>
+                                    <p class="mb-0">
+                                        <i class='bx bx-user'></i>
+                                        {{ $permohonan->laporanVerifikasi->pembuatLaporan->name ?? '-' }}
+                                    </p>
+                                </div>
+                                <hr>
+                                <div class="mb-3">
+                                    <label class="text-muted small">Ringkasan Hasil Verifikasi</label>
+                                    <div class="p-3 bg-light rounded">
+                                        {!! nl2br(e($permohonan->laporanVerifikasi->ringkasan_verifikasi ?? 'Tidak ada ringkasan')) !!}
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <div class="mb-0">
+                                    <label class="text-muted small">Status Kelengkapan</label>
+                                    <div
+                                        class="alert alert-{{ $permohonan->laporanVerifikasi->status_kelengkapan == 'lengkap' ? 'success' : 'warning' }} mb-0">
+                                        <div class="d-flex align-items-center">
+                                            <i
+                                                class='bx {{ $permohonan->laporanVerifikasi->status_kelengkapan == 'lengkap' ? 'bx-check-circle' : 'bx-error-circle' }} fs-3 me-3'></i>
+                                            <div>
+                                                <h5 class="mb-1">
+                                                    {{ $permohonan->laporanVerifikasi->status_kelengkapan == 'lengkap' ? 'Dokumen Lengkap' : 'Dokumen Tidak Lengkap' }}
+                                                </h5>
+                                                <p class="mb-0">
+                                                    @if ($permohonan->laporanVerifikasi->status_kelengkapan == 'lengkap')
+                                                        Semua dokumen telah terverifikasi dengan baik dan dapat dilanjutkan
+                                                        ke tahap berikutnya.
+                                                    @else
+                                                        Ada beberapa dokumen yang perlu diperbaiki atau dilengkapi.
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($permohonan->laporanVerifikasi->file_laporan)
+                                    <div class="mt-3">
+                                        <a href="{{ asset('storage/' . $permohonan->laporanVerifikasi->file_laporan) }}"
+                                            target="_blank" class="btn btn-success">
+                                            <i class='bx bx-download'></i> Download Laporan PDF
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <!-- Form Buat Laporan Baru -->
+                        <div class="card h-100">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class='bx bx-file-blank me-2'></i>Buat Laporan Verifikasi
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ route('laporan-verifikasi.store', $permohonan) }}" method="POST"
+                                    id="laporanForm">
+                                    @csrf
+                                    <input type="hidden" name="status_kelengkapan" id="status_kelengkapan"
+                                        value="">
+
+                                    <!-- Ringkasan Verifikasi -->
+                                    <div class="mb-4">
+                                        <label for="ringkasan_verifikasi" class="form-label">
+                                            Ringkasan Hasil Verifikasi <span class="text-danger">*</span>
+                                        </label>
+                                        <textarea name="ringkasan_verifikasi" id="ringkasan_verifikasi"
+                                            class="form-control @error('ringkasan_verifikasi') is-invalid @enderror" rows="5" required>{{ old('ringkasan_verifikasi') }}</textarea>
+                                        <small class="text-muted">Jelaskan hasil verifikasi secara umum, termasuk dokumen
+                                            yang sudah sesuai dan yang perlu revisi.</small>
+                                        @error('ringkasan_verifikasi')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="submit" class="btn btn-success" onclick="setStatus('lengkap')">
+                                            <i class='bx bx-check-circle'></i> Simpan & Kirim
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -220,9 +314,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i
-                        class='bx bx-list-check me-2'></i>{{ $isVerifikator ? 'Verifikasi Dokumen' : 'Status Verifikasi Dokumen' }}
+                        class='bx bx-list-check me-2'></i>{{ ($isVerifikator || $isAdmin) ? 'Verifikasi Dokumen' : 'Status Verifikasi Dokumen' }}
                 </h5>
-                @if ($isVerifikator && $permohonan->status_akhir == 'proses')
+                @if (($isVerifikator || $isAdmin) && $permohonan->status_akhir == 'proses')
                     <button type="button" class="btn btn-success" id="submitVerificationBtn">
                         <i class='bx bx-check-circle me-1'></i>Submit Verifikasi
                     </button>
@@ -245,7 +339,7 @@
                                     @if ($isVerifikator || $isAdmin)
                                         <th width="15%">Status Verifikasi</th>
                                         <th width="30%">
-                                            {{ $isVerifikator && $permohonan->status_akhir == 'proses' ? 'Verifikasi' : 'Catatan' }}
+                                            {{ ($isVerifikator || $isAdmin) && $permohonan->status_akhir == 'proses' ? 'Verifikasi' : 'Catatan' }}
                                         </th>
                                     @else
                                         <th width="15%">Status Verifikasi</th>
@@ -271,8 +365,8 @@
                                                     $isPdf = strtolower($fileExtension) === 'pdf';
                                                 @endphp
                                                 @if ($isPdf)
-                                                    <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank"
-                                                        class="btn btn-sm btn-primary" title="Lihat PDF">
+                                                    <a href="{{ asset('storage/' . $dokumen->file_path) }}"
+                                                        target="_blank" class="btn btn-sm btn-primary" title="Lihat PDF">
                                                         <i class="bx bx-show"></i>
                                                     </a>
                                                 @else
@@ -314,7 +408,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if ($isVerifikator && $permohonan->status_akhir == 'proses')
+                                            @if (($isVerifikator || $isAdmin) && $permohonan->status_akhir == 'proses')
                                                 <div class="verification-form">
                                                     <select class="form-select form-select-sm mb-2 dokumen-status"
                                                         data-dokumen-id="{{ $dokumen->id }}">
@@ -577,5 +671,10 @@
         document.getElementById('downloadExcelBtn').addEventListener('click', function() {
             if (currentFileUrl) window.location.href = currentFileUrl;
         });
+
+        // Function untuk set status kelengkapan di form laporan verifikasi
+        function setStatus(status) {
+            document.getElementById('status_kelengkapan').value = status;
+        }
     </script>
 @endpush

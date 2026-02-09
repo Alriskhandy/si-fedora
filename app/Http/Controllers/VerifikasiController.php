@@ -230,7 +230,8 @@ class VerifikasiController extends Controller
             
             // Update status permohonan
             $hasRevision = $totalRevision > 0;
-            $newStatus = $hasRevision ? 'revisi' : 'selesai';
+            // Status menjadi 'revisi' jika ada revisi, tetap 'proses' jika semua verified
+            $newStatus = $hasRevision ? 'revisi' : 'proses';
             
             $permohonan->update(['status_akhir' => $newStatus]);
             
@@ -249,7 +250,7 @@ class VerifikasiController extends Controller
                 'success' => true,
                 'message' => $hasRevision 
                     ? 'Verifikasi berhasil disimpan. Terdapat dokumen yang perlu revisi.' 
-                    : 'Verifikasi berhasil disimpan. Semua dokumen sesuai.'
+                    : 'Verifikasi berhasil disimpan. Semua dokumen sesuai. Menunggu laporan dari admin.'
             ]);
             
         } catch (\Exception $e) {
@@ -269,68 +270,33 @@ class VerifikasiController extends Controller
     }
 
     /**
-     * Update tahapan verifikasi dan buat tahapan berikutnya jika selesai
+     * Update tahapan verifikasi hanya jika ada revisi
      */
     private function updateTahapanVerifikasi($permohonan, $hasRevision, $totalVerified, $totalRevision)
     {
+        // Hanya update tahapan jika ada revisi
+        if (!$hasRevision) {
+            return;
+        }
+
         $masterTahapan = MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
         
         if (!$masterTahapan) {
             return;
         }
 
-        // Update tahapan Verifikasi
+        // Update tahapan Verifikasi menjadi status 'revisi'
         PermohonanTahapan::updateOrCreate(
             [
                 'permohonan_id' => $permohonan->id,
                 'tahapan_id' => $masterTahapan->id,
             ],
             [
-                'status' => $hasRevision ? 'revisi' : 'selesai',
-                'catatan' => $hasRevision 
-                    ? "Verifikasi selesai - {$totalRevision} dokumen perlu revisi, {$totalVerified} dokumen sesuai"
-                    : "Verifikasi selesai - Semua dokumen ({$totalVerified}) telah diverifikasi dan sesuai",
+                'status' => 'revisi',
+                'catatan' => "Verifikasi - {$totalRevision} dokumen perlu revisi, {$totalVerified} dokumen sesuai. Menunggu pemohon upload ulang dokumen yang valid.",
                 'updated_by' => auth()->id(),
             ]
         );
-
-        // Jika tidak ada revisi, aktifkan tahapan berikutnya
-        if (!$hasRevision) {
-            $this->activateNextTahapan($permohonan, $masterTahapan);
-        }
-    }
-
-    /**
-     * Aktifkan tahapan berikutnya setelah verifikasi selesai
-     */
-    private function activateNextTahapan($permohonan, $currentTahapan)
-    {
-        // Cari tahapan berikutnya berdasarkan urutan
-        $nextTahapan = MasterTahapan::where('urutan', '>', $currentTahapan->urutan)
-            ->orderBy('urutan', 'asc')
-            ->first();
-
-        if (!$nextTahapan) {
-            return;
-        }
-
-        // Buat tahapan berikutnya dengan status 'proses'
-        PermohonanTahapan::updateOrCreate(
-            [
-                'permohonan_id' => $permohonan->id,
-                'tahapan_id' => $nextTahapan->id,
-            ],
-            [
-                'status' => 'proses',
-                'catatan' => 'Tahapan dimulai setelah verifikasi selesai',
-                'updated_by' => auth()->id(),
-            ]
-        );
-
-        Log::info('Tahapan berikutnya diaktifkan', [
-            'permohonan_id' => $permohonan->id,
-            'tahapan' => $nextTahapan->nama_tahapan,
-        ]);
     }
 
     /**
@@ -362,44 +328,48 @@ class VerifikasiController extends Controller
     }
 
     /**
-     * Kirim notifikasi ke pemohon dan admin
+     * Kirim notifikasi:
+     * - Jika tidak ada revisi: notifikasi ke admin untuk membuat laporan
+     * - Jika ada revisi: notifikasi ke pemohon untuk upload ulang dokumen
      */
     private function sendNotifications($permohonan, $hasRevision, $totalVerified, $totalRevision)
     {
-        // Notifikasi ke pemohon
-        Notifikasi::create([
-            'user_id' => $permohonan->user_id,
-            'title' => $hasRevision ? 'Dokumen Perlu Revisi' : 'Verifikasi Dokumen Selesai',
-            'message' => $hasRevision 
-                ? "Terdapat {$totalRevision} dokumen yang perlu direvisi. Silakan periksa catatan verifikasi dan upload ulang dokumen yang diperlukan."
-                : "Semua dokumen ({$totalVerified}) telah diverifikasi dan sesuai. Permohonan Anda akan dilanjutkan ke tahap berikutnya.",
-            'type' => $hasRevision ? 'revision' : 'success',
-            'action_url' => route('permohonan.tahapan.verifikasi', $permohonan),
-            'notifiable_type' => Permohonan::class,
-            'notifiable_id' => $permohonan->id,
-        ]);
-
-        // Notifikasi ke admin
-        $admins = User::role(['admin_peran', 'kaban', 'superadmin'])->get();
-        
-        foreach ($admins as $admin) {
+        if ($hasRevision) {
+            // Notifikasi ke pemohon untuk upload ulang dokumen yang perlu revisi
             Notifikasi::create([
-                'user_id' => $admin->id,
-                'title' => 'Verifikasi Dokumen Selesai',
+                'user_id' => $permohonan->user_id,
+                'title' => 'Dokumen Perlu Revisi',
                 'message' => sprintf(
-                    'Verifikasi untuk %s - %s tahun %s telah selesai. Status: %s (%s dokumen sesuai, %s perlu revisi)',
-                    $permohonan->kabupatenKota->nama ?? 'N/A',
-                    $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
-                    $permohonan->tahun,
-                    $hasRevision ? 'Perlu Revisi' : 'Selesai',
-                    $totalVerified,
-                    $totalRevision
+                    'Terdapat %s dokumen yang perlu direvisi dari total %s dokumen. Silakan periksa catatan verifikasi dan upload ulang dokumen yang diperlukan.',
+                    $totalRevision,
+                    $totalVerified + $totalRevision
                 ),
-                'type' => $hasRevision ? 'warning' : 'info',
-                'action_url' => route('permohonan.show', $permohonan),
+                'type' => 'revision',
+                'action_url' => route('permohonan.tahapan.verifikasi', $permohonan),
                 'notifiable_type' => Permohonan::class,
                 'notifiable_id' => $permohonan->id,
             ]);
+        } else {
+            // Notifikasi ke admin_peran untuk membuat laporan verifikasi
+            $admins = User::role('admin_peran')->get();
+            
+            foreach ($admins as $admin) {
+                Notifikasi::create([
+                    'user_id' => $admin->id,
+                    'title' => 'Verifikasi Selesai - Cek & Buat Laporan',
+                    'message' => sprintf(
+                        'Verifikasi untuk %s - %s tahun %s telah selesai oleh verifikator. Semua %s dokumen telah diverifikasi dan sesuai. Silakan cek kelengkapan dan buat laporan verifikasi.',
+                        $permohonan->kabupatenKota->nama ?? 'N/A',
+                        $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
+                        $permohonan->tahun,
+                        $totalVerified
+                    ),
+                    'type' => 'info',
+                    'action_url' => route('permohonan.tahapan.verifikasi', $permohonan),
+                    'notifiable_type' => Permohonan::class,
+                    'notifiable_id' => $permohonan->id,
+                ]);
+            }
         }
     }
 }
