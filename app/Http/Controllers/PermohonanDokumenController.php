@@ -158,20 +158,17 @@ class PermohonanDokumenController extends Controller
     public function upload(Request $request, PermohonanDokumen $permohonanDokumen)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,xlsx|max:10120', // 10MB
+            'file' => 'required|file|mimes:pdf,xlsx,xls|max:102400', // 100MB
         ], [
             'file.required' => 'File harus diupload',
-            'file.mimes' => 'File harus berformat PDF, DOC, DOCX, EXCEL',
-            'file.max' => 'Ukuran file maksimal 2MB'
+            'file.mimes' => 'File harus berformat PDF atau Excel (xlsx, xls)',
+            'file.max' => 'Ukuran file maksimal 100MB'
         ]);
 
         // Cek akses - hanya pemohon yang bisa upload
         if (Auth::user()->hasRole('pemohon')) {
             if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses ke dokumen ini.'
-                ], 403);
+                return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
             }
         }
 
@@ -179,19 +176,13 @@ class PermohonanDokumenController extends Controller
         $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
         if ($permohonan && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
             if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y')
-                ], 400);
+                return back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
             }
         }
 
         // Cek status permohonan - hanya bisa upload jika status belum atau revisi
         if (!in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.'
-            ], 400);
+            return back()->with('error', 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.');
         }
 
         try {
@@ -215,18 +206,11 @@ class PermohonanDokumenController extends Controller
                 'status_verifikasi' => 'pending',
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Dokumen berhasil diupload',
-                'file_url' => asset('storage/' . $filePath),
-                'file_name' => $fileName,
-                'dokumen_id' => $permohonanDokumen->id
-            ]);
+            // Redirect kembali ke halaman tahapan permohonan
+            return redirect()->route('permohonan.tahapan.permohonan', $permohonanDokumen->permohonan_id)
+                ->with('success', 'Dokumen "' . $permohonanDokumen->masterKelengkapan->nama_dokumen . '" berhasil diupload');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return back()->with('error', 'Terjadi kesalahan saat upload: ' . $e->getMessage());
         }
     }
 

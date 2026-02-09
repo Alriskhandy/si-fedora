@@ -107,7 +107,8 @@ class JadwalFasilitasiController extends Controller
         // Kirim notifikasi ke semua user (kecuali superadmin)
         $users = \App\Models\User::whereHas('roles', function($query) {
             $query->where('name', '!=', 'superadmin')
-            ->where('name', '!=', 'auditor');
+            ->where('name', '!=', 'auditor')
+            ->where('name', '!=', 'admin_peran');
         })->get();
 
         foreach ($users as $user) {
@@ -217,7 +218,8 @@ class JadwalFasilitasiController extends Controller
         // Kirim notifikasi ke semua user (kecuali superadmin)
         $users = \App\Models\User::whereHas('roles', function($query) {
             $query->where('name', '!=', 'superadmin')
-            ->where('name', '!=', 'auditor');
+            ->where('name', '!=', 'auditor')
+            ->where('name', '!=', 'admin_peran');
         })->get();
 
         foreach ($users as $user) {

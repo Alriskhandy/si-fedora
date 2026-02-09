@@ -23,8 +23,6 @@ class PermohonanController extends Controller
         // Filter berdasarkan role
         if (Auth::user()->hasRole('pemohon')) {
             $query->where('user_id', Auth::id());
-        } elseif (Auth::user()->hasRole('admin_peran')) {
-            // Admin bisa liat semua permohonan
         } elseif (Auth::user()->hasRole('verifikator')) {
             // Verifikator lewat UserKabkotaAssignment
             $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
@@ -76,6 +74,12 @@ class PermohonanController extends Controller
             } else {
                 $query->whereRaw('1 = 0');
             }
+        } elseif (Auth::user()->hasAnyRole(['admin_peran', 'kaban', 'superadmin', 'auditor'])) {
+            // Admin, Kaban, Superadmin, dan Auditor bisa lihat semua permohonan
+            // No filter needed
+        } else {
+            // Role lain tidak bisa akses
+            $query->whereRaw('1 = 0');
         }
 
         // Search
@@ -127,7 +131,7 @@ class PermohonanController extends Controller
             $selectedJadwal = JadwalFasilitasi::find($request->jadwal_id);
         }
 
-        return view('permohonan.create', compact('jadwalFasilitasi', 'selectedJadwal'));
+        return view('pages.fasilitasi.create', compact('jadwalFasilitasi', 'selectedJadwal'));
     }
 
     public function store(Request $request)
@@ -193,7 +197,7 @@ class PermohonanController extends Controller
             'penetapanPerda'
         ]);
 
-        return view('permohonan.show-with-tabs', compact('permohonan'));
+        return view('pages.fasilitasi.show', compact('permohonan'));
     }
 
     /**
@@ -220,7 +224,7 @@ class PermohonanController extends Controller
             'activityLogs.causer'
         ]);
 
-        return view('permohonan.show-with-tabs', compact('permohonan'));
+        return view('pages.fasilitasi.show', compact('permohonan'));
     }
 
     public function edit(Permohonan $permohonan)
@@ -337,6 +341,117 @@ class PermohonanController extends Controller
         return redirect()->route('permohonan.index')->with('success', 'Permohonan berhasil dihapus.');
     }
 
+    // ============================================================
+    // TAHAPAN DETAIL METHODS
+    // ============================================================
+
+    public function tahapanPermohonan(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'createdBy',
+            'permohonanDokumen.masterKelengkapan',
+            'permohonanDokumen.verifiedBy'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.permohonan', compact('permohonan'));
+    }
+
+    public function tahapanVerifikasi(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'permohonanDokumen.masterKelengkapan',
+            'permohonanDokumen.verifiedBy',
+            'perpanjanganWaktu'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.verifikasi', compact('permohonan'));
+    }
+
+    public function tahapanJadwal(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'penetapanJadwal.koordinator.koordinator',
+            'koordinator.koordinator'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.jadwal', compact('permohonan'));
+    }
+
+    public function tahapanPelaksanaan(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'undanganPelaksanaan',
+            'dokumentasiPelaksanaan'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.pelaksanaan', compact('permohonan'));
+    }
+
+    public function tahapanHasil(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'hasilFasilitasi.hasilSistematika.bab',
+            'hasilFasilitasi.hasilUrusan.urusan',
+            'hasilFasilitasi.fasilitator'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.hasil', compact('permohonan'));
+    }
+
+    public function tahapanTindakLanjut(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'tindakLanjut',
+            'suratPenyampaianHasil'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.tindak-lanjut', compact('permohonan'));
+    }
+
+    public function tahapanPenetapan(Permohonan $permohonan)
+    {
+        $this->authorizeView($permohonan);
+        
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'jadwalFasilitasi',
+            'penetapanPerda'
+        ]);
+
+        return view('pages.fasilitasi.tahapan.penetapan', compact('permohonan'));
+    }
+
     private function authorizeView(Permohonan $permohonan)
     {
         $user = Auth::user();
@@ -376,6 +491,15 @@ class PermohonanController extends Controller
             if (!$hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
+        }
+        // Admin, Kaban, Superadmin, dan Auditor bisa lihat semua permohonan
+        elseif ($user->hasAnyRole(['admin_peran', 'kaban', 'superadmin', 'auditor'])) {
+            // Full access - no restriction
+            return;
+        }
+        // Role lain tidak memiliki akses
+        else {
+            abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
         }
     }
 }

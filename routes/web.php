@@ -171,20 +171,33 @@ Route::middleware(['auth'])->group(function () {
     // PERMOHONAN MANAGEMENT
     // ============================================================
     
-    // PermohonanController (Pemohon: CRUD, Verifikator: Read)
-    Route::middleware(['role:pemohon'])->prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
-        Route::get('/create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{permohonan}/edit', 'edit')->name('edit');
-        Route::put('/{permohonan}', 'update')->name('update');
-        Route::delete('/{permohonan}', 'destroy')->name('destroy');
-        Route::post('/{permohonan}/submit', 'submit')->name('submit');
-        Route::get('/{permohonan}/tab', 'showWithTabs')->name('show-tabs');
-    });
-    
-    Route::middleware(['role:pemohon|verifikator'])->prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
+    // PermohonanController (All authenticated users can view, Pemohon can manage)
+    Route::prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
+        // View routes - accessible by all authenticated users
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}', 'show')->name('show');
+        Route::get('/{permohonan}/tab', 'showWithTabs')->name('show-tabs');
+        
+        // Tahapan routes - accessible by all authenticated users
+        Route::prefix('{permohonan}/tahapan')->name('tahapan.')->group(function () {
+            Route::get('/permohonan', 'tahapanPermohonan')->name('permohonan');
+            Route::get('/verifikasi', 'tahapanVerifikasi')->name('verifikasi');
+            Route::get('/jadwal', 'tahapanJadwal')->name('jadwal');
+            Route::get('/pelaksanaan', 'tahapanPelaksanaan')->name('pelaksanaan');
+            Route::get('/hasil', 'tahapanHasil')->name('hasil');
+            Route::get('/tindak-lanjut', 'tahapanTindakLanjut')->name('tindak-lanjut');
+            Route::get('/penetapan', 'tahapanPenetapan')->name('penetapan');
+        });
+        
+        // Management routes - only pemohon
+        Route::middleware(['role:pemohon'])->group(function () {
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{permohonan}/edit', 'edit')->name('edit');
+            Route::put('/{permohonan}', 'update')->name('update');
+            Route::delete('/{permohonan}', 'destroy')->name('destroy');
+            Route::post('/{permohonan}/submit', 'submit')->name('submit');
+        });
     });
 
     // PermohonanDokumenController (Pemohon only)
