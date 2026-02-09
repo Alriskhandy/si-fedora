@@ -83,23 +83,13 @@
             <li class="menu-item {{ request()->routeIs('approval.*') ? 'active' : '' }}">
                 <a href="{{ route('approval.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-check-circle"></i>
-                    <div data-i18n="Approval">Approval Draft Fasilitasi</div>
+                    <div data-i18n="Approval">Hasil Fasilitasi</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('penetapan-jadwal.*') ? 'active' : '' }}">
                 <a href="{{ route('penetapan-jadwal.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-calendar-check"></i>
-                    <div data-i18n="Penetapan Jadwal">Penetapan Jadwal Fasilitasi</div>
-                </a>
-            </li>
-
-            <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Monitoring & Laporan</span>
-            </li>
-            <li class="menu-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
-                    <div data-i18n="Monitoring">Monitoring Progress</div>
+                    <div data-i18n="Penetapan Jadwal">Jadwal Fasilitasi / Evaluasi</div>
                 </a>
             </li>
         @endif

@@ -64,7 +64,7 @@
                             <dd class="col-sm-7">{{ $undangan->pembuat->name }}</dd>
 
                             <dt class="col-sm-5">Tanggal Dibuat</dt>
-                            <dd class="col-sm-7">{{ $undangan->tanggal_dibuat->format('d M Y H:i') }}</dd>
+                            <dd class="col-sm-7">{{ $undangan->created_at->format('d M Y H:i') }}</dd>
 
                             @if ($undangan->tanggal_dikirim)
                                 <dt class="col-sm-5">Tanggal Dikirim</dt>
@@ -82,44 +82,39 @@
                         </dl>
 
                         @if ($undangan->isDraft())
-                            <form method="POST" action="{{ route('undangan-pelaksanaan.send', $permohonan) }}"
-                                onsubmit="return confirm('Kirim undangan ini ke semua penerima?')">
-                                @csrf
-                                <button type="submit" class="btn btn-primary w-100 mt-3">
-                                    <i class="bx bx-send"></i> Kirim Undangan
-                                </button>
-                            </form>
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <i class="bx bx-info-circle"></i> Undangan ini masih dalam status draft.
+                            </div>
                         @endif
                     </div>
                 </div>
             </div>
 
             <div class="col-md-8">
-                <!-- Detail Undangan -->
+                <!-- File Undangan -->
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Detail Undangan</h5>
+                        <h5 class="mb-0">File Undangan</h5>
                         @if ($undangan->file_undangan)
                             <a href="{{ route('undangan-pelaksanaan.download', $permohonan) }}"
-                                class="btn btn-sm btn-info">
+                                class="btn btn-sm btn-primary">
                                 <i class="bx bx-download"></i> Download PDF
                             </a>
                         @endif
                     </div>
                     <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-3">Nomor Undangan</dt>
-                            <dd class="col-sm-9">{{ $undangan->nomor_undangan }}</dd>
-
-                            <dt class="col-sm-3">Perihal</dt>
-                            <dd class="col-sm-9">{{ $undangan->perihal }}</dd>
-
-                            <dt class="col-sm-3">Isi Undangan</dt>
-                            <dd class="col-sm-9">
-                                <div class="border rounded p-3" style="white-space: pre-line;">
-                                    {{ $undangan->isi_undangan }}</div>
-                            </dd>
-                        </dl>
+                        @if ($undangan->file_undangan)
+                            <div class="alert alert-info mb-0">
+                                <i class="bx bx-file-blank"></i>
+                                <strong>File undangan tersedia</strong>
+                                <p class="mb-0 mt-2">Klik tombol "Download PDF" di atas untuk mengunduh file undangan
+                                    lengkap.</p>
+                            </div>
+                        @else
+                            <div class="alert alert-warning mb-0">
+                                <i class="bx bx-error-circle"></i> File undangan belum tersedia
+                            </div>
+                        @endif
 
                         <hr class="my-3">
 

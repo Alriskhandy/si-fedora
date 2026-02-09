@@ -24,6 +24,28 @@
         <div class="row">
             <!-- Informasi Permohonan -->
             <div class="col-lg-4">
+                <!-- Informasi Penetapan -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Informasi Penetapan</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="text-muted small">Ditetapkan Oleh</label>
+                            <p class="mb-0">
+                                <i class='bx bx-user'></i> {{ $penetapan->penetap->name ?? '-' }}
+                            </p>
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label class="text-muted small">Tanggal Penetapan</label>
+                            <p class="mb-0">
+                                <i class='bx bx-calendar'></i> {{ $penetapan->tanggal_penetapan->format('d M Y, H:i') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Informasi Permohonan</h5>
@@ -37,7 +59,8 @@
                         <div class="mb-3">
                             <label class="text-muted small">Jenis Dokumen</label>
                             <p class="mb-0">
-                                <span class="badge bg-primary">{{ strtoupper($permohonan->jenis_dokumen) }}</span>
+                                <span
+                                    class="badge bg-primary">{{ strtoupper($permohonan->jenisDokumen->nama ?? '-') }}</span>
                             </p>
                         </div>
                         <hr>
@@ -45,41 +68,6 @@
                             <label class="text-muted small">Tahun</label>
                             <p class="fw-bold mb-0">{{ $permohonan->tahun }}</p>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Status Jadwal -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Status Jadwal</h5>
-                    </div>
-                    <div class="card-body">
-                        @if ($penetapan->isBelumMulai())
-                            <div class="alert alert-info mb-0">
-                                <i class='bx bx-time-five'></i>
-                                <strong>Belum Dimulai</strong>
-                                <p class="mb-0 small mt-2">
-                                    Fasilitasi akan dimulai {{ $penetapan->tanggal_mulai->diffForHumans() }}
-                                </p>
-                            </div>
-                        @elseif($penetapan->isAktif())
-                            <div class="alert alert-success mb-0">
-                                <i class='bx bx-check-circle'></i>
-                                <strong>Sedang Berlangsung</strong>
-                                <p class="mb-0 small mt-2">
-                                    Fasilitasi sedang berlangsung dan akan selesai
-                                    {{ $penetapan->tanggal_selesai->diffForHumans() }}
-                                </p>
-                            </div>
-                        @else
-                            <div class="alert alert-secondary mb-0">
-                                <i class='bx bx-calendar-check'></i>
-                                <strong>Sudah Selesai</strong>
-                                <p class="mb-0 small mt-2">
-                                    Fasilitasi telah selesai {{ $penetapan->tanggal_selesai->diffForHumans() }}
-                                </p>
-                            </div>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -95,7 +83,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="text-muted small">Tanggal Mulai</label>
                                 <h5 class="mb-0">
                                     <i class='bx bx-calendar-event text-primary'></i>
@@ -103,7 +91,7 @@
                                 </h5>
                                 <small class="text-muted">{{ $penetapan->tanggal_mulai->format('l') }}</small>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="text-muted small">Tanggal Selesai</label>
                                 <h5 class="mb-0">
                                     <i class='bx bx-calendar-check text-success'></i>
@@ -111,15 +99,13 @@
                                 </h5>
                                 <small class="text-muted">{{ $penetapan->tanggal_selesai->format('l') }}</small>
                             </div>
-                        </div>
-
-                        <div class="alert alert-light">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-time text-primary fs-4 me-3'></i>
-                                <div>
-                                    <strong>Durasi Fasilitasi</strong>
-                                    <p class="mb-0">{{ $penetapan->durasi_hari }} hari</p>
-                                </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Durasi Fasilitasi</label>
+                                <h5 class="mb-0">
+                                    <i class='bx bx-time text-primary'></i>
+                                    {{ $penetapan->durasi_hari }} hari
+                                </h5>
+                                <small class="text-muted">{{ $penetapan->durasi_hari }} hari</small>
                             </div>
                         </div>
 
@@ -150,56 +136,8 @@
                                 </div>
                             </div>
                         @endif
-
-                        @if ($penetapan->jadwalFasilitasi)
-                            <hr>
-                            <div class="mb-3">
-                                <label class="text-muted small">Referensi Jadwal</label>
-                                <p class="mb-0">
-                                    <span class="badge bg-label-primary">
-                                        Menggunakan Jadwal Fasilitasi #{{ $penetapan->jadwal_fasilitasi_id }}
-                                    </span>
-                                </p>
-                            </div>
-                        @endif
                     </div>
                 </div>
-
-                <!-- Informasi Penetapan -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Informasi Penetapan</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="text-muted small">Ditetapkan Oleh</label>
-                            <p class="mb-0">
-                                <i class='bx bx-user'></i> {{ $penetapan->penetap->name ?? '-' }}
-                            </p>
-                        </div>
-                        <hr>
-                        <div class="mb-3">
-                            <label class="text-muted small">Tanggal Penetapan</label>
-                            <p class="mb-0">
-                                <i class='bx bx-calendar'></i> {{ $penetapan->tanggal_penetapan->format('d M Y, H:i') }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Catatan -->
-                @if ($penetapan->catatan)
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Catatan</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="p-3 bg-light rounded">
-                                {!! nl2br(e($penetapan->catatan)) !!}
-                            </div>
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
     </div>

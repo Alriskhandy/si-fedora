@@ -4,30 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class UndanganPelaksanaan extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'undangan_pelaksanaan';
 
     protected $fillable = [
         'permohonan_id',
         'penetapan_jadwal_id',
-        'nomor_undangan',
-        'perihal',
-        'isi_undangan',
         'file_undangan',
         'status',
         'dibuat_oleh',
-        'tanggal_dibuat',
         'tanggal_dikirim',
     ];
 
     protected $casts = [
-        'tanggal_dibuat' => 'datetime',
         'tanggal_dikirim' => 'datetime',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['file_undangan', 'status', 'tanggal_dikirim'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
 
     // Relasi
     public function permohonan()

@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-    /* SweetAlert2 z-index fix */
+    /* SweetAlert2 z-index fix */x
     .swal2-container {
         z-index: 9999 !important;
     }

@@ -509,7 +509,7 @@ class PermohonanController extends Controller
             'kabupatenKota',
             'jenisDokumen',
             'jadwalFasilitasi',
-            'penetapanJadwal.koordinator.koordinator',
+            'penetapanJadwal',
             'koordinator.koordinator'
         ]);
 

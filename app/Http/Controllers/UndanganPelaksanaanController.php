@@ -6,6 +6,7 @@ use App\Models\Permohonan;
 use App\Models\UndanganPelaksanaan;
 use App\Models\UndanganPenerima;
 use App\Models\User;
+use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,7 +47,7 @@ class UndanganPelaksanaanController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('undangan-pelaksanaan.index', compact('permohonan'));
+        return view('pages.undangan-pelaksanaan.index', compact('permohonan'));
     }
 
     /**
@@ -54,91 +55,21 @@ class UndanganPelaksanaanController extends Controller
      */
     public function create(Permohonan $permohonan)
     {
-        // Cek apakah sudah ada undangan
         if ($permohonan->undanganPelaksanaan) {
             return redirect()->route('undangan-pelaksanaan.show', $permohonan)
                 ->with('info', 'Undangan pelaksanaan sudah dibuat sebelumnya.');
         }
 
-        // Cek apakah sudah ada penetapan jadwal
         if (!$permohonan->penetapanJadwal) {
             return redirect()->route('undangan-pelaksanaan.index')
                 ->with('error', 'Jadwal fasilitasi belum ditetapkan.');
         }
 
-        // Ambil tim yang di-assign untuk kabupaten/kota ini berdasarkan user_kabkota_assignments
-        $kabkotaId = $permohonan->kab_kota_id;
-        $tahun = $permohonan->tahun;
+        $timData = $this->getTimAssignments($permohonan);
 
-        // Verifikator yang di-assign ke kabupaten/kota ini
-        $verifikatorList = User::whereHas('kabkotaAssignments', function ($q) use ($kabkotaId, $tahun) {
-            $q->where('kabupaten_kota_id', $kabkotaId)
-              ->where('role_type', 'verifikator')
-              ->where('tahun', $tahun)
-              ->where('is_active', true);
-        })->with(['kabkotaAssignments' => function ($q) use ($kabkotaId, $tahun) {
-            $q->where('kabupaten_kota_id', $kabkotaId)
-              ->where('role_type', 'verifikator')
-              ->where('tahun', $tahun);
-        }])->get();
-
-        // Fasilitator yang di-assign ke kabupaten/kota ini
-        $fasilitatorList = User::whereHas('kabkotaAssignments', function ($q) use ($kabkotaId, $tahun) {
-            $q->where('kabupaten_kota_id', $kabkotaId)
-              ->where('role_type', 'fasilitator')
-              ->where('tahun', $tahun)
-              ->where('is_active', true);
-        })->with(['kabkotaAssignments' => function ($q) use ($kabkotaId, $tahun) {
-            $q->where('kabupaten_kota_id', $kabkotaId)
-              ->where('role_type', 'fasilitator')
-              ->where('tahun', $tahun);
-        }])->get();
-
-        // Koordinator yang di-assign ke kabupaten/kota ini (jika ada)
-        $koordinatorList = User::whereHas('kabkotaAssignments', function ($q) use ($kabkotaId, $tahun) {
-            $q->where('kabupaten_kota_id', $kabkotaId)
-              ->where('role_type', 'koordinator')
-              ->where('tahun', $tahun)
-              ->where('is_active', true);
-        })->with(['kabkotaAssignments' => function ($q) use ($kabkotaId, $tahun) {
-            $q->where('kabupaten_kota_id', $kabkotaId)
-              ->where('role_type', 'koordinator')
-              ->where('tahun', $tahun);
-        }])->get();
-
-        // Pemohon dari kabupaten/kota ini
-        $pemohonList = User::whereHas('roles', function ($q) {
-            $q->where('name', 'pemohon');
-        })->whereHas('kabupatenKota', function ($q) use ($permohonan) {
-            $q->where('id', $permohonan->kab_kota_id);
-        })->get();
-
-        // Auto-select semua tim yang di-assign (akan di-check otomatis di form)
-        $autoSelectedPenerima = collect()
-            ->merge($verifikatorList->pluck('id'))
-            ->merge($fasilitatorList->pluck('id'))
-            ->merge($koordinatorList->pluck('id'))
-            ->merge($pemohonList->pluck('id'))
-            ->unique()
-            ->toArray();
-
-        // Generate nomor undangan
-        $tahun = date('Y');
-        $bulan = date('m');
-        $lastUndangan = UndanganPelaksanaan::whereYear('created_at', $tahun)
-            ->whereMonth('created_at', $bulan)
-            ->count();
-        $nomorUrut = str_pad($lastUndangan + 1, 3, '0', STR_PAD_LEFT);
-        $nomorUndangan = "UND-{$nomorUrut}/BPKAD/{$bulan}/{$tahun}";
-
-        return view('undangan-pelaksanaan.create', compact(
-            'permohonan', 
-            'verifikatorList', 
-            'fasilitatorList', 
-            'koordinatorList',
-            'pemohonList', 
-            'nomorUndangan',
-            'autoSelectedPenerima'
+        return view('pages.undangan-pelaksanaan.create', array_merge(
+            ['permohonan' => $permohonan],
+            $timData
         ));
     }
 
@@ -148,57 +79,40 @@ class UndanganPelaksanaanController extends Controller
     public function store(Request $request, Permohonan $permohonan)
     {
         $request->validate([
-            'nomor_undangan' => 'required|string|unique:undangan_pelaksanaan,nomor_undangan',
-            'perihal' => 'required|string',
-            'isi_undangan' => 'required|string',
-            'file_undangan' => 'nullable|file|mimes:pdf|max:2048',
+            'file_undangan' => 'required|file|mimes:pdf|max:2048',
             'penerima' => 'required|array|min:1',
             'penerima.*' => 'required|exists:users,id',
         ]);
 
+        // Load relasi yang diperlukan
+        $permohonan->load(['kabupatenKota', 'jenisDokumen', 'penetapanJadwal']);
+
         try {
             DB::beginTransaction();
 
-            $filePath = null;
-            if ($request->hasFile('file_undangan')) {
-                $filePath = $request->file('file_undangan')->store('undangan', 'public');
-            }
+            $filePath = $request->hasFile('file_undangan')
+                ? $request->file('file_undangan')->store('undangan', 'public')
+                : null;
 
-            // Buat undangan
             $undangan = UndanganPelaksanaan::create([
                 'permohonan_id' => $permohonan->id,
                 'penetapan_jadwal_id' => $permohonan->penetapanJadwal->id,
-                'nomor_undangan' => $request->nomor_undangan,
-                'perihal' => $request->perihal,
-                'isi_undangan' => $request->isi_undangan,
                 'file_undangan' => $filePath,
-                'status' => 'draft',
+                'status' => 'terkirim',
                 'dibuat_oleh' => Auth::id(),
-                'tanggal_dibuat' => now(),
+                'tanggal_dikirim' => now(),
             ]);
 
-            // Tambahkan penerima
-            foreach ($request->penerima as $userId) {
-                $user = User::find($userId);
-                $jenisPenerima = 'pemohon'; // default
-
-                if ($user->hasRole('verifikator')) {
-                    $jenisPenerima = 'verifikator';
-                } elseif ($user->hasRole('fasilitator')) {
-                    $jenisPenerima = 'fasilitator';
-                }
-
-                UndanganPenerima::create([
-                    'undangan_id' => $undangan->id,
-                    'user_id' => $userId,
-                    'jenis_penerima' => $jenisPenerima,
-                ]);
-            }
+            $this->attachPenerima($undangan, $request->penerima);
+            $this->updateTahapan($permohonan);
 
             DB::commit();
 
+            $this->logActivity($undangan, $permohonan, count($request->penerima));
+            $this->sendNotifications($undangan, $permohonan, $request->penerima);
+
             return redirect()->route('undangan-pelaksanaan.show', $permohonan)
-                ->with('success', 'Undangan pelaksanaan berhasil dibuat.');
+                ->with('success', 'Undangan pelaksanaan berhasil dibuat dan dikirim.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error membuat undangan: ' . $e->getMessage());
@@ -220,62 +134,7 @@ class UndanganPelaksanaanController extends Controller
 
         $undangan->load('penerima.user');
 
-        return view('undangan-pelaksanaan.show', compact('permohonan', 'undangan'));
-    }
-
-    /**
-     * Kirim undangan
-     */
-    public function send(Permohonan $permohonan)
-    {
-        $undangan = $permohonan->undanganPelaksanaan;
-
-        if (!$undangan) {
-            return back()->with('error', 'Undangan tidak ditemukan.');
-        }
-
-        if ($undangan->isTerkirim()) {
-            return back()->with('info', 'Undangan sudah dikirim sebelumnya.');
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $undangan->update([
-                'status' => 'terkirim',
-                'tanggal_dikirim' => now(),
-            ]);
-
-            // Update tahapan permohonan (Tahap 7: Persiapan Pelaksanaan = selesai)
-            try {
-                $tahapanPersiapan = \App\Models\MasterTahapan::where('nama_tahapan', 'Persiapan Pelaksanaan')->first();
-
-                if ($tahapanPersiapan) {
-                    \App\Models\PermohonanTahapan::updateOrCreate(
-                        [
-                            'permohonan_id' => $permohonan->id,
-                            'tahapan_id' => $tahapanPersiapan->id
-                        ],
-                        [
-                            'status' => 'selesai',
-                            'tanggal_selesai' => now(),
-                            'keterangan' => 'Undangan pelaksanaan telah dikirim'
-                        ]
-                    );
-                }
-            } catch (\Exception $e) {
-                Log::warning('Gagal update tahapan persiapan: ' . $e->getMessage());
-            }
-
-            DB::commit();
-
-            // TODO: Kirim notifikasi email/push notification ke penerima
-
-            return back()->with('success', 'Undangan berhasil dikirim ke semua penerima.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal mengirim undangan: ' . $e->getMessage());
-        }
+        return view('pages.undangan-pelaksanaan.show', compact('permohonan', 'undangan'));
     }
 
     /**
@@ -288,6 +147,17 @@ class UndanganPelaksanaanController extends Controller
         if (!$undangan || !$undangan->file_undangan) {
             return back()->with('error', 'File undangan tidak ditemukan.');
         }
+
+        // Log activity
+        activity()
+            ->performedOn($undangan)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'permohonan_id' => $permohonan->id,
+                'kabupaten_kota' => $permohonan->kabupatenKota->nama,
+                'file' => $undangan->file_undangan,
+            ])
+            ->log('Download file undangan pelaksanaan');
 
         return Storage::disk('public')->download($undangan->file_undangan);
     }
@@ -311,7 +181,7 @@ class UndanganPelaksanaanController extends Controller
 
         $undanganList = $query->latest()->paginate(10);
 
-        return view('undangan-pelaksanaan.my-undangan', compact('undanganList'));
+        return view('pages.undangan-pelaksanaan.my-undangan', compact('undanganList'));
     }
 
     /**
@@ -323,11 +193,171 @@ class UndanganPelaksanaanController extends Controller
             ->where('user_id', Auth::id())
             ->findOrFail($id);
 
-        // Mark as read
         if (!$undanganPenerima->dibaca) {
             $undanganPenerima->markAsRead();
         }
 
-        return view('undangan-pelaksanaan.view', compact('undanganPenerima'));
+        return view('pages.undangan-pelaksanaan.view', compact('undanganPenerima'));
+    }
+
+    /**
+     * Get tim assignments untuk kabupaten/kota
+     */
+    private function getTimAssignments(Permohonan $permohonan): array
+    {
+        $kabkotaId = $permohonan->kab_kota_id;
+        $tahun = $permohonan->tahun;
+
+        $assignmentQuery = function ($roleType) use ($kabkotaId, $tahun) {
+            return function ($q) use ($kabkotaId, $tahun, $roleType) {
+                $q->where('kabupaten_kota_id', $kabkotaId)
+                  ->where('role_type', $roleType)
+                  ->where('tahun', $tahun)
+                  ->where('is_active', true);
+            };
+        };
+
+        $verifikatorList = User::whereHas('kabkotaAssignments', $assignmentQuery('verifikator'))
+            ->with(['kabkotaAssignments' => $assignmentQuery('verifikator')])
+            ->get();
+
+        $fasilitatorList = User::whereHas('kabkotaAssignments', $assignmentQuery('fasilitator'))
+            ->with(['kabkotaAssignments' => $assignmentQuery('fasilitator')])
+            ->get();
+
+        $koordinatorList = User::whereHas('kabkotaAssignments', $assignmentQuery('koordinator'))
+            ->with(['kabkotaAssignments' => $assignmentQuery('koordinator')])
+            ->get();
+
+        $pemohonList = User::whereHas('roles', fn($q) => $q->where('name', 'pemohon'))
+            ->whereHas('kabupatenKota', fn($q) => $q->where('id', $permohonan->kab_kota_id))
+            ->get();
+
+        $autoSelectedPenerima = collect()
+            ->merge($verifikatorList->pluck('id'))
+            ->merge($fasilitatorList->pluck('id'))
+            ->merge($koordinatorList->pluck('id'))
+            ->merge($pemohonList->pluck('id'))
+            ->unique()
+            ->toArray();
+
+        return compact('verifikatorList', 'fasilitatorList', 'koordinatorList', 'pemohonList', 'autoSelectedPenerima');
+    }
+
+    /**
+     * Attach penerima ke undangan
+     */
+    private function attachPenerima(UndanganPelaksanaan $undangan, array $penerimaIds): void
+    {
+        foreach ($penerimaIds as $userId) {
+            $user = User::find($userId);
+            if (!$user) continue;
+
+            $jenisPenerima = 'pemohon';
+            if ($user->hasRole('verifikator')) {
+                $jenisPenerima = 'verifikator';
+            } elseif ($user->hasRole('fasilitator')) {
+                $jenisPenerima = 'fasilitator';
+            }
+
+            UndanganPenerima::create([
+                'undangan_id' => $undangan->id,
+                'user_id' => $userId,
+                'jenis_penerima' => $jenisPenerima,
+            ]);
+        }
+    }
+
+    /**
+     * Update tahapan permohonan
+     */
+    private function updateTahapan(Permohonan $permohonan): void
+    {
+        // Set tahapan Penetapan Jadwal menjadi selesai
+        $tahapanPenetapanJadwal = \App\Models\MasterTahapan::where('nama_tahapan', 'Penetapan Jadwal')->first();
+        
+        if (!$tahapanPenetapanJadwal) {
+            Log::warning('Tahapan Penetapan Jadwal tidak ditemukan di master_tahapan');
+        } else {
+            $updated = \App\Models\PermohonanTahapan::updateOrCreate(
+                ['permohonan_id' => $permohonan->id, 'tahapan_id' => $tahapanPenetapanJadwal->id],
+                [
+                    'status' => 'selesai',
+                    'tanggal_selesai' => now(),
+                    'keterangan' => 'Undangan pelaksanaan telah dibuat dan dikirim'
+                ]
+            );
+            Log::info('Tahapan Penetapan Jadwal updated', ['permohonan_id' => $permohonan->id, 'updated' => $updated->wasRecentlyCreated ? 'created' : 'updated']);
+        }
+
+        // Set tahapan Pelaksanaan Fasilitasi menjadi proses
+        $tahapanPelaksanaan = \App\Models\MasterTahapan::where('nama_tahapan', 'Pelaksanaan')->first();
+        
+        if (!$tahapanPelaksanaan) {
+            Log::warning('Tahapan Pelaksanaan Fasilitasi tidak ditemukan di master_tahapan');
+        } else {
+            $updated = \App\Models\PermohonanTahapan::updateOrCreate(
+                ['permohonan_id' => $permohonan->id, 'tahapan_id' => $tahapanPelaksanaan->id],
+                [
+                    'status' => 'proses',
+                    'tanggal_mulai' => now(),
+                    'keterangan' => 'Menunggu pelaksanaan kegiatan fasilitasi'
+                ]
+            );
+            Log::info('Tahapan Pelaksanaan Fasilitasi updated', ['permohonan_id' => $permohonan->id, 'updated' => $updated->wasRecentlyCreated ? 'created' : 'updated']);
+        }
+    }
+
+    /**
+     * Log activity
+     */
+    private function logActivity(UndanganPelaksanaan $undangan, Permohonan $permohonan, int $jumlahPenerima): void
+    {
+        activity()
+            ->performedOn($undangan)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'permohonan_id' => $permohonan->id,
+                'kabupaten_kota' => $permohonan->kabupatenKota->nama,
+                'jumlah_penerima' => $jumlahPenerima,
+            ])
+            ->log('Membuat dan mengirim undangan pelaksanaan');
+    }
+
+    /**
+     * Kirim notifikasi ke penerima
+     */
+    private function sendNotifications(UndanganPelaksanaan $undangan, Permohonan $permohonan, array $penerimaIds): void
+    {
+        $jadwal = $permohonan->penetapanJadwal;
+
+        foreach ($penerimaIds as $userId) {
+            $user = User::find($userId);
+            if (!$user) continue;
+
+            try {
+                Notifikasi::create([
+                    'user_id' => $user->id,
+                    'title' => 'Undangan Pelaksanaan Fasilitasi',
+                    'message' => sprintf(
+                        'Anda diundang untuk mengikuti kegiatan Fasilitasi Penyusunan RKPD %s - %s tahun %s. Pelaksanaan: %s s/d %s%s. Silakan download file undangan lengkap.',
+                        $permohonan->kabupatenKota->nama ?? 'N/A',
+                        $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
+                        $permohonan->tahun,
+                        $jadwal->tanggal_mulai->format('d M Y'),
+                        $jadwal->tanggal_selesai->format('d M Y'),
+                        $jadwal->lokasi ? ' di ' . $jadwal->lokasi : ''
+                    ),
+                    'type' => 'info',
+                    'action_url' => route('my-undangan.view', $undangan->penerima()->where('user_id', $user->id)->first()->id ?? $undangan->id),
+                    'notifiable_type' => UndanganPelaksanaan::class,
+                    'notifiable_id' => $undangan->id,
+                ]);
+
+                Log::info('Notifikasi undangan dikirim', ['user_id' => $user->id, 'user_name' => $user->name]);
+            } catch (\Exception $e) {
+                Log::error('Gagal mengirim notifikasi', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            }
+        }
     }
 }

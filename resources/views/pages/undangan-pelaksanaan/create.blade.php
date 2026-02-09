@@ -79,42 +79,10 @@
                             @csrf
 
                             <div class="mb-3">
-                                <label class="form-label" for="nomor_undangan">Nomor Undangan <span
+                                <label class="form-label" for="file_undangan">File Undangan (PDF) <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nomor_undangan" name="nomor_undangan"
-                                    value="{{ old('nomor_undangan', $nomorUndangan) }}" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label" for="perihal">Perihal <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="perihal" name="perihal"
-                                    value="{{ old('perihal', 'Undangan Pelaksanaan Fasilitasi Dokumen Perencanaan') }}"
-                                    required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label" for="isi_undangan">Isi Undangan <span
-                                        class="text-danger">*</span></label>
-                                <textarea class="form-control" id="isi_undangan" name="isi_undangan" rows="8" required>{{ old(
-                                    'isi_undangan',
-                                    "Dengan hormat,
-                                
-                                Bersama ini kami mengundang Saudara/i untuk menghadiri pelaksanaan fasilitasi dokumen perencanaan untuk {$permohonan->kabupatenKota->nama}.
-                                
-                                Waktu dan Tempat:
-                                Tanggal: {$permohonan->penetapanJadwal->tanggal_mulai->format(
-                                        'd F Y',
-                                    )} - {$permohonan->penetapanJadwal->tanggal_selesai->format('d F Y')}
-                                Lokasi: {$permohonan->penetapanJadwal->lokasi}
-                                
-                                Demikian undangan ini kami sampaikan. Atas perhatian dan kehadirannya kami ucapkan terima kasih.",
-                                ) }}</textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label" for="file_undangan">File Undangan (PDF) (Opsional)</label>
                                 <input type="file" class="form-control" id="file_undangan" name="file_undangan"
-                                    accept=".pdf">
+                                    accept=".pdf" required>
                                 <small class="text-muted">Format: PDF, Maksimal 2MB</small>
                             </div>
 
@@ -236,7 +204,7 @@
 
                             <div class="mt-4">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bx bx-save"></i> Simpan Undangan
+                                    <i class="bx bx-send"></i> Kirim Undangan
                                 </button>
                                 <a href="{{ route('undangan-pelaksanaan.index') }}" class="btn btn-outline-secondary">
                                     Batal

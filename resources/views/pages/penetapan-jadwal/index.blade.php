@@ -7,7 +7,7 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h4 class="fw-bold mb-1">Penetapan Jadwal Fasilitasi</h4>
+                <h4 class="fw-bold mb-1">Penetapan Jadwal Fasilitasi / Evaluasi</h4>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
@@ -77,7 +77,7 @@
                                         </td>
                                         <td>
                                             <span class="badge bg-primary">
-                                                {{ strtoupper($item->jenis_dokumen) }}
+                                                {{ strtoupper($item->jenisDokumen->nama ?? '-') }}
                                             </span>
                                         </td>
                                         <td>{{ $item->tahun }}</td>
@@ -95,11 +95,6 @@
                                                 <span class="badge bg-success">
                                                     <i class='bx bx-calendar-check'></i> Sudah Ditetapkan
                                                 </span>
-                                                <br>
-                                                <small class="text-muted">
-                                                    {{ $item->penetapanJadwal->tanggal_mulai->format('d M Y') }} - 
-                                                    {{ $item->penetapanJadwal->tanggal_selesai->format('d M Y') }}
-                                                </small>
                                             @else
                                                 <span class="badge bg-warning">
                                                     <i class='bx bx-time'></i> Belum Ditetapkan

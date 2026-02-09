@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Permohonan;
 use App\Models\PenetapanJadwalFasilitasi;
 use App\Models\JadwalFasilitasi;
+use App\Models\Notifikasi;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +19,7 @@ class PenetapanJadwalController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Permohonan::with(['kabupatenKota', 'laporanVerifikasi', 'penetapanJadwal'])
+        $query = Permohonan::with(['kabupatenKota', 'laporanVerifikasi', 'penetapanJadwal', 'jenisDokumen'])
             ->whereHas('laporanVerifikasi', function ($q) {
                 $q->where('status_kelengkapan', 'lengkap');
             });
@@ -40,7 +42,7 @@ class PenetapanJadwalController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('penetapan-jadwal.index', compact('permohonan'));
+        return view('pages.penetapan-jadwal.index', compact('permohonan'));
     }
 
     /**
@@ -60,7 +62,7 @@ class PenetapanJadwalController extends Controller
             ->orderBy('tanggal_mulai')
             ->get();
 
-        return view('penetapan-jadwal.create', compact('permohonan', 'jadwalTersedia'));
+        return view('pages.penetapan-jadwal.create', compact('permohonan', 'jadwalTersedia'));
     }
 
     /**
@@ -75,8 +77,10 @@ class PenetapanJadwalController extends Controller
             'lokasi' => 'nullable|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'catatan' => 'nullable|string',
         ]);
+
+        // Load relasi untuk activity log
+        $permohonan->load(['kabupatenKota', 'jenisDokumen']);
 
         try {
             DB::beginTransaction();
@@ -90,12 +94,11 @@ class PenetapanJadwalController extends Controller
                 'lokasi' => $request->lokasi,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
-                'catatan' => $request->catatan,
                 'ditetapkan_oleh' => Auth::id(),
                 'tanggal_penetapan' => now(),
             ]);
 
-            // Update tahapan permohonan (opsional, skip jika error)
+            // Update tahapan permohonan - tetap status 'proses'
             try {
                 $tahapanPenetapan = \App\Models\MasterTahapan::where('nama_tahapan', 'Penetapan Jadwal')->first();
                 if ($tahapanPenetapan) {
@@ -105,32 +108,67 @@ class PenetapanJadwalController extends Controller
                             'tahapan_id' => $tahapanPenetapan->id
                         ],
                         [
-                            'status' => 'selesai',
-                            'tgl_mulai' => now(),
-                            'tgl_selesai' => now(),
-                            'catatan' => 'Jadwal fasilitasi telah ditetapkan',
-                        ]
-                    );
-                }
-
-                // Mulai tahapan pelaksanaan
-                $tahapanPelaksanaan = \App\Models\MasterTahapan::where('nama_tahapan', 'Pelaksanaan')->first();
-                if ($tahapanPelaksanaan) {
-                    $permohonan->tahapan()->updateOrCreate(
-                        [
-                            'permohonan_id' => $permohonan->id,
-                            'tahapan_id' => $tahapanPelaksanaan->id
-                        ],
-                        [
                             'status' => 'proses',
-                            'tgl_mulai' => $request->tanggal_mulai,
-                            'catatan' => 'Menunggu pelaksanaan fasilitasi',
+                            'catatan' => sprintf(
+                                'Jadwal fasilitasi telah ditetapkan (%s s/d %s). Menunggu pembuatan undangan pelaksanaan.',
+                                \Carbon\Carbon::parse($request->tanggal_mulai)->format('d M Y'),
+                                \Carbon\Carbon::parse($request->tanggal_selesai)->format('d M Y')
+                            ),
+                            'updated_by' => Auth::id(),
                         ]
                     );
                 }
             } catch (\Exception $e) {
                 // Log error tapi tetap lanjutkan
                 Log::warning('Gagal update tahapan: ' . $e->getMessage());
+            }
+
+            // Activity log
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'penetapan_id' => $penetapan->id,
+                    'tanggal_mulai' => $request->tanggal_mulai,
+                    'tanggal_selesai' => $request->tanggal_selesai,
+                    'lokasi' => $request->lokasi,
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'kabupaten_kota' => $permohonan->kabupatenKota->nama ?? null,
+                    'jenis_dokumen' => $permohonan->jenisDokumen->nama_dokumen ?? null,
+                    'tahun' => $permohonan->tahun,
+                ])
+                ->log('Jadwal fasilitasi ditetapkan oleh Kaban');
+
+            Log::info('Jadwal fasilitasi ditetapkan', [
+                'permohonan_id' => $permohonan->id,
+                'penetapan_id' => $penetapan->id,
+                'ditetapkan_oleh' => auth()->user()->name,
+                'tanggal_mulai' => $request->tanggal_mulai,
+                'tanggal_selesai' => $request->tanggal_selesai,
+            ]);
+
+            // Notifikasi ke admin untuk membuat undangan pelaksanaan
+            $admins = User::role('admin_peran')->get();
+            
+            foreach ($admins as $admin) {
+                Notifikasi::create([
+                    'user_id' => $admin->id,
+                    'title' => 'Jadwal Ditetapkan - Buat Undangan Pelaksanaan',
+                    'message' => sprintf(
+                        'Jadwal fasilitasi untuk %s - %s tahun %s telah ditetapkan oleh Kaban. Pelaksanaan: %s s/d %s%s. Silakan buat undangan pelaksanaan.',
+                        $permohonan->kabupatenKota->nama ?? 'N/A',
+                        $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
+                        $permohonan->tahun,
+                        \Carbon\Carbon::parse($request->tanggal_mulai)->format('d M Y'),
+                        \Carbon\Carbon::parse($request->tanggal_selesai)->format('d M Y'),
+                        $request->lokasi ? ' di ' . $request->lokasi : ''
+                    ),
+                    'type' => 'info',
+                    'action_url' => route('permohonan.show', $permohonan),
+                    'notifiable_type' => Permohonan::class,
+                    'notifiable_id' => $permohonan->id,
+                ]);
             }
 
             DB::commit();
@@ -156,6 +194,6 @@ class PenetapanJadwalController extends Controller
                 ->with('info', 'Jadwal fasilitasi belum ditetapkan.');
         }
 
-        return view('penetapan-jadwal.show', compact('permohonan', 'penetapan'));
+        return view('pages.penetapan-jadwal.show', compact('permohonan', 'penetapan'));
     }
 }

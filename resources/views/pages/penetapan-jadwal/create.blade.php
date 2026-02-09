@@ -37,7 +37,8 @@
                         <div class="mb-3">
                             <label class="text-muted small">Jenis Dokumen</label>
                             <p class="mb-0">
-                                <span class="badge bg-primary">{{ strtoupper($permohonan->jenis_dokumen) }}</span>
+                                <span
+                                    class="badge bg-primary">{{ strtoupper($permohonan->jenisDokumen->nama ?? '-') }}</span>
                             </p>
                         </div>
                         <hr>
@@ -101,8 +102,7 @@
                                             data-mulai="{{ $jadwal->tanggal_mulai->format('Y-m-d') }}"
                                             data-selesai="{{ $jadwal->tanggal_selesai->format('Y-m-d') }}"
                                             {{ old('jadwal_fasilitasi_id') == $jadwal->id ? 'selected' : '' }}>
-                                            {{ $jadwal->tanggal_mulai->format('d M Y') }} -
-                                            {{ $jadwal->tanggal_selesai->format('d M Y') }}
+                                            {{ $jadwal->jenisDokumen->nama ?? '-' }}
                                             @if ($jadwal->keterangan)
                                                 ({{ $jadwal->keterangan }})
                                             @endif
@@ -217,17 +217,6 @@
                                 </div>
                             </div>
 
-                            <!-- Catatan -->
-                            <div class="mb-4">
-                                <label for="catatan" class="form-label">
-                                    Catatan Tambahan (Opsional)
-                                </label>
-                                <textarea name="catatan" id="catatan" class="form-control @error('catatan') is-invalid @enderror" rows="4">{{ old('catatan') }}</textarea>
-                                @error('catatan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
                             <!-- Action Buttons -->
                             <div class="d-flex justify-content-between">
                                 <a href="{{ route('penetapan-jadwal.index') }}" class="btn btn-secondary">
@@ -255,10 +244,12 @@
         .leaflet-container {
             cursor: crosshair;
         }
+
         .leaflet-control-geocoder {
             border-radius: 4px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
         }
+
         .leaflet-control-geocoder-form input {
             font-size: 14px;
             padding: 5px 10px;
@@ -293,22 +284,22 @@
 
             // Add Search Control (Geocoder)
             const geocoder = L.Control.geocoder({
-                defaultMarkGeocode: false,
-                placeholder: 'Cari lokasi...',
-                errorMessage: 'Lokasi tidak ditemukan',
-                geocoder: L.Control.Geocoder.nominatim({
-                    geocodingQueryParams: {
-                        countrycodes: 'id', // Limit ke Indonesia
-                        'accept-language': 'id'
-                    }
+                    defaultMarkGeocode: false,
+                    placeholder: 'Cari lokasi...',
+                    errorMessage: 'Lokasi tidak ditemukan',
+                    geocoder: L.Control.Geocoder.nominatim({
+                        geocodingQueryParams: {
+                            countrycodes: 'id', // Limit ke Indonesia
+                            'accept-language': 'id'
+                        }
+                    })
                 })
-            })
-            .on('markgeocode', function(e) {
-                const latlng = e.geocode.center;
-                setMarker(latlng.lat, latlng.lng);
-                map.setView(latlng, 16);
-            })
-            .addTo(map);
+                .on('markgeocode', function(e) {
+                    const latlng = e.geocode.center;
+                    setMarker(latlng.lat, latlng.lng);
+                    map.setView(latlng, 16);
+                })
+                .addTo(map);
 
             // Custom icon for marker
             const customIcon = L.icon({

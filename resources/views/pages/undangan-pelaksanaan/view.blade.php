@@ -61,36 +61,39 @@
             </div>
 
             <div class="col-md-8">
-                <!-- Detail Undangan -->
+                <!-- File Undangan -->
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Detail Undangan</h5>
+                        <h5 class="mb-0">File Undangan</h5>
                         @if ($undanganPenerima->undangan->file_undangan)
                             <a href="{{ route('undangan-pelaksanaan.download', $undanganPenerima->undangan->permohonan) }}"
-                                class="btn btn-sm btn-info">
+                                class="btn btn-sm btn-primary">
                                 <i class="bx bx-download"></i> Download PDF
                             </a>
                         @endif
                     </div>
                     <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-3">Nomor Undangan</dt>
-                            <dd class="col-sm-9">{{ $undanganPenerima->undangan->nomor_undangan }}</dd>
+                        @if ($undanganPenerima->undangan->tanggal_dikirim)
+                            <dl class="row mb-3">
+                                <dt class="col-sm-3">Tanggal Dikirim</dt>
+                                <dd class="col-sm-9">
+                                    {{ $undanganPenerima->undangan->tanggal_dikirim->format('d F Y H:i') }}
+                                </dd>
+                            </dl>
+                        @endif
 
-                            <dt class="col-sm-3">Perihal</dt>
-                            <dd class="col-sm-9">{{ $undanganPenerima->undangan->perihal }}</dd>
-
-                            <dt class="col-sm-3">Tanggal Dikirim</dt>
-                            <dd class="col-sm-9">
-                                {{ $undanganPenerima->undangan->tanggal_dikirim ? $undanganPenerima->undangan->tanggal_dikirim->format('d F Y H:i') : '-' }}
-                            </dd>
-
-                            <dt class="col-sm-3">Isi Undangan</dt>
-                            <dd class="col-sm-9">
-                                <div class="border rounded p-3 bg-light" style="white-space: pre-line;">
-                                    {{ $undanganPenerima->undangan->isi_undangan }}</div>
-                            </dd>
-                        </dl>
+                        @if ($undanganPenerima->undangan->file_undangan)
+                            <div class="alert alert-info mb-0">
+                                <i class="bx bx-file-blank"></i>
+                                <strong>File undangan tersedia</strong>
+                                <p class="mb-0 mt-2">Klik tombol "Download PDF" di atas untuk mengunduh file undangan
+                                    lengkap.</p>
+                            </div>
+                        @else
+                            <div class="alert alert-warning mb-0">
+                                <i class="bx bx-error-circle"></i> File undangan belum tersedia
+                            </div>
+                        @endif
                     </div>
                 </div>
 

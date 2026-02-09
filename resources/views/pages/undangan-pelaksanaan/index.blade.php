@@ -24,19 +24,17 @@
             <div class="card-body">
                 <form method="GET" class="mb-3">
                     <div class="row g-3">
-                        <div class="col-md-5">
+                        <div class="col-md-6">
                             <input type="text" name="search" class="form-control" placeholder="Cari Kabupaten/Kota..."
                                 value="{{ request('search') }}">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <select name="status_undangan" class="form-select">
-                                <option value="">Semua Status Undangan</option>
+                                <option value="">Semua Status</option>
                                 <option value="belum_ada" {{ request('status_undangan') == 'belum_ada' ? 'selected' : '' }}>
                                     Belum Ada Undangan</option>
-                                <option value="draft" {{ request('status_undangan') == 'draft' ? 'selected' : '' }}>Draft
-                                </option>
                                 <option value="terkirim" {{ request('status_undangan') == 'terkirim' ? 'selected' : '' }}>
-                                    Terkirim</option>
+                                    Sudah Terkirim</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -55,10 +53,11 @@
                         <thead>
                             <tr>
                                 <th>No</th>
+                                <th>Jenis Dokumen</th>
                                 <th>Kabupaten/Kota</th>
-                                <th>Nomor Permohonan</th>
-                                <th>Tanggal Fasilitasi</th>
-                                <th>Status Undangan</th>
+                                <th>Jadwal Fasilitasi</th>
+                                <th>Status</th>
+                                <th>Penerima</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -68,26 +67,39 @@
                                     <td>{{ $loop->iteration + ($permohonan->currentPage() - 1) * $permohonan->perPage() }}
                                     </td>
                                     <td>
-                                        <strong>{{ $item->kabupatenKota->nama }}</strong>
+                                        <strong>{{ $item->jenisDokumen->nama ?? '-' }}</strong><br>
                                     </td>
-                                    <td>{{ $item->no_permohonan }}</td>
+                                    <td>
+                                        <strong>{{ $item->kabupatenKota->nama }}</strong><br>
+                                    </td>
                                     <td>
                                         @if ($item->penetapanJadwal)
-                                            {{ $item->penetapanJadwal->tanggal_mulai->format('d M Y') }} -
-                                            {{ $item->penetapanJadwal->tanggal_selesai->format('d M Y') }}
+                                            <i class="bx bx-calendar text-primary"></i>
+                                            {{ $item->penetapanJadwal->tanggal_mulai->format('d M Y') }}<br>
+                                            <small class="text-muted">s/d {{ $item->penetapanJadwal->tanggal_selesai->format('d M Y') }}</small>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>
                                         @if ($item->undanganPelaksanaan)
-                                            @if ($item->undanganPelaksanaan->status == 'draft')
-                                                <span class="badge bg-warning">Draft</span>
-                                            @else
-                                                <span class="badge bg-success">Terkirim</span>
-                                            @endif
+                                            <span class="badge bg-success">
+                                                <i class="bx bx-check-circle"></i> Terkirim
+                                            </span><br>
+                                            <small class="text-muted">{{ $item->undanganPelaksanaan->tanggal_dikirim->format('d M Y') }}</small>
                                         @else
-                                            <span class="badge bg-secondary">Belum Ada</span>
+                                            <span class="badge bg-secondary">
+                                                <i class="bx bx-x-circle"></i> Belum Ada
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($item->undanganPelaksanaan)
+                                            <span class="badge bg-label-info">
+                                                {{ $item->undanganPelaksanaan->jumlah_penerima }} orang
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>
@@ -106,7 +118,10 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">Tidak ada data permohonan</td>
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="bx bx-info-circle bx-lg text-muted"></i>
+                                        <p class="mb-0 mt-2">Tidak ada data permohonan dengan jadwal yang sudah ditetapkan</p>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

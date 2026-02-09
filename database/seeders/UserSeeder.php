@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
 
         // 1. Superadmin
         $superadmin = User::create([
-            'name' => 'Super Administrator',
+            'name' => 'Super Admin',
             'email' => 'superadmin@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
 
         // 2. Kepala Badan
         $kaban = User::create([
-            'name' => 'Kepala Badan PERAN',
+            'name' => 'Kepala Bappeda Malut',
             'email' => 'kaban@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
 
         // 3. Admin PERAN
         $adminPeran = User::create([
-            'name' => 'Admin PERAN',
+            'name' => 'Admin',
             'email' => 'admin@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -60,7 +60,7 @@ class UserSeeder extends Seeder
 
         // 5. Tim Pokja (Fasilitator)
         $pokja1 = User::create([
-            'name' => 'Fasilitator Pokja 1',
+            'name' => 'Fasilitator 1',
             'email' => 'fasilitator1@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -68,7 +68,7 @@ class UserSeeder extends Seeder
         $pokja1->assignRole('fasilitator');
 
         $pokja2 = User::create([
-            'name' => 'Fasilitator Pokja 2',
+            'name' => 'Fasilitator 2',
             'email' => 'fasilitator2@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -77,7 +77,7 @@ class UserSeeder extends Seeder
 
         // 6. User Kota Ternate (Pemohon)
         $ternateUser = User::create([
-            'name' => 'Pemohon Kota Ternate',
+            'name' => 'Kota Ternate',
             'email' => 'ternate@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -87,7 +87,7 @@ class UserSeeder extends Seeder
 
         // 7. User Auditor (Monitoring)
         $auditor = User::create([
-            'name' => 'Auditor Monitoring',
+            'name' => 'Auditor',
             'email' => 'auditor@sifedora.go.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -99,10 +99,10 @@ class UserSeeder extends Seeder
         echo "==========================\n";
         echo "Superadmin: superadmin@sifedora.go.id / password\n";
         echo "Kaban: kaban@sifedora.go.id / password\n";
-        echo "Admin PERAN: admin@sifedora.go.id / password\n";
+        echo "Admin: admin@sifedora.go.id / password\n";
         echo "Verifikator: verifikator1@sifedora.go.id / password\n";
         echo "Fasilitator: fasilitator1@sifedora.go.id / password\n";
-        echo "Pemohon (Ternate): ternate@sifedora.go.id / password\n";
+        echo "Kota Ternate (Pemohon): ternate@sifedora.go.id / password\n";
         echo "Auditor: auditor@sifedora.go.id / password\n";
     }
 }

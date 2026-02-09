@@ -45,8 +45,6 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Nomor Undangan</th>
-                                <th>Perihal</th>
                                 <th>Kabupaten/Kota</th>
                                 <th>Tanggal Fasilitasi</th>
                                 <th>Status</th>
@@ -58,13 +56,6 @@
                                 <tr class="{{ !$item->dibaca ? 'table-active' : '' }}">
                                     <td>{{ $loop->iteration + ($undanganList->currentPage() - 1) * $undanganList->perPage() }}
                                     </td>
-                                    <td>
-                                        <strong>{{ $item->undangan->nomor_undangan }}</strong>
-                                        @if (!$item->dibaca)
-                                            <span class="badge bg-danger ms-1">New</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $item->undangan->perihal }}</td>
                                     <td>{{ $item->undangan->permohonan->kabupatenKota->nama }}</td>
                                     <td>
                                         {{ $item->undangan->penetapanJadwal->tanggal_mulai->format('d M Y') }} -
