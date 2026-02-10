@@ -27,6 +27,7 @@ use App\Http\Controllers\JadwalFasilitasiController;
 use App\Http\Controllers\PenetapanJadwalController;
 use App\Http\Controllers\UndanganPelaksanaanController;
 use App\Http\Controllers\HasilFasilitasiController;
+use App\Http\Controllers\PelaksanaanFasilitasiController;
 use App\Http\Controllers\TimAssignmentController;
 use App\Http\Controllers\AdminPeranController;
 use App\Http\Controllers\SuratPemberitahuanController;
@@ -204,6 +205,18 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:pemohon'])->group(function () {
         Route::resource('permohonan-dokumen', PermohonanDokumenController::class)->parameters(['permohonan-dokumen' => 'permohonanDokumen']);
         Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])->name('permohonan-dokumen.upload');
+    });
+
+    // Dokumen Tahapan Routes (for upload documents at different stages)
+    Route::prefix('permohonan/{permohonan}/dokumen')->name('permohonan.dokumen.')->controller(PelaksanaanFasilitasiController::class)->group(function () {
+        Route::post('/upload-pelaksanaan', 'uploadDokumen')->name('upload-pelaksanaan');
+        Route::get('/{dokumen}/download', 'downloadDokumen')->name('download');
+        Route::delete('/{dokumen}', 'deleteDokumen')->name('delete');
+    });
+
+    // Pelaksanaan Fasilitasi Routes
+    Route::prefix('pelaksanaan-fasilitasi')->name('pelaksanaan-fasilitasi.')->controller(PelaksanaanFasilitasiController::class)->group(function () {
+        Route::post('/{permohonan}/complete', 'completeTahapan')->name('complete')->middleware('role:admin_peran|superadmin');
     });
 
     // AdminPeranController (Admin only - Assignment Tim)

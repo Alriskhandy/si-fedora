@@ -63,7 +63,7 @@
                                         <tr>
                                             <td>{{ $index + $permohonan->firstItem() }}</td>
                                             <td>{{ $item->kabupatenKota->nama ?? '-' }}</td>
-                                            <td><span class="badge bg-primary">{{ strtoupper($item->jenis_dokumen) }}</span>
+                                            <td><span class="badge bg-primary">{{ strtoupper($item->jenisDokumen->name) }}</span>
                                             </td>
                                             <td>{{ $item->tahun }}</td>
                                             <td>

@@ -317,7 +317,7 @@
             @endif
 
             <!-- Undangan Pelaksanaan -->
-            @if ($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->file_undangan)
+            {{-- @if ($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->file_undangan)
                 <div class="card">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">
@@ -413,7 +413,7 @@
                         @endif
                     </div>
                 </div>
-            @endif
+            @endif --}}
         @endif
     </div>
 @endsection

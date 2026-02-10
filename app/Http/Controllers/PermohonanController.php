@@ -519,14 +519,6 @@ class PermohonanController extends Controller
     public function tahapanPelaksanaan(Permohonan $permohonan)
     {
         $this->authorizeView($permohonan);
-        
-        $permohonan->load([
-            'kabupatenKota',
-            'jenisDokumen',
-            'jadwalFasilitasi',
-            'undanganPelaksanaan',
-            'dokumentasiPelaksanaan'
-        ]);
 
         return view('pages.fasilitasi.tahapan.pelaksanaan', compact('permohonan'));
     }

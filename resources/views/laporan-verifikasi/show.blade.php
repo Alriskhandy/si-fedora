@@ -48,7 +48,7 @@
                         <div class="mb-3">
                             <label class="text-muted small">Jenis Dokumen</label>
                             <p class="mb-0">
-                                <span class="badge bg-primary">{{ strtoupper($permohonan->jenis_dokumen) }}</span>
+                                <span class="badge bg-primary">{{ strtoupper($permohonan->jenisDokumen->nama) }}</span>
                             </p>
                         </div>
                         <hr>
