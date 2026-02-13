@@ -131,7 +131,7 @@ class HasilFasilitasiController extends Controller
             ->where('is_active', true)
             ->get();
 
-        $query = Permohonan::with(['kabupatenKota', 'undanganPelaksanaan', 'hasilFasilitasi'])
+        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi'])
             ->where(function ($q) use ($userAssignments) {
                 foreach ($userAssignments as $assignment) {
                     $q->orWhere(function ($subQ) use ($assignment) {
@@ -651,17 +651,11 @@ class HasilFasilitasiController extends Controller
                 ->select('hasil_fasilitasi_urusan.*')
                 ->get();
 
-            // Prepare data for view
-            $data = [
-                'permohonan' => $permohonan,
-                'kabkota' => $permohonan->kabupatenKota->nama,
-                'tahun' => date('Y'),
-                'sistematika' => $sistematika,
-                'urusan' => $urusan
-            ];
+            // Generate HTML content using same service as Word document
+            $htmlContent = $this->documentService->generateWordDocument($permohonan, $sistematika, $urusan);
 
-            // Generate PDF
-            $pdf = PDF::loadView('hasil-fasilitasi.pdf', $data)
+            // Generate PDF from HTML content
+            $pdf = PDF::loadHTML($htmlContent)
                 ->setPaper('a4', 'portrait');
 
             // Save to file

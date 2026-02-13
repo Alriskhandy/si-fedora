@@ -36,11 +36,12 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>No</th>
-                                <th>Kabupaten/Kota</th>
-                                <th>Nomor Permohonan</th>
-                                <th>Tanggal Undangan</th>
-                                <th>Aksi</th>
+                                <th width="5%">No</th>
+                                <th width="25%">Kabupaten/Kota</th>
+                                <th width="25%">Jenis Dokumen</th>
+                                <th width="10%">Tahun</th>
+                                <th width="15%">Status</th>
+                                <th width="20%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="table-border-bottom-0">
@@ -49,14 +50,31 @@
                                     <td>{{ $loop->iteration + ($permohonan->currentPage() - 1) * $permohonan->perPage() }}
                                     </td>
                                     <td>
-                                        <strong>{{ $item->kabupatenKota->nama }}</strong>
+                                        <strong>{{ $item->kabupatenKota->nama ?? '-' }}</strong>
                                     </td>
-                                    <td>{{ $item->no_permohonan }}</td>
+                                    <td>{{ $item->jenisDokumen->nama ?? '-' }}</td>
                                     <td>
-                                        @if ($item->undanganPelaksanaan)
-                                            {{ $item->undanganPelaksanaan->tanggal_dikirim ? $item->undanganPelaksanaan->tanggal_dikirim->format('d M Y') : '-' }}
+                                        <span class="badge bg-label-primary">{{ $item->tahun }}</span>
+                                    </td>
+                                    <td>
+                                        @if ($item->hasilFasilitasi)
+                                            @if ($item->hasilFasilitasi->status_validasi === 'tervalidasi')
+                                                <span class="badge bg-success">
+                                                    <i class='bx bx-check-circle'></i> Tervalidasi
+                                                </span>
+                                            @elseif ($item->hasilFasilitasi->status_validasi === 'diajukan')
+                                                <span class="badge bg-warning">
+                                                    <i class='bx bx-time'></i> Menunggu Validasi
+                                                </span>
+                                            @else
+                                                <span class="badge bg-secondary">
+                                                    <i class='bx bx-edit'></i> Draft
+                                                </span>
+                                            @endif
                                         @else
-                                            <span class="text-muted">-</span>
+                                            <span class="badge bg-danger">
+                                                <i class='bx bx-x-circle'></i> Belum Input
+                                            </span>
                                         @endif
                                     </td>
                                     <td>
@@ -85,7 +103,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center">Tidak ada data permohonan</td>
+                                    <td colspan="6" class="text-center">Tidak ada data permohonan</td>
                                 </tr>
                             @endforelse
                         </tbody>

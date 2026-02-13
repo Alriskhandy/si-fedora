@@ -29,63 +29,52 @@ class HasilFasilitasiDocumentService
     private function getDocumentHeader(string $kabkota, string $tahun): string
     {
         return '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            font-size: 12pt; 
-            line-height: 1.5; 
-            margin: 20px;
-        }
-        h1 { 
-            font-size: 14pt; 
-            font-weight: bold; 
-            text-align: center; 
-            margin-bottom: 20px; 
-        }
-        h2 { 
-            font-size: 13pt; 
-            font-weight: bold; 
-            margin-top: 20px; 
-            margin-bottom: 10px; 
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 20px; 
-        }
-        table, th, td { 
-            border: 1px solid black; 
-        }
-        th, td { 
-            padding: 8px; 
-            vertical-align: top; 
-        }
-        th { 
-            background-color: #f0f0f0; 
-            font-weight: bold; 
-            text-align: center; 
-        }
-        .no-col { 
-            width: 5%; 
-            text-align: center; 
-        }
-        .title-col { 
-            width: 25%; 
-        }
-        .content-col { 
-            width: 70%; 
-        }
-        .header-row {
-            background-color: #e8f4f8;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <h1>HASIL FASILITASI<br>RANCANGAN AKHIR RKPD ' . strtoupper($kabkota) . ' TAHUN ' . $tahun . '</h1>';
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            font-size: 12pt; 
+                            line-height: 1.5; 
+                            margin: 20px;
+                        }
+                        h2 { 
+                            font-size: 12pt; 
+                            font-weight: normal; 
+                            margin-top: 20px; 
+                            margin-bottom: 10px; 
+                        }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-bottom: 20px; 
+                        }
+                        table, th, td { 
+                            border: 1px solid black; 
+                        }
+                        th, td { 
+                            padding: 8px; 
+                            vertical-align: top; 
+                            font-size: 12pt;
+                        }
+                        th { 
+                            font-weight: bold; 
+                            text-align: center; 
+                        }
+                        .no-col { 
+                            width: 5%; 
+                            text-align: center; 
+                        }
+                        .title-col { 
+                            width: 25%; 
+                        }
+                        .content-col { 
+                            width: 70%; 
+                        }
+                    </style>
+                </head>
+                <body>';
     }
 
     /**
@@ -94,51 +83,49 @@ class HasilFasilitasiDocumentService
     private function generateSistematikaSection($sistematika, string $kabkota): string
     {
         $html = '
-    <h2>I. Sistematika dan Substansi Rancangan Akhir RKPD</h2>
-    <p>Catatan penyempurnaan terhadap sistematika dan rancangan akhir RKPD ' . $kabkota . ', sebagai berikut:</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th class="no-col">No.</th>
-                <th class="title-col">Bab/Sub Bab</th>
-                <th class="content-col">Catatan Penyempurnaan</th>
-            </tr>
-        </thead>
-        <tbody>';
+            <p>Catatan penyempurnaan terhadap sistematika dan substansi sebagai berikut:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th class="no-col">No.</th>
+                        <th class="title-col">Bab/Sub Bab</th>
+                        <th class="content-col">Catatan Penyempurnaan</th>
+                    </tr>
+                </thead>
+                <tbody>';
 
-        if ($sistematika->count() > 0) {
-            $counter = 1;
-            $currentBabId = null;
-            $groupedItems = $this->groupSistematika($sistematika);
+                if ($sistematika->count() > 0) {
+                    $counter = 1;
+                    $currentBabId = null;
+                    $groupedItems = $this->groupSistematika($sistematika);
 
-            foreach ($groupedItems as $groupedItem) {
-                // Display bab header if changed
-                if ($currentBabId !== $groupedItem['bab_id']) {
-                    $html .= '<tr class="header-row">
-                        <td class="no-col"></td>
-                        <td colspan="2"><strong>' . htmlspecialchars($groupedItem['bab_nama']) . '</strong></td>
-                    </tr>';
-                    $currentBabId = $groupedItem['bab_id'];
+                    foreach ($groupedItems as $groupedItem) {
+                        // Display bab header if changed
+                        if ($currentBabId !== $groupedItem['bab_id']) {
+                            $html .= '<tr>
+                                <td colspan="3">' . ucwords(strtolower(htmlspecialchars($groupedItem['bab_nama']))) . '</td>
+                            </tr>';
+                            $currentBabId = $groupedItem['bab_id'];
+                        }
+
+                        // Merge catatan with numbering
+                        $catatanGabungan = $this->mergeCatatan($groupedItem['catatan']);
+
+                        $html .= '<tr>
+                            <td class="no-col">' . $counter . '</td>
+                            <td>' . ucwords(strtolower(htmlspecialchars($groupedItem['sub_bab']))) . '</td>
+                            <td>' . $catatanGabungan . '</td>
+                        </tr>';
+
+                        $counter++;
+                    }
+                } else {
+                    $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
                 }
 
-                // Merge catatan with numbering
-                $catatanGabungan = $this->mergeCatatan($groupedItem['catatan']);
-
-                $html .= '<tr>
-                    <td class="no-col">' . $counter . '</td>
-                    <td>' . htmlspecialchars($groupedItem['sub_bab']) . '</td>
-                    <td>' . $catatanGabungan . '</td>
-                </tr>';
-
-                $counter++;
-            }
-        } else {
-            $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
-        }
-
-        $html .= '</tbody>
-    </table>';
+                $html .= '</tbody>
+            </table>';
 
         return $html;
     }
@@ -149,43 +136,42 @@ class HasilFasilitasiDocumentService
     private function generateUrusanSection($urusan): string
     {
         $html = '
-    <h2>II. Masukan terkait penyelenggaraan urusan Pemerintah Daerah</h2>
-    <p>Masukan terkait penyelenggaraan urusan Pemerintah Daerah sebagai berikut:</p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 5%; text-align: center;">No</th>
-                <th style="width: 70%;">Masukan/Saran</th>
-                <th style="width: 25%;">Keterangan</th>
-            </tr>
-        </thead>
-        <tbody>';
+            <p>Masukan terkait penyelenggaraan urusan Pemerintah Daerah sebagai berikut:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 5%; text-align: center;">No</th>
+                        <th style="width: 70%;">Masukan/Saran</th>
+                        <th style="width: 25%;">Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>';
 
-        if ($urusan->count() > 0) {
-            $groupedUrusan = $this->groupUrusan($urusan);
+                if ($urusan->count() > 0) {
+                    $groupedUrusan = $this->groupUrusan($urusan);
 
-            foreach ($groupedUrusan as $urusan) {
-                // Header urusan
-                $html .= '<tr class="header-row">
-                    <td colspan="3"><strong>Urusan ' . htmlspecialchars($urusan['nama']) . '</strong></td>
-                </tr>';
+                    foreach ($groupedUrusan as $urusan) {
+                        // Header urusan
+                        $html .= '<tr>
+                            <td colspan="3">Urusan ' . htmlspecialchars($urusan['nama']) . '</td>
+                        </tr>';
 
-                // Items with numbering
-                foreach ($urusan['items'] as $index => $catatan) {
-                    $html .= '<tr>
-                        <td style="text-align: center;">' . ($index + 1) . '.</td>
-                        <td>' . $this->cleanHtmlContent($catatan) . '</td>
-                        <td></td>
-                    </tr>';
+                        // Items with numbering
+                        foreach ($urusan['items'] as $index => $catatan) {
+                            $html .= '<tr>
+                                <td style="text-align: center;">' . ($index + 1) . '.</td>
+                                <td>' . $this->cleanHtmlContent($catatan) . '</td>
+                                <td></td>
+                            </tr>';
+                        }
+                    }
+                } else {
+                    $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan masukan</td></tr>';
                 }
-            }
-        } else {
-            $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan masukan</td></tr>';
-        }
 
-        $html .= '</tbody>
-    </table>';
+                $html .= '</tbody>
+            </table>';
 
         return $html;
     }
@@ -196,8 +182,8 @@ class HasilFasilitasiDocumentService
     private function getDocumentFooter(): string
     {
         return '
-</body>
-</html>';
+            </body>
+            </html>';
     }
 
     /**
