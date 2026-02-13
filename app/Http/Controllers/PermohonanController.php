@@ -531,9 +531,9 @@ class PermohonanController extends Controller
             'kabupatenKota',
             'jenisDokumen',
             'jadwalFasilitasi',
-            'hasilFasilitasi.hasilSistematika.bab',
-            'hasilFasilitasi.hasilUrusan.urusan',
-            'hasilFasilitasi.fasilitator'
+            'hasilFasilitasi.hasilSistematika.masterBab',
+            'hasilFasilitasi.hasilUrusan.masterUrusan',
+            'hasilFasilitasi.pembuat',
         ]);
 
         return view('pages.fasilitasi.tahapan.hasil', compact('permohonan'));
@@ -566,6 +566,107 @@ class PermohonanController extends Controller
         ]);
 
         return view('pages.fasilitasi.tahapan.penetapan', compact('permohonan'));
+    }
+
+    /**
+     * Update deadline for tahapan (Admin & Superadmin only)
+     */
+    public function updateDeadline(Request $request, Permohonan $permohonan)
+    {
+        $request->validate([
+            'deadline' => 'required|date|after:now',
+            'keterangan' => 'required|string|min:20',
+            'tahapan' => 'required|string',
+        ], [
+            'deadline.required' => 'Deadline wajib diisi',
+            'deadline.after' => 'Deadline harus lebih dari waktu sekarang',
+            'keterangan.required' => 'Keterangan wajib diisi',
+            'keterangan.min' => 'Keterangan minimal 20 karakter',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Get tahapan berdasarkan nama
+            $masterTahapan = \App\Models\MasterTahapan::where('nama_tahapan', $request->tahapan)->first();
+            
+            if (!$masterTahapan) {
+                return redirect()->back()->with('error', 'Tahapan tidak ditemukan.');
+            }
+
+            // Get atau create permohonan tahapan
+            $permohonanTahapan = \App\Models\PermohonanTahapan::firstOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapan->id,
+                ],
+                [
+                    'status' => 'proses',
+                    'updated_by' => Auth::id(),
+                ]
+            );
+
+            $deadlineLama = $permohonanTahapan->deadline;
+
+            // Update deadline
+            $permohonanTahapan->update([
+                'deadline' => $request->deadline,
+                'updated_by' => Auth::id(),
+            ]);
+
+            // Log activity
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'tahapan' => $request->tahapan,
+                    'deadline_lama' => $deadlineLama ? \Carbon\Carbon::parse($deadlineLama)->format('d F Y, H:i') : 'Belum ada',
+                    'deadline_baru' => \Carbon\Carbon::parse($request->deadline)->format('d F Y, H:i'),
+                    'keterangan' => $request->keterangan,
+                ])
+                ->log('Deadline tahapan ' . $request->tahapan . ' diperbarui oleh ' . Auth::user()->name);
+
+            // Kirim notifikasi ke fasilitator yang terkait
+            $fasilitators = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->where('role_type', 'fasilitator')
+                ->with('user')
+                ->get();
+
+            foreach ($fasilitators as $assignment) {
+                if ($assignment->user) {
+                    Notifikasi::create([
+                        'user_id' => $assignment->user->id,
+                        'title' => 'Deadline Diperbarui',
+                        'message' => 'Deadline untuk tahapan ' . $request->tahapan . ' permohonan ' . 
+                                   ($permohonan->kabupatenKota->nama ?? '-') . ' telah diperbarui menjadi ' . 
+                                   \Carbon\Carbon::parse($request->deadline)->format('d F Y, H:i') . '. ' . 
+                                   'Keterangan: ' . $request->keterangan,
+                        'type' => 'info',
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => route('permohonan.tahapan.hasil', $permohonan),
+                        'is_read' => false,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Deadline berhasil diperbarui.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error update deadline: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui deadline.');
+        }
     }
 
     private function authorizeView(Permohonan $permohonan)

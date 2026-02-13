@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-use function Symfony\Component\Clock\now;
-
 class PelaksanaanFasilitasiController extends Controller
 {
     /**
@@ -181,7 +179,7 @@ class PelaksanaanFasilitasiController extends Controller
                     ],
                     [
                         'status' => 'selesai',
-                        'tanggal_selesai' => now(),
+                        'tanggal_selesai' => Carbon::now(),
                         'catatan' => 'Pelaksanaan fasilitasi telah selesai dilaksanakan',
                         'updated_by' => Auth::id(),
                     ]
@@ -197,6 +195,9 @@ class PelaksanaanFasilitasiController extends Controller
             // Buat/update tahapan berikutnya (Hasil) menjadi proses
             $masterTahapanHasil = MasterTahapan::where('nama_tahapan', 'Hasil Fasilitasi / Evaluasi')->first();
             if ($masterTahapanHasil) {
+                // Set deadline 3 hari setelah pelaksanaan selesai sampai jam 24:00
+                $deadline = Carbon::now()->addDays(3)->endOfDay();
+                
                 \App\Models\PermohonanTahapan::updateOrCreate(
                     [
                         'permohonan_id' => $permohonan->id,
@@ -204,15 +205,17 @@ class PelaksanaanFasilitasiController extends Controller
                     ],
                     [
                         'status' => 'proses',
-                        'tanggal_mulai' => now(),
+                        'tanggal_mulai' => Carbon::now(),
+                        'deadline' => $deadline,
                         'catatan' => 'Menunggu input hasil fasilitasi dari Fasilitator',
                         'updated_by' => Auth::id(),
                     ]
                 );
 
-                Log::info('Tahapan Hasil dimulai', [
+                Log::info('Tahapan Hasil dimulai dengan deadline', [
                     'permohonan_id' => $permohonan->id,
                     'tahapan' => 'Hasil Fasilitasi / Evaluasi',
+                    'deadline' => $deadline->format('Y-m-d H:i:s'),
                     'user_id' => Auth::id(),
                 ]);
             }

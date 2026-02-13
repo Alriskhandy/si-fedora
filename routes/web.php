@@ -188,6 +188,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/hasil', 'tahapanHasil')->name('hasil');
             Route::get('/tindak-lanjut', 'tahapanTindakLanjut')->name('tindak-lanjut');
             Route::get('/penetapan', 'tahapanPenetapan')->name('penetapan');
+            
+            // Update deadline - only admin & superadmin
+            Route::put('/update-deadline', 'updateDeadline')->name('update-deadline')->middleware('role:admin_peran|superadmin');
         });
         
         // Management routes - only pemohon
@@ -378,10 +381,11 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{perpanjanganWaktu}/upload-surat', 'uploadSurat')->name('upload-surat');
     });
     
-    Route::middleware(['role:admin_peran'])->prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
+    Route::middleware(['role:admin_peran|superadmin'])->prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{perpanjanganWaktu}', 'show')->name('show');
         Route::get('/{perpanjanganWaktu}/download', 'download')->name('download');
+        Route::post('/', 'store')->name('store'); // Admin bisa perpanjang waktu dari halaman hasil
         Route::put('/{perpanjanganWaktu}/process', 'process')->name('process');
     });
 

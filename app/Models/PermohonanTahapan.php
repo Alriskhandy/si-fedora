@@ -17,11 +17,13 @@ class PermohonanTahapan extends Model
         'status',
         'catatan',
         'updated_by',
+        'deadline',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deadline' => 'datetime',
     ];
 
     // Relasi

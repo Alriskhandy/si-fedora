@@ -171,7 +171,7 @@
                             'Verifikasi' => 'permohonan.tahapan.verifikasi',
                             'Penetapan Jadwal' => 'permohonan.tahapan.jadwal',
                             'Pelaksanaan' => 'permohonan.tahapan.pelaksanaan',
-                            'Hasil Fasilitasi' => 'permohonan.tahapan.hasil',
+                            'Hasil Fasilitasi / Evaluasi' => 'permohonan.tahapan.hasil',
                             'Tindak Lanjut' => 'permohonan.tahapan.tindak-lanjut',
                             'Penetapan PERDA' => 'permohonan.tahapan.penetapan',
                         ];
@@ -448,7 +448,8 @@
                     <div class="card-body p-3" style="max-height: 600px; overflow-y: auto;">
                         @php
                             // Ambil semua tahapan yang sudah dimulai (ada di permohonan_tahapan)
-                            $tahapanHistory = $permohonan->tahapan()
+                            $tahapanHistory = $permohonan
+                                ->tahapan()
                                 ->with('masterTahapan')
                                 ->orderBy('created_at', 'desc')
                                 ->get();
@@ -458,10 +459,11 @@
                             @foreach ($tahapanHistory as $index => $history)
                                 <div class="mb-3 pb-3 {{ $index < $tahapanHistory->count() - 1 ? 'border-bottom' : '' }}">
                                     <div class="mb-1">
-                                        <strong style="font-size: 0.85rem;">{{ $history->masterTahapan->nama_tahapan }}</strong>
+                                        <strong
+                                            style="font-size: 0.85rem;">{{ $history->masterTahapan->nama_tahapan }}</strong>
                                     </div>
                                     <div class="text-muted" style="font-size: 0.8rem; line-height: 1.6;">
-                                        Status: 
+                                        Status:
                                         @if ($history->status === 'selesai')
                                             <span class="text-primary fw-semibold">Selesai</span>
                                         @elseif ($history->status === 'proses')
@@ -471,13 +473,15 @@
                                         @else
                                             <span class="text-secondary">{{ ucfirst($history->status) }}</span>
                                         @endif
-                                        
+
                                         <br>
-                                        Dimulai: <span class="text-dark">{{ $history->created_at->format('d M Y, H:i') }}</span>
-                                        
+                                        Dimulai: <span
+                                            class="text-dark">{{ $history->created_at->format('d M Y, H:i') }}</span>
+
                                         @if ($history->status === 'selesai')
                                             <br>
-                                            Selesai: <span class="text-dark">{{ $history->updated_at->format('d M Y, H:i') }}</span>
+                                            Selesai: <span
+                                                class="text-dark">{{ $history->updated_at->format('d M Y, H:i') }}</span>
                                         @endif
 
                                         @if ($history->catatan)
