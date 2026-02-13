@@ -17,6 +17,8 @@ class MasterBabSeeder extends Seeder
         // Get RKPD jenis dokumen
         $rkpd = MasterJenisDokumen::where('nama', 'RKPD')->first();
         $rkpdPerubahan = MasterJenisDokumen::where('nama', 'RKPD Perubahan')->first();
+        $rpjmd = MasterJenisDokumen::where('nama', 'RPJMD')->first();
+        $rpjmdPerubahan = MasterJenisDokumen::where('nama', 'RPJMD Perubahan')->first();
 
         if (!$rkpd || !$rkpdPerubahan) {
             $this->command->error('Please run MasterJenisDokumenSeeder first!');
@@ -32,31 +34,31 @@ class MasterBabSeeder extends Seeder
                 'urutan' => 1,
             ],
             [
-                'nama_bab' => 'BAB II EVALUASI PELAKSANAAN RKPD TAHUN LALU',
+                'nama_bab' => 'BAB II GAMBARAN UMUM KONDISI DAERAH',
                 'jenis_dokumen_id' => $rkpd->id,
                 'parent_id' => null,
                 'urutan' => 2,
             ],
             [
-                'nama_bab' => 'BAB III RANCANGAN KERANGKA EKONOMI DAERAH DAN KEBIJAKAN KEUANGAN DAERAH',
+                'nama_bab' => 'BAB III KERANGKA EKONOMI DAERAH DAN KEUANGAN DAERAH',
                 'jenis_dokumen_id' => $rkpd->id,
                 'parent_id' => null,
                 'urutan' => 3,
             ],
             [
-                'nama_bab' => 'BAB IV PRIORITAS DAN SASARAN PEMBANGUNAN DAERAH',
+                'nama_bab' => 'BAB IV SASARAN DAN PRIORITAS PEMBANGUNAN DAERAH',
                 'jenis_dokumen_id' => $rkpd->id,
                 'parent_id' => null,
                 'urutan' => 4,
             ],
             [
-                'nama_bab' => 'BAB V RENCANA PROGRAM DAN KEGIATAN PRIORITAS DAERAH',
+                'nama_bab' => 'BAB V RENCANA KERJA DAN PENDANAAN DAERAH',
                 'jenis_dokumen_id' => $rkpd->id,
                 'parent_id' => null,
                 'urutan' => 5,
             ],
             [
-                'nama_bab' => 'BAB VI RENCANA PROGRAM PERANGKAT DAERAH',
+                'nama_bab' => 'BAB VI KINERJA PENYELENGGARAAN PEMERINTAHAN DAERAH',
                 'jenis_dokumen_id' => $rkpd->id,
                 'parent_id' => null,
                 'urutan' => 6,
@@ -69,7 +71,7 @@ class MasterBabSeeder extends Seeder
             ],
         ];
 
-        // Bab-bab untuk RKPD Perubahan
+        // Bab-bab untuk RPJMD Perubahan
         $babsRkpdPerubahan = [
             [
                 'nama_bab' => 'BAB I PENDAHULUAN',
@@ -78,31 +80,31 @@ class MasterBabSeeder extends Seeder
                 'urutan' => 1,
             ],
             [
-                'nama_bab' => 'BAB II EVALUASI PELAKSANAAN RKPD TAHUN BERJALAN',
+                'nama_bab' => 'BAB II GAMBARAN UMUM KONDISI DAERAH',
                 'jenis_dokumen_id' => $rkpdPerubahan->id,
                 'parent_id' => null,
                 'urutan' => 2,
             ],
             [
-                'nama_bab' => 'BAB III RANCANGAN KERANGKA EKONOMI DAERAH DAN KEBIJAKAN KEUANGAN DAERAH',
+                'nama_bab' => 'BAB III KERANGKA EKONOMI DAERAH DAN KEUANGAN DAERAH',
                 'jenis_dokumen_id' => $rkpdPerubahan->id,
                 'parent_id' => null,
                 'urutan' => 3,
             ],
             [
-                'nama_bab' => 'BAB IV PRIORITAS DAN SASARAN PEMBANGUNAN DAERAH',
+                'nama_bab' => 'BAB IV SASARAN DAN PRIORITAS PEMBANGUNAN DAERAH',
                 'jenis_dokumen_id' => $rkpdPerubahan->id,
                 'parent_id' => null,
                 'urutan' => 4,
             ],
             [
-                'nama_bab' => 'BAB V RENCANA PROGRAM DAN KEGIATAN PRIORITAS DAERAH',
+                'nama_bab' => 'BAB V RENCANA KERJA DAN PENDANAAN DAERAH',
                 'jenis_dokumen_id' => $rkpdPerubahan->id,
                 'parent_id' => null,
                 'urutan' => 5,
             ],
             [
-                'nama_bab' => 'BAB VI RENCANA PROGRAM PERANGKAT DAERAH',
+                'nama_bab' => 'BAB VI KINERJA PENYELENGGARAAN PEMERINTAHAN DAERAH',
                 'jenis_dokumen_id' => $rkpdPerubahan->id,
                 'parent_id' => null,
                 'urutan' => 6,
@@ -112,6 +114,120 @@ class MasterBabSeeder extends Seeder
                 'jenis_dokumen_id' => $rkpdPerubahan->id,
                 'parent_id' => null,
                 'urutan' => 7,
+            ],
+        ];
+
+        $babsRpjmd = [
+            [
+                'nama_bab' => 'BAB I PENDAHULUAN',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 1,
+            ],
+            [
+                'nama_bab' => 'BAB II GAMBARAN UMUM KONDISI DAERAH',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 2,
+            ],
+            [
+                'nama_bab' => 'BAB III GAMBARAN KEUANGAN DAERAH',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 3,
+            ],
+            [
+                'nama_bab' => 'BAB IV PERMASALAHAN DAN ISU-ISU STRATEGIS DAERAH',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 4,
+            ],
+            [
+                'nama_bab' => 'BAB V VISI, MISI, TUJUAN DAN SASARAN',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 5,
+            ],
+            [
+                'nama_bab' => 'BAB VI STRATEGI, ARAH KEBIJAKAN DAN PROGRAM PEMBANGUNAN DAERAH',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 6,
+            ],
+            [
+                'nama_bab' => 'BAB VII KERANGKA PENDANAAN PEMBANGUNAN DAN PROGRAM PERANGKAT DAERAH',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 7,
+            ],
+            [
+                'nama_bab' => 'BAB VIII KINERJA PENYELENGGARAAN PEMERINTAHAN DAERAH',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 8,
+            ],
+            [
+                'nama_bab' => 'BAB IX PENUTUP',
+                'jenis_dokumen_id' => $rpjmd->id,
+                'parent_id' => null,
+                'urutan' => 9,
+            ],
+        ];
+
+        $babsRpjmdPerubahan = [
+            [
+                'nama_bab' => 'BAB I PENDAHULUAN',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 1,
+            ],
+            [
+                'nama_bab' => 'BAB II GAMBARAN UMUM KONDISI DAERAH',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 2,
+            ],
+            [
+                'nama_bab' => 'BAB III GAMBARAN KEUANGAN DAERAH',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 3,
+            ],
+            [
+                'nama_bab' => 'BAB IV PERMASALAHAN DAN ISU-ISU STRATEGIS DAERAH',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 4,
+            ],
+            [
+                'nama_bab' => 'BAB V VISI, MISI, TUJUAN DAN SASARAN',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 5,
+            ],
+            [
+                'nama_bab' => 'BAB VI STRATEGI, ARAH KEBIJAKAN DAN PROGRAM PEMBANGUNAN DAERAH',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 6,
+            ],
+            [
+                'nama_bab' => 'BAB VII KERANGKA PENDANAAN PEMBANGUNAN DAN PROGRAM PERANGKAT DAERAH',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 7,
+            ],
+            [
+                'nama_bab' => 'BAB VIII KINERJA PENYELENGGARAAN PEMERINTAHAN DAERAH',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 8,
+            ],
+            [
+                'nama_bab' => 'BAB IX PENUTUP',
+                'jenis_dokumen_id' => $rpjmdPerubahan->id,
+                'parent_id' => null,
+                'urutan' => 9,
             ],
         ];
 
@@ -137,8 +253,32 @@ class MasterBabSeeder extends Seeder
             );
         }
 
+        // Seed RPJMD babs
+        foreach ($babsRpjmd as $bab) {
+            MasterBab::firstOrCreate(
+                [
+                    'nama_bab' => $bab['nama_bab'],
+                    'jenis_dokumen_id' => $bab['jenis_dokumen_id'],
+                ],
+                $bab
+            );
+        }
+
+        // Seed RKPD Perubahan babs
+        foreach ($babsRpjmdPerubahan as $bab) {
+            MasterBab::firstOrCreate(
+                [
+                    'nama_bab' => $bab['nama_bab'],
+                    'jenis_dokumen_id' => $bab['jenis_dokumen_id'],
+                ],
+                $bab
+            );
+        }
+
         $this->command->info('Master Bab seeded successfully!');
         $this->command->info('- RKPD: 7 babs');
         $this->command->info('- RKPD Perubahan: 7 babs');
+        $this->command->info('- RPJMD: 9 babs');
+        $this->command->info('- RPJMD Perubahan: 9 babs');
     }
 }

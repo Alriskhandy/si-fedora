@@ -271,23 +271,25 @@ Route::middleware(['auth'])->group(function () {
     // FASILITASI & HASIL
     // ============================================================
     
-    // HasilFasilitasiController (Fasilitator: Create/Edit, Verifikator: Read)
+    // HasilFasilitasiController (Fasilitator: Create/Edit, Verifikator: Read, Admin: Read All)
     Route::middleware(['role:fasilitator'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
         Route::get('/{permohonan}/create', 'create')->name('create');
         Route::post('/{permohonan}', 'store')->name('store');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
-        Route::get('/{permohonan}/generate', 'generate')->name('generate');
-        Route::get('/{permohonan}/generate-pdf', 'generatePdf')->name('generate-pdf');
+        Route::get('/{permohonan}/generate', 'generate')->name('generate'); // Koordinator only: create draft
         Route::post('/{permohonan}/sistematika', 'storeSistematika')->name('sistematika.store');
         Route::delete('/{permohonan}/sistematika/{id}', 'deleteSistematika')->name('sistematika.delete');
         Route::post('/{permohonan}/urusan', 'storeUrusan')->name('urusan.store');
         Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
     });
     
-    Route::middleware(['role:fasilitator|verifikator'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+    Route::middleware(['role:fasilitator|verifikator|admin_peran|superadmin'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}', 'show')->name('show');
         Route::get('/{permohonan}/download', 'download')->name('download');
+        Route::get('/{permohonan}/download-word', 'downloadWord')->name('download-word'); // Download Word draft
+        Route::get('/{permohonan}/download-pdf', 'downloadPdf')->name('download-pdf'); // Download PDF
+        Route::get('/{permohonan}/preview-pdf', 'previewPdf')->name('preview-pdf'); // Preview PDF in browser
     });
 
     // ============================================================

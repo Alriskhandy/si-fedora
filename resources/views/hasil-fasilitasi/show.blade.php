@@ -2,19 +2,20 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Detail Hasil Fasilitasi</h4>
             <div>
-                @if (!isset($isVerifikator) || !$isVerifikator)
-                    @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
-                        <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}" class="btn btn-primary me-2">
-                            <i class="bx bxs-file-doc"></i> Generate Word
-                        </a>
-                        <a href="{{ route('hasil-fasilitasi.generate-pdf', $permohonan->id) }}" class="btn btn-danger me-2">
-                            <i class="bx bxs-file-pdf"></i> Generate PDF
-                        </a>
-                    @endif
-                @endif
+                <h4 class="fw-bold">Detail Hasil Fasilitasi / Evaluasi</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('hasil-fasilitasi.index') }}">Hasil Fasilitasi /
+                                Evaluasi</a></li>
+                        <li class="breadcrumb-item active">Detail</li>
+                    </ol>
+                </nav>
+            </div>
+            <div>
                 <a href="{{ route('hasil-fasilitasi.index') }}" class="btn btn-secondary">
                     <i class="bx bx-arrow-back"></i> Kembali
                 </a>
@@ -22,8 +23,17 @@
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="alert alert-success alert-dismissible position-fixed top-0 end-0 m-3" role="alert"
+                style="z-index: 9999; max-width: 400px;">
                 {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible position-fixed top-0 end-0 m-3" role="alert"
+                style="z-index: 9999; max-width: 400px;">
+                {{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
@@ -36,35 +46,77 @@
                         <h5 class="mb-0">Informasi Permohonan</h5>
                     </div>
                     <div class="card-body">
+                        @php
+                            // Get tahapan pelaksanaan
+                            $masterTahapanPelaksanaan = \App\Models\MasterTahapan::where(
+                                'nama_tahapan',
+                                'Pelaksanaan',
+                            )->first();
+                            $tahapanPelaksanaan = null;
+                            if ($masterTahapanPelaksanaan) {
+                                $tahapanPelaksanaan = $permohonan
+                                    ->tahapan()
+                                    ->where('tahapan_id', $masterTahapanPelaksanaan->id)
+                                    ->first();
+                            }
+
+                            // Get tahapan hasil/evaluasi
+                            $masterTahapanHasil = \App\Models\MasterTahapan::where(
+                                'nama_tahapan',
+                                'Hasil Fasilitasi / Evaluasi',
+                            )->first();
+                            $tahapanHasil = null;
+                            if ($masterTahapanHasil) {
+                                $tahapanHasil = $permohonan
+                                    ->tahapan()
+                                    ->where('tahapan_id', $masterTahapanHasil->id)
+                                    ->first();
+                            }
+                        @endphp
                         <dl class="row mb-0">
                             <dt class="col-sm-5">Kabupaten/Kota</dt>
                             <dd class="col-sm-7">{{ $permohonan->kabupatenKota->nama }}</dd>
 
-                            <dt class="col-sm-5">No. Permohonan</dt>
-                            <dd class="col-sm-7">{{ $permohonan->no_permohonan }}</dd>
+                            <dt class="col-sm-5">Jenis Dokumen</dt>
+                            <dd class="col-sm-7"><span
+                                    class="badge bg-primary">{{ strtoupper($permohonan->jenisDokumen->nama) }}</span></dd>
 
-                            <dt class="col-sm-5">Tanggal</dt>
-                            <dd class="col-sm-7">{{ $permohonan->created_at->format('d M Y') }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
+                            <dt class="col-sm-5">Tahun</dt>
+                            <dd class="col-sm-7">{{ $permohonan->tahun }}</dd>
 
-            <div class="col-md-3">
-                <!-- Ringkasan -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Ringkasan</h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-7">Sistematika</dt>
-                            <dd class="col-sm-5">
-                                <span class="badge bg-primary">{{ $hasilFasilitasi->hasilSistematika->count() }}</span> item
+                            @if ($tahapanPelaksanaan && $tahapanPelaksanaan->updated_at)
+                                <dt class="col-sm-5">Waktu Pelaksanaan</dt>
+                                <dd class="col-sm-7">
+                                    {{ $tahapanPelaksanaan->updated_at->format('d M Y, H:i') }}
+                                    <span class="badge bg-success">{{ $tahapanPelaksanaan->status }}</span>
+                                </dd>
+                            @endif
+
+                            @if ($tahapanHasil && $tahapanHasil->deadline)
+                                <dt class="col-sm-5">Batas Waktu Penginputan</dt>
+                                <dd class="col-sm-7">
+                                    @php
+                                        $deadline = \Carbon\Carbon::parse($tahapanHasil->deadline);
+                                        $isOverdue = \Carbon\Carbon::now()->gt($deadline);
+                                    @endphp
+                                    <span class="badge {{ $isOverdue ? 'bg-danger' : 'bg-warning' }}">
+                                        <i class="bx {{ $isOverdue ? 'bx-error-circle' : 'bx-time' }}"></i>
+                                        {{ $deadline->format('d M Y, H:i') }}
+                                        @if ($isOverdue)
+                                            (Terlewat)
+                                        @endif
+                                    </span>
+                                </dd>
+                            @endif
+
+                            <dt class="col-sm-5">Sistematika</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-primary">{{ $hasilFasilitasi->hasilSistematika->count() }}</span>
+                                item
                             </dd>
 
-                            <dt class="col-sm-7">Urusan</dt>
-                            <dd class="col-sm-5">
+                            <dt class="col-sm-5">Urusan</dt>
+                            <dd class="col-sm-7">
                                 <span class="badge bg-primary">{{ $hasilFasilitasi->hasilUrusan->count() }}</span> item
                             </dd>
                         </dl>
@@ -72,37 +124,55 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
-                <!-- Info Tambahan -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Info Tambahan</h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-5">Dibuat Oleh</dt>
-                            <dd class="col-sm-7">{{ $hasilFasilitasi->pembuat->name }}</dd>
+            <div class="col-md-6">
+                <!-- Informasi Tim -->
+                @if ($timInfo)
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bx bx-group"></i> Tim Fasilitasi / Evaluasi</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    @if ($timInfo['verifikator'])
+                                        <div class="mb-2">
+                                            <small class="text-muted">PIC (Verifikator):</small>
+                                            <div><strong>{{ $timInfo['verifikator']->user->name }}</strong></div>
+                                        </div>
+                                    @endif
 
-                            <dt class="col-sm-5">Tanggal</dt>
-                            <dd class="col-sm-7">
-                                {{ $hasilFasilitasi->created_at->format('d M Y') }}
-                            </dd>
+                                    @if ($timInfo['koordinator'])
+                                        <div class="mb-2">
+                                            <small class="text-muted">Koordinator :</small>
+                                            <div>
+                                                <strong>{{ $timInfo['koordinator']->user->name }}</strong>
+                                                @if ($timInfo['koordinator']->user_id == Auth::id())
+                                                    <span class="badge bg-success">Anda</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
 
-                            <dt class="col-sm-5">Update</dt>
-                            <dd class="col-sm-7">
-                                {{ $hasilFasilitasi->updated_at->format('d M Y') }}
-                            </dd>
-                        </dl>
-                        @if (!isset($isVerifikator) || !$isVerifikator)
-                            <div class="mt-2">
-                                <a href="{{ route('hasil-fasilitasi.create', $permohonan) }}"
-                                    class="btn btn-sm btn-warning w-100">
-                                    <i class="bx bx-edit"></i> Edit
-                                </a>
+                                <div class="col-md-6">
+                                    @if ($timInfo['anggota']->count() > 0)
+                                        <div class="mb-0">
+                                            <small class="text-muted">Anggota :</small>
+                                            @foreach ($timInfo['anggota'] as $anggota)
+                                                <div>
+                                                    - {{ $anggota->user->name }}
+                                                    @if ($anggota->user_id == Auth::id())
+                                                        <span class="badge bg-success">Anda</span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                        @endif
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
         </div>
 
@@ -111,7 +181,70 @@
                 <!-- Tabs untuk Sistematika dan Urusan -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="bx bx-list-check"></i> Masukan Fasilitasi</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bx bx-list-check"></i> Masukan Fasilitasi</h5>
+                            @if ($hasilFasilitasi && ($hasilFasilitasi->hasilSistematika->count() > 0 || $hasilFasilitasi->hasilUrusan->count() > 0))
+                                <div>
+                                    @php
+                                        // Check if current user is koordinator
+                                        $isKoordinator = false;
+                                        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+                                        $assignment = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
+                                            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                                            ->where('jenis_dokumen_id', $jenisDokumenId)
+                                            ->where('tahun', $permohonan->tahun)
+                                            ->where('role_type', 'fasilitator')
+                                            ->where('is_pic', true)
+                                            ->where('is_active', true)
+                                            ->first();
+                                        $isKoordinator = $assignment !== null;
+                                    @endphp
+
+                                    @if ($isKoordinator && (!isset($isVerifikator) || !$isVerifikator))
+                                        @if ($hasilFasilitasi->draft_file)
+                                            <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}"
+                                                class="btn btn-sm btn-warning me-2" data-bs-toggle="tooltip"
+                                                title="Buat ulang draft dokumen hasil masukan">
+                                                <i class="bx bx-refresh"></i> Buat Ulang Draft
+                                            </a>
+                                        @else
+                                            <a href="{{ route('hasil-fasilitasi.generate', $permohonan->id) }}"
+                                                class="btn btn-sm btn-primary me-2" data-bs-toggle="tooltip"
+                                                title="Buat draft dokumen hasil masukan">
+                                                <i class="bx bx-file-blank"></i> Buat Draft Dokumen
+                                            </a>
+                                        @endif
+                                    @endif
+
+                                    @if ($hasilFasilitasi->draft_file)
+                                        <button type="button" class="btn btn-sm btn-outline-info me-2"
+                                            data-bs-toggle="modal" data-bs-target="#previewPdfModal"
+                                            title="Lihat preview PDF">
+                                            <i class="bx bx-show"></i> Lihat Draft
+                                        </button>
+                                        <a href="{{ route('hasil-fasilitasi.download-word', $permohonan->id) }}"
+                                            class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="tooltip"
+                                            title="Unduh draft dalam format Word">
+                                            <i class="bx bx-download"></i> Word
+                                        </a>
+                                        <a href="{{ route('hasil-fasilitasi.download-pdf', $permohonan->id) }}"
+                                            class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip"
+                                            title="Unduh draft dalam format PDF">
+                                            <i class="bx bx-download"></i> PDF
+                                        </a>
+                                    @else
+                                        <small class="text-muted">
+                                            <i class="bx bx-info-circle"></i>
+                                            @if ($isKoordinator && (!isset($isVerifikator) || !$isVerifikator))
+                                                Klik "Buat Draft Dokumen" untuk membuat draft hasil masukan
+                                            @else
+                                                Koordinator belum membuat draft dokumen
+                                            @endif
+                                        </small>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
                     </div>
                     <div class="card-body">
                         <ul class="nav nav-tabs" role="tablist">
@@ -148,10 +281,9 @@
                                                     <tr>
                                                         <td class="text-center">{{ $loop->iteration }}</td>
                                                         <td>
-                                                            <strong
-                                                                class="text-primary">{{ $item->masterBab->nama_bab ?? '-' }}</strong>
+                                                            <strong>{{ $item->masterBab->nama_bab ?? '-' }}</strong>
                                                             @if ($item->sub_bab)
-                                                                <br><small class="text-muted">{{ $item->sub_bab }}</small>
+                                                                <br><span>{{ $item->sub_bab }}</span>
                                                             @endif
                                                         </td>
                                                         <td>{!! is_string($item->catatan_penyempurnaan)
@@ -194,7 +326,7 @@
                                                     <tr>
                                                         <td class="text-center">{{ $loop->iteration }}</td>
                                                         <td>
-                                                            <strong class="text-primary">
+                                                            <strong>
                                                                 {{ $item->masterUrusan->urutan }}.
                                                                 {{ $item->masterUrusan->nama_urusan }}
                                                             </strong>
@@ -222,49 +354,68 @@
                     </div>
                 </div>
 
-                <!-- Files -->
+                <!-- Catatan -->
+                @if ($hasilFasilitasi->catatan)
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bx bx-note"></i> Catatan</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="border rounded p-3" style="white-space: pre-line;">
+                                {{ $hasilFasilitasi->catatan }}
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
-
-            <!-- Files -->
-            @if ($hasilFasilitasi->draft_file || $hasilFasilitasi->final_file)
-                <div class="card mb-4">
-                    <div class="card-body">
-                        @if ($hasilFasilitasi->draft_file)
-                            <div class="mb-2">
-                                <strong>Draft File:</strong>
-                                <a href="{{ url('storage/' . $hasilFasilitasi->draft_file) }}" target="_blank"
-                                    class="btn btn-sm btn-outline-primary ms-2">
-                                    <i class="bx bx-download"></i> Download
-                                </a>
-                            </div>
-                        @endif
-
-                        @if ($hasilFasilitasi->final_file)
-                            <div class="mb-2">
-                                <strong>Final File:</strong>
-                                <a href="{{ url('storage/' . $hasilFasilitasi->final_file) }}" target="_blank"
-                                    class="btn btn-sm btn-outline-success ms-2">
-                                    <i class="bx bx-download"></i> Download
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-
-            <!-- Catatan -->
-            @if ($hasilFasilitasi->catatan)
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bx bx-note"></i> Catatan</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="border rounded p-3" style="white-space: pre-line;">
-                            {{ $hasilFasilitasi->catatan }}</div>
-                    </div>
-                </div>
-            @endif
         </div>
     </div>
+
+    <!-- Modal Preview PDF -->
+    <div class="modal fade" id="previewPdfModal" tabindex="-1" aria-labelledby="previewPdfModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewPdfModalLabel">
+                        <i class="bx bx-file-blank"></i> Preview Dokumen Hasil Fasilitasi
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="height: 80vh;">
+                    @if ($hasilFasilitasi && $hasilFasilitasi->draft_file)
+                        <iframe id="pdfPreviewFrame" src="{{ route('hasil-fasilitasi.preview-pdf', $permohonan->id) }}?v={{ $hasilFasilitasi->updated_at?->timestamp ?? time() }}" width="100%"
+                            height="100%" style="border: none;" title="Preview PDF Hasil Fasilitasi"></iframe>
+                    @else
+                        <div class="alert alert-info m-3">
+                            <i class="bx bx-info-circle"></i> Draft dokumen belum tersedia.
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ route('hasil-fasilitasi.download-pdf', $permohonan->id) }}" class="btn btn-primary">
+                        <i class="bx bx-download"></i> Download PDF
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        // Reload iframe when modal is opened to clear cache
+        const previewModal = document.getElementById('previewPdfModal');
+        if (previewModal) {
+            previewModal.addEventListener('show.bs.modal', function () {
+                const iframe = document.getElementById('pdfPreviewFrame');
+                if (iframe) {
+                    // Reload iframe with new timestamp to bypass cache
+                    const currentSrc = iframe.src.split('?')[0];
+                    iframe.src = currentSrc + '?v=' + new Date().getTime();
+                }
+            });
+        }
+    </script>
+@endpush

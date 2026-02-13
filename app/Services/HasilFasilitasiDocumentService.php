@@ -104,7 +104,7 @@ class HasilFasilitasiDocumentService
                         // Display bab header if changed
                         if ($currentBabId !== $groupedItem['bab_id']) {
                             $html .= '<tr>
-                                <td colspan="3">' . ucwords(strtolower(htmlspecialchars($groupedItem['bab_nama']))) . '</td>
+                                <td colspan="3">' . $this->formatTitleWithRomanNumerals(htmlspecialchars($groupedItem['bab_nama'])) . '</td>
                             </tr>';
                             $currentBabId = $groupedItem['bab_id'];
                         }
@@ -114,7 +114,7 @@ class HasilFasilitasiDocumentService
 
                         $html .= '<tr>
                             <td class="no-col">' . $counter . '</td>
-                            <td>' . ucwords(strtolower(htmlspecialchars($groupedItem['sub_bab']))) . '</td>
+                            <td>' . $this->formatTitleWithRomanNumerals(htmlspecialchars($groupedItem['sub_bab'])) . '</td>
                             <td>' . $catatanGabungan . '</td>
                         </tr>';
 
@@ -253,6 +253,27 @@ class HasilFasilitasiDocumentService
         }
 
         return $merged;
+    }
+
+    /**
+     * Format title with proper Roman numeral capitalization
+     * Example: "BAB II EVALUASI" -> "Bab II Evaluasi"
+     */
+    private function formatTitleWithRomanNumerals(string $title): string
+    {
+        // Convert to title case first
+        $title = ucwords(strtolower($title));
+        
+        // Fix Roman numerals (I, II, III, IV, V, VI, VII, VIII, IX, X, XI, XII, XIII, XIV, XV, XVI, XVII, XVIII, XIX, XX)
+        $title = preg_replace_callback(
+            '/\b(i{1,3}|iv|vi{0,3}|ix|xi{0,3}|xiv|xv|xvi{0,3}|xix|xx)\b/i',
+            function($matches) {
+                return strtoupper($matches[0]);
+            },
+            $title
+        );
+        
+        return $title;
     }
 
     /**

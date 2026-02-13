@@ -62,10 +62,23 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
+     * Check if user is admin or superadmin
+     */
+    private function isAdmin()
+    {
+        return Auth::user()->hasAnyRole(['admin_peran', 'superadmin']);
+    }
+
+    /**
      * Check if user is member of this permohonan's tim (fasilitator or verifikator)
      */
     private function isTimMember(Permohonan $permohonan)
     {
+        // Admin can access all
+        if ($this->isAdmin()) {
+            return true;
+        }
+
         // Get jenis_dokumen_id directly from permohonan
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
 
@@ -121,18 +134,21 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
-     * Tampilkan daftar permohonan untuk input hasil fasilitasi (Fasilitator & Verifikator)
+     * Tampilkan daftar permohonan untuk input hasil fasilitasi (Fasilitator, Verifikator & Admin)
      */
     public function index(Request $request)
     {
-        // Get user's tim assignments (fasilitator or verifikator)
-        $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->whereIn('role_type', ['fasilitator', 'verifikator'])
-            ->where('is_active', true)
-            ->get();
+        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi']);
 
-        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi'])
-            ->where(function ($q) use ($userAssignments) {
+        // Admin can see all permohonan
+        if (!$this->isAdmin()) {
+            // Get user's tim assignments (fasilitator or verifikator)
+            $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
+                ->whereIn('role_type', ['fasilitator', 'verifikator'])
+                ->where('is_active', true)
+                ->get();
+
+            $query->where(function ($q) use ($userAssignments) {
                 foreach ($userAssignments as $assignment) {
                     $q->orWhere(function ($subQ) use ($assignment) {
                         // Use correct column name: kab_kota_id (not kabupaten_kota_id)
@@ -142,6 +158,7 @@ class HasilFasilitasiController extends Controller
                     });
                 }
             });
+        }
 
         // Filter pencarian
         if ($request->filled('search')) {
@@ -213,6 +230,18 @@ class HasilFasilitasiController extends Controller
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
         $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.user', 'hasilUrusan.masterUrusan', 'hasilUrusan.user');
 
+        // Sort sistematika by bab urutan
+        $sortedSistematika = $hasilFasilitasi->hasilSistematika->sortBy(function ($item) {
+            return $item->masterBab->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilSistematika', $sortedSistematika);
+
+        // Sort urusan by master urusan urutan
+        $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
+            return $item->masterUrusan->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
+
         // Check if current user is koordinator (fasilitator dengan is_pic=true)
         $isKoordinator = $this->isKoordinator($permohonan);
 
@@ -243,6 +272,7 @@ class HasilFasilitasiController extends Controller
             'isKoordinator' => $isKoordinator,
             'tim_found' => $timInfo !== null
         ]);
+        // dd($permohonan);
 
         return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'timInfo'));
     }
@@ -303,11 +333,12 @@ class HasilFasilitasiController extends Controller
      */
     public function show(Permohonan $permohonan)
     {
-        // Check if user is member or verifikator
+        // Admin can access all
+        $isAdmin = $this->isAdmin();
         $isVerifikator = $this->isVerifikator($permohonan);
         $isTimMember = $this->isTimMember($permohonan);
 
-        if (!$isTimMember && !$isVerifikator) {
+        if (!$isAdmin && !$isTimMember && !$isVerifikator) {
             abort(403, 'Anda tidak memiliki akses untuk melihat hasil fasilitasi ini.');
         }
 
@@ -325,8 +356,39 @@ class HasilFasilitasiController extends Controller
 
         $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilUrusan.user', 'hasilSistematika.masterBab', 'hasilSistematika.user', 'pembuat');
 
+        // Sort sistematika by bab urutan
+        $sortedSistematika = $hasilFasilitasi->hasilSistematika->sortBy(function ($item) {
+            return $item->masterBab->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilSistematika', $sortedSistematika);
+
+        // Sort urusan by master urusan urutan
+        $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
+            return $item->masterUrusan->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
+
+         // Get tim info untuk ditampilkan
+        $kabkotaId = $permohonan->kab_kota_id;
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+        $timInfo = null;
+        if ($jenisDokumenId && $kabkotaId) {
+            $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
+                ->where('jenis_dokumen_id', $jenisDokumenId)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->with('user')
+                ->get();
+
+            $timInfo = [
+                'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
+                'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
+                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values()
+            ];
+        }
+
         // Pass isVerifikator to view
-        return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator'));
+        return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'timInfo'));
     }
 
     /**
@@ -570,20 +632,21 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
-     * Generate dokumen hasil fasilitasi dalam format Word
+     * Generate dokumen hasil fasilitasi dalam format Word (koordinator only)
+     * Membuat draft document dan menyimpannya, tidak langsung download
      */
     public function generate(Permohonan $permohonan)
     {
-        // Only koordinator can generate documents
-        if (!$this->isKoordinator($permohonan)) {
-            return redirect()->back()->with('error', 'Hanya koordinator yang dapat generate dokumen');
-        }
-
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
             if (!$hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Only koordinator can generate draft
+            if (!$this->isKoordinator($permohonan)) {
+                return redirect()->back()->with('error', 'Hanya koordinator yang dapat membuat draft dokumen.');
             }
 
             $sistematika = $hasilFasilitasi->hasilSistematika()
@@ -592,57 +655,6 @@ class HasilFasilitasiController extends Controller
                 ->orderBy('id')
                 ->get();
 
-            $urusan = $hasilFasilitasi->hasilUrusan()
-                ->with('masterUrusan')
-                ->orderBy('id')
-                ->get();
-
-            // Generate document using service
-            $content = $this->documentService->generateWordDocument($permohonan, $sistematika, $urusan);
-
-            // Save to file
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
-            $filepath = $this->documentService->saveDocument($content, $filename);
-
-            // Update draft_file in hasil_fasilitasi
-            $hasilFasilitasi->update([
-                'draft_file' => $filepath,
-                'updated_by' => Auth::id()
-            ]);
-
-            return response()->download(
-                $this->documentService->getStoragePath($filepath),
-                $filename,
-                ['Content-Type' => 'application/msword']
-            );
-        } catch (\Exception $e) {
-            Log::error('Error generating hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal generate dokumen: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Generate dokumen hasil fasilitasi dalam format PDF
-     */
-    public function generatePdf(Permohonan $permohonan)
-    {
-        // Only koordinator can generate documents
-        if (!$this->isKoordinator($permohonan)) {
-            return redirect()->back()->with('error', 'Hanya koordinator yang dapat generate dokumen');
-        }
-
-        try {
-            $hasilFasilitasi = $permohonan->hasilFasilitasi;
-
-            if (!$hasilFasilitasi) {
-                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
-            }
-
-            $sistematika = $hasilFasilitasi->hasilSistematika()
-                ->with('masterBab')
-                ->orderBy('master_bab_id')
-                ->orderBy('id')
-                ->get();
             $urusan = $hasilFasilitasi->hasilUrusan()
                 ->with('masterUrusan')
                 ->join('master_urusan', 'hasil_fasilitasi_urusan.master_urusan_id', '=', 'master_urusan.id')
@@ -651,29 +663,158 @@ class HasilFasilitasiController extends Controller
                 ->select('hasil_fasilitasi_urusan.*')
                 ->get();
 
-            // Generate HTML content using same service as Word document
-            $htmlContent = $this->documentService->generateWordDocument($permohonan, $sistematika, $urusan);
+            // Generate document using service
+            $content = $this->documentService->generateWordDocument($permohonan, $sistematika, $urusan);
 
-            // Generate PDF from HTML content
-            $pdf = PDF::loadHTML($htmlContent)
-                ->setPaper('a4', 'portrait');
+            // Save Word document to file
+            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
+            $filepath = $this->documentService->saveDocument($content, $filename);
 
-            // Save to file
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
-            $filepath = 'hasil-fasilitasi/' . $filename;
+            // Generate and save PDF file with same base name
+            $pdfFilename = str_replace('.doc', '.pdf', $filename);
+            $pdf = PDF::loadHTML($content)->setPaper('a4', 'portrait');
+            
+            // Save PDF to storage
+            $pdfPath = 'hasil-fasilitasi/' . $pdfFilename;
+            $pdfContent = $pdf->output();
+            Storage::disk('public')->put($pdfPath, $pdfContent);
 
-            Storage::disk('public')->put($filepath, $pdf->output());
-
-            // Update final_file in hasil_fasilitasi
+            // Update draft_file in hasil_fasilitasi
             $hasilFasilitasi->update([
-                'final_file' => $filepath,
+                'draft_file' => $filepath,
                 'updated_by' => Auth::id()
             ]);
 
-            return $pdf->download($filename);
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('draft_created')
+                ->log('Draft dokumen hasil fasilitasi berhasil dibuat (Word & PDF)');
+
+            return redirect()->back()->with('success', 'Draft dokumen hasil fasilitasi berhasil dibuat. Tim dapat mengunduh dokumen dalam format Word atau PDF.');
         } catch (\Exception $e) {
-            Log::error('Error generating PDF hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal generate PDF: ' . $e->getMessage());
+            Log::error('Error generating hasil fasilitasi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal membuat draft dokumen: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download dokumen Word hasil fasilitasi (semua tim member)
+     */
+    public function downloadWord(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (!$hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check access: must be team member or admin
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            // Check if draft file exists
+            if (!$hasilFasilitasi->draft_file || !Storage::disk('public')->exists($hasilFasilitasi->draft_file)) {
+                return redirect()->back()->with('error', 'File draft belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
+            return response()->download(
+                $this->documentService->getStoragePath($hasilFasilitasi->draft_file),
+                $filename,
+                ['Content-Type' => 'application/msword']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading Word hasil fasilitasi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengunduh dokumen: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download dokumen PDF hasil fasilitasi (semua tim member)
+     * PDF di-download dari file yang sudah di-generate saat membuat draft
+     */
+    public function downloadPdf(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (!$hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check access: must be team member or admin
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            // Check if draft exists
+            if (!$hasilFasilitasi->draft_file) {
+                return redirect()->back()->with('error', 'Draft dokumen belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            // Get PDF path (same as Word but with .pdf extension)
+            $pdfPath = str_replace('.doc', '.pdf', $hasilFasilitasi->draft_file);
+            
+            // Check if PDF file exists
+            if (!Storage::disk('public')->exists($pdfPath)) {
+                return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
+            }
+
+            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
+            return response()->download(
+                Storage::disk('public')->path($pdfPath),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading PDF hasil fasilitasi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengunduh PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview dokumen PDF hasil fasilitasi di browser (semua tim member)
+     * PDF di-stream dari file yang sudah di-generate saat membuat draft
+     */
+    public function previewPdf(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (!$hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check access: must be team member or admin
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            // Check if draft exists
+            if (!$hasilFasilitasi->draft_file) {
+                return redirect()->back()->with('error', 'Draft dokumen belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            // Get PDF path (same as Word but with .pdf extension)
+            $pdfPath = str_replace('.doc', '.pdf', $hasilFasilitasi->draft_file);
+            
+            // Check if PDF file exists
+            if (!Storage::disk('public')->exists($pdfPath)) {
+                return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
+            }
+
+            // Stream PDF file to browser (inline preview)
+            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
+            return response()->file(
+                Storage::disk('public')->path($pdfPath),
+                ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $filename . '"']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error previewing PDF hasil fasilitasi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menampilkan preview PDF: ' . $e->getMessage());
         }
     }
 }
