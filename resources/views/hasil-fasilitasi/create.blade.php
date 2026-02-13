@@ -176,6 +176,119 @@
             </div>
         </div>
 
+        <!-- Card Upload Draft Final (Admin/Koordinator Only) -->
+        @if (($isAdmin || $isKoordinator) && $hasilFasilitasi && $hasilFasilitasi->draft_file)
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bx bx-file-pdf"></i> Draft Final Dokumen Hasil Fasilitasi
+                            </h5>
+                            <small class="text-muted">
+                                Upload file PDF final yang sudah dilengkapi dengan kop surat dan lampiran lainnya
+                            </small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    @if ($hasilFasilitasi->draft_final_file)
+                                        <div class="alert">
+                                            <i class="bx bx-check-circle"></i> <strong>Draft final sudah diupload</strong>
+                                            <div class="mt-2">
+                                                <a href="{{ route('hasil-fasilitasi.download-draft-final', $permohonan->id) }}"
+                                                    class="btn btn-sm btn-success me-2">
+                                                    <i class="bx bx-download"></i> Download Draft Final
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-warning"
+                                                    onclick="document.getElementById('formUploadDraftFinal').classList.remove('d-none')">
+                                                    <i class="bx bx-refresh"></i> Upload Ulang
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="alert alert-info">
+                                            <i class="bx bx-info-circle"></i> Draft final belum diupload. Silakan upload
+                                            file PDF yang sudah dilengkapi dengan kop surat.
+                                        </div>
+                                    @endif
+
+                                    <!-- Form Upload -->
+                                    <form id="formUploadDraftFinal"
+                                        action="{{ route('hasil-fasilitasi.upload-draft-final', $permohonan->id) }}"
+                                        method="POST" enctype="multipart/form-data"
+                                        class="{{ $hasilFasilitasi->draft_final_file ? 'd-none' : '' }}">
+                                        @csrf
+                                        <div class="mb-3">
+                                            <label for="draft_final_file" class="form-label">
+                                                Upload Draft Final PDF <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="file"
+                                                class="form-control @error('draft_final_file') is-invalid @enderror"
+                                                id="draft_final_file" name="draft_final_file" accept=".pdf" required>
+                                            <small class="text-muted">Format: PDF, Maksimal: 10MB</small>
+                                            @error('draft_final_file')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bx bx-upload"></i> Upload Draft Final
+                                        </button>
+                                        @if ($hasilFasilitasi->draft_final_file)
+                                            <button type="button" class="btn btn-secondary"
+                                                onclick="document.getElementById('formUploadDraftFinal').classList.add('d-none')">
+                                                Batal
+                                            </button>
+                                        @endif
+                                    </form>
+                                </div>
+
+                                <!-- Tombol Submit ke Kaban (Admin Only) -->
+                                @if ($isAdmin && $hasilFasilitasi->draft_final_file)
+                                    <div class="col-md-4">
+                                        <div class="border-start ps-4">
+                                            <h6 class="mb-2">Ajukan ke Kepala Badan</h6>
+                                            @if ($hasilFasilitasi->status_draft === 'menunggu_persetujuan_kaban')
+                                                <div class="alert alert-warning">
+                                                    <i class="bx bx-time"></i> <strong>Menunggu Persetujuan</strong>
+                                                    <p class="mb-0 small">
+                                                        Diajukan:
+                                                        {{ $hasilFasilitasi->tanggal_diajukan_kaban ? $hasilFasilitasi->tanggal_diajukan_kaban->format('d M Y, H:i') : '-' }}
+                                                    </p>
+                                                </div>
+                                            @elseif ($hasilFasilitasi->status_draft === 'disetujui_kaban')
+                                                <div class="alert alert-success">
+                                                    <i class="bx bx-check-circle"></i> <strong>Sudah Disetujui</strong>
+                                                    <p class="mb-0 small">
+                                                        Tanggal:
+                                                        {{ $hasilFasilitasi->tanggal_disetujui_kaban ? $hasilFasilitasi->tanggal_disetujui_kaban->format('d M Y, H:i') : '-' }}
+                                                    </p>
+                                                </div>
+                                            @else
+                                                <p class="text-muted small mb-3">
+                                                    Draft final siap untuk diajukan ke Kepala Badan untuk mendapatkan
+                                                    persetujuan.
+                                                </p>
+                                                <form
+                                                    action="{{ route('hasil-fasilitasi.submit-to-kaban', $permohonan->id) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Ajukan dokumen ini ke Kepala Badan untuk persetujuan?')">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-success w-100">
+                                                        <i class="bx bx-send"></i> Ajukan ke Kaban
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-md-12">
                 <!-- Tabs untuk Sistematika dan Urusan -->
@@ -319,7 +432,8 @@
                                                             <td>
                                                                 <strong>{{ $item->masterBab->nama_bab ?? '-' }}</strong>
                                                                 @if ($item->sub_bab)
-                                                                    <br><span class="text-muted">{{ $item->sub_bab }}</span>
+                                                                    <br><span
+                                                                        class="text-muted">{{ $item->sub_bab }}</span>
                                                                 @endif
                                                             </td>
                                                             <td>{!! is_string($item->catatan_penyempurnaan)
@@ -472,8 +586,10 @@
                 </div>
                 <div class="modal-body p-0" style="height: 80vh;">
                     @if ($hasilFasilitasi && $hasilFasilitasi->draft_file)
-                        <iframe id="pdfPreviewFrame" src="{{ route('hasil-fasilitasi.preview-pdf', $permohonan->id) }}?v={{ $hasilFasilitasi->updated_at?->timestamp ?? time() }}" width="100%"
-                            height="100%" style="border: none;" title="Preview PDF Hasil Fasilitasi"></iframe>
+                        <iframe id="pdfPreviewFrame"
+                            src="{{ route('hasil-fasilitasi.preview-pdf', $permohonan->id) }}?v={{ $hasilFasilitasi->updated_at?->timestamp ?? time() }}"
+                            width="100%" height="100%" style="border: none;"
+                            title="Preview PDF Hasil Fasilitasi"></iframe>
                     @else
                         <div class="alert alert-info m-3">
                             <i class="bx bx-info-circle"></i> Draft dokumen belum tersedia.
@@ -544,7 +660,7 @@
         // Reload iframe when modal is opened to clear cache
         const previewModal = document.getElementById('previewPdfModal');
         if (previewModal) {
-            previewModal.addEventListener('show.bs.modal', function () {
+            previewModal.addEventListener('show.bs.modal', function() {
                 const iframe = document.getElementById('pdfPreviewFrame');
                 if (iframe) {
                     // Reload iframe with new timestamp to bypass cache

@@ -14,7 +14,12 @@ class HasilFasilitasi extends Model
     protected $fillable = [
         'permohonan_id',
         'draft_file',
+        'draft_final_file',
         'final_file',
+        'status_draft',
+        'tanggal_diajukan_kaban',
+        'tanggal_disetujui_kaban',
+        'keterangan_kaban',
         'surat_penyampaian',
         'surat_dibuat_oleh',
         'surat_tanggal',
@@ -27,6 +32,8 @@ class HasilFasilitasi extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'surat_tanggal' => 'datetime',
+        'tanggal_diajukan_kaban' => 'datetime',
+        'tanggal_disetujui_kaban' => 'datetime',
     ];
 
     // Relasi
