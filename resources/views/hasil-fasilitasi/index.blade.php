@@ -2,8 +2,19 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Input Hasil Fasilitasi</h4>
+            <div>
+                <h4 class="fw-bold mb-1">
+                    Input Hasil Fasilitasi / Evaluasi
+                </h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('hasil-fasilitasi.index') }}">Input Hasil Fasilitasi</a></li>
+                    </ol>
+                </nav>
+            </div>
         </div>
 
         @if (session('success'))

@@ -263,6 +263,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:kaban'])->prefix('approval')->name('approval.')->controller(ApprovalController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}', 'show')->name('show');
+        Route::get('/{permohonan}/download-draft-final', 'downloadDraftFinal')->name('download-draft-final');
         Route::post('/{permohonan}/approve', 'approve')->name('approve');
         Route::post('/{permohonan}/reject', 'reject')->name('reject');
     });
@@ -283,20 +284,24 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
     });
     
-    Route::middleware(['role:fasilitator|verifikator|admin_peran|superadmin'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+    Route::middleware(['role:fasilitator|verifikator|admin_peran|superadmin|kaban'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}', 'show')->name('show');
         Route::get('/{permohonan}/download', 'download')->name('download');
         Route::get('/{permohonan}/download-word', 'downloadWord')->name('download-word'); // Download Word draft
         Route::get('/{permohonan}/download-pdf', 'downloadPdf')->name('download-pdf'); // Download PDF
         Route::get('/{permohonan}/preview-pdf', 'previewPdf')->name('preview-pdf'); // Preview PDF in browser
-        Route::get('/{permohonan}/download-draft-final', 'downloadDraftFinal')->name('download-draft-final'); // Download PDF final
     });
 
-    // Admin only routes untuk draft final dan submit ke kaban
-    Route::middleware(['role:admin_peran|superadmin'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
-        Route::post('/{permohonan}/upload-draft-final', 'uploadDraftFinal')->name('upload-draft-final'); // Upload draft final PDF
-        Route::post('/{permohonan}/submit-to-kaban', 'submitToKaban')->name('submit-to-kaban'); // Submit ke Kepala Badan
+    // Public download route for approved draft final (all authenticated users)
+    Route::middleware(['auth'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+        Route::get('/{permohonan}/download-draft-final', 'downloadDraftFinal')->name('download-draft-final'); // Download PDF final (accessible by all authenticated users)
+    });
+
+    // Admin & Koordinator routes untuk draft final dan submit ke kaban
+    Route::middleware(['role:admin_peran|superadmin|fasilitator'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+        Route::post('/{permohonan}/upload-draft-final', 'uploadDraftFinal')->name('upload-draft-final'); // Upload draft final PDF (Admin/Koordinator)
+        Route::post('/{permohonan}/submit-to-kaban', 'submitToKaban')->name('submit-to-kaban'); // Submit ke Kepala Badan (Admin only, checked in controller)
     });
 
     // ============================================================

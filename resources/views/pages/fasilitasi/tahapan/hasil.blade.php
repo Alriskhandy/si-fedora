@@ -56,7 +56,10 @@
 
         @php
             // Get tahapan Hasil Fasilitasi untuk cek deadline
-            $masterTahapanHasil = \App\Models\MasterTahapan::where('nama_tahapan', 'Hasil Fasilitasi / Evaluasi')->first();
+            $masterTahapanHasil = \App\Models\MasterTahapan::where(
+                'nama_tahapan',
+                'Hasil Fasilitasi / Evaluasi',
+            )->first();
             $tahapanHasil = null;
             $batasWaktu = null;
             $isOverdue = false;
@@ -86,7 +89,11 @@
         @endphp
 
         <!-- Info Batas Waktu (hanya untuk admin & tim fedora) -->
-        @if ($tahapanHasil && $batasWaktu && (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']) || $isFasilitator))
+        @if (
+            $tahapanHasil &&
+                $batasWaktu &&
+                (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']) ||
+                    $isFasilitator))
             <div class="card border-0 shadow-sm mb-4 {{ $isOverdue ? 'border-danger' : 'border-warning' }}"
                 style="border-left: 4px solid {{ $isOverdue ? '#dc3545' : '#ffc107' }} !important;">
                 <div class="card-body">
@@ -120,11 +127,15 @@
                         </div>
                         <div class="col-auto">
                             <div class="d-flex gap-2">
-                                @if ($isFasilitator || auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']))
+                                @if (
+                                    $isFasilitator ||
+                                        auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']))
                                     @if (!$permohonan->hasilFasilitasi || $permohonan->hasilFasilitasi->status_validasi !== 'tervalidasi')
-                                        <a href="{{ route('hasil-fasilitasi.create', $permohonan) }}" class="btn btn-primary shadow-sm">
-                                            <i class='bx {{ !$permohonan->hasilFasilitasi ? "bx-plus-circle" : "bx-edit" }} me-1'></i>
-                                            {{ !$permohonan->hasilFasilitasi ? 'Input' : 'Lihat/Edit' }} Hasil
+                                        <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                            class="btn btn-primary shadow-sm">
+                                            <i
+                                                class='bx {{ !$permohonan->hasilFasilitasi ? 'bx-plus-circle' : 'bx-edit' }} me-1'></i>
+                                            {{ !$permohonan->hasilFasilitasi ? 'Input' : 'Lihat' }}
                                         </a>
                                     @endif
                                 @endif
@@ -141,301 +152,86 @@
             </div>
         @endif
 
-        @if (!$permohonan->hasilFasilitasi)
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="mb-4">
-                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 mb-3"
-                            style="width: 80px; height: 80px;">
-                            <i class='bx bx-time-five bx-lg text-warning'></i>
-                        </div>
-                    </div>
-                    <h5 class="mb-3">Hasil Fasilitasi Sedang Diproses</h5>
-                    <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
-                        Hasil fasilitasi sedang dalam proses input oleh fasilitator.
-                        Dokumen akan tersedia setelah diinput dan divalidasi oleh Kepala Badan
-                    </p>
-
-                    @if (!$batasWaktu && ($isFasilitator || auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban'])))
-                        <div>
-                            <a href="{{ route('hasil-fasilitasi.create', $permohonan) }}" class="btn btn-primary btn-lg">
-                                <i class='bx bx-plus-circle me-2'></i>Input Hasil Fasilitasi
-                            </a>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        @elseif ($permohonan->hasilFasilitasi->status_validasi !== 'tervalidasi')
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="mb-4">
-                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 mb-3"
-                            style="width: 80px; height: 80px;">
-                            <i class='bx bx-time-five bx-lg text-dark'></i>
-                        </div>
-                    </div>
-                    <h5 class="mb-2">Sedang Diproses</h5>
-                    <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
-                        Catatan / masukan sedang dalam proses penginputan. <br>
-                        Silahkan kembali lagi nanti.
-                    </p>
-                </div>
-            </div>
-        @else
-            <!-- Hasil sudah tervalidasi - semua role bisa lihat -->
-            <!-- Informasi Hasil Fasilitasi -->
+        <!-- Penyampaian Hasil Fasilitasi / Evaluasi Disetujui Kepala Badan -->
+        @if (
+            $permohonan->hasilFasilitasi &&
+                $permohonan->hasilFasilitasi->draft_final_file &&
+                $permohonan->hasilFasilitasi->status_draft === 'disetujui_kaban')
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0 me-3">
-                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-white"
-                                style="width: 45px; height: 45px;">
-                                <i class='bx bx-check-double text-success' style="font-size: 24px;"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h5 class="mb-1 text-white">
-                                <i class='bx bx-check-circle me-2'></i>Hasil Fasilitasi & Catatan Penyempurnaan
-                            </h5>
-                            <p class="mb-0 text-white-50 small">Telah divalidasi dan siap digunakan</p>
-                        </div>
-                    </div>
+                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);">
+                    <h5 class="fw-bold mb-1">
+                        Penyampaian Hasil Fasilitasi / Evaluasi
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded h-100">
-                                <h6 class="mb-3 text-uppercase text-muted small fw-bold">
-                                    <i class='bx bx-info-circle me-1'></i>Informasi Umum
+                    <div class="row g-0">
+                        <!-- Informasi Permohonan -->
+                        <div class="col-md-4 border-end">
+                            <div class="p-4">
+                                <h6 class="mb-4 text-uppercase text-muted small fw-bold">
+                                    <i class='bx bx-info-circle me-1'></i>Informasi Permohonan
                                 </h6>
-                                <div class="mb-3">
-                                    <label class="text-muted small d-block mb-1">Tanggal Pelaksanaan</label>
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Kabupaten/Kota</label>
                                     <div class="fw-bold">
-                                        <i class='bx bx-calendar text-primary me-1'></i>
-                                        {{ $permohonan->hasilFasilitasi->tanggal_pelaksanaan ? \Carbon\Carbon::parse($permohonan->hasilFasilitasi->tanggal_pelaksanaan)->format('d F Y') : '-' }}
+                                        <i class='bx bx-map text-primary me-1'></i>
+                                        {{ $permohonan->kabupatenKota->nama ?? '-' }}
                                     </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="text-muted small d-block mb-1">Status Validasi</label>
-                                    <span class="badge bg-success px-3 py-2">
-                                        <i class='bx bx-check-shield me-1'></i>Tervalidasi
-                                    </span>
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Jenis Dokumen</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-file text-info me-1'></i>
+                                        {{ $permohonan->jenisDokumen->nama ?? '-' }}
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Tanggal Disetujui</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-calendar-check text-success me-1'></i>
+                                        {{ $permohonan->hasilFasilitasi->tanggal_disetujui_kaban ? \Carbon\Carbon::parse($permohonan->hasilFasilitasi->tanggal_disetujui_kaban)->format('d F Y, H:i') : '-' }}
+                                    </div>
                                 </div>
                                 <div>
-                                    <label class="text-muted small d-block mb-1">Diinput Oleh</label>
-                                    <div class="d-flex align-items-center">
-                                        <div class="flex-shrink-0 me-2">
-                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10"
-                                                style="width: 35px; height: 35px;">
-                                                <i class='bx bx-user text-primary'></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-bold">{{ $permohonan->hasilFasilitasi->pembuat->name ?? '-' }}
-                                            </div>
-                                            <small class="text-muted">Fasilitator</small>
-                                        </div>
-                                    </div>
+                                    <label class="text-muted small d-block mb-2">Status</label>
+                                    <span class="badge bg-success px-3 py-2">
+                                        <i class='bx bx-check-shield me-1'></i>Selesai
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            @if ($permohonan->hasilFasilitasi->catatan_kaban)
-                                <div
-                                    class="p-3 bg-primary bg-opacity-5 rounded border border-primary border-opacity-25 h-100">
-                                    <h6 class="mb-3 text-uppercase text-primary small fw-bold">
-                                        <i class='bx bx-message-dots me-1'></i>Catatan Kepala Badan
+
+                        <!-- PDF Preview -->
+                        <div class="col-md-8">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
                                     </h6>
-                                    <p class="mb-0 text-dark">{{ $permohonan->hasilFasilitasi->catatan_kaban }}</p>
+                                    <a href="{{ route('hasil-fasilitasi.download-draft-final', $permohonan) }}"
+                                        class="btn btn-primary btn-sm shadow-sm" target="_blank">
+                                        <i class='bx bx-download me-1'></i>Download PDF
+                                    </a>
                                 </div>
-                            @else
-                                <div
-                                    class="p-3 bg-light rounded border border-dashed h-100 d-flex align-items-center justify-content-center">
-                                    <div class="text-center text-muted">
-                                        <i class='bx bx-message-x bx-lg mb-2 d-block'></i>
-                                        <small>Tidak ada catatan dari Kepala Badan</small>
-                                    </div>
+
+                                <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
+                                    <iframe
+                                        src="{{ asset('storage/' . $permohonan->hasilFasilitasi->draft_final_file) }}#toolbar=1&view=FitH"
+                                        type="application/pdf" width="100%" height="600px" style="border: none;">
+                                        <p class="text-center py-5">
+                                            Browser Anda tidak mendukung preview PDF.
+                                            <a href="{{ route('hasil-fasilitasi.download-draft-final', $permohonan) }}"
+                                                class="btn btn-primary" target="_blank">
+                                                <i class='bx bx-download me-1'></i>Download PDF
+                                            </a>
+                                        </p>
+                                    </iframe>
                                 </div>
-                            @endif
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Hasil Fasilitasi per Sistematika -->
-            @if ($permohonan->hasilFasilitasi->hasilFasilitasiSistematika->count() > 0)
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white border-bottom">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <h5 class="mb-0">
-                                <i class='bx bx-list-ul text-primary me-2'></i>Hasil Fasilitasi per Sistematika
-                            </h5>
-                            <span class="badge bg-primary rounded-pill">
-                                {{ $permohonan->hasilFasilitasi->hasilFasilitasiSistematika->count() }} Sistematika
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="accordion accordion-flush" id="accordionSistematika">
-                            @foreach ($permohonan->hasilFasilitasi->hasilFasilitasiSistematika as $index => $sistematika)
-                                <div class="accordion-item border rounded mb-2">
-                                    <h2 class="accordion-header" id="heading{{ $index }}">
-                                        <button class="accordion-button {{ $index > 0 ? 'collapsed' : '' }} shadow-none"
-                                            type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#collapse{{ $index }}"
-                                            aria-expanded="{{ $index == 0 ? 'true' : 'false' }}"
-                                            aria-controls="collapse{{ $index }}">
-                                            <div class="d-flex align-items-center w-100">
-                                                <div class="flex-shrink-0 me-3">
-                                                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10"
-                                                        style="width: 35px; height: 35px;">
-                                                        <i class='bx bx-book-content text-primary'></i>
-                                                    </div>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <strong>{{ $sistematika->masterBab->nama_bab ?? 'Sistematika' }}</strong>
-                                                    @if ($sistematika->saran)
-                                                        <span class="badge bg-info ms-2">
-                                                            <i class='bx bx-bulb'></i> Ada Saran
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </button>
-                                    </h2>
-                                    <div id="collapse{{ $index }}"
-                                        class="accordion-collapse collapse {{ $index == 0 ? 'show' : '' }}"
-                                        aria-labelledby="heading{{ $index }}"
-                                        data-bs-parent="#accordionSistematika">
-                                        <div class="accordion-body bg-light">
-                                            <div class="mb-3">
-                                                <h6 class="text-uppercase text-muted small fw-bold mb-2">
-                                                    <i class='bx bx-detail me-1'></i>Keterangan
-                                                </h6>
-                                                <p class="mb-0">{{ $sistematika->keterangan ?? '-' }}</p>
-                                            </div>
-                                            @if ($sistematika->saran)
-                                                <div
-                                                    class="p-3 bg-info bg-opacity-10 rounded border border-info border-opacity-25">
-                                                    <h6 class="text-info mb-2">
-                                                        <i class='bx bx-bulb me-1'></i>Saran Penyempurnaan
-                                                    </h6>
-                                                    <p class="mb-0">{{ $sistematika->saran }}</p>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Hasil Fasilitasi per Urusan -->
-            @if ($permohonan->hasilFasilitasi->hasilFasilitasiUrusan->count() > 0)
-                <div class="card border-0 shadow-sm mb-4">
-                    <div class="card-header bg-white border-bottom">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <h5 class="mb-0">
-                                <i class='bx bx-briefcase text-primary me-2'></i>Hasil Fasilitasi per Urusan
-                            </h5>
-                            <span class="badge bg-primary rounded-pill">
-                                {{ $permohonan->hasilFasilitasi->hasilFasilitasiUrusan->count() }} Urusan
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="5%" class="text-center">No</th>
-                                        <th width="30%">
-                                            <i class='bx bx-briefcase me-1'></i>Urusan
-                                        </th>
-                                        <th width="35%">
-                                            <i class='bx bx-detail me-1'></i>Keterangan
-                                        </th>
-                                        <th width="30%">
-                                            <i class='bx bx-bulb me-1'></i>Saran
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($permohonan->hasilFasilitasi->hasilFasilitasiUrusan as $index => $urusan)
-                                        <tr>
-                                            <td class="text-center">
-                                                <span class="badge bg-light text-dark rounded-circle"
-                                                    style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
-                                                    {{ $index + 1 }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="flex-shrink-0 me-2">
-                                                        <div class="d-flex align-items-center justify-content-center rounded bg-primary bg-opacity-10"
-                                                            style="width: 32px; height: 32px;">
-                                                            <i class='bx bx-food-menu text-primary'></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="flex-grow-1">
-                                                        <div class="fw-semibold">
-                                                            {{ $urusan->masterUrusan->nama_urusan ?? '-' }}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="text-muted">{{ $urusan->keterangan ?? '-' }}</span>
-                                            </td>
-                                            <td>
-                                                @if ($urusan->saran)
-                                                    <div class="p-2 bg-info bg-opacity-10 rounded">
-                                                        <i class='bx bx-bulb text-info'></i>
-                                                        <span class="text-info small">{{ $urusan->saran }}</span>
-                                                    </div>
-                                                @else
-                                                    <span class="text-muted small">
-                                                        <i class='bx bx-minus'></i> Tidak ada saran
-                                                    </span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Download Laporan -->
-            @if ($permohonan->hasilFasilitasi->status_validasi === 'tervalidasi')
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <div class="mb-4">
-                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 mb-3"
-                                style="width: 80px; height: 80px;">
-                                <i class='bx bx-file-blank bx-lg text-primary'></i>
-                            </div>
-                        </div>
-                        <h4 class="mb-3">Dokumen Hasil Fasilitasi</h4>
-                        <p class="text-muted mb-4 mx-auto" style="max-width: 500px;">
-                            Download laporan hasil fasilitasi yang telah tervalidasi dalam format PDF
-                        </p>
-                        <a href="{{ route('hasil-fasilitasi.download', $permohonan) }}"
-                            class="btn btn-primary btn-lg shadow-sm" target="_blank">
-                            <i class='bx bx-download me-2'></i>Download Laporan PDF
-                        </a>
-                        <div class="mt-3">
-                            <small class="text-muted">
-                                <i class='bx bx-check-shield me-1'></i>
-                                Dokumen telah tervalidasi dan siap digunakan
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            @endif
         @endif
 
         <!-- Modal Perpanjangan Waktu -->
@@ -467,9 +263,10 @@
                                         <div class="flex-grow-1">
                                             <div class="small text-muted mb-1">Batas waktu saat ini</div>
                                             <strong class="d-block">
-                                                @if($batasWaktu)
+                                                @if ($batasWaktu)
                                                     {{ $batasWaktu->format('d F Y, H:i') }}
-                                                    <span class="badge {{ $isOverdue ? 'bg-danger' : 'bg-warning text-dark' }} ms-2">
+                                                    <span
+                                                        class="badge {{ $isOverdue ? 'bg-danger' : 'bg-warning text-dark' }} ms-2">
                                                         {{ $batasWaktu->diffForHumans() }}
                                                     </span>
                                                 @else
@@ -485,8 +282,8 @@
                                         <i class='bx bx-calendar me-1'></i>
                                         Deadline Baru <span class="text-danger">*</span>
                                     </label>
-                                    <input type="datetime-local" class="form-control form-control-lg"
-                                        id="deadline" name="deadline" required
+                                    <input type="datetime-local" class="form-control form-control-lg" id="deadline"
+                                        name="deadline" required
                                         value="{{ $batasWaktu ? $batasWaktu->format('Y-m-d\\TH:i') : \Carbon\Carbon::now()->addDays(3)->endOfDay()->format('Y-m-d\\TH:i') }}">
                                     <div class="form-text">
                                         <i class='bx bx-info-circle me-1'></i>

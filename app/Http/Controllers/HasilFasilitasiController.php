@@ -93,6 +93,16 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
+     * Check if user is Kepala Badan
+     * 
+     * @return bool
+     */
+    private function isKepalaBadan(): bool
+    {
+        return Auth::user()->hasRole('kaban');
+    }
+
+    /**
      * Check if user is member of this permohonan's tim (fasilitator or verifikator)
      * 
      * @param Permohonan $permohonan
@@ -258,7 +268,7 @@ class HasilFasilitasiController extends Controller
     private function notifyAdminAndKaban(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
         // Get all admin and superadmin users
-        $admins = User::role(['admin_peran', 'superadmin', 'kepala_badan'])->get();
+        $admins = User::role(['admin_peran', 'superadmin', 'kaban'])->get();
 
         foreach ($admins as $admin) {
             if ($admin->id != Auth::id()) {
@@ -978,8 +988,8 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
-            // Check access: must be team member or admin
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
+            // Check access: must be team member, admin, or kepala badan
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
@@ -1016,8 +1026,8 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
-            // Check access: must be team member or admin
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
+            // Check access: must be team member, admin, or kepala badan
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
@@ -1062,8 +1072,8 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
-            // Check access: must be team member or admin
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
+            // Check access: must be team member, admin, or kepala badan
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
@@ -1182,11 +1192,6 @@ class HasilFasilitasiController extends Controller
 
             if (!$hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
-            }
-
-            // Check access: must be team member or admin
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin()) {
-                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
             // Check if draft final exists
