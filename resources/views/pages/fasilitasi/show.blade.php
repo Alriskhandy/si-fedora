@@ -172,8 +172,8 @@
                             'Penetapan Jadwal' => 'permohonan.tahapan.jadwal',
                             'Pelaksanaan' => 'permohonan.tahapan.pelaksanaan',
                             'Hasil Fasilitasi / Evaluasi' => 'permohonan.tahapan.hasil',
-                            'Tindak Lanjut' => 'permohonan.tahapan.tindak-lanjut',
-                            'Penetapan PERDA' => 'permohonan.tahapan.penetapan',
+                            'Tindak Lanjut Hasil' => 'permohonan.tahapan.tindak-lanjut',
+                            'Penetapan PERDA / PERKADA' => 'permohonan.tahapan.penetapan',
                         ];
                     @endphp
 

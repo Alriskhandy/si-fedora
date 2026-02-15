@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DokumenTahapan;
+use App\Models\MasterTahapan;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
-use App\Models\TindakLanjut;
+use App\Models\PermohonanTahapan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,102 +39,6 @@ class TindakLanjutController extends Controller
     }
 
     /**
-     * Form upload tindak lanjut
-     */
-    public function create(Permohonan $permohonan)
-    {
-        // Pastikan permohonan milik user yang login
-        if ($permohonan->user_id !== Auth::id()) {
-            return redirect()->route('tindak-lanjut.index')
-                ->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
-        }
-
-        // Pastikan surat penyampaian sudah ada
-        if (!$permohonan->hasilFasilitasi || !$permohonan->hasilFasilitasi->surat_penyampaian) {
-            return redirect()->route('tindak-lanjut.index')
-                ->with('error', 'Surat penyampaian hasil belum tersedia.');
-        }
-
-        $tindakLanjut = $permohonan->tindakLanjut;
-
-        return view('tindak-lanjut.create', compact('permohonan', 'tindakLanjut'));
-    }
-
-    /**
-     * Simpan tindak lanjut
-     */
-    public function store(Request $request, Permohonan $permohonan)
-    {
-        // Pastikan permohonan milik user yang login
-        if ($permohonan->user_id !== Auth::id()) {
-            return back()->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
-        }
-
-        $request->validate([
-            'keterangan' => 'required|string',
-            'file_laporan' => 'required|file|mimes:pdf,doc,docx|max:10240',
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            // Upload file
-            $filePath = $request->file('file_laporan')->store('tindak-lanjut', 'public');
-
-            // Simpan atau update tindak lanjut
-            $tindakLanjut = TindakLanjut::updateOrCreate(
-                ['permohonan_id' => $permohonan->id],
-                [
-                    'keterangan' => $request->keterangan,
-                    'file_laporan' => $filePath,
-                    'tanggal_upload' => now(),
-                    'diupload_oleh' => Auth::id(),
-                ]
-            );
-
-            // Update tahapan Tindak Lanjut Hasil
-            $masterTahapanTindakLanjut = \App\Models\MasterTahapan::where('nama_tahapan', 'Tindak Lanjut Hasil')->first();
-            if ($masterTahapanTindakLanjut) {
-                \App\Models\PermohonanTahapan::updateOrCreate(
-                    [
-                        'permohonan_id' => $permohonan->id,
-                        'tahapan_id' => $masterTahapanTindakLanjut->id,
-                    ],
-                    [
-                        'status' => 'selesai',
-                        'tgl_selesai' => now(),
-                        'catatan' => 'Laporan tindak lanjut diupload pada ' . now()->format('d M Y H:i'),
-                        'updated_by' => Auth::id(),
-                    ]
-                );
-            }
-
-            DB::commit();
-
-            return redirect()->route('tindak-lanjut.index')
-                ->with('success', 'Laporan tindak lanjut berhasil diunggah.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error menyimpan tindak lanjut: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menyimpan tindak lanjut: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Tampilkan detail tindak lanjut
-     */
-    public function show(Permohonan $permohonan)
-    {
-        $tindakLanjut = $permohonan->tindakLanjut;
-
-        if (!$tindakLanjut) {
-            return redirect()->back()->with('error', 'Tindak lanjut belum ada.');
-        }
-
-        return view('tindak-lanjut.show', compact('permohonan', 'tindakLanjut'));
-    }
-
-    /**
      * Download file laporan tindak lanjut
      */
     public function download(Permohonan $permohonan)
@@ -148,5 +56,178 @@ class TindakLanjutController extends Controller
         }
 
         return response()->download($filepath);
+    }
+
+    /**
+     * Upload dokumen tindak lanjut ke DokumenTahapan (belum submit)
+     */
+    public function upload(Request $request, Permohonan $permohonan)
+    {
+        // Pastikan permohonan milik user yang login
+        if ($permohonan->user_id !== Auth::id()) {
+            return back()->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:102400', // 100MB = 102400 KB
+        ], [
+            'file.required' => 'File dokumen wajib diupload',
+            'file.mimes' => 'File harus berformat PDF',
+            'file.max' => 'Ukuran file maksimal 100MB',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Get tahapan Tindak Lanjut
+            $masterTahapan = \App\Models\MasterTahapan::where('nama_tahapan', 'LIKE', '%Tindak Lanjut%')->first();
+            
+            if (!$masterTahapan) {
+                return back()->with('error', 'Tahapan tindak lanjut tidak ditemukan.');
+            }
+
+            // Upload file
+            $file = $request->file('file');
+            $fileName = 'tindak_lanjut_' . $permohonan->id . '_' . time() . '.pdf';
+            $filePath = $file->storeAs('dokumen-tahapan/tindak-lanjut', $fileName, 'public');
+
+            // Simpan ke DokumenTahapan
+            $dokumen = DokumenTahapan::create([
+                'permohonan_id' => $permohonan->id,
+                'tahapan_id' => $masterTahapan->id,
+                'user_id' => Auth::id(),
+                'nama_dokumen' => 'Dokumen Tindak Lanjut Hasil Fasilitasi',
+                'file_path' => $filePath,
+                'file_name' => $fileName,
+                'file_size' => $file->getSize(),
+                'file_type' => $file->getMimeType(),
+                'status' => 'menunggu',
+            ]);
+
+            // Log activity
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'dokumen' => $fileName,
+                    'ukuran' => $file->getSize(),
+                ])
+                ->log('Dokumen tindak lanjut diupload oleh ' . Auth::user()->name);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Dokumen tindak lanjut berhasil diupload. Silakan preview dan submit dokumen.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error uploading tindak lanjut: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengupload dokumen: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Submit dokumen tindak lanjut (finalisasi)
+     */
+    public function submit(Request $request, Permohonan $permohonan)
+    {
+        // Pastikan permohonan milik user yang login
+        if ($permohonan->user_id !== Auth::id()) {
+            return back()->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
+        }
+
+        // Pastikan sudah ada dokumen yang diupload
+        $masterTahapan = MasterTahapan::where('id', 6)->first();
+        
+        if (!$masterTahapan) {
+            return back()->with('error', 'Master tahapan tindak lanjut tidak ditemukan.');
+        }
+
+        $dokumen = DokumenTahapan::where('permohonan_id', $permohonan->id)
+            ->where('tahapan_id', $masterTahapan->id)
+            ->latest()
+            ->first();
+
+        if (!$dokumen) {
+            return back()->with('error', 'Belum ada dokumen yang diupload. Silakan upload dokumen terlebih dahulu.');
+        }
+
+        // Pastikan belum disubmit sebelumnya (cek apakah verified_by masih kosong)
+        if ($dokumen->verified_by) {
+            return back()->with('error', 'Dokumen sudah pernah disubmit sebelumnya.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Update DokumenTahapan dengan timestamp submit sebagai penanda
+            $dokumen->update([
+                'verified_by' => Auth::id(),
+                'verified_at' => now(),
+            ]);
+
+            // Update tahapan Tindak Lanjut menjadi selesai
+            PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapan->id,
+                ],
+                [
+                    'status' => 'selesai',
+                    'catatan' => 'Dokumen tindak lanjut telah disubmit oleh pemohon',
+                    'updated_by' => Auth::id(),
+                ]
+            );
+
+            // Cari tahapan Penetapan Perda dan set menjadi proses
+            $tahapanPenetapan = \App\Models\MasterTahapan::where('id', 7)
+                ->first();
+
+            if ($tahapanPenetapan) {
+                PermohonanTahapan::updateOrCreate(
+                    [
+                        'permohonan_id' => $permohonan->id,
+                        'tahapan_id' => $tahapanPenetapan->id,
+                    ],
+                    [
+                        'status' => 'proses',
+                        'catatan' => 'Tahapan penetapan perda dimulai setelah dokumen tindak lanjut disubmit',
+                        'updated_by' => Auth::id(),
+                    ]
+                );
+            }
+
+            // Log activity
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(Auth::user())
+                ->log('Dokumen tindak lanjut disubmit oleh ' . Auth::user()->name);
+
+            // Kirim notifikasi ke Tim Fedora, Admin, dan Kaban
+            $targetUsers = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['admin', 'tim_fedora', 'kaban']);
+            })->get();
+
+            foreach ($targetUsers as $user) {
+                Notifikasi::create([
+                    'user_id' => $user->id,
+                    'title' => 'Dokumen Tindak Lanjut Disubmit',
+                    'message' => 'Pemohon ' . Auth::user()->name . ' dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' telah submit dokumen tindak lanjut untuk permohonan ' . $permohonan->nomor_permohonan,
+                    'type' => 'tindak_lanjut_submitted',
+                    'model_type' => Permohonan::class,
+                    'model_id' => $permohonan->id,
+                    'action_url' => route('permohonan.tahapan.tindak-lanjut', $permohonan),
+                    'is_read' => false,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Dokumen tindak lanjut berhasil disubmit dan dapat dilihat oleh tim.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error submitting tindak lanjut: ' . $e->getMessage());
+            return back()->with('error', 'Gagal submit dokumen: ' . $e->getMessage());
+        }
     }
 }

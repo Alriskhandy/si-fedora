@@ -69,11 +69,6 @@ class ApprovalController extends Controller
     {
         $admins = User::role(['admin_peran', 'superadmin'])->get();
 
-        Log::info('Notifying Admins', [
-            'admin_count' => $admins->count(),
-            'permohonan_id' => $permohonan->id,
-        ]);
-
         foreach ($admins as $admin) {
             if ($admin->id != Auth::id()) {
                 try {
@@ -87,7 +82,6 @@ class ApprovalController extends Controller
                         'action_url' => route('hasil-fasilitasi.show', $permohonan->id),
                         'is_read' => false,
                     ]);
-                    Log::info('Notification created for admin', ['user_id' => $admin->id]);
                 } catch (\Exception $e) {
                     Log::error('Failed to create notification for admin', [
                         'user_id' => $admin->id,
@@ -116,11 +110,6 @@ class ApprovalController extends Controller
             ->whereIn('role_type', ['fasilitator', 'verifikator'])
             ->get();
 
-        Log::info('Notifying Team Members', [
-            'team_count' => $assignments->count(),
-            'permohonan_id' => $permohonan->id,
-        ]);
-
         foreach ($assignments as $assignment) {
             if ($assignment->user_id != Auth::id()) {
                 try {
@@ -134,7 +123,6 @@ class ApprovalController extends Controller
                         'action_url' => route('hasil-fasilitasi.show', $permohonan->id),
                         'is_read' => false,
                     ]);
-                    Log::info('Notification created for team member', ['user_id' => $assignment->user_id]);
                 } catch (\Exception $e) {
                     Log::error('Failed to create notification for team member', [
                         'user_id' => $assignment->user_id,
@@ -168,7 +156,6 @@ class ApprovalController extends Controller
                     'action_url' => route('permohonan.show', $permohonan->id),
                     'is_read' => false,
                 ]);
-                Log::info('Notification created for pemohon', ['user_id' => $permohonan->user_id]);
             } catch (\Exception $e) {
                 Log::error('Failed to create notification for pemohon', [
                     'user_id' => $permohonan->user_id,
@@ -236,13 +223,6 @@ class ApprovalController extends Controller
         }
 
         $permohonan = $query->latest('updated_at')->paginate(10);
-        
-        // Debug log
-        Log::info('Approval Index', [
-            'user_id' => Auth::id(),
-            'user_role' => Auth::user()->roles->pluck('name'),
-            'permohonan_count' => $permohonan->total(),
-        ]);
 
         return view('pages.approval.index', compact('permohonan'));
     }
@@ -271,15 +251,6 @@ class ApprovalController extends Controller
         ]);
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
-
-        // Debug log
-        Log::info('Approval Show', [
-            'user_id' => Auth::id(),
-            'permohonan_id' => $permohonan->id,
-            'hasilFasilitasi_exists' => $hasilFasilitasi ? 'yes' : 'no',
-            'status_draft' => $hasilFasilitasi?->status_draft ?? 'null',
-            'draft_final_file' => $hasilFasilitasi?->draft_final_file ?? 'null',
-        ]);
 
         // Pastikan ada hasil fasilitasi
         if (!$hasilFasilitasi) {
@@ -376,22 +347,10 @@ class ApprovalController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
-            // Log untuk debugging
-            Log::info('Approval Process Started', [
-                'permohonan_id' => $permohonan->id,
-                'hasil_fasilitasi_updated' => true,
-            ]);
-
             // Update tahapan hasil fasilitasi ke selesai
             $masterHasilFasilitasi = MasterTahapan::where('nama_tahapan', 'LIKE', '%Hasil Fasilitasi%')
                 ->orWhere('nama_tahapan', 'LIKE', '%Evaluasi%')
                 ->first();
-
-            Log::info('Master Tahapan Hasil Fasilitasi Query', [
-                'found' => $masterHasilFasilitasi ? 'yes' : 'no',
-                'tahapan_id' => $masterHasilFasilitasi?->id,
-                'tahapan_nama' => $masterHasilFasilitasi?->nama_tahapan,
-            ]);
 
             if ($masterHasilFasilitasi) {
                 PermohonanTahapan::updateOrCreate(
@@ -407,21 +366,10 @@ class ApprovalController extends Controller
                     ]
                 );
 
-                Log::info('Tahapan Hasil Fasilitasi Updated', [
-                    'tahapan_id' => $masterHasilFasilitasi->id,
-                    'status_updated' => 'selesai',
-                ]);
-
                 // Update tahapan berikutnya ke proses
                 $masterTahapanBerikutnya = MasterTahapan::where('urutan', '>', $masterHasilFasilitasi->urutan)
                     ->orderBy('urutan')
                     ->first();
-
-                Log::info('Master Tahapan Berikutnya Query', [
-                    'found' => $masterTahapanBerikutnya ? 'yes' : 'no',
-                    'tahapan_id' => $masterTahapanBerikutnya?->id,
-                    'tahapan_nama' => $masterTahapanBerikutnya?->nama_tahapan,
-                ]);
 
                 if ($masterTahapanBerikutnya) {
                     PermohonanTahapan::updateOrCreate(
@@ -436,12 +384,6 @@ class ApprovalController extends Controller
                             'updated_by' => Auth::id(),
                         ]
                     );
-
-                    Log::info('Tahapan Berikutnya Updated', [
-                        'tahapan_id' => $masterTahapanBerikutnya->id,
-                        'tahapan_nama' => $masterTahapanBerikutnya->nama_tahapan,
-                        'status_updated' => 'proses',
-                    ]);
                 }
             }
 
@@ -457,7 +399,6 @@ class ApprovalController extends Controller
                 ])
                 ->log('Draft final hasil fasilitasi disetujui oleh Kepala Badan');
 
-            Log::info('Activity Log Created');
 
             // Notifikasi ke pemohon
             try {
@@ -467,7 +408,6 @@ class ApprovalController extends Controller
                     'Hasil fasilitasi untuk permohonan ' . $permohonan->kabupatenKota->nama . ' telah disetujui oleh Kepala Badan.',
                     'success'
                 );
-                Log::info('Notification to Pemohon sent');
             } catch (\Exception $e) {
                 Log::error('Failed to notify Pemohon: ' . $e->getMessage());
             }
@@ -480,7 +420,6 @@ class ApprovalController extends Controller
                     'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah disetujui oleh Kepala Badan.',
                     'success'
                 );
-                Log::info('Notification to Admins sent');
             } catch (\Exception $e) {
                 Log::error('Failed to notify Admins: ' . $e->getMessage());
             }
@@ -493,12 +432,10 @@ class ApprovalController extends Controller
                     'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah disetujui oleh Kepala Badan.',
                     'success'
                 );
-                Log::info('Notification to Team Members sent');
             } catch (\Exception $e) {
                 Log::error('Failed to notify Team Members: ' . $e->getMessage());
             }
 
-            Log::info('Approval Process Completed Successfully');
 
             return redirect()->route('approval.index')->with('success', 'Draft final hasil fasilitasi berhasil disetujui. Tahapan berikutnya telah dimulai.');
         } catch (\Exception $e) {
@@ -547,12 +484,6 @@ class ApprovalController extends Controller
                 'updated_by' => Auth::id(),
             ]);
 
-            Log::info('Rejection Process', [
-                'permohonan_id' => $permohonan->id,
-                'hasil_fasilitasi_updated' => true,
-                'status' => 'ditolak_kaban',
-            ]);
-
             // Activity Log
             activity()
                 ->performedOn($hasilFasilitasi)
@@ -573,7 +504,6 @@ class ApprovalController extends Controller
                     'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' memerlukan revisi. Catatan: ' . $request->catatan_penolakan,
                     'warning'
                 );
-                Log::info('Notification to Admins sent (rejection)');
             } catch (\Exception $e) {
                 Log::error('Failed to notify Admins (rejection): ' . $e->getMessage());
             }
@@ -586,12 +516,9 @@ class ApprovalController extends Controller
                     'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' memerlukan revisi dari Kepala Badan. Silakan perbaiki dan upload ulang.',
                     'warning'
                 );
-                Log::info('Notification to Team Members sent (rejection)');
             } catch (\Exception $e) {
                 Log::error('Failed to notify Team Members (rejection): ' . $e->getMessage());
             }
-
-            Log::info('Rejection Process Completed Successfully');
 
             return redirect()->route('approval.index')->with('success', 'Draft final memerlukan revisi. Admin dan tim akan menerima notifikasi untuk melakukan perbaikan dan upload ulang.');
         } catch (\Exception $e) {

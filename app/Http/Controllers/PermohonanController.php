@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DokumenTahapan;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
 use App\Models\JadwalFasilitasi;
 use App\Models\PermohonanDokumen;
 use App\Models\MasterKelengkapanVerifikasi;
+use App\Models\MasterTahapan;
 use App\Models\Notifikasi;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
@@ -548,10 +550,21 @@ class PermohonanController extends Controller
             'jenisDokumen',
             'jadwalFasilitasi',
             'tindakLanjut',
-            'suratPenyampaianHasil'
         ]);
 
-        return view('pages.fasilitasi.tahapan.tindak-lanjut', compact('permohonan'));
+        // Get dokumen tindak lanjut dari DokumenTahapan
+        $masterTahapan = MasterTahapan::where('id', 6)->first();
+        $dokumenTindakLanjut = null;
+        
+        if ($masterTahapan) {
+            $dokumenTindakLanjut = DokumenTahapan::where('permohonan_id', $permohonan->id)
+                ->where('tahapan_id', $masterTahapan->id)
+                ->where('permohonan_id', $permohonan->id)
+                ->latest()
+                ->first();
+        }
+        
+        return view('pages.fasilitasi.tahapan.tindak-lanjut', compact('permohonan', 'dokumenTindakLanjut'));
     }
 
     public function tahapanPenetapan(Permohonan $permohonan)

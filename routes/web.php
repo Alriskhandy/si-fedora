@@ -408,6 +408,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}/create', 'create')->name('create');
         Route::post('/{permohonan}', 'store')->name('store');
+        Route::post('/{permohonan}/upload', 'upload')->name('upload');
+        Route::post('/{permohonan}/submit', 'submit')->name('submit');
         Route::get('/{permohonan}', 'show')->name('show');
         Route::get('/{permohonan}/download', 'download')->name('download');
     });
