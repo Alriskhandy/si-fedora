@@ -34,7 +34,7 @@ class DashboardController extends Controller
         }
 
         // Fallback
-        return view('dashboard.default', [
+        return view('pages.dashboard.default', [
             'user' => $user
         ]);
     }
@@ -51,7 +51,7 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.superadmin', compact('stats'));
+        return view('pages.dashboard.superadmin', compact('stats'));
     }
 
     private function kabanDashboard($user)
@@ -69,7 +69,7 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.kaban', compact('stats'));
+        return view('pages.dashboard.kaban', compact('stats'));
     }
 
     private function adminPeranDashboard($user)
@@ -86,7 +86,7 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.admin_peran', compact('stats'));
+        return view('pages.dashboard.admin_peran', compact('stats'));
     }
 
     private function verifikatorDashboard($user)
@@ -108,7 +108,7 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.verifikator', compact('stats'));
+        return view('pages.dashboard.verifikator', compact('stats'));
     }
 
     private function pokjaDashboard($user)
@@ -136,7 +136,7 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.pokja', compact('stats'));
+        return view('pages.dashboard.pokja', compact('stats'));
     }
 
     private function kabKotaDashboard($user)
@@ -164,7 +164,7 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.kab_kota', compact('stats'));
+        return view('pages.dashboard.kab_kota', compact('stats'));
     }
 
     private function auditorDashboard($user)
@@ -196,6 +196,6 @@ class DashboardController extends Controller
                 ->get()
         ];
 
-        return view('dashboard.auditor', compact('stats'));
+        return view('pages.dashboard.auditor', compact('stats'));
     }
 }

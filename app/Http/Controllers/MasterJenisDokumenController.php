@@ -31,7 +31,7 @@ class MasterJenisDokumenController extends Controller
 
         $jenisDokumens = $query->orderBy('nama')->paginate(20);
 
-        return view('master-jenis-dokumen.index', compact('jenisDokumens', 'request'));
+        return view('pages.master-jenis-dokumen.index', compact('jenisDokumens', 'request'));
     }
 
     /**
@@ -39,7 +39,7 @@ class MasterJenisDokumenController extends Controller
      */
     public function create()
     {
-        return view('master-jenis-dokumen.create');
+        return view('pages.master-jenis-dokumen.create');
     }
 
     /**
@@ -75,7 +75,7 @@ class MasterJenisDokumenController extends Controller
      */
     public function edit(MasterJenisDokumen $masterJenisDokuman)
     {
-        return view('master-jenis-dokumen.edit', compact('masterJenisDokuman'));
+        return view('pages.master-jenis-dokumen.edit', compact('masterJenisDokuman'));
     }
 
     /**
