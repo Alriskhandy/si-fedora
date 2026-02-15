@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DokumenTahapan;
+use App\Models\MasterTahapan;
+use App\Models\Notifikasi;
 use App\Models\Permohonan;
-use App\Models\PenetapanPerda;
+use App\Models\PermohonanTahapan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,31 +38,9 @@ class PenetapanPerdaController extends Controller
     }
 
     /**
-     * Form penetapan PERDA/PERKADA
+     * Upload dokumen penetapan perda ke DokumenTahapan (belum submit)
      */
-    public function create(Permohonan $permohonan)
-    {
-        // Pastikan permohonan milik user yang login
-        if ($permohonan->user_id !== Auth::id()) {
-            return redirect()->route('penetapan-perda.index')
-                ->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
-        }
-
-        // Pastikan tindak lanjut sudah ada
-        if (!$permohonan->tindakLanjut) {
-            return redirect()->route('penetapan-perda.index')
-                ->with('error', 'Tindak lanjut belum diupload.');
-        }
-
-        $penetapanPerda = $permohonan->penetapanPerda;
-
-        return view('penetapan-perda.create', compact('permohonan', 'penetapanPerda'));
-    }
-
-    /**
-     * Simpan penetapan PERDA/PERKADA
-     */
-    public function store(Request $request, Permohonan $permohonan)
+    public function upload(Request $request, Permohonan $permohonan)
     {
         // Pastikan permohonan milik user yang login
         if ($permohonan->user_id !== Auth::id()) {
@@ -66,82 +48,153 @@ class PenetapanPerdaController extends Controller
         }
 
         $request->validate([
-            'jenis_penetapan' => 'required|in:perda,perkada',
-            'nomor_penetapan' => 'required|string',
-            'tanggal_penetapan' => 'required|date',
-            'tentang' => 'required|string',
-            'file_penetapan' => 'required|file|mimes:pdf|max:10240',
+            'file' => 'required|file|mimes:pdf|max:102400', // 100MB = 102400 KB
+        ], [
+            'file.required' => 'File dokumen wajib diupload',
+            'file.mimes' => 'File harus berformat PDF',
+            'file.max' => 'Ukuran file maksimal 100MB',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Upload file
-            $filePath = $request->file('file_penetapan')->store('penetapan-perda', 'public');
-
-            // Simpan atau update penetapan PERDA
-            $penetapanPerda = PenetapanPerda::updateOrCreate(
-                ['permohonan_id' => $permohonan->id],
-                [
-                    'nomor_perda' => $request->nomor_penetapan,
-                    'tanggal_penetapan' => $request->tanggal_penetapan,
-                    'file_perda' => $filePath,
-                    'keterangan' => $request->tentang,
-                    'dibuat_oleh' => Auth::id(),
-                ]
-            );
-
-            // Update tahapan Penetapan PERDA/PERKADA menjadi selesai
-            $masterTahapanPerda = \App\Models\MasterTahapan::where('nama_tahapan', 'Penetapan PERDA/PERKADA')->first();
-            if ($masterTahapanPerda) {
-                \App\Models\PermohonanTahapan::updateOrCreate(
-                    [
-                        'permohonan_id' => $permohonan->id,
-                        'tahapan_id' => $masterTahapanPerda->id,
-                    ],
-                    [
-                        'status' => 'selesai',
-                        'tgl_selesai' => now(),
-                        'catatan' => strtoupper($request->jenis_penetapan) . ' No. ' . $request->nomor_penetapan . ' ditetapkan pada ' . now()->format('d M Y H:i'),
-                        'updated_by' => Auth::id(),
-                    ]
-                );
+            // Get tahapan Penetapan Perda (ID 7)
+            $masterTahapan = MasterTahapan::where('id', 7)->first();
+            
+            if (!$masterTahapan) {
+                return back()->with('error', 'Tahapan penetapan perda tidak ditemukan.');
             }
 
-            // Update status akhir permohonan menjadi selesai
-            $permohonan->update([
-                'status_akhir' => 'selesai',
+            // Upload file
+            $file = $request->file('file');
+            $fileName = 'penetapan_perda_' . $permohonan->id . '_' . time() . '.pdf';
+            $filePath = $file->storeAs('dokumen-tahapan/penetapan-perda', $fileName, 'public');
+
+            // Simpan ke DokumenTahapan
+            $dokumen = DokumenTahapan::create([
+                'permohonan_id' => $permohonan->id,
+                'tahapan_id' => $masterTahapan->id,
+                'user_id' => Auth::id(),
+                'nama_dokumen' => 'Dokumen Penetapan PERDA/PERKADA',
+                'file_path' => $filePath,
+                'file_name' => $fileName,
+                'file_size' => $file->getSize(),
+                'file_type' => $file->getMimeType(),
+                'status' => 'menunggu',
             ]);
+
+            // Log activity
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'dokumen' => $fileName,
+                    'ukuran' => $file->getSize(),
+                ])
+                ->log('Dokumen penetapan perda diupload oleh ' . Auth::user()->name);
 
             DB::commit();
 
-            return redirect()->route('penetapan-perda.index')
-                ->with('success', 'Penetapan PERDA/PERKADA berhasil disimpan.');
+            return redirect()->back()->with('success', 'Dokumen penetapan perda berhasil diupload. Silakan preview dan submit dokumen.');
+            
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error menyimpan penetapan PERDA: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menyimpan penetapan: ' . $e->getMessage());
+            Log::error('Error uploading penetapan perda: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengupload dokumen: ' . $e->getMessage());
         }
     }
 
     /**
-     * Tampilkan detail penetapan
+     * Submit dokumen penetapan perda (finalisasi)
      */
-    public function show(Permohonan $permohonan)
+    public function submit(Request $request, Permohonan $permohonan)
     {
         // Pastikan permohonan milik user yang login
         if ($permohonan->user_id !== Auth::id()) {
-            return redirect()->route('penetapan-perda.index')
-                ->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
+            return back()->with('error', 'Anda tidak memiliki akses ke permohonan ini.');
         }
 
-        $penetapanPerda = $permohonan->penetapanPerda;
-
-        if (!$penetapanPerda) {
-            return redirect()->back()->with('error', 'Penetapan belum ada.');
+        // Pastikan sudah ada dokumen yang diupload
+        $masterTahapan = MasterTahapan::where('id', 7)->first();
+        
+        if (!$masterTahapan) {
+            return back()->with('error', 'Master tahapan penetapan perda tidak ditemukan.');
         }
 
-        return view('penetapan-perda.show', compact('permohonan', 'penetapanPerda'));
+        $dokumen = DokumenTahapan::where('permohonan_id', $permohonan->id)
+            ->where('tahapan_id', $masterTahapan->id)
+            ->latest()
+            ->first();
+
+        if (!$dokumen) {
+            return back()->with('error', 'Belum ada dokumen yang diupload. Silakan upload dokumen terlebih dahulu.');
+        }
+
+        // Pastikan belum disubmit sebelumnya (cek apakah verified_by masih kosong)
+        if ($dokumen->verified_by) {
+            return back()->with('error', 'Dokumen sudah pernah disubmit sebelumnya.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Update DokumenTahapan dengan timestamp submit sebagai penanda
+            $dokumen->update([
+                'verified_by' => Auth::id(),
+                'verified_at' => now(),
+            ]);
+
+            // Update tahapan Penetapan Perda menjadi selesai
+            PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapan->id,
+                ],
+                [
+                    'status' => 'selesai',
+                    'catatan' => 'Dokumen penetapan perda telah disubmit oleh pemohon',
+                    'updated_by' => Auth::id(),
+                ]
+            );
+
+            // Update status permohonan menjadi selesai
+            $permohonan->update([
+                'status_akhir' => 'selesai'
+            ]);
+
+            // Log activity
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(Auth::user())
+                ->log('Dokumen penetapan perda disubmit oleh ' . Auth::user()->name);
+
+            // Kirim notifikasi ke Tim Fedora, Admin, dan Kaban
+            $targetUsers = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['admin', 'tim_fedora', 'kaban']);
+            })->get();
+
+            foreach ($targetUsers as $user) {
+                Notifikasi::create([
+                    'user_id' => $user->id,
+                    'title' => 'Dokumen Penetapan PERDA Disubmit',
+                    'message' => 'Pemohon ' . Auth::user()->name . ' dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' telah submit dokumen penetapan perda untuk permohonan ' . $permohonan->nomor_permohonan,
+                    'type' => 'penetapan_perda_submitted',
+                    'model_type' => Permohonan::class,
+                    'model_id' => $permohonan->id,
+                    'action_url' => route('permohonan.tahapan.penetapan', $permohonan),
+                    'is_read' => false,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Dokumen penetapan perda berhasil disubmit dan dapat dilihat oleh tim.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error submitting penetapan perda: ' . $e->getMessage());
+            return back()->with('error', 'Gagal submit dokumen: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -149,13 +202,23 @@ class PenetapanPerdaController extends Controller
      */
     public function download(Permohonan $permohonan)
     {
-        $penetapanPerda = $permohonan->penetapanPerda;
-
-        if (!$penetapanPerda) {
-            return back()->with('error', 'Penetapan tidak ditemukan.');
+        // Get dokumen from DokumenTahapan
+        $masterTahapan = MasterTahapan::where('id', 7)->first();
+        
+        if (!$masterTahapan) {
+            return back()->with('error', 'Tahapan penetapan perda tidak ditemukan.');
         }
 
-        $filePath = $penetapanPerda->file_perda;
+        $dokumen = DokumenTahapan::where('permohonan_id', $permohonan->id)
+            ->where('tahapan_id', $masterTahapan->id)
+            ->latest()
+            ->first();
+
+        if (!$dokumen) {
+            return back()->with('error', 'Dokumen penetapan tidak ditemukan.');
+        }
+
+        $filePath = $dokumen->file_path;
 
         if (!$filePath) {
             return back()->with('error', 'File penetapan tidak ditemukan.');
@@ -168,35 +231,5 @@ class PenetapanPerdaController extends Controller
         }
 
         return response()->download($filepath);
-    }
-
-    /**
-     * Daftar penetapan untuk publik
-     */
-    public function public(Request $request)
-    {
-        $query = PenetapanPerda::with(['permohonan.kabupatenKota'])
-            ->whereNotNull('file_perda');
-
-        // Filter pencarian
-        if ($request->filled('search')) {
-            $query->whereHas('permohonan.kabupatenKota', function ($q) use ($request) {
-                $q->where('nama_kabkota', 'like', '%' . $request->search . '%');
-            });
-        }
-
-        // Filter jenis
-        if ($request->filled('jenis')) {
-            $query->where('jenis_penetapan', $request->jenis)
-                ->orWhere(function ($q) use ($request) {
-                    // Fallback jika jenis_penetapan null, anggap PERDA
-                    $q->whereNull('jenis_penetapan')
-                        ->where('jenis', $request->jenis == 'perda' ? 'perda' : 'perkada');
-                });
-        }
-
-        $penetapans = $query->latest()->paginate(15);
-
-        return view('penetapan-perda.public', compact('penetapans'));
     }
 }

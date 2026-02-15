@@ -141,12 +141,9 @@ class VerifikasiController extends Controller
             ->where('status_verifikasi', 'revision')
             ->count();
 
-        // Update status permohonan dan tahapan
+        // Update tahapan Verifikasi
         if ($verifiedDokumen === $totalDokumen) {
-            // Semua dokumen verified
-            $permohonan->update(['status_akhir' => 'selesai']);
-
-            // Update/create tahapan Verifikasi di permohonan_tahapan
+            // Semua dokumen verified - update tahapan Verifikasi di permohonan_tahapan
             $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
 
             if ($masterTahapanVerifikasi) {

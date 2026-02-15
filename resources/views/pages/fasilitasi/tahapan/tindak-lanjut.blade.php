@@ -62,7 +62,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                @if($dokumenTindakLanjut && !$dokumenTindakLanjut->verified_by && auth()->user()->hasRole('pemohon'))
+                @if ($dokumenTindakLanjut && !$dokumenTindakLanjut->verified_by && auth()->user()->hasRole('pemohon'))
                     <!-- Sudah Upload tapi Belum Submit (Pemohon) -->
                     <div class="alert alert-warning mb-4">
                         <div class="d-flex align-items-center">
@@ -276,21 +276,13 @@
                         <h5 class="mb-3">Dokumen Belum Tersedia</h5>
 
                         @if (auth()->user()->hasRole('pemohon'))
-                            @if (!$permohonan->tindakLanjut)
-                                <p class="text-muted mb-4">
-                                    Form upload dokumen perencanaan yang telah diperbaiki akan tersedia setelah<br>
-                                    hasil fasilitasi divalidasi oleh admin.
-                                </p>
-                            @else
-                                <p class="text-muted mb-4">
-                                    Silakan upload dokumen perencanaan yang telah di tindak lanjut<br>
-                                    berdasarkan hasil fasilitasi / evaluasi.
-                                </p>
-                                <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal"
-                                    data-bs-target="#uploadDokumenModal">
-                                    <i class='bx bx-upload me-2'></i>Upload Dokumen
-                                </button>
-                            @endif
+                            <p class="text-muted mb-4">
+                                Silakan upload dokumen tindak lanjut hasil fasilitasi / evaluasi
+                            </p>
+                            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal"
+                                data-bs-target="#uploadDokumenModal">
+                                <i class='bx bx-upload me-2'></i>Upload Dokumen
+                            </button>
                         @else
                             {{-- Untuk role selain pemohon --}}
                             @if (!$permohonan->tindakLanjut)
@@ -312,10 +304,10 @@
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header bg-primary bg-opacity-10 border-bottom-0">
                             <div>
-                                <h5 class="modal-title fw-bold">
+                                <h5 class="modal-title fw-bold text-white">
                                     <i class='bx bx-upload me-2 text-primary'></i>Upload Dokumen Tindak Lanjut
                                 </h5>
-                                <p class="mb-0 small text-muted">Upload dokumen perencanaan yang telah diperbaiki</p>
+                                <p class="mb-0 small text-white">Upload dokumen perencanaan yang telah diperbaiki</p>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
@@ -354,7 +346,7 @@
                                     </div>
                                 @endif
 
-                                <div class="mb-4">
+                                <div class="mb-1">
                                     <label class="form-label fw-semibold">
                                         <i class='bx bx-file-pdf me-1'></i>
                                         File Dokumen <span class="text-danger">*</span>
@@ -388,10 +380,10 @@
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header bg-warning bg-opacity-10 border-bottom-0">
                             <div>
-                                <h5 class="modal-title fw-bold">
+                                <h5 class="modal-title fw-bold text-white">
                                     <i class='bx bx-refresh me-2 text-warning'></i>Upload Ulang Dokumen Tindak Lanjut
                                 </h5>
-                                <p class="mb-0 small text-muted">Dokumen lama akan digantikan dengan dokumen baru</p>
+                                <p class="mb-0 small text-white">Dokumen lama akan digantikan dengan dokumen baru</p>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
@@ -412,7 +404,7 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-4">
+                                <div class="mb-1">
                                     <label class="form-label fw-semibold">
                                         <i class='bx bx-file-pdf me-1'></i>
                                         File Dokumen Baru <span class="text-danger">*</span>
@@ -445,11 +437,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const btnSubmit = document.getElementById('btnSubmitDokumen');
-            
+
             if (btnSubmit) {
                 btnSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
+
                     // Check if Swal is available
                     if (typeof Swal === 'undefined') {
                         if (confirm('Apakah Anda yakin ingin submit dokumen ini?')) {
@@ -457,7 +449,7 @@
                         }
                         return;
                     }
-                    
+
                     Swal.fire({
                         title: 'Konfirmasi Submit Dokumen',
                         html: '<p class="mb-2">Setelah disubmit, dokumen akan dapat dilihat oleh admin dan tim lainnya.</p><p class="mb-0"><strong>Apakah Anda yakin ingin submit dokumen ini?</strong></p>',
@@ -479,17 +471,17 @@
                     });
                 });
             }
-            
+
             function submitForm() {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ route('tindak-lanjut.submit', $permohonan) }}';
-                
+
                 const csrfToken = document.createElement('input');
                 csrfToken.type = 'hidden';
                 csrfToken.name = '_token';
                 csrfToken.value = '{{ csrf_token() }}';
-                
+
                 form.appendChild(csrfToken);
                 document.body.appendChild(form);
                 form.submit();

@@ -1,47 +1,5 @@
 @extends('layouts.app')
 
-@push('styles')
-    <style>
-        .timeline {
-            position: relative;
-            padding-left: 40px;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 15px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #e0e0e0;
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 30px;
-        }
-
-        .timeline-icon {
-            position: absolute;
-            left: -40px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-        }
-
-        .timeline-content h6 {
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-    </style>
-@endpush
-
 @section('title', 'Tahapan Penetapan PERDA/PERKADA')
 
 @section('main')
@@ -50,14 +8,14 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-1">
-                    Tahapan Verifikasi - {{ $isVerifikator ? 'Verifikasi Dokumen' : 'Status Verifikasi' }}
+                    Penetapan PERDA/PERKADA
                 </h4>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('permohonan.index') }}">Permohonan</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('permohonan.show', $permohonan) }}">Detail</a></li>
-                        <li class="breadcrumb-item active">Tahapan Verifikasi</li>
+                        <li class="breadcrumb-item active">Tahapan Penetapan</li>
                     </ol>
                 </nav>
             </div>
@@ -96,280 +54,356 @@
             </div>
         @endif
 
-        @if (!$permohonan->penetapanPerda)
-            <div class="alert alert-info">
-                <i class='bx bx-info-circle me-2'></i>
-                <strong>Penetapan PERDA/PERKADA:</strong> Form upload PERDA/PERKADA yang telah ditetapkan akan tersedia
-                setelah
-                tindak lanjut selesai dan dokumen final disetujui.
+        <!-- Single Card: Penetapan PERDA/PERKADA -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #198754 0%, #20c997 100%);">
+                <h5 class="fw-bold mb-1">
+                    <i class='bx bx-certification me-2'></i>Penetapan PERDA/PERKADA
+                </h5>
             </div>
-
-            @if (auth()->user()->hasRole('pemohon') && $permohonan->tindakLanjut)
-                <!-- Form Upload PERDA/PERKADA untuk Pemohon -->
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class='bx bx-upload me-2'></i>Upload PERDA/PERKADA yang Telah Ditetapkan
-                        </h5>
+            <div class="card-body">
+                @if ($dokumenPenetapan && !$dokumenPenetapan->verified_by && auth()->user()->hasRole('pemohon'))
+                    <!-- Sudah Upload tapi Belum Submit (Pemohon) -->
+                    <div class="alert alert-warning mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class='bx bx-error-circle me-2' style="font-size: 24px;"></i>
+                            <div>
+                                <strong>Dokumen Belum Disubmit</strong>
+                                <p class="mb-0 small">Dokumen sudah diupload namun belum disubmit. Silakan preview dan
+                                    submit dokumen Anda.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-primary">
-                            <i class='bx bx-info-circle me-1'></i>
-                            Silakan upload dokumen PERDA/PERKADA yang telah ditetapkan oleh pemerintah daerah Anda.
+
+                    <div class="row g-0">
+                        <!-- Kolom Kiri: Informasi -->
+                        <div class="col-md-4 border-end">
+                            <div class="p-4">
+                                <h6 class="mb-4 text-uppercase text-muted small fw-bold">
+                                    <i class='bx bx-info-circle me-1'></i>Informasi Penetapan PERDA
+                                </h6>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Kabupaten/Kota</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-map text-primary me-1'></i>
+                                        {{ $permohonan->kabupatenKota->nama ?? '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Jenis Dokumen</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-file text-info me-1'></i>
+                                        {{ $permohonan->jenisDokumen->nama ?? '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Tanggal Upload</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-calendar-check text-success me-1'></i>
+                                        {{ $dokumenPenetapan->created_at ? $dokumenPenetapan->created_at->format('d F Y, H:i') : '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Status</label>
+                                    <span class="badge bg-warning px-3 py-2">
+                                        <i class='bx bx-time me-1'></i>Belum Disubmit
+                                    </span>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
+                                        data-bs-target="#uploadUlangModal">
+                                        <i class='bx bx-refresh me-1'></i>Upload Ulang
+                                    </button>
+                                    <button type="button" id="btnSubmitDokumen" class="btn btn-success">
+                                        <i class='bx bx-check-circle me-1'></i>Submit Dokumen
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <form action="{{ route('permohonan.penetapan.store', $permohonan->id) }}" method="POST"
+                        <!-- Kolom Kanan: Preview PDF -->
+                        <div class="col-md-8">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
+                                    </h6>
+                                    <a href="{{ asset('storage/' . $dokumenPenetapan->file_path) }}"
+                                        class="btn btn-success btn-sm shadow-sm" target="_blank">
+                                        <i class='bx bx-download me-1'></i>Download PDF
+                                    </a>
+                                </div>
+
+                                <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
+                                    <iframe
+                                        src="{{ asset('storage/' . $dokumenPenetapan->file_path) }}#toolbar=1&view=FitH"
+                                        type="application/pdf" width="100%" height="600px" style="border: none;">
+                                        <p class="text-center py-5">
+                                            Browser Anda tidak mendukung preview PDF.
+                                            <a href="{{ asset('storage/' . $dokumenPenetapan->file_path) }}"
+                                                class="btn btn-success" target="_blank">
+                                                <i class='bx bx-download me-1'></i>Download PDF
+                                            </a>
+                                        </p>
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($dokumenPenetapan && $dokumenPenetapan->verified_by && $dokumenPenetapan->verified_at)
+                    <!-- Sudah Ada Dokumen - 2 Kolom (4:8) -->
+                    <div class="row g-0">
+                        <!-- Kolom Kiri: Informasi -->
+                        <div class="col-md-4 border-end">
+                            <div class="p-4">
+                                <h6 class="mb-4 text-uppercase text-muted small fw-bold">
+                                    <i class='bx bx-info-circle me-1'></i>Informasi Penetapan PERDA
+                                </h6>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Kabupaten/Kota</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-map text-primary me-1'></i>
+                                        {{ $permohonan->kabupatenKota->nama ?? '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Jenis Dokumen</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-file text-info me-1'></i>
+                                        {{ $permohonan->jenisDokumen->nama ?? '-' }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="text-muted small d-block mb-2">Tanggal Submit</label>
+                                    <div class="fw-bold">
+                                        <i class='bx bx-calendar-check text-success me-1'></i>
+                                        {{ $dokumenPenetapan->verified_at ? $dokumenPenetapan->verified_at->format('d F Y, H:i') : '-' }}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-muted small d-block mb-2">Status</label>
+                                    <span class="badge bg-success px-3 py-2">
+                                        <i class='bx bx-check-shield me-1'></i>Sudah Disubmit
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan: Preview PDF -->
+                        <div class="col-md-8">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
+                                    </h6>
+                                    <a href="{{ asset('storage/' . $dokumenPenetapan->file_path) }}"
+                                        class="btn btn-success btn-sm shadow-sm" target="_blank">
+                                        <i class='bx bx-download me-1'></i>Download PDF
+                                    </a>
+                                </div>
+
+                                <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
+                                    <iframe
+                                        src="{{ asset('storage/' . $dokumenPenetapan->file_path) }}#toolbar=1&view=FitH"
+                                        type="application/pdf" width="100%" height="600px" style="border: none;">
+                                        <p class="text-center py-5">
+                                            Browser Anda tidak mendukung preview PDF.
+                                            <a href="{{ asset('storage/' . $dokumenPenetapan->file_path) }}"
+                                                class="btn btn-success" target="_blank">
+                                                <i class='bx bx-download me-1'></i>Download PDF
+                                            </a>
+                                        </p>
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <!-- Belum Ada Dokumen -->
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class='bx bx-file-blank' style="font-size: 80px; color: #6c757d;"></i>
+                        </div>
+                        <h5 class="mb-3">Dokumen PERDA / PERKADA Belum Tersedia</h5>
+
+                        @if (auth()->user()->hasRole('pemohon'))
+                            <p class="text-muted mb-4">
+                                Silakan upload dokumen PERDA/PERKADA yang telah ditetapkan.
+                            </p>
+                            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal"
+                                data-bs-target="#uploadDokumenModal">
+                                <i class='bx bx-upload me-1'></i> Upload Dokumen
+                            </button>
+                        @else
+                            {{-- Untuk role selain pemohon --}}
+                            <p class="text-muted mb-4">
+                                Dokumen PERDA / PERKADA belum tersedia. <br>
+                                Silahkan kembali lagi nanti.
+                            </p>
+                        @endif
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Modal Upload Dokumen Pertama Kali (untuk Pemohon) -->
+        @if (auth()->user()->hasRole('pemohon') && !$dokumenPenetapan)
+            <div class="modal fade" id="uploadDokumenModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-primary bg-opacity-10 border-bottom-0">
+                            <div>
+                                <h5 class="modal-title fw-bold">
+                                    <i class='bx bx-upload me-2 text-primary'></i>Upload Dokumen PERDA/PERKADA
+                                </h5>
+                                <p class="mb-0 small text-muted">Upload dokumen PERDA/PERKADA yang telah ditetapkan</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('penetapan-perda.upload', $permohonan) }}" method="POST"
                             enctype="multipart/form-data">
                             @csrf
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="nomor_penetapan" class="form-label">Nomor Penetapan <span
-                                                class="text-danger">*</span></label>
-                                        <input type="text"
-                                            class="form-control @error('nomor_penetapan') is-invalid @enderror"
-                                            id="nomor_penetapan" name="nomor_penetapan" required
-                                            placeholder="Contoh: Nomor 1 Tahun 2025">
-                                        @error('nomor_penetapan')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                            <div class="modal-body p-4">
+                                <div class="mb-1">
+                                    <label for="file" class="form-label fw-bold">
+                                        File Dokumen <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="file" class="form-control @error('file') is-invalid @enderror"
+                                        id="file" name="file" accept=".pdf" required>
+                                    <div class="form-text">
+                                        <i class='bx bx-info-circle'></i> Format: PDF, Maksimal: 100MB
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="tanggal_penetapan" class="form-label">Tanggal Penetapan <span
-                                                class="text-danger">*</span></label>
-                                        <input type="date"
-                                            class="form-control @error('tanggal_penetapan') is-invalid @enderror"
-                                            id="tanggal_penetapan" name="tanggal_penetapan" required>
-                                        @error('tanggal_penetapan')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+                                    @error('file')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
-
-                            <div class="mb-3">
-                                <label for="jenis_dokumen" class="form-label">Jenis Dokumen <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select @error('jenis_dokumen') is-invalid @enderror" id="jenis_dokumen"
-                                    name="jenis_dokumen" required>
-                                    <option value="">Pilih Jenis Dokumen</option>
-                                    <option value="perda">PERDA (Peraturan Daerah)</option>
-                                    <option value="perkada">PERKADA (Peraturan Kepala Daerah)</option>
-                                </select>
-                                @error('jenis_dokumen')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="file_perda" class="form-label">Upload File PERDA/PERKADA <span
-                                        class="text-danger">*</span></label>
-                                <input type="file" class="form-control @error('file_perda') is-invalid @enderror"
-                                    id="file_perda" name="file_perda" accept=".pdf" required>
-                                <div class="form-text">Format: PDF. Maksimal 10MB.</div>
-                                @error('file_perda')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="keterangan" class="form-label">Keterangan</label>
-                                <textarea class="form-control @error('keterangan') is-invalid @enderror" id="keterangan" name="keterangan"
-                                    rows="3" placeholder="Tambahkan keterangan jika diperlukan"></textarea>
-                                @error('keterangan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class='bx bx-upload me-1'></i>Upload PERDA/PERKADA
+                            <div class="modal-footer border-top-0 bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class='bx bx-x me-1'></i> Batal
+                                </button>
+                                <button type="submit" class="btn btn-primary shadow-sm">
+                                    <i class='bx bx-upload me-1'></i> Upload Dokumen
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
-            @endif
-        @else
-            <!-- Informasi Penetapan PERDA -->
-            <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class='bx bx-certification me-2'></i>Penetapan PERDA/PERKADA
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-success mb-3">
-                        <i class='bx bx-check-circle me-1'></i>
-                        PERDA/PERKADA telah diupload oleh pemohon dan tercatat dalam sistem.
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <table class="table table-borderless">
-                                <tr>
-                                    <th width="40%">Nomor Penetapan:</th>
-                                    <td><strong>{{ $permohonan->penetapanPerda->nomor_penetapan ?? '-' }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <th>Tanggal Penetapan:</th>
-                                    <td>
-                                        @if ($permohonan->penetapanPerda->tanggal_penetapan)
-                                            <strong>{{ \Carbon\Carbon::parse($permohonan->penetapanPerda->tanggal_penetapan)->format('d F Y') }}</strong>
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Jenis Dokumen:</th>
-                                    <td>
-                                        <span class="badge bg-primary">
-                                            {{ $permohonan->penetapanPerda->jenis_dokumen == 'perda' ? 'PERDA' : 'PERATURAN DAERAH' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Status Publikasi:</th>
-                                    <td>
-                                        @if ($permohonan->penetapanPerda->is_published)
-                                            <span class="badge bg-success">
-                                                <i class='bx bx-globe'></i> Sudah Dipublikasi
-                                            </span>
-                                        @else
-                                            <span class="badge bg-warning">
-                                                <i class='bx bx-lock'></i> Belum Dipublikasi
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="mb-2"><i class='bx bx-info-circle me-1'></i>Tentang PERDA:</h6>
-                                    <p class="mb-2"><strong>{{ $permohonan->penetapanPerda->tentang ?? '-' }}</strong>
-                                    </p>
-                                    @if ($permohonan->penetapanPerda->keterangan)
-                                        <hr>
-                                        <small class="text-muted">{{ $permohonan->penetapanPerda->keterangan }}</small>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if ($permohonan->penetapanPerda->tanggal_publikasi)
-                        <div class="alert alert-success mt-3">
-                            <i class='bx bx-calendar-check me-2'></i>
-                            <strong>Tanggal Publikasi:</strong>
-                            {{ \Carbon\Carbon::parse($permohonan->penetapanPerda->tanggal_publikasi)->format('d F Y') }}
-                        </div>
-                    @endif
-                </div>
             </div>
+        @endif
 
-            <!-- Dokumen Penetapan -->
-            @if ($permohonan->penetapanPerda->file_penetapan)
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class='bx bx-file-blank me-2'></i>Dokumen Penetapan
-                        </h5>
-                    </div>
-                    <div class="card-body text-center">
-                        <div class="mb-3">
-                            <i class='bx bx-file-blank bx-lg text-primary'></i>
-                            <p class="mb-1 mt-2"><strong>Dokumen Resmi Penetapan PERDA</strong></p>
-                            <small class="text-muted">Format: PDF</small>
+        <!-- Modal Upload Ulang (untuk Pemohon) -->
+        @if ($dokumenPenetapan && !$dokumenPenetapan->verified_by && auth()->user()->hasRole('pemohon'))
+            <div class="modal fade" id="uploadUlangModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-warning bg-opacity-10 border-bottom-0">
+                            <div>
+                                <h5 class="modal-title fw-bold">
+                                    <i class='bx bx-refresh me-2 text-warning'></i>Upload Ulang Dokumen
+                                </h5>
+                                <p class="mb-0 small text-muted">Ganti dokumen penetapan perda yang sudah diupload</p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
-                        <a href="{{ asset('storage/' . $permohonan->penetapanPerda->file_penetapan) }}" target="_blank"
-                            class="btn btn-primary btn-lg">
-                            <i class='bx bx-download'></i> Download Dokumen Penetapan
-                        </a>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Timeline Proses -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class='bx bx-time-five me-2'></i>Timeline Proses
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-icon bg-primary">
-                                <i class='bx bx-send'></i>
-                            </div>
-                            <div class="timeline-content">
-                                <h6>Permohonan Diajukan</h6>
-                                <small class="text-muted">
-                                    {{ \Carbon\Carbon::parse($permohonan->created_at)->format('d F Y, H:i') }} WIB
-                                </small>
-                            </div>
-                        </div>
-
-                        @if ($permohonan->laporanVerifikasi)
-                            <div class="timeline-item">
-                                <div class="timeline-icon bg-info">
-                                    <i class='bx bx-check-shield'></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h6>Verifikasi Selesai</h6>
-                                    <small class="text-muted">
-                                        {{ \Carbon\Carbon::parse($permohonan->laporanVerifikasi->tanggal_verifikasi)->format('d F Y') }}
-                                    </small>
+                        <form action="{{ route('penetapan-perda.upload', $permohonan) }}" method="POST"
+                            enctype="multipart/form-data">
+                            @csrf
+                            <div class="modal-body p-4">
+                                <div class="mb-1">
+                                    <label for="file_ulang" class="form-label fw-bold">
+                                        File Dokumen Baru <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="file" class="form-control @error('file') is-invalid @enderror"
+                                        id="file_ulang" name="file" accept=".pdf" required>
+                                    <div class="form-text">
+                                        <i class='bx bx-info-circle'></i> Format: PDF, Maksimal: 100MB
+                                    </div>
+                                    @error('file')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
-                        @endif
-
-                        @if ($permohonan->jadwalFasilitasi)
-                            <div class="timeline-item">
-                                <div class="timeline-icon bg-warning">
-                                    <i class='bx bx-calendar-event'></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h6>Jadwal Fasilitasi Ditetapkan</h6>
-                                    <small class="text-muted">
-                                        {{ \Carbon\Carbon::parse($permohonan->jadwalFasilitasi->tanggal_mulai)->format('d F Y') }}
-                                    </small>
-                                </div>
+                            <div class="modal-footer border-top-0 bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class='bx bx-x me-1'></i> Batal
+                                </button>
+                                <button type="submit" class="btn btn-warning shadow-sm">
+                                    <i class='bx bx-upload me-1'></i> Upload Ulang
+                                </button>
                             </div>
-                        @endif
-
-                        @if ($permohonan->hasilFasilitasi)
-                            <div class="timeline-item">
-                                <div class="timeline-icon bg-success">
-                                    <i class='bx bx-check-double'></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <h6>Pelaksanaan Fasilitasi</h6>
-                                    <small class="text-muted">
-                                        {{ \Carbon\Carbon::parse($permohonan->hasilFasilitasi->tanggal_pelaksanaan)->format('d F Y') }}
-                                    </small>
-                                </div>
-                            </div>
-                        @endif
-
-                        <div class="timeline-item">
-                            <div class="timeline-icon bg-success">
-                                <i class='bx bx-certification'></i>
-                            </div>
-                            <div class="timeline-content">
-                                <h6>PERDA Ditetapkan</h6>
-                                <small class="text-muted">
-                                    {{ \Carbon\Carbon::parse($permohonan->penetapanPerda->tanggal_penetapan)->format('d F Y') }}
-                                </small>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
         @endif
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnSubmit = document.getElementById('btnSubmitDokumen');
+
+            if (btnSubmit) {
+                btnSubmit.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Check if Swal is available
+                    if (typeof Swal === 'undefined') {
+                        if (confirm('Apakah Anda yakin ingin submit dokumen ini?')) {
+                            submitForm();
+                        }
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Konfirmasi Submit Dokumen',
+                        html: '<p class="mb-2">Setelah disubmit, dokumen akan dapat dilihat oleh admin dan tim lainnya.</p><p class="mb-0"><strong>Apakah Anda yakin ingin submit dokumen ini?</strong></p>',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bx bx-check-circle me-1"></i> Ya, Submit',
+                        cancelButtonText: '<i class="bx bx-x me-1"></i> Tidak, Batal',
+                        customClass: {
+                            confirmButton: 'btn btn-success shadow-sm',
+                            cancelButton: 'btn btn-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitForm();
+                        }
+                    });
+                });
+            }
+
+            function submitForm() {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route('penetapan-perda.submit', $permohonan) }}';
+
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    </script>
+@endpush

@@ -563,7 +563,7 @@ class PermohonanController extends Controller
                 ->latest()
                 ->first();
         }
-        
+
         return view('pages.fasilitasi.tahapan.tindak-lanjut', compact('permohonan', 'dokumenTindakLanjut'));
     }
 
@@ -578,7 +578,18 @@ class PermohonanController extends Controller
             'penetapanPerda'
         ]);
 
-        return view('pages.fasilitasi.tahapan.penetapan', compact('permohonan'));
+        // Get dokumen penetapan perda dari DokumenTahapan
+        $masterTahapan = MasterTahapan::where('id', 7)->first();
+        $dokumenPenetapan = null;
+        
+        if ($masterTahapan) {
+            $dokumenPenetapan = DokumenTahapan::where('permohonan_id', $permohonan->id)
+                ->where('tahapan_id', $masterTahapan->id)
+                ->latest()
+                ->first();
+        }
+
+        return view('pages.fasilitasi.tahapan.penetapan', compact('permohonan', 'dokumenPenetapan'));
     }
 
     /**
