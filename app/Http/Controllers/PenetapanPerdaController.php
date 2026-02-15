@@ -8,6 +8,7 @@ use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
 use App\Models\User;
+use App\Models\UserKabkotaAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -168,10 +169,24 @@ class PenetapanPerdaController extends Controller
                 ->causedBy(Auth::user())
                 ->log('Dokumen penetapan perda disubmit oleh ' . Auth::user()->name);
 
-            // Kirim notifikasi ke Tim Fedora, Admin, dan Kaban
-            $targetUsers = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['admin', 'tim_fedora', 'kaban']);
+            // Kirim notifikasi ke Superadmin, Admin Peran, Kaban, dan Tim yang di-assign
+            // 1. Users dengan role tertentu
+            $roleUsers = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['superadmin', 'admin_peran', 'kaban']);
             })->get();
+
+            // 2. Tim fasilitator dan verifikator yang di-assign ke kabkota + jenis dokumen + tahun ini
+            $timAssignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->with('user')
+                ->get();
+
+            $timUsers = $timAssignments->pluck('user')->filter();
+
+            // Gabungkan dan hapus duplikat
+            $targetUsers = $roleUsers->merge($timUsers)->unique('id');
 
             foreach ($targetUsers as $user) {
                 Notifikasi::create([
