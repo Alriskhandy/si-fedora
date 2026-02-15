@@ -2,8 +2,20 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Undangan Saya</h4>
+            <div>
+                <h4 class="fw-bold mb-1">Undangan Saya</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Undangan Saya</li>
+                    </ol>
+                </nav>
+            </div>
+            <a href="{{ route('dashboard') }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali
+            </a>
         </div>
 
         @if (session('success'))
@@ -29,7 +41,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary me-2">
+                            <button type="submit" class="btn btn-success me-2">
                                 <i class="bx bx-search"></i> Filter
                             </button>
                             <a href="{{ auth()->user()->hasRole('pemohon') ? route('pemohon.undangan.index') : route('my-undangan.index') }}"

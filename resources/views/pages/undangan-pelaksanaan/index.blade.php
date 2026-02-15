@@ -2,8 +2,20 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Undangan Pelaksanaan</h4>
+            <div>
+                <h4 class="fw-bold mb-1">Undangan Pelaksanaan</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Undangan Pelaksanaan</li>
+                    </ol>
+                </nav>
+            </div>
+            <a href="{{ route('dashboard') }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali
+            </a>
         </div>
 
         @if (session('success'))
@@ -20,9 +32,10 @@
             </div>
         @endif
 
-        <div class="card">
+        <!-- Filter Section -->
+        <div class="card mb-4" style="background-color: #f8f9fa;">
             <div class="card-body">
-                <form method="GET" class="mb-3">
+                <form method="GET" class="row g-3">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <input type="text" name="search" class="form-control" placeholder="Cari Kabupaten/Kota..."
@@ -38,7 +51,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary me-2">
+                            <button type="submit" class="btn btn-success me-2">
                                 <i class="bx bx-search"></i> Filter
                             </button>
                             <a href="{{ route('undangan-pelaksanaan.index') }}" class="btn btn-outline-secondary">
@@ -47,8 +60,12 @@
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
 
-                <div class="table-responsive text-nowrap">
+        <!-- Data Table -->
+        <div class="card">
+            <div class="card-body">
                     <table class="table table-hover">
                         <thead>
                             <tr>
@@ -110,7 +127,7 @@
                                             </a>
                                         @else
                                             <a href="{{ route('undangan-pelaksanaan.create', $item) }}"
-                                                class="btn btn-sm btn-primary">
+                                                class="btn btn-sm btn-success">
                                                 <i class="bx bx-plus"></i> Buat Undangan
                                             </a>
                                         @endif

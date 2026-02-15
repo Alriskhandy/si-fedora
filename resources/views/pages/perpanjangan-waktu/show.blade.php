@@ -2,28 +2,27 @@
 
 @section('title', 'Detail Perpanjangan Waktu')
 
-@section('content')
+@section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <!-- Header -->
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a
-                            href="{{ route('permohonan.show', $perpanjanganWaktu->permohonan) }}">Detail Permohonan</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('perpanjangan-waktu.index') }}">Perpanjangan Waktu</a></li>
-                    <li class="breadcrumb-item active">Detail</li>
-                </ol>
-            </nav>
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="fw-bold mb-1">Detail Perpanjangan Waktu</h4>
-                    <p class="text-muted mb-0">ID: #{{ $perpanjanganWaktu->id }}</p>
-                </div>
-                <div>
-                    <span class="badge bg-{{ $perpanjanganWaktu->statusBadgeClass }} fs-6">
-                        {{ $perpanjanganWaktu->statusText }}
-                    </span>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Detail Perpanjangan Waktu</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('perpanjangan-waktu.index') }}">Perpanjangan Waktu</a></li>
+                        <li class="breadcrumb-item active">Detail</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-{{ $perpanjanganWaktu->statusBadgeClass }} fs-6">
+                    {{ $perpanjanganWaktu->statusText }}
+                </span>
+                <a href="{{ route('perpanjangan-waktu.index') }}" class="btn btn-secondary">
+                    <i class='bx bx-arrow-back me-1'></i> Kembali
+                </a>
             </div>
         </div>
 

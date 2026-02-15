@@ -2,10 +2,20 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Detail Undangan Pelaksanaan</h4>
+            <div>
+                <h4 class="fw-bold mb-1">Detail Undangan Pelaksanaan</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('undangan-pelaksanaan.index') }}">Undangan Pelaksanaan</a></li>
+                        <li class="breadcrumb-item active">Detail</li>
+                    </ol>
+                </nav>
+            </div>
             <a href="{{ route('undangan-pelaksanaan.index') }}" class="btn btn-secondary">
-                <i class="bx bx-arrow-back"></i> Kembali
+                <i class='bx bx-arrow-back me-1'></i> Kembali
             </a>
         </div>
 
@@ -97,7 +107,7 @@
                         <h5 class="mb-0">File Undangan</h5>
                         @if ($undangan->file_undangan)
                             <a href="{{ route('undangan-pelaksanaan.download', $permohonan) }}"
-                                class="btn btn-sm btn-primary">
+                                class="btn btn-sm btn-success">
                                 <i class="bx bx-download"></i> Download PDF
                             </a>
                         @endif

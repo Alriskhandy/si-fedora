@@ -2,10 +2,20 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold">Buat Undangan Pelaksanaan</h4>
+            <div>
+                <h4 class="fw-bold mb-1">Buat Undangan Pelaksanaan</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('undangan-pelaksanaan.index') }}">Undangan Pelaksanaan</a></li>
+                        <li class="breadcrumb-item active">Buat Undangan</li>
+                    </ol>
+                </nav>
+            </div>
             <a href="{{ route('undangan-pelaksanaan.index') }}" class="btn btn-secondary">
-                <i class="bx bx-arrow-back"></i> Kembali
+                <i class='bx bx-arrow-back me-1'></i> Kembali
             </a>
         </div>
 
@@ -203,8 +213,8 @@
                             </div>
 
                             <div class="mt-4">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bx bx-send"></i> Kirim Undangan
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bx bx-send me-1"></i> Kirim Undangan
                                 </button>
                                 <a href="{{ route('undangan-pelaksanaan.index') }}" class="btn btn-outline-secondary">
                                     Batal

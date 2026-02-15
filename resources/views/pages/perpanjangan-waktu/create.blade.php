@@ -2,19 +2,23 @@
 
 @section('title', 'Ajukan Perpanjangan Waktu')
 
-@section('content')
+@section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <!-- Header -->
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('permohonan.show', $permohonan) }}">Detail Permohonan</a>
-                    </li>
-                    <li class="breadcrumb-item active">Ajukan Perpanjangan</li>
-                </ol>
-            </nav>
-            <h4 class="fw-bold mb-1">Ajukan Perpanjangan Waktu Upload</h4>
-            <p class="text-muted mb-0">Untuk Permohonan: <strong>{{ $permohonan->kabupatenKota->nama ?? '-' }}</strong></p>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Ajukan Perpanjangan Waktu</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('permohonan.show', $permohonan) }}">Detail Permohonan</a></li>
+                        <li class="breadcrumb-item active">Ajukan Perpanjangan</li>
+                    </ol>
+                </nav>
+            </div>
+            <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali
+            </a>
         </div>
 
         <div class="row">
@@ -76,8 +80,8 @@
                             </div>
 
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class='bx bx-send'></i> Ajukan Permohonan
+                                <button type="submit" class="btn btn-success">
+                                    <i class='bx bx-send me-1'></i> Ajukan Permohonan
                                 </button>
                                 <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-outline-secondary">
                                     <i class='bx bx-x'></i> Batal

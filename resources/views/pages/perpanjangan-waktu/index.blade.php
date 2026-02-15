@@ -8,12 +8,35 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-1">Permohonan Perpanjangan Waktu</h4>
-                <p class="text-muted mb-0">Daftar permohonan perpanjangan waktu upload dokumen</p>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Perpanjangan Waktu</li>
+                    </ol>
+                </nav>
             </div>
+            <a href="{{ route('dashboard') }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali
+            </a>
         </div>
 
+        <!-- Alert Section -->
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <!-- Filters -->
-        <div class="card mb-4">
+        <div class="card mb-4" style="background-color: #f8f9fa;">
             <div class="card-body">
                 <form method="GET" action="{{ route('perpanjangan-waktu.index') }}" class="row g-3">
                     <div class="col-md-4">
@@ -35,7 +58,7 @@
                     <div class="col-md-4">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-success">
                                 <i class='bx bx-search'></i> Filter
                             </button>
                             <a href="{{ route('perpanjangan-waktu.index') }}" class="btn btn-outline-secondary">
@@ -106,7 +129,7 @@
                                             <div class="d-flex gap-1">
                                                 @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']))
                                                     @if (!$perpanjangan->diproses_at)
-                                                        <button type="button" class="btn btn-sm btn-primary"
+                                                        <button type="button" class="btn btn-sm btn-success"
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#processModal{{ $perpanjangan->id }}"
                                                             title="Proses Perpanjangan">
@@ -208,8 +231,8 @@
                                                                 data-bs-dismiss="modal">
                                                                 <i class='bx bx-x'></i> Batal
                                                             </button>
-                                                            <button type="submit" class="btn btn-primary">
-                                                                <i class='bx bx-save'></i> Simpan Perpanjangan
+                                                            <button type="submit" class="btn btn-success">
+                                                                <i class='bx bx-save me-1'></i> Simpan Perpanjangan
                                                             </button>
                                                         </div>
                                                     </form>
