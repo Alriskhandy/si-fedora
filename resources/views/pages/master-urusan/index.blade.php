@@ -4,6 +4,24 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    Master Data
+                </h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-style1 mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Master Urusan</li>
+                    </ol>
+                </nav>
+            </div>
+            <a href="{{ route('dashboard') }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali
+            </a>
+        </div>
+
         <div class="row">
             <div class="col-lg-12 mb-4">
                 @if (session('success'))
@@ -15,9 +33,9 @@
 
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Master Urusan Pemerintahan</h5>
+                        <h5 class="card-title mb-0">Daftart Urusan Pemerintahan</h5>
                         <a href="{{ route('master-urusan.create') }}" class="btn btn-primary">
-                            <i class="bx bx-plus me-1"></i> Tambah Urusan
+                            <i class="bx bx-plus me-1"></i> Tambah Data
                         </a>
                     </div>
                     <div class="card-body">
@@ -121,3 +139,31 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            // Notification helper
+            function showNotification(type, message) {
+                const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+                const icon = type === 'success' ? 'bx-check-circle' : 'bx-error-circle';
+
+                const notification = $(`
+                    <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed" 
+                         role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                        <i class='bx ${icon} me-2'></i>${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+
+                $('body').append(notification);
+
+                setTimeout(function() {
+                    notification.fadeOut(function() {
+                        $(this).remove();
+                    });
+                }, 3000);
+            }
+        });
+    </script>
+@endpush
