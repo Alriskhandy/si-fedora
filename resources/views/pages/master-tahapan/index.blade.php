@@ -35,12 +35,8 @@
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h5 class="card-title mb-1">Daftar Tahapan</h5>
-                                <p class="text-muted small mb-0">Kelola tahapan dalam proses fasilitasi</p>
+                                <h5 class="card-title mb-1">Daftar Tahapan Fasilitasi / Evaluasi</h5>
                             </div>
-                            <a href="{{ route('master-tahapan.create') }}" class="btn btn-primary">
-                                <i class="bx bx-plus me-1"></i> Tambah Data
-                            </a>
                         </div>
                     </div>
                     <div class="card-body">
@@ -49,7 +45,6 @@
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
                                         <th>Urutan</th>
                                         <th>Nama Tahapan</th>
                                         <th>Aksi</th>
@@ -58,33 +53,13 @@
                                 <tbody>
                                     @forelse($tahapan as $index => $item)
                                         <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>
-                                                <span class="badge bg-label-primary">{{ $item->urutan }}</span>
-                                            </td>
+                                            <td>{{ $item->urutan }}</td>
                                             <td>{{ $item->nama_tahapan }}</td>
                                             <td>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow"
-                                                        data-bs-toggle="dropdown">
-                                                        <i class="bx bx-dots-vertical-rounded"></i>
-                                                    </button>
-                                                    <div class="dropdown-menu">
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('master-tahapan.edit', $item) }}">
-                                                            <i class="bx bx-edit-alt me-1"></i> Edit
-                                                        </a>
-                                                        <form action="{{ route('master-tahapan.destroy', $item) }}"
-                                                            method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger"
-                                                                onclick="return confirm('Yakin ingin menghapus?')">
-                                                                <i class="bx bx-trash me-1"></i> Delete
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </div>
+                                                <a href="{{ route('master-tahapan.edit', $item) }}" 
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="bx bx-edit-alt me-1"></i> Edit
+                                                </a>
                                             </td>
                                         </tr>
                                     @empty

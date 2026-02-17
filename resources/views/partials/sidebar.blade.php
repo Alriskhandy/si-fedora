@@ -24,14 +24,21 @@
             </a>
         </li>
 
+        <!-- DOKUMEN & ADMINISTRASI - SEMUA ROLE -->
+        <li
+            class="menu-item {{ request()->routeIs('arsip.*') ? 'active' : '' }}">
+            <a href="{{ route('arsip.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-archive"></i>
+                <div data-i18n="Arsip Dokumen">Arsip Dokumen</div>
+            </a>
+        </li>
+
         <!-- ============================================= -->
         <!-- PROSES FASILITASI - SEMUA ROLE (kecuali superadmin) -->
         <!-- ============================================= -->
         @if (!auth()->user()->hasRole('superadmin'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">
-                    Fasilitasi/Evaluasi
-                </span>
+                <span class="menu-header-text">Proses Fasilitasi</span>
             </li>
 
             <li class="menu-item {{ request()->routeIs('jadwal.*') ? 'active' : '' }}">
@@ -59,13 +66,16 @@
                     class="menu-item {{ request()->routeIs('my-undangan.*', 'undangan-pelaksanaan.*') ? 'active' : '' }}">
                     <a href="{{ route('my-undangan.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-envelope-open"></i>
-                        <div data-i18n="Undangan">
-                            @if (auth()->user()->hasRole('pemohon'))
-                                Undangan Pelaksanaan
-                            @else
-                                Undangan Fasilitasi
-                            @endif
-                        </div>
+                        <div data-i18n="Undangan">Undangan Saya</div>
+                    </a>
+                </li>
+            @endif
+
+            @if (auth()->user()->hasAnyRole(['fasilitator', 'verifikator']))
+                <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
+                    <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-edit"></i>
+                        <div data-i18n="Input Hasil">Input Hasil</div>
                     </a>
                 </li>
             @endif
@@ -78,7 +88,7 @@
         {{-- KABAN: Approval & Penetapan --}}
         @if (auth()->user()->hasRole('kaban'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Persetujuan & Penetapan</span>
+                <span class="menu-header-text">Persetujuan</span>
             </li>
             <li class="menu-item {{ request()->routeIs('approval.*') ? 'active' : '' }}">
                 <a href="{{ route('approval.index') }}" class="menu-link">
@@ -89,7 +99,7 @@
             <li class="menu-item {{ request()->routeIs('penetapan-jadwal.*') ? 'active' : '' }}">
                 <a href="{{ route('penetapan-jadwal.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-calendar-check"></i>
-                    <div data-i18n="Penetapan Jadwal">Jadwal Fasilitasi / Evaluasi</div>
+                    <div data-i18n="Penetapan Jadwal">Penetapan Jadwal</div>
                 </a>
             </li>
         @endif
@@ -97,18 +107,18 @@
         {{-- ADMIN PERAN: Penjadwalan & Validasi --}}
         @if (auth()->user()->hasRole('admin_peran'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Validasi & Pelaksanaan</span>
+                <span class="menu-header-text">Validasi & Koordinasi</span>
             </li>
             <li class="menu-item {{ request()->routeIs('validasi-hasil.*') ? 'active' : '' }}">
                 <a href="{{ route('validasi-hasil.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-check-double"></i>
-                    <div data-i18n="Validasi Hasil">Validasi Hasil Fasilitasi</div>
+                    <div data-i18n="Validasi Hasil">Validasi Hasil</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('undangan-pelaksanaan.*') ? 'active' : '' }}">
                 <a href="{{ route('undangan-pelaksanaan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-mail-send"></i>
-                    <div data-i18n="Undangan Pelaksanaan">Kelola Undangan</div>
+                    <div data-i18n="Undangan Pelaksanaan">Undangan Pelaksanaan</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('perpanjangan-waktu.*') ? 'active' : '' }}">
@@ -122,7 +132,7 @@
         {{-- POKJA: Evaluasi Dokumen --}}
         @if (auth()->user()->hasRole('pokja'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Evaluasi Pokja</span>
+                <span class="menu-header-text">Evaluasi</span>
             </li>
             <li class="menu-item {{ request()->routeIs('evaluasi.*') ? 'active' : '' }}">
                 <a href="{{ route('evaluasi.index') }}" class="menu-link">
@@ -132,129 +142,12 @@
             </li>
         @endif
 
-        {{-- AUDITOR: Activity Log --}}
-        @if (auth()->user()->hasRole('auditor'))
-            <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Sistem Audit</span>
-            </li>
-            <li class="menu-item {{ request()->routeIs('auditor.activity-log.*') ? 'active' : '' }}">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-history"></i>
-                    <div data-i18n="Activity Log">Activity Log</div>
-                </a>
-            </li>
-        @endif
-
-        <!-- ============================================= -->
-        <!-- DOKUMEN & ADMINISTRASI - SEMUA ROLE -->
-        <!-- ============================================= -->
-        @if (!auth()->user()->hasRole('superadmin'))
-            <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Dokumen & Administrasi</span>
-            </li>
-
-            {{-- Menu Dokumen Permohonan - Semua dokumen dari tahapan --}}
-            <li class="menu-item {{ request()->routeIs('dokumen-permohonan.*') ? 'active' : '' }}">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-file-find"></i>
-                    <div data-i18n="Dokumen Permohonan">
-                        @if (auth()->user()->hasRole('pemohon'))
-                            Dokumen Saya
-                        @elseif(auth()->user()->hasRole('auditor'))
-                            Arsip Dokumen
-                        @else
-                            Dokumen Permohonan
-                        @endif
-                    </div>
-                </a>
-            </li>
-
-            {{-- Menu Laporan Verifikasi --}}
-            @if (auth()->user()->hasAnyRole(['admin_peran', 'verifikator', 'auditor', 'kaban']))
-                <li class="menu-item {{ request()->routeIs('laporan-verifikasi.*') ? 'active' : '' }}">
-                    <a href="{{ route('laporan-verifikasi.index') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-clipboard"></i>
-                        <div data-i18n="Laporan Verifikasi">
-                            @if (auth()->user()->hasRole('auditor'))
-                                Data Verifikasi
-                            @else
-                                Laporan Verifikasi
-                            @endif
-                        </div>
-                    </a>
-                </li>
-            @endif
-
-            {{-- Menu Hasil Fasilitasi --}}
-            @if (auth()->user()->hasAnyRole(['fasilitator', 'admin_peran', 'auditor', 'kaban']))
-                <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
-                    <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-edit-alt"></i>
-                        <div data-i18n="Hasil Fasilitasi">
-                            @if (auth()->user()->hasRole('fasilitator'))
-                                Input Hasil Fasilitasi
-                            @elseif(auth()->user()->hasRole('auditor'))
-                                Data Fasilitasi
-                            @else
-                                Hasil Fasilitasi
-                            @endif
-                        </div>
-                    </a>
-                </li>
-            @endif
-
-            {{-- Menu Surat & Administrasi --}}
-            @if (auth()->user()->hasAnyRole(['admin_peran', 'kaban']))
-                <li class="menu-item {{ request()->routeIs('surat-pemberitahuan.*') ? 'active' : '' }}">
-                    <a href="{{ route('surat-pemberitahuan.index') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-envelope"></i>
-                        <div data-i18n="Surat Pemberitahuan">Surat Pemberitahuan</div>
-                    </a>
-                </li>
-            @endif
-
-            {{-- Menu Surat Penyampaian Hasil - Semua bisa lihat --}}
-            <li
-                class="menu-item {{ request()->routeIs('public.surat-penyampaian-hasil*', 'surat-penyampaian-hasil.*') ? 'active' : '' }}">
-                <a href="{{ auth()->user()->hasRole('kaban') ? route('surat-penyampaian-hasil.index') : route('public.surat-penyampaian-hasil') }}"
-                    class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-paper-plane"></i>
-                    <div data-i18n="Surat Penyampaian">Surat Penyampaian Hasil</div>
-                </a>
-            </li>
-
-            {{-- Menu Surat Rekomendasi --}}
-            @if (auth()->user()->hasAnyRole(['admin_peran', 'pemohon', 'auditor']))
-                <li class="menu-item {{ request()->routeIs('surat-rekomendasi.*') ? 'active' : '' }}">
-                    <a href="{{ route('surat-rekomendasi.index') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-notepad"></i>
-                        <div data-i18n="Surat Rekomendasi">Surat Rekomendasi</div>
-                    </a>
-                </li>
-            @endif
-
-            {{-- Menu PERDA/PERKADA - Semua bisa lihat --}}
-            <li
-                class="menu-item {{ request()->routeIs('public.penetapan-perda', 'penetapan-perda.*', 'tindak-lanjut.*') ? 'active' : '' }}">
-                <a href="{{ route('public.penetapan-perda') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-book-bookmark"></i>
-                    <div data-i18n="Dokumen PERDA">
-                        @if (auth()->user()->hasRole('pemohon'))
-                            PERDA / Tindak Lanjut
-                        @else
-                            PERDA / PERKADA
-                        @endif
-                    </div>
-                </a>
-            </li>
-        @endif
-
         <!-- ============================================= -->
         <!-- MANAJEMEN AKUN & TIM -->
         <!-- ============================================= -->
         @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran']))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Manajemen Akun & Tim</span>
+                <span class="menu-header-text">Manajemen</span>
             </li>
             <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <a href="{{ route('users.index') }}" class="menu-link">
@@ -298,7 +191,7 @@
             <li class="menu-item {{ request()->routeIs('master-kelengkapan.*') ? 'active' : '' }}">
                 <a href="{{ route('master-kelengkapan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-check-square"></i>
-                    <div data-i18n="Kelengkapan Verifikasi">Dokumen Kelengkapan</div>
+                    <div data-i18n="Kelengkapan Verifikasi">Kelengkapan Dokumen</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('master-bab.*') ? 'active' : '' }}">
@@ -320,7 +213,7 @@
         <!-- ============================================= -->
         @if (auth()->user()->hasRole('superadmin'))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Pengaturan Sistem</span>
+                <span class="menu-header-text">Sistem</span>
             </li>
             <li class="menu-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.roles.index') }}" class="menu-link">
@@ -347,7 +240,7 @@
         <!-- ============================================= -->
         @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor']))
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Monitoring & Audit</span>
+                <span class="menu-header-text">Monitoring</span>
             </li>
             <li class="menu-item {{ request()->routeIs('activity-log.*') ? 'active' : '' }}">
                 <a href="{{ route('activity-log.index') }}" class="menu-link">

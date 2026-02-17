@@ -99,6 +99,11 @@ class Permohonan extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function pemohon()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function verifikator()
     {
         return $this->belongsTo(User::class, 'verifikator_id');
@@ -124,6 +129,13 @@ class Permohonan extends Model
     public function tahapan()
     {
         return $this->hasMany(PermohonanTahapan::class);
+    }
+
+    public function tahapanAktif()
+    {
+        return $this->hasOne(PermohonanTahapan::class)
+            ->where('status', 'proses')
+            ->with('masterTahapan');
     }
 
     // Tim Relations

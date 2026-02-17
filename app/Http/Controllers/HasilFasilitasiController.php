@@ -341,7 +341,7 @@ class HasilFasilitasiController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('hasil-fasilitasi.index', compact('permohonan'));
+        return view('pages.hasil-fasilitasi.index', compact('permohonan'));
     }
 
     /**
@@ -442,7 +442,7 @@ class HasilFasilitasiController extends Controller
         ]);
         // dd($permohonan);
 
-        return view('hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
+        return view('pages.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
     }
 
     /**
@@ -568,7 +568,7 @@ class HasilFasilitasiController extends Controller
         // Pass isVerifikator to view
         $isKoordinator = $this->isKoordinator($permohonan);
         
-        return view('hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo'));
+        return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo'));
     }
 
     /**

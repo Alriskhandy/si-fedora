@@ -38,6 +38,7 @@ use App\Http\Controllers\PerpanjanganWaktuController;
 use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
 use App\Http\Controllers\LogoController;
+use App\Http\Controllers\ArsipController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,6 +92,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', 'destroy')->name('destroy');
         Route::delete('/', 'destroyAll')->name('destroy-all');
         Route::post('/mark-all-read', 'markAllAsRead')->name('mark-all-read');
+    });
+
+    // ArsipController - Archive of all documents
+    Route::prefix('arsip')->name('arsip.')->controller(ArsipController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{permohonan}', 'show')->name('show');
     });
 
     // ============================================================
