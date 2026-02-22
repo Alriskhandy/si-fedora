@@ -80,10 +80,55 @@ class DashboardController extends Controller
             'pending_approval' => Permohonan::where('status_akhir', 'revisi')->count(),
             'total_permohonan' => Permohonan::count(),
             'recent_activities' => DB::table('activity_log')
-                ->where('created_at', '>=', now()->subDays(7))
-                ->orderBy('created_at', 'desc')
+                ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
+                ->select(
+                    'activity_log.*',
+                    'users.name as causer_name'
+                )
+                ->where('activity_log.created_at', '>=', now()->subDays(7))
+                ->orderBy('activity_log.created_at', 'desc')
                 ->limit(10)
-                ->get()
+                ->get(),
+            'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
+                ->latest()
+                ->limit(5)
+                ->get(),
+            
+            // Master Data Statistics
+            'master_data' => [
+                'kabupaten_kota' => \App\Models\KabupatenKota::count(),
+                'jenis_dokumen' => \App\Models\MasterJenisDokumen::count(),
+                'tahapan' => \App\Models\MasterTahapan::count(),
+                'bab' => \App\Models\MasterBab::count(),
+                'urusan' => \App\Models\MasterUrusan::count(),
+                'kelengkapan' => \App\Models\MasterKelengkapanVerifikasi::count(),
+            ],
+            
+            // User Accounts Statistics
+            'users' => [
+                'total' => User::count(),
+                'superadmin' => User::role('superadmin')->count(),
+                'kaban' => User::role('kaban')->count(),
+                'admin_peran' => User::role('admin_peran')->count(),
+                'verifikator' => User::role('verifikator')->count(),
+                'fasilitator' => User::role('fasilitator')->count(),
+                'pemohon' => User::role('pemohon')->count(),
+                'auditor' => User::role('auditor')->count(),
+            ],
+            
+            // Team Assignments Statistics
+            'tim_assignments' => [
+                'total' => DB::table('user_kabkota_assignments')
+                    ->selectRaw("COUNT(DISTINCT (kabupaten_kota_id || '_' || COALESCE(jenis_dokumen_id::text, 'null') || '_' || tahun::text)) as total")
+                    ->value('total'),
+                'active' => DB::table('user_kabkota_assignments')
+                    ->where('is_active', true)
+                    ->selectRaw("COUNT(DISTINCT (kabupaten_kota_id || '_' || COALESCE(jenis_dokumen_id::text, 'null') || '_' || tahun::text)) as total")
+                    ->value('total'),
+                'total_members' => \App\Models\UserKabkotaAssignment::count(),
+                'verifikator' => \App\Models\UserKabkotaAssignment::where('role_type', 'verifikator')->count(),
+                'fasilitator' => \App\Models\UserKabkotaAssignment::where('role_type', 'fasilitator')->count(),
+            ],
         ];
 
         return view('pages.dashboard.admin_peran', compact('stats'));
