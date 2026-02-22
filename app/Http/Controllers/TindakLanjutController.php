@@ -18,28 +18,6 @@ use Illuminate\Support\Facades\Storage;
 class TindakLanjutController extends Controller
 {
     /**
-     * Tampilkan daftar permohonan untuk tindak lanjut (Pemohon)
-     */
-    public function index(Request $request)
-    {
-        // Permohonan dengan surat penyampaian hasil yang sudah ada
-        $query = Permohonan::with(['kabupatenKota', 'hasilFasilitasi', 'tindakLanjut'])
-            ->where('user_id', Auth::id())
-            ->whereHas('hasilFasilitasi', function ($q) {
-                $q->whereNotNull('surat_penyampaian');
-            });
-
-        // Filter pencarian
-        if ($request->filled('search')) {
-            $query->where('nomor_permohonan', 'like', '%' . $request->search . '%');
-        }
-
-        $permohonans = $query->latest()->paginate(10);
-        // dd($permohonans);
-        return view('tindak-lanjut.index', compact('permohonans'));
-    }
-
-    /**
      * Download file laporan tindak lanjut
      */
     public function download(Permohonan $permohonan)

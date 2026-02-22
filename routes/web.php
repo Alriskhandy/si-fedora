@@ -258,8 +258,6 @@ Route::middleware(['auth'])->group(function () {
 
     // ValidasiHasilController (Admin only)
     Route::middleware(['role:admin_peran'])->prefix('validasi-hasil')->name('validasi-hasil.')->controller(ValidasiHasilController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{permohonan}', 'show')->name('show');
         Route::post('/{permohonan}/approve', 'approve')->name('approve');
         Route::post('/{permohonan}/revise', 'revise')->name('revise');
         Route::get('/{permohonan}/generate', 'generate')->name('generate');
@@ -417,7 +415,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{permohonan}', 'store')->name('store');
         Route::post('/{permohonan}/upload', 'upload')->name('upload');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
-        Route::get('/{permohonan}', 'show')->name('show');
         Route::get('/{permohonan}/download', 'download')->name('download');
     });
 
@@ -427,16 +424,8 @@ Route::middleware(['auth'])->group(function () {
     
     // PenetapanPerdaController (Pemohon: Manage, All: View)
     Route::middleware(['role:pemohon'])->prefix('penetapan-perda')->name('penetapan-perda.')->controller(PenetapanPerdaController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{permohonan}/create', 'create')->name('create');
-        Route::post('/{permohonan}', 'store')->name('store');
         Route::post('/{permohonan}/upload', 'upload')->name('upload');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
-        Route::get('/{permohonan}', 'show')->name('show');
-    });
-    
-    Route::prefix('public')->name('public.')->group(function () {
-        Route::get('/penetapan-perda', [PenetapanPerdaController::class, 'public'])->name('penetapan-perda');
     });
     
     Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');

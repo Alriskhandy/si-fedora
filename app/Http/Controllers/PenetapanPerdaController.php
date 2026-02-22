@@ -17,26 +17,6 @@ use Illuminate\Support\Facades\Storage;
 
 class PenetapanPerdaController extends Controller
 {
-    /**
-     * Tampilkan daftar permohonan untuk penetapan PERDA (Pemohon)
-     */
-    public function index(Request $request)
-    {
-        $query = Permohonan::with(['kabupatenKota', 'tindakLanjut', 'penetapanPerda'])
-            ->where('user_id', Auth::id())
-            ->whereHas('tindakLanjut');
-
-        // Filter pencarian
-        if ($request->filled('search')) {
-            $query->whereHas('kabupatenKota', function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
-            });
-        }
-
-        $permohonans = $query->latest()->paginate(10);
-
-        return view('penetapan-perda.index', compact('permohonans'));
-    }
 
     /**
      * Upload dokumen penetapan perda ke DokumenTahapan (belum submit)
