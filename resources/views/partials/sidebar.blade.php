@@ -109,12 +109,6 @@
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Validasi & Koordinasi</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('validasi-hasil.*') ? 'active' : '' }}">
-                <a href="{{ route('validasi-hasil.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-check-double"></i>
-                    <div data-i18n="Validasi Hasil">Validasi Hasil</div>
-                </a>
-            </li>
             <li class="menu-item {{ request()->routeIs('undangan-pelaksanaan.*') ? 'active' : '' }}">
                 <a href="{{ route('undangan-pelaksanaan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-mail-send"></i>

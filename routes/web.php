@@ -440,12 +440,4 @@ Route::middleware(['auth'])->group(function () {
     });
     
     Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
-
-    // ============================================================
-    // MONITORING (Placeholder)
-    // ============================================================
-    
-    Route::middleware(['role:kaban'])->get('/monitoring', function () {
-        return 'Monitoring Management';
-    })->name('monitoring.index');
 });

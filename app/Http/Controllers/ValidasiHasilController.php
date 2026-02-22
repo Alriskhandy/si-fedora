@@ -14,44 +14,6 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 class ValidasiHasilController extends Controller
 {
     /**
-     * Tampilkan daftar hasil fasilitasi yang perlu validasi (Admin PERAN)
-     */
-    public function index(Request $request)
-    {
-        $query = HasilFasilitasi::with(['permohonan.kabupatenKota', 'pembuat'])
-            ->whereNotNull('draft_file')
-            ->orWhereNotNull('final_file');
-
-        // Filter pencarian
-        if ($request->filled('search')) {
-            $query->whereHas('permohonan.kabupatenKota', function ($q) use ($request) {
-                $q->where('nama_kabkota', 'like', '%' . $request->search . '%');
-            });
-        }
-
-        $hasilList = $query->latest('updated_at')->paginate(10);
-
-        return view('validasi-hasil.index', compact('hasilList'));
-    }
-
-    /**
-     * Tampilkan detail untuk validasi
-     */
-    public function show(Permohonan $permohonan)
-    {
-        $hasilFasilitasi = $permohonan->hasilFasilitasi;
-
-        if (!$hasilFasilitasi) {
-            return redirect()->route('validasi-hasil.index')
-                ->with('error', 'Hasil fasilitasi tidak ditemukan.');
-        }
-
-        $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilSistematika');
-
-        return view('validasi-hasil.show', compact('permohonan', 'hasilFasilitasi'));
-    }
-
-    /**
      * Setujui hasil fasilitasi
      */
     public function approve(Request $request, Permohonan $permohonan)
