@@ -367,14 +367,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{suratPemberitahuan}/download', 'download')->name('download');
     });
 
-    // SuratRekomendasiController (Kaban only)
-    Route::middleware(['role:kaban'])->prefix('surat-rekomendasi')->name('surat-rekomendasi.')->controller(SuratRekomendasiController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{permohonan}/create', 'create')->name('create');
-        Route::post('/{permohonan}', 'store')->name('store');
-        Route::get('/{permohonan}', 'show')->name('show');
-    });
-
     // SuratPenyampaianHasilController (Kaban: Manage, All: View)
     Route::middleware(['role:kaban'])->prefix('surat-penyampaian-hasil')->name('surat-penyampaian-hasil.')->controller(SuratPenyampaianHasilController::class)->group(function () {
         Route::get('/', 'index')->name('index');

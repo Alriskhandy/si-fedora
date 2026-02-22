@@ -11,40 +11,6 @@ use Illuminate\Support\Facades\Storage;
 
 class PermohonanDokumenController extends Controller
 {
-    public function index(Request $request)
-    {
-        $query = PermohonanDokumen::with(['permohonan', 'persyaratanDokumen']);
-
-        if (Auth::user()->hasRole('pemohon')) {
-            // Pemohon hanya bisa liat dokumen permohonan miliknya sendiri
-            $query->whereHas('permohonan', function ($q) {
-                $q->where('user_id', Auth::id());
-            });
-        }
-
-        $permohonanDokumen = $query->latest()->paginate(10);
-
-        return view('permohonan_dokumen.index', compact('permohonanDokumen'));
-    }
-
-    public function create(Request $request)
-    {
-        $permohonanId = $request->query('permohonan_id');
-
-        $permohonan = Permohonan::where('id', $permohonanId)->firstOrFail();
-
-        // Hanya bisa buat dokumen untuk permohonan milik sendiri
-        if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonan->user_id !== Auth::id()) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
-        }
-
-        $persyaratanDokumen = PersyaratanDokumen::where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)->get();
-
-        return view('permohonan_dokumen.create', compact('permohonan', 'persyaratanDokumen'));
-    }
-
     public function store(Request $request)
     {
         $request->validate([
@@ -88,21 +54,6 @@ class PermohonanDokumenController extends Controller
         ]);
 
         return redirect()->route('permohonan.show', $permohonan)->with('success', 'Dokumen persyaratan berhasil ditambahkan.');
-    }
-
-    public function show(PermohonanDokumen $permohonanDokumen)
-    {
-        $this->authorizeView($permohonanDokumen);
-        return view('permohonan_dokumen.show', compact('permohonanDokumen'));
-    }
-
-    public function edit(PermohonanDokumen $permohonanDokumen)
-    {
-        $this->authorizeView($permohonanDokumen);
-
-        $persyaratanDokumen = PersyaratanDokumen::where('jenis_dokumen_id', $permohonanDokumen->permohonan->jenis_dokumen_id)->get();
-
-        return view('permohonan_dokumen.edit', compact('permohonanDokumen', 'persyaratanDokumen'));
     }
 
     public function update(Request $request, PermohonanDokumen $permohonanDokumen)
