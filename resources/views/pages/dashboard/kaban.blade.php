@@ -67,22 +67,7 @@
 
         <!-- second row: activity chart and hasil fasilitasi approval -->
         <div class="row g-4 mb-4">
-            <div class="col-lg-6 col-md-12">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center justify-content-between pb-0">
-                        <h5 class="m-0">Aktivitas Pengguna</h5>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Pilih periode" id="periodToggle">
-                            <button type="button" class="btn btn-outline-primary active"
-                                data-period="daily">Harian</button>
-                            <button type="button" class="btn btn-outline-primary" data-period="weekly">Mingguan</button>
-                            <button type="button" class="btn btn-outline-primary" data-period="monthly">Bulanan</button>
-                        </div>
-                    </div>
-                    <div class="card-body p-4">
-                        <div id="activityChart" style="min-height:300px;"></div>
-                    </div>
-                </div>
-            </div>
+            
 
             <div class="col-lg-6 col-md-12">
                 <div class="card h-100">
@@ -122,6 +107,55 @@
                             <div class="text-center text-muted py-5">
                                 <i class='bx bx-check-circle bx-lg mb-2'></i>
                                 <p class="mb-0">Tidak ada hasil fasilitasi yang menunggu approval</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penetapan Jadwal -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5 class="m-0">Penetapan Jadwal</h5>
+                        <a href="{{ route('penetapan-jadwal.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
+                    </div>
+                    <div class="card-body">
+                        @forelse ($stats['penetapan_jadwal'] ?? [] as $penetapan)
+                            <div class="mb-4 pb-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="mb-2">
+                                            {{ $penetapan->permohonan?->kabupatenKota?->nama ?? '-' }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ $penetapan->permohonan?->jenisDokumen?->nama ?? '-' }} 
+                                            - Tahun {{ $penetapan->permohonan?->tahun ?? '-' }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-label-success">
+                                        Ditetapkan
+                                    </span>
+                                </div>
+                                <p class="mb-2 small">
+                                    <i class='bx bx-calendar'></i> <strong>Jadwal Fasilitasi:</strong>
+                                    {{ $penetapan->tanggal_mulai ? \Carbon\Carbon::parse($penetapan->tanggal_mulai)->format('d M Y') : '-' }}
+                                    s/d
+                                    {{ $penetapan->tanggal_selesai ? \Carbon\Carbon::parse($penetapan->tanggal_selesai)->format('d M Y') : '-' }}
+                                </p>
+                                @if($penetapan->lokasi)
+                                <p class="mb-2 small">
+                                    <i class='bx bx-map'></i> <strong>Lokasi:</strong> {{ $penetapan->lokasi }}
+                                </p>
+                                @endif
+                                <p class="mb-0 small">
+                                    <i class='bx bx-time'></i> <strong>Ditetapkan:</strong>
+                                    {{ $penetapan->tanggal_penetapan ? \Carbon\Carbon::parse($penetapan->tanggal_penetapan)->format('d M Y H:i') : '-' }}
+                                </p>
+                            </div>
+                        @empty
+                            <div class="text-center text-muted py-4">
+                                <p class="small">Tidak ada penetapan jadwal</p>
                             </div>
                         @endforelse
                     </div>
@@ -224,51 +258,19 @@
                 </div>
             </div>
 
-            <!-- Penetapan Jadwal -->
             <div class="col-lg-6 col-md-12">
                 <div class="card h-100">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="m-0">Penetapan Jadwal</h5>
-                        <a href="{{ route('penetapan-jadwal.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
+                    <div class="card-header d-flex align-items-center justify-content-between pb-0">
+                        <h5 class="m-0">Aktivitas Pengguna</h5>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Pilih periode" id="periodToggle">
+                            <button type="button" class="btn btn-outline-primary active"
+                                data-period="daily">Harian</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="weekly">Mingguan</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="monthly">Bulanan</button>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        @forelse ($stats['penetapan_jadwal'] ?? [] as $penetapan)
-                            <div class="mb-4 pb-2 border-bottom">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h6 class="mb-2">
-                                            {{ $penetapan->permohonan?->kabupatenKota?->nama ?? '-' }}
-                                        </h6>
-                                        <small class="text-muted">
-                                            {{ $penetapan->permohonan?->jenisDokumen?->nama ?? '-' }} 
-                                            - Tahun {{ $penetapan->permohonan?->tahun ?? '-' }}
-                                        </small>
-                                    </div>
-                                    <span class="badge bg-label-success">
-                                        Ditetapkan
-                                    </span>
-                                </div>
-                                <p class="mb-2 small">
-                                    <i class='bx bx-calendar'></i> <strong>Jadwal Fasilitasi:</strong>
-                                    {{ $penetapan->tanggal_mulai ? \Carbon\Carbon::parse($penetapan->tanggal_mulai)->format('d M Y') : '-' }}
-                                    s/d
-                                    {{ $penetapan->tanggal_selesai ? \Carbon\Carbon::parse($penetapan->tanggal_selesai)->format('d M Y') : '-' }}
-                                </p>
-                                @if($penetapan->lokasi)
-                                <p class="mb-2 small">
-                                    <i class='bx bx-map'></i> <strong>Lokasi:</strong> {{ $penetapan->lokasi }}
-                                </p>
-                                @endif
-                                <p class="mb-0 small">
-                                    <i class='bx bx-time'></i> <strong>Ditetapkan:</strong>
-                                    {{ $penetapan->tanggal_penetapan ? \Carbon\Carbon::parse($penetapan->tanggal_penetapan)->format('d M Y H:i') : '-' }}
-                                </p>
-                            </div>
-                        @empty
-                            <div class="text-center text-muted py-4">
-                                <p class="small">Tidak ada penetapan jadwal</p>
-                            </div>
-                        @endforelse
+                    <div class="card-body p-4">
+                        <div id="activityChart" style="min-height:300px;"></div>
                     </div>
                 </div>
             </div>

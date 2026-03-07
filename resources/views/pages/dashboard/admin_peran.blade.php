@@ -67,106 +67,8 @@
 
         <!-- second row: activity chart and summary cards -->
         <div class="row g-4 mb-4">
-            <div class="col-lg-8 col-md-12">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center justify-content-between pb-0">
-                        <h5 class="m-0">Aktivitas Pengguna</h5>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Pilih periode" id="periodToggle">
-                            <button type="button" class="btn btn-outline-primary active"
-                                data-period="daily">Harian</button>
-                            <button type="button" class="btn btn-outline-primary" data-period="weekly">Mingguan</button>
-                            <button type="button" class="btn btn-outline-primary" data-period="monthly">Bulanan</button>
-                        </div>
-                    </div>
-                    <div class="card-body p-4">
-                        <div id="activityChart" style="min-height:250px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-12">
-                <div class="row row-cols-2 g-4 h-100">
-                    <div class="col">
-                        <div class="card h-100">
-                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
-                                    <div class="avatar flex-shrink-0">
-                                        <span class="avatar-initial rounded bg-label-primary">
-                                            <i class='bx bx-user bx-sm'></i>
-                                        </span>
-                                    </div>
-                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Total
-                                        Users</p>
-                                </div>
-                                <div class="text-center">
-                                    <h2 class="mb-0 fw-bold">{{ $stats['users']['total'] }}</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="card h-100">
-                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
-                                    <div class="avatar flex-shrink-0">
-                                        <span class="avatar-initial rounded bg-label-warning">
-                                            <i class='bx bx-buildings bx-sm'></i>
-                                        </span>
-                                    </div>
-                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Kab /
-                                        Kota</p>
-                                </div>
-                                <div class="text-center">
-                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['kabupaten_kota'] }}</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="card h-100">
-                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
-                                    <div class="avatar flex-shrink-0">
-                                        <span class="avatar-initial rounded bg-label-success">
-                                            <i class='bx bx-file bx-sm'></i>
-                                        </span>
-                                    </div>
-                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Jenis
-                                        Dokumen</p>
-                                </div>
-                                <div class="text-center">
-                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['jenis_dokumen'] }}</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col">
-                        <div class="card h-100">
-                            <div class="card-body p-3 d-flex flex-column justify-content-center"
-                                style="min-height:150px;">
-                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
-                                    <div class="avatar flex-shrink-0">
-                                        <span class="avatar-initial rounded bg-label-info">
-                                            <i class='bx bx-briefcase bx-sm'></i>
-                                        </span>
-                                    </div>
-                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Urusan
-                                        Pemerintahan</p>
-                                </div>
-                                <div class="text-center">
-                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['urusan'] }}</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- third row: daftar permohonan dan jadwal -->
-        <div class="row g-4">
             <!-- Daftar Permohonan -->
-            <div class="col-lg-6 col-md-12">
+            <div class="col-lg-8 col-md-12">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between pb-0 flex-wrap gap-2">
                         <h5 class="m-0">Daftar Permohonan</h5>
@@ -258,6 +160,88 @@
                 </div>
             </div>
 
+            <div class="col-lg-4 col-md-12">
+                <div class="row row-cols-2 g-4 h-100">
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-primary">
+                                            <i class='bx bx-user bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Total
+                                        Users</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['users']['total'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-warning">
+                                            <i class='bx bx-buildings bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Kab /
+                                        Kota</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['kabupaten_kota'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center"
+                                style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-success">
+                                            <i class='bx bx-file bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Jenis
+                                        Dokumen</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['jenis_dokumen'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center"
+                                style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-info">
+                                            <i class='bx bx-briefcase bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Urusan
+                                        Pemerintahan</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['urusan'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- third row: daftar permohonan dan jadwal -->
+        <div class="row g-4">
             <!-- Jadwal Pelaksanaan -->
             <div class="col-lg-6 col-md-12">
                 <div class="card h-100">
@@ -297,6 +281,23 @@
                                 <p class="small">Tidak ada jadwal pelaksanaan aktif</p>
                             </div>
                         @endforelse
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-md-12">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between pb-0">
+                        <h5 class="m-0">Aktivitas Pengguna</h5>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Pilih periode" id="periodToggle">
+                            <button type="button" class="btn btn-outline-primary active"
+                                data-period="daily">Harian</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="weekly">Mingguan</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="monthly">Bulanan</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="activityChart" style="min-height:250px;"></div>
                     </div>
                 </div>
             </div>
