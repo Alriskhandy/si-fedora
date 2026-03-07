@@ -10,6 +10,7 @@ use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\JadwalFasilitasi;
 use App\Models\Notifikasi;
+use App\Models\UndanganPenerima;
 
 class DashboardController extends Controller
 {
@@ -204,9 +205,27 @@ class DashboardController extends Controller
 
     private function verifikatorDashboard($user)
     {
-        // Untuk sementara, verifikator bisa melihat semua permohonan dengan status proses
-        // Karena belum ada sistem assignment verifikator
+        // Get permohonan list dengan relasi yang dibutuhkan
+        $permohonanList = Permohonan::with(['jenisDokumen', 'kabupatenKota'])
+            ->where('status_akhir', 'proses')
+            ->latest()
+            ->get()
+            ->map(function ($permohonan) {
+                return [
+                    'id' => $permohonan->id,
+                    'nomor_permohonan' => 'PRM-' . str_pad($permohonan->id, 6, '0', STR_PAD_LEFT),
+                    'tahun' => $permohonan->tahun ?? date('Y'),
+                    'jenis_dokumen_id' => $permohonan->jenis_dokumen_id ?? '',
+                    'jenis_dokumen_nama' => $permohonan->jenisDokumen?->nama ?? '-',
+                    'kabupaten_kota_id' => $permohonan->kab_kota_id ?? '',
+                    'kabupaten_kota_nama' => $permohonan->kabupatenKota?->nama ?? '-',
+                    'status' => $permohonan->status_akhir ?? 'draft',
+                ];
+            })
+            ->toArray();
+        
         $stats = [
+            // Summary cards
             'my_verifikasi' => Permohonan::where('status_akhir', 'proses')
                 ->count(),
             'completed_verifikasi' => Permohonan::where('status_akhir', 'selesai')
@@ -214,11 +233,38 @@ class DashboardController extends Controller
                 ->count(),
             'pending_verifikasi' => Permohonan::where('status_akhir', 'proses')
                 ->count(),
-            'my_tasks' => Permohonan::with(['kabupatenKota'])
+            
+            // Data untuk tabel daftar permohonan
+            'permohonan_list' => $permohonanList,
+            
+            // Tugas verifikasi saya (recent tasks)
+            'my_tasks' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
                 ->where('status_akhir', 'proses')
                 ->latest()
                 ->limit(5)
-                ->get()
+                ->get(),
+            
+            // Undangan yang diterima user (dari my-undangan route)
+            'undangan' => UndanganPenerima::with([
+                    'undangan.permohonan.kabupatenKota',
+                    'undangan.permohonan.jenisDokumen',
+                    'undangan.penetapanJadwal'
+                ])
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+            
+            // Notification counts untuk user saat ini
+            'notifications' => [
+                'total' => Notifikasi::where('user_id', $user->id)->count(),
+                'unread' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', false)
+                    ->count(),
+                'read' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', true)
+                    ->count(),
+            ],
         ];
 
         return view('pages.dashboard.verifikator', compact('stats'));
