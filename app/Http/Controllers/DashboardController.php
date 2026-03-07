@@ -75,13 +75,13 @@ class DashboardController extends Controller
 
     private function adminPeranDashboard($user)
     {
-        // Get jenis dokumen list for filter
+        // Get jenis dokumen list untuk filter dropdown
         $jenisDokumenList = \App\Models\MasterJenisDokumen::pluck('nama', 'id')->toArray();
         
-        // Get kab/kota list for filter
+        // Get kab/kota list untuk filter dropdown
         $kabupatenKotaList = \App\Models\KabupatenKota::pluck('nama', 'id')->toArray();
         
-        // Get permohonan list dengan relasi
+        // Get permohonan list dengan relasi yang dibutuhkan
         $permohonanList = Permohonan::with(['jenisDokumen', 'kabupatenKota'])
             ->latest()
             ->get()
@@ -94,81 +94,39 @@ class DashboardController extends Controller
                     'jenis_dokumen_nama' => $permohonan->jenisDokumen?->nama ?? '-',
                     'kabupaten_kota_id' => $permohonan->kab_kota_id ?? '',
                     'kabupaten_kota_nama' => $permohonan->kabupatenKota?->nama ?? '-',
-                    'tanggal' => $permohonan->created_at,
                     'status' => $permohonan->status_akhir ?? 'draft',
                 ];
             })
             ->toArray();
         
         $stats = [
-            'pending_verifikasi' => Permohonan::where('status_akhir', 'belum')->count(),
-            'in_evaluation' => Permohonan::where('status_akhir', 'proses')->count(),
-            'pending_approval' => Permohonan::where('status_akhir', 'revisi')->count(),
-            'total_permohonan' => Permohonan::count(),
-            'recent_activities' => DB::table('activity_log')
-                ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
-                ->select(
-                    'activity_log.*',
-                    'users.name as causer_name'
-                )
-                ->where('activity_log.created_at', '>=', now()->subDays(7))
-                ->orderBy('activity_log.created_at', 'desc')
-                ->limit(10)
-                ->get(),
-            'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
-                ->latest()
-                ->limit(5)
-                ->get(),
-            
-            // Data untuk table daftar permohonan
+            // Data untuk tabel daftar permohonan
             'permohonan_list' => $permohonanList,
             'jenis_dokumen_list' => $jenisDokumenList,
             'kabupaten_kota_list' => $kabupatenKotaList,
             
-            // Jadwal aktif untuk card jadwal pelaksanaan - 5 terbaru
+            // Jadwal aktif untuk card jadwal pelaksanaan (5 terbaru yang masih aktif)
             'jadwal_aktif' => JadwalFasilitasi::where('status', 'published')
                 ->orderBy('created_at', 'desc')
                 ->limit(3)
                 ->get(),
             
-            // Master Data Statistics
+            // Master Data Statistics untuk summary cards
             'master_data' => [
                 'kabupaten_kota' => \App\Models\KabupatenKota::count(),
                 'jenis_dokumen' => \App\Models\MasterJenisDokumen::count(),
-                'tahapan' => \App\Models\MasterTahapan::count(),
-                'bab' => \App\Models\MasterBab::count(),
                 'urusan' => \App\Models\MasterUrusan::count(),
-                'kelengkapan' => \App\Models\MasterKelengkapanVerifikasi::count(),
             ],
+            
             // Activity chart data (daily/weekly/monthly)
             'activity_chart' => $this->prepareActivityChartData(),
             
-            // User Accounts Statistics
+            // User total statistics
             'users' => [
                 'total' => User::count(),
-                'superadmin' => User::role('superadmin')->count(),
-                'kaban' => User::role('kaban')->count(),
-                'admin_peran' => User::role('admin_peran')->count(),
-                'verifikator' => User::role('verifikator')->count(),
-                'fasilitator' => User::role('fasilitator')->count(),
-                'pemohon' => User::role('pemohon')->count(),
-                'auditor' => User::role('auditor')->count(),
             ],
             
-            // Team Assignments Statistics
-            'tim_assignments' => [
-                'total' => DB::table('user_kabkota_assignments')
-                    ->selectRaw("COUNT(DISTINCT (kabupaten_kota_id || '_' || COALESCE(jenis_dokumen_id::text, 'null') || '_' || tahun::text)) as total")
-                    ->value('total'),
-                'active' => DB::table('user_kabkota_assignments')
-                    ->where('is_active', true)
-                    ->selectRaw("COUNT(DISTINCT (kabupaten_kota_id || '_' || COALESCE(jenis_dokumen_id::text, 'null') || '_' || tahun::text)) as total")
-                    ->value('total'),
-                'total_members' => \App\Models\UserKabkotaAssignment::count(),
-                'verifikator' => \App\Models\UserKabkotaAssignment::where('role_type', 'verifikator')->count(),
-                'fasilitator' => \App\Models\UserKabkotaAssignment::where('role_type', 'fasilitator')->count(),
-            ],
-            // Notification counts for current user (custom notifikasi table)
+            // Notification counts untuk user saat ini
             'notifications' => [
                 'total' => Notifikasi::where('user_id', $user->id)->count(),
                 'unread' => Notifikasi::where('user_id', $user->id)
