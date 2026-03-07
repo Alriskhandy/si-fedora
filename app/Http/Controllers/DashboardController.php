@@ -57,17 +57,78 @@ class DashboardController extends Controller
 
     private function kabanDashboard($user)
     {
+        // Get jenis dokumen list untuk filter dropdown
+        $jenisDokumenList = \App\Models\MasterJenisDokumen::pluck('nama', 'id')->toArray();
+        
+        // Get kab/kota list untuk filter dropdown
+        $kabupatenKotaList = \App\Models\KabupatenKota::pluck('nama', 'id')->toArray();
+        
+        // Get permohonan list dengan relasi yang dibutuhkan
+        $permohonanList = Permohonan::with(['jenisDokumen', 'kabupatenKota'])
+            ->latest()
+            ->get()
+            ->map(function ($permohonan) {
+                return [
+                    'id' => $permohonan->id,
+                    'nomor_permohonan' => 'PRM-' . str_pad($permohonan->id, 6, '0', STR_PAD_LEFT),
+                    'tahun' => $permohonan->tahun ?? date('Y'),
+                    'jenis_dokumen_id' => $permohonan->jenis_dokumen_id ?? '',
+                    'jenis_dokumen_nama' => $permohonan->jenisDokumen?->nama ?? '-',
+                    'kabupaten_kota_id' => $permohonan->kab_kota_id ?? '',
+                    'kabupaten_kota_nama' => $permohonan->kabupatenKota?->nama ?? '-',
+                    'status' => $permohonan->status_akhir ?? 'draft',
+                ];
+            })
+            ->toArray();
+        
         $stats = [
-            'pending_approval' => Permohonan::where('status_akhir', 'proses')->count(),
+            // Summary cards
+            'pending_approval' => \App\Models\HasilFasilitasi::where('status_draft', 'menunggu_persetujuan_kaban')->count(),
             'total_permohonan' => Permohonan::count(),
             'completed_this_month' => Permohonan::where('status_akhir', 'selesai')
                 ->whereMonth('updated_at', now()->month)
                 ->count(),
-            'recent_permohonan' => Permohonan::with(['kabupatenKota'])
-                ->whereIn('status_akhir', ['proses', 'selesai'])
-                ->latest()
+            
+            // Hasil fasilitasi yang menunggu approval kaban
+            'hasil_fasilitasi_approval' => \App\Models\HasilFasilitasi::with([
+                    'permohonan.kabupatenKota',
+                    'permohonan.jenisDokumen',
+                    'pembuat'
+                ])
+                ->where('status_draft', 'menunggu_persetujuan_kaban')
+                ->orderBy('tanggal_diajukan_kaban', 'asc')
                 ->limit(5)
-                ->get()
+                ->get(),
+            
+            // Data untuk tabel daftar permohonan
+            'permohonan_list' => $permohonanList,
+            'jenis_dokumen_list' => $jenisDokumenList,
+            'kabupaten_kota_list' => $kabupatenKotaList,
+            
+            // Penetapan jadwal (jadwal yang sudah ditetapkan untuk permohonan)
+            'penetapan_jadwal' => \App\Models\PenetapanJadwalFasilitasi::with([
+                    'permohonan.kabupatenKota',
+                    'permohonan.jenisDokumen',
+                    'jadwalFasilitasi.jenisDokumen',
+                    'penetap'
+                ])
+                ->orderBy('tanggal_penetapan', 'desc')
+                ->limit(5)
+                ->get(),
+            
+            // Activity chart data (daily/weekly/monthly)
+            'activity_chart' => $this->prepareActivityChartData(),
+            
+            // Notification counts untuk user saat ini
+            'notifications' => [
+                'total' => Notifikasi::where('user_id', $user->id)->count(),
+                'unread' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', false)
+                    ->count(),
+                'read' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', true)
+                    ->count(),
+            ],
         ];
 
         return view('pages.dashboard.kaban', compact('stats'));

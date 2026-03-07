@@ -70,7 +70,7 @@
             <div class="col-lg-8 col-md-12">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between pb-0">
-                        <h5 class="m-0">Grafik Aktivitas</h5>
+                        <h5 class="m-0">Aktivitas Pengguna</h5>
                         <div class="btn-group btn-group-sm" role="group" aria-label="Pilih periode" id="periodToggle">
                             <button type="button" class="btn btn-outline-primary active"
                                 data-period="daily">Harian</button>
@@ -263,7 +263,7 @@
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h5 class="m-0">Jadwal Pelaksanaan</h5>
-                        <a href="#" class="btn btn-sm btn-primary">Lihat Semua</a>
+                        <a href="{{ route('jadwal.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
                     </div>
                     <div class="card-body">
                         @forelse ($stats['jadwal_aktif'] ?? [] as $jadwal)
