@@ -431,6 +431,7 @@ class DashboardController extends Controller
     private function auditorDashboard($user)
     {
         $stats = [
+            // Summary statistics
             'total_permohonan' => Permohonan::count(),
             'in_process' => Permohonan::whereIn('status_akhir', ['proses', 'revisi'])->count(),
             'completed_this_month' => Permohonan::where('status_akhir', 'selesai')
@@ -439,22 +440,42 @@ class DashboardController extends Controller
             'total_activities' => DB::table('activity_log')
                 ->where('created_at', '>=', now()->subDays(7))
                 ->count(),
+            
+            // Recent activities
             'recent_activities' => DB::table('activity_log')
                 ->leftJoin('users', 'activity_log.causer_id', '=', 'users.id')
                 ->select('activity_log.*', 'users.name as causer_name')
                 ->orderBy('activity_log.created_at', 'desc')
-                ->limit(10)
+                ->limit(5)
                 ->get()
                 ->map(function ($activity) {
                     $activity->causer = (object) ['name' => $activity->causer_name];
                     return $activity;
                 }),
+            
+            // Master data counts
             'total_users' => User::count(),
             'total_kabkota' => \App\Models\KabupatenKota::count(),
+            
+            // Recent permohonan
             'recent_permohonan' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
                 ->latest()
                 ->limit(10)
-                ->get()
+                ->get(),
+            
+            // Activity chart data (daily/weekly/monthly)
+            'activity_chart' => $this->prepareActivityChartData(),
+            
+            // Notification counts untuk user saat ini
+            'notifications' => [
+                'total' => Notifikasi::where('user_id', $user->id)->count(),
+                'unread' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', false)
+                    ->count(),
+                'read' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', true)
+                    ->count(),
+            ],
         ];
 
         return view('pages.dashboard.auditor', compact('stats'));
