@@ -4,92 +4,60 @@
 
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Dashboard Admin PERAN</h5>
-                        <p class="text-muted">Koordinasi & Workflow Management</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-3 col-md-6 col-12 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div class="me-1">
-                                <p class="card-title mb-1">Menunggu Verifikasi</p>
-                                <div class="d-flex align-items-center">
-                                    <h4 class="mb-0 me-2">{{ $stats['pending_verifikasi'] }}</h4>
-                                </div>
+        <!-- header row with greeting and notifications -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8 col-md-12">
+                <div class="card h-100">
+                    <div class="d-flex align-items-end row">
+                        <div class="col-sm-7">
+                            <div class="card-body">
+                                <h3 class="card-title">DASHBOARD SI-FEDORA</h3>
+                                <h5 class="card-title text-secondary">Selamat datang, {{ auth()->user()->name }}!</h5>
+                                <p class="mb-4">Silahkan melihat ringkasan statistik SI-FEDORA pada halaman ini.</p>
                             </div>
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-primary">
-                                    <i class='bx bx-check-circle bx-sm'></i>
-                                </span>
+                        </div>
+                        <div class="col-sm-5 text-center text-sm-left">
+                            <div class="card-body pb-0 px-0 px-md-4">
+                                <img src="../assets/img/illustrations/man-with-laptop-light.png" height="140"
+                                    alt="Ilustrasi" data-app-dark-img="illustrations/man-with-laptop-dark.png"
+                                    data-app-light-img="illustrations/man-with-laptop-light.png" />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6 col-12 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div class="me-1">
-                                <p class="card-title mb-1">Sedang Dievaluasi</p>
-                                <div class="d-flex align-items-center">
-                                    <h4 class="mb-0 me-2">{{ $stats['in_evaluation'] }}</h4>
+            <div class="col-lg-4 col-md-12">
+                <div class="card h-100">
+                    <div class="card-body p-4">
+                        <h6 class="card-title mb-3">Notifikasi</h6>
+                        <div class="row g-0 text-center">
+                            <div class="col-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <span class="avatar mb-2">
+                                        <i class="bx bx-bell bx-sm"></i>
+                                    </span>
+                                    <p class="mb-2 small text-muted">Total</p>
+                                    <h2 class="mb-0 fw-bold">{{ $stats['notifications']['total'] }}</h2>
                                 </div>
                             </div>
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-success">
-                                    <i class='bx bx-file-find bx-sm'></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 col-12 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div class="me-1">
-                                <p class="card-title mb-1">Menunggu Approval</p>
-                                <div class="d-flex align-items-center">
-                                    <h4 class="mb-0 me-2">{{ $stats['pending_approval'] }}</h4>
+                            <div class="col-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <span class="avatar mb-2">
+                                        <i class="bx bx-envelope-open bx-sm"></i>
+                                    </span>
+                                    <p class="mb-2 small text-muted">Belum</p>
+                                    <h2 class="mb-0 fw-bold">{{ $stats['notifications']['unread'] }}</h2>
                                 </div>
                             </div>
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-info">
-                                    <i class='bx bx-task bx-sm'></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 col-12 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div class="me-1">
-                                <p class="card-title mb-1">Total Permohonan</p>
-                                <div class="d-flex align-items-center">
-                                    <h4 class="mb-0 me-2">{{ $stats['total_permohonan'] }}</h4>
+                            <div class="col-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <span class="avatar mb-2">
+                                        <i class="bx bx-check-circle bx-sm"></i>
+                                    </span>
+                                    <p class="mb-2 small text-muted">Sudah</p>
+                                    <h2 class="mb-0 fw-bold">{{ $stats['notifications']['read'] }}</h2>
                                 </div>
-                            </div>
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-warning">
-                                    <i class='bx bx-file bx-sm'></i>
-                                </span>
                             </div>
                         </div>
                     </div>
@@ -97,303 +65,351 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-lg-8 mb-4">
-                <div class="card">
-                    <h5 class="card-header">Aktivitas Terbaru (7 Hari Terakhir)</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th width="5%">No</th>
-                                    <th width="20%">Pengguna</th>
-                                    <th width="35%">Aktivitas</th>
-                                    <th width="20%">Modul</th>
-                                    <th width="20%">Waktu</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                                @forelse($stats['recent_activities'] as $index => $activity)
+        <!-- second row: activity chart and summary cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8 col-md-12">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between pb-0">
+                        <h5 class="m-0">Grafik Aktivitas</h5>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Pilih periode" id="periodToggle">
+                            <button type="button" class="btn btn-outline-primary active"
+                                data-period="daily">Harian</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="weekly">Mingguan</button>
+                            <button type="button" class="btn btn-outline-primary" data-period="monthly">Bulanan</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="activityChart" style="min-height:250px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+                <div class="row row-cols-2 g-4 h-100">
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-primary">
+                                            <i class='bx bx-user bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Total
+                                        Users</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['users']['total'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-warning">
+                                            <i class='bx bx-buildings bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Kab /
+                                        Kota</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['kabupaten_kota'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center" style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-success">
+                                            <i class='bx bx-file bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Jenis
+                                        Dokumen</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['jenis_dokumen'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body p-3 d-flex flex-column justify-content-center"
+                                style="min-height:150px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3 gap-2">
+                                    <div class="avatar flex-shrink-0">
+                                        <span class="avatar-initial rounded bg-label-info">
+                                            <i class='bx bx-briefcase bx-sm'></i>
+                                        </span>
+                                    </div>
+                                    <p class="card-title mb-0 text-muted text-truncate" style="font-size:0.85rem;">Urusan
+                                        Pemerintahan</p>
+                                </div>
+                                <div class="text-center">
+                                    <h2 class="mb-0 fw-bold">{{ $stats['master_data']['urusan'] }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- third row: daftar permohonan dan jadwal -->
+        <div class="row g-4">
+            <!-- Daftar Permohonan -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between pb-0 flex-wrap gap-2">
+                        <h5 class="m-0">Daftar Permohonan</h5>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select class="form-select form-select-sm" id="filterTahun" style="width: auto;">
+                                <option value="">Semua Tahun</option>
+                                @for ($year = date('Y'); $year >= 2020; $year--)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endfor
+                            </select>
+                            <select class="form-select form-select-sm" id="filterJenisDokumen" style="width: auto;">
+                                <option value="">Semua Jenis Dokumen</option>
+                                @foreach ($stats['jenis_dokumen_list'] ?? [] as $id => $nama)
+                                    <option value="{{ $id }}">{{ $nama }}</option>
+                                @endforeach
+                            </select>
+                            <select class="form-select form-select-sm" id="filterKabKota" style="width: auto;">
+                                <option value="">Semua Kab/Kota</option>
+                                @foreach ($stats['kabupaten_kota_list'] ?? [] as $id => $nama)
+                                    <option value="{{ $id }}">{{ $nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
                                     <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td><small>{{ $activity->causer_name ?? 'System' }}</small></td>
-                                        <td><small>{{ $activity->description ?? '-' }}</small></td>
-                                        <td>
-                                            <small>
-                                                @if($activity->subject_type)
-                                                    @php
-                                                        $type = str_replace('App\\Models\\', '', $activity->subject_type);
-                                                        $type = preg_replace('/(?<!^)[A-Z]/', ' $0', $type);
-                                                    @endphp
-                                                    {{ $type }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </small>
-                                        </td>
-                                        <td>
-                                            <small>
-                                                {{ $activity->created_at ? \Carbon\Carbon::parse($activity->created_at)->diffForHumans() : '-' }}
-                                            </small>
-                                        </td>
+                                        <th>Kab/Kota</th>
+                                        <th>Jenis Dokumen</th>
+                                        <th>Tahun</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Aksi</th>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted py-3">Tidak ada aktivitas dalam 7 hari terakhir</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody id="permohonanTableBody">
+                                    @forelse ($stats['permohonan_list'] ?? [] as $permohonan)
+                                        <tr class="permohonan-row" data-tahun="{{ $permohonan['tahun'] ?? '' }}"
+                                            data-jenis="{{ $permohonan['jenis_dokumen_id'] ?? '' }}"
+                                            data-kabkota="{{ $permohonan['kabupaten_kota_id'] ?? '' }}">
+                                            <td>
+                                                <small>{{ $permohonan['kabupaten_kota_nama'] ?? '-' }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ $permohonan['jenis_dokumen_nama'] ?? '-' }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ $permohonan['tahun'] ?? '-' }}</small>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $statusClass = match ($permohonan['status'] ?? null) {
+                                                        'belum' => 'badge bg-label-secondary',
+                                                        'proses' => 'badge bg-label-info',
+                                                        'revisi' => 'badge bg-label-warning',
+                                                        'selesai' => 'badge bg-label-success',
+                                                        default => 'badge bg-label-secondary',
+                                                    };
+                                                    $statusLabel = match ($permohonan['status'] ?? null) {
+                                                        'belum' => 'Belum',
+                                                        'proses' => 'Proses',
+                                                        'revisi' => 'Revisi',
+                                                        'selesai' => 'Selesai',
+                                                        default => 'Unknown',
+                                                    };
+                                                @endphp
+                                                <span class="{{ $statusClass }}">{{ $statusLabel }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="#"
+                                                    class="btn btn-sm btn-icon btn-text-primary rounded-pill"
+                                                    title="Lihat Detail">
+                                                    <span class="ti-xs"><i class='bx bx-show'></i></span>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                Tidak ada data permohonan
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-4 mb-4">
-                <div class="card">
-                    <h5 class="card-header">Statistik Ringkas</h5>
+            <!-- Jadwal Pelaksanaan -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5 class="m-0">Jadwal Pelaksanaan</h5>
+                        <a href="#" class="btn btn-sm btn-primary">Lihat Semua</a>
+                    </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                            <div>
-                                <small class="text-muted d-block">Belum Dimulai</small>
-                                <span class="fw-bold">{{ \App\Models\Permohonan::where('status_akhir', 'belum')->count() }}</span>
+                        @forelse ($stats['jadwal_aktif'] ?? [] as $jadwal)
+                            <div class="mb-4 pb-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="mb-2">
+                                            {{ $jadwal->jenisDokumen?->nama ?? strtoupper($jadwal->jenis_dokumen ?? '-') }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            Tahun Anggaran: {{ $jadwal->tahun_anggaran ?? '-' }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-label-info">
+                                        {{ $jadwal->status_label ?? ucfirst($jadwal->status ?? '-') }}
+                                    </span>
+                                </div>
+                                <p class="mb-2 small">
+                                    <i class='bx bx-calendar'></i> <strong>Jadwal:</strong>
+                                    {{ $jadwal->tanggal_mulai ? \Carbon\Carbon::parse($jadwal->tanggal_mulai)->format('d M Y') : '-' }}
+                                    s/d
+                                    {{ $jadwal->tanggal_selesai ? \Carbon\Carbon::parse($jadwal->tanggal_selesai)->format('d M Y') : '-' }}
+                                </p>
+                                <p class="mb-0 small">
+                                    <i class='bx bx-time'></i> <strong>Batas Permohonan:</strong>
+                                    {{ $jadwal->batas_permohonan ? \Carbon\Carbon::parse($jadwal->batas_permohonan)->format('d M Y') : '-' }}
+                                </p>
                             </div>
-                            <span class="badge bg-label-secondary">Belum</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                            <div>
-                                <small class="text-muted d-block">Sedang Diproses</small>
-                                <span class="fw-bold">{{ \App\Models\Permohonan::where('status_akhir', 'proses')->count() }}</span>
+                        @empty
+                            <div class="text-center text-muted py-4">
+                                <p class="small">Tidak ada jadwal pelaksanaan aktif</p>
                             </div>
-                            <span class="badge bg-label-info">Proses</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                            <div>
-                                <small class="text-muted d-block">Perlu Revisi</small>
-                                <span class="fw-bold">{{ \App\Models\Permohonan::where('status_akhir', 'revisi')->count() }}</span>
-                            </div>
-                            <span class="badge bg-label-warning">Revisi</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted d-block">Selesai</small>
-                                <span class="fw-bold">{{ \App\Models\Permohonan::where('status_akhir', 'selesai')->count() }}</span>
-                            </div>
-                            <span class="badge bg-label-success">Selesai</span>
-                        </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Master Data, User & Tim Statistics --}}
-        <div class="row">
-            <div class="col-lg-4 mb-4">
-                <div class="card">
-                    <h5 class="card-header d-flex align-items-center">
-                        <i class='bx bx-data bx-sm me-2'></i>
-                        Master Data
-                    </h5>
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Kabupaten/Kota</small>
-                                <span class="badge bg-label-primary rounded-pill">{{ $stats['master_data']['kabupaten_kota'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Jenis Dokumen</small>
-                                <span class="badge bg-label-info rounded-pill">{{ $stats['master_data']['jenis_dokumen'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Tahapan</small>
-                                <span class="badge bg-label-success rounded-pill">{{ $stats['master_data']['tahapan'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Sistematika (BAB)</small>
-                                <span class="badge bg-label-warning rounded-pill">{{ $stats['master_data']['bab'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Urusan Pemerintahan</small>
-                                <span class="badge bg-label-secondary rounded-pill">{{ $stats['master_data']['urusan'] }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Kelengkapan Dokumen</small>
-                                <span class="badge bg-label-dark rounded-pill">{{ $stats['master_data']['kelengkapan'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 mb-4">
-                <div class="card">
-                    <h5 class="card-header d-flex align-items-center">
-                        <i class='bx bx-user bx-sm me-2'></i>
-                        Akun Pengguna
-                    </h5>
-                    <div class="card-body">
-                        <div class="mb-3 pb-2 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class='bx bx-group text-primary me-1'></i>
-                                    <strong>Total Pengguna</strong>
-                                </div>
-                                <span class="badge bg-primary rounded-pill">{{ $stats['users']['total'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Superadmin</small>
-                                <span class="text-muted">{{ $stats['users']['superadmin'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Kepala Badan</small>
-                                <span class="text-muted">{{ $stats['users']['kaban'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Admin PERAN</small>
-                                <span class="text-muted">{{ $stats['users']['admin_peran'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Verifikator</small>
-                                <span class="text-muted">{{ $stats['users']['verifikator'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Fasilitator</small>
-                                <span class="text-muted">{{ $stats['users']['fasilitator'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Pemohon (Kab/Kota)</small>
-                                <span class="text-muted">{{ $stats['users']['pemohon'] }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Auditor</small>
-                                <span class="text-muted">{{ $stats['users']['auditor'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 mb-4">
-                <div class="card">
-                    <h5 class="card-header d-flex align-items-center">
-                        <i class='bx bx-group bx-sm me-2'></i>
-                        Tim FEDORA
-                    </h5>
-                    <div class="card-body">
-                        <div class="mb-3 pb-2 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class='bx bx-shield-alt-2 text-success me-1'></i>
-                                    <strong>Tim Aktif</strong>
-                                </div>
-                                <span class="badge bg-success rounded-pill">{{ $stats['tim_assignments']['active'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-3 pb-2 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <small class="text-muted">Total Tim (Semua)</small>
-                                </div>
-                                <span class="text-muted">{{ $stats['tim_assignments']['total'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-3 pb-2 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class='bx bx-user-check text-info me-1'></i>
-                                    <strong>Total Anggota</strong>
-                                </div>
-                                <span class="badge bg-info rounded-pill">{{ $stats['tim_assignments']['total_members'] }}</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Verifikator</small>
-                                <span class="text-muted">{{ $stats['tim_assignments']['verifikator'] }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">Fasilitator</small>
-                                <span class="text-muted">{{ $stats['tim_assignments']['fasilitator'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12 mb-4">
-                <div class="card">
-                    <h5 class="card-header">Permohonan Terbaru</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Kabupaten/Kota</th>
-                                    <th>Jenis Dokumen</th>
-                                    <th>Status</th>
-                                    <th>Tanggal Diterima</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($stats['recent_permohonan'] as $index => $permohonan)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $permohonan->kabupatenKota->nama ?? '-' }}</td>
-                                        <td>{{ $permohonan->jenisDokumen->nama ?? '-' }}</td>
-                                        <td>
-                                            @if($permohonan->status_akhir == 'belum')
-                                                <span class="badge bg-secondary">Belum Dimulai</span>
-                                            @elseif($permohonan->status_akhir == 'proses')
-                                                <span class="badge bg-info">Sedang Diproses</span>
-                                            @elseif($permohonan->status_akhir == 'revisi')
-                                                <span class="badge bg-warning">Perlu Revisi</span>
-                                            @elseif($permohonan->status_akhir == 'selesai')
-                                                <span class="badge bg-success">Selesai</span>
-                                            @else
-                                                <span class="badge bg-dark">{{ $permohonan->status_akhir }}</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <small>{{ $permohonan->created_at ? $permohonan->created_at->format('d/m/Y H:i') : '-' }}</small>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center text-muted py-3">Belum ada permohonan</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Activity chart initialization
+                const chartEl = document.querySelector('#activityChart');
+                const activityData = @json($stats['activity_chart']);
+
+                const config = {
+                    chart: {
+                        type: 'line',
+                        height: 250,
+                        toolbar: {
+                            show: false
+                        },
+                        zoom: {
+                            enabled: false
+                        },
+                        sparkline: {
+                            enabled: false
+                        }
+                    },
+                    stroke: {
+                        curve: 'smooth',
+                        width: 3
+                    },
+                    markers: {
+                        size: 4
+                    },
+                    xaxis: {
+                        categories: activityData.daily.labels
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Jumlah'
+                        }
+                    },
+                    series: [{
+                        name: 'Aktivitas',
+                        data: activityData.daily.data
+                    }],
+                    colors: ['#5A8DEE'],
+                    grid: {
+                        borderColor: '#ebe9f1'
+                    }
+                };
+
+                const activityChart = new ApexCharts(chartEl, config);
+                activityChart.render();
+
+                // period toggle
+                document.getElementById('periodToggle').addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'BUTTON') return;
+                    const period = e.target.getAttribute('data-period');
+                    // update button active state
+                    Array.from(this.children).forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    activityChart.updateOptions({
+                        xaxis: {
+                            categories: activityData[period].labels
+                        }
+                    });
+                    activityChart.updateSeries([{
+                        data: activityData[period].data
+                    }]);
+                });
+
+                // Filter permohonan
+                const filterTahun = document.getElementById('filterTahun');
+                const filterJenisDokumen = document.getElementById('filterJenisDokumen');
+                const filterKabKota = document.getElementById('filterKabKota');
+                const permohonanRows = document.querySelectorAll('.permohonan-row');
+
+                function applyFilters() {
+                    const tahun = filterTahun.value;
+                    const jenis = filterJenisDokumen.value;
+                    const kabkota = filterKabKota.value;
+
+                    permohonanRows.forEach(row => {
+                        let show = true;
+
+                        if (tahun && row.getAttribute('data-tahun') !== tahun) {
+                            show = false;
+                        }
+                        if (jenis && row.getAttribute('data-jenis') !== jenis) {
+                            show = false;
+                        }
+                        if (kabkota && row.getAttribute('data-kabkota') !== kabkota) {
+                            show = false;
+                        }
+
+                        row.style.display = show ? '' : 'none';
+                    });
+
+                    // Show "no data" message if all rows are hidden
+                    const visibleRows = document.querySelectorAll('.permohonan-row:not([style*="display: none"])');
+                    const noDataRow = document.querySelector('tr:has(td[colspan="7"])');
+                    if (noDataRow) {
+                        noDataRow.style.display = visibleRows.length === 0 ? '' : 'none';
+                    }
+                }
+
+                filterTahun.addEventListener('change', applyFilters);
+                filterJenisDokumen.addEventListener('change', applyFilters);
+                filterKabKota.addEventListener('change', applyFilters);
+            });
+        </script>
+    @endpush
 @endsection

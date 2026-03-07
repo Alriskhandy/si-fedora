@@ -9,6 +9,7 @@ use Spatie\Permission\Models\Role;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\JadwalFasilitasi;
+use App\Models\Notifikasi;
 
 class DashboardController extends Controller
 {
@@ -74,6 +75,31 @@ class DashboardController extends Controller
 
     private function adminPeranDashboard($user)
     {
+        // Get jenis dokumen list for filter
+        $jenisDokumenList = \App\Models\MasterJenisDokumen::pluck('nama', 'id')->toArray();
+        
+        // Get kab/kota list for filter
+        $kabupatenKotaList = \App\Models\KabupatenKota::pluck('nama', 'id')->toArray();
+        
+        // Get permohonan list dengan relasi
+        $permohonanList = Permohonan::with(['jenisDokumen', 'kabupatenKota'])
+            ->latest()
+            ->get()
+            ->map(function ($permohonan) {
+                return [
+                    'id' => $permohonan->id,
+                    'nomor_permohonan' => 'PRM-' . str_pad($permohonan->id, 6, '0', STR_PAD_LEFT),
+                    'tahun' => $permohonan->tahun ?? date('Y'),
+                    'jenis_dokumen_id' => $permohonan->jenis_dokumen_id ?? '',
+                    'jenis_dokumen_nama' => $permohonan->jenisDokumen?->nama ?? '-',
+                    'kabupaten_kota_id' => $permohonan->kab_kota_id ?? '',
+                    'kabupaten_kota_nama' => $permohonan->kabupatenKota?->nama ?? '-',
+                    'tanggal' => $permohonan->created_at,
+                    'status' => $permohonan->status_akhir ?? 'draft',
+                ];
+            })
+            ->toArray();
+        
         $stats = [
             'pending_verifikasi' => Permohonan::where('status_akhir', 'belum')->count(),
             'in_evaluation' => Permohonan::where('status_akhir', 'proses')->count(),
@@ -94,6 +120,17 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get(),
             
+            // Data untuk table daftar permohonan
+            'permohonan_list' => $permohonanList,
+            'jenis_dokumen_list' => $jenisDokumenList,
+            'kabupaten_kota_list' => $kabupatenKotaList,
+            
+            // Jadwal aktif untuk card jadwal pelaksanaan - 5 terbaru
+            'jadwal_aktif' => JadwalFasilitasi::where('status', 'published')
+                ->orderBy('created_at', 'desc')
+                ->limit(3)
+                ->get(),
+            
             // Master Data Statistics
             'master_data' => [
                 'kabupaten_kota' => \App\Models\KabupatenKota::count(),
@@ -103,6 +140,8 @@ class DashboardController extends Controller
                 'urusan' => \App\Models\MasterUrusan::count(),
                 'kelengkapan' => \App\Models\MasterKelengkapanVerifikasi::count(),
             ],
+            // Activity chart data (daily/weekly/monthly)
+            'activity_chart' => $this->prepareActivityChartData(),
             
             // User Accounts Statistics
             'users' => [
@@ -128,6 +167,16 @@ class DashboardController extends Controller
                 'total_members' => \App\Models\UserKabkotaAssignment::count(),
                 'verifikator' => \App\Models\UserKabkotaAssignment::where('role_type', 'verifikator')->count(),
                 'fasilitator' => \App\Models\UserKabkotaAssignment::where('role_type', 'fasilitator')->count(),
+            ],
+            // Notification counts for current user (custom notifikasi table)
+            'notifications' => [
+                'total' => Notifikasi::where('user_id', $user->id)->count(),
+                'unread' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', false)
+                    ->count(),
+                'read' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', true)
+                    ->count(),
             ],
         ];
 
@@ -182,6 +231,48 @@ class DashboardController extends Controller
         ];
 
         return view('pages.dashboard.pokja', compact('stats'));
+    }
+
+    private function prepareActivityChartData()
+    {
+        // generate labels/data for last 7 days, 8 weeks, and 6 months
+        $dailyLabels = [];
+        $dailyData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $dailyLabels[] = now()->subDays($i)->format('d M');
+            $dailyData[] = DB::table('activity_log')
+                ->whereDate('created_at', $date)
+                ->count();
+        }
+
+        $weeklyLabels = [];
+        $weeklyData = [];
+        for ($i = 7; $i >= 0; $i--) {
+            $start = now()->subWeeks($i)->startOfWeek();
+            $end = (clone $start)->endOfWeek();
+            $weeklyLabels[] = $start->format('d M');
+            $weeklyData[] = DB::table('activity_log')
+                ->whereBetween('created_at', [$start, $end])
+                ->count();
+        }
+
+        $monthlyLabels = [];
+        $monthlyData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $monthlyLabels[] = $month->format('M Y');
+            $monthlyData[] = DB::table('activity_log')
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
+        }
+
+        return [
+            'daily' => ['labels' => $dailyLabels, 'data' => $dailyData],
+            'weekly' => ['labels' => $weeklyLabels, 'data' => $weeklyData],
+            'monthly' => ['labels' => $monthlyLabels, 'data' => $monthlyData],
+        ];
     }
 
     private function kabKotaDashboard($user)
