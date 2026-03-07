@@ -237,7 +237,7 @@
                                                 <span class="{{ $statusClass }}">{{ $statusLabel }}</span>
                                             </td>
                                             <td class="text-center">
-                                                <a href="#"
+                                                <a href="{{ route('permohonan.show', $permohonan['id']) }}"
                                                     class="btn btn-sm btn-icon btn-text-primary rounded-pill"
                                                     title="Lihat Detail">
                                                     <span class="ti-xs"><i class='bx bx-show'></i></span>
