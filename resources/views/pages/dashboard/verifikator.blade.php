@@ -13,7 +13,7 @@
                             <div class="card-body">
                                 <h3 class="card-title">DASHBOARD SI-FEDORA</h3>
                                 <h5 class="card-title text-secondary">Selamat datang, {{ auth()->user()->name }}!</h5>
-                                <p class="mb-4">Verifikasi dan evaluasi dokumen permohonan dari kabupaten/kota.</p>
+                                <p class="mb-4">Verifikasi kelengkapan Fasilitasi/Evaluasi Dokumen Perencanaan dari kabupaten/kota.</p>
                             </div>
                         </div>
                         <div class="col-sm-5 text-center text-sm-left">
@@ -70,7 +70,7 @@
             <div class="col-lg-8 col-md-12">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="m-0">Tugas Verifikasi Saya</h5>
+                        <h5 class="m-0">Tugas Saya</h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">

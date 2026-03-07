@@ -277,6 +277,7 @@ class DashboardController extends Controller
             ->pluck('permohonan_id');
 
         $stats = [
+            // Summary cards
             'my_evaluasi' => Permohonan::whereIn('id', $permohonanIds)
                 ->where('status_akhir', 'proses')
                 ->count(),
@@ -287,12 +288,36 @@ class DashboardController extends Controller
             'pending_submissions' => Permohonan::whereIn('id', $permohonanIds)
                 ->where('status_akhir', 'proses')
                 ->count(),
-            'my_evaluasi_tasks' => Permohonan::with(['kabupatenKota'])
+            
+            // Tugas evaluasi saya (recent tasks)
+            'my_evaluasi_tasks' => Permohonan::with(['kabupatenKota', 'jenisDokumen'])
                 ->whereIn('id', $permohonanIds)
                 ->where('status_akhir', 'proses')
                 ->latest()
                 ->limit(5)
-                ->get()
+                ->get(),
+            
+            // Undangan yang diterima user (dari my-undangan route)
+            'undangan' => UndanganPenerima::with([
+                    'undangan.permohonan.kabupatenKota',
+                    'undangan.permohonan.jenisDokumen',
+                    'undangan.penetapanJadwal'
+                ])
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(),
+            
+            // Notification counts untuk user saat ini
+            'notifications' => [
+                'total' => Notifikasi::where('user_id', $user->id)->count(),
+                'unread' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', false)
+                    ->count(),
+                'read' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', true)
+                    ->count(),
+            ],
         ];
 
         return view('pages.dashboard.pokja', compact('stats'));
