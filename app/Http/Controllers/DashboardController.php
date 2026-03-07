@@ -296,7 +296,27 @@ class DashboardController extends Controller
 
     private function kabKotaDashboard($user)
     {
+        // Get permohonan list milik user dengan relasi yang dibutuhkan
+        $permohonanList = Permohonan::with(['jenisDokumen', 'kabupatenKota'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get()
+            ->map(function ($permohonan) {
+                return [
+                    'id' => $permohonan->id,
+                    'nomor_permohonan' => 'PRM-' . str_pad($permohonan->id, 6, '0', STR_PAD_LEFT),
+                    'tahun' => $permohonan->tahun ?? date('Y'),
+                    'jenis_dokumen_id' => $permohonan->jenis_dokumen_id ?? '',
+                    'jenis_dokumen_nama' => $permohonan->jenisDokumen?->nama ?? '-',
+                    'kabupaten_kota_id' => $permohonan->kab_kota_id ?? '',
+                    'kabupaten_kota_nama' => $permohonan->kabupatenKota?->nama ?? '-',
+                    'status' => $permohonan->status_akhir ?? 'draft',
+                ];
+            })
+            ->toArray();
+        
         $stats = [
+            // Summary cards
             'my_permohonan' => Permohonan::where('user_id', $user->id)->count(),
             'draft_permohonan' => Permohonan::where('user_id', $user->id)
                 ->where('status_akhir', 'belum')
@@ -307,16 +327,31 @@ class DashboardController extends Controller
             'completed_permohonan' => Permohonan::where('user_id', $user->id)
                 ->where('status_akhir', 'selesai')
                 ->count(),
+            
+            // Data untuk tabel daftar permohonan
+            'permohonan_list' => $permohonanList,
+            
+            // Jadwal aktif
             'jadwal_aktif' => JadwalFasilitasi::where('status', 'published')
                 ->where('batas_permohonan', '>=', now())
-                ->orderBy('tanggal_mulai', 'asc')
-                ->limit(3)
-                ->get(),
-            'my_permohonan_list' => Permohonan::with(['kabupatenKota'])
-                ->where('user_id', $user->id)
-                ->latest()
+                ->with(['jenisDokumen'])
+                ->orderBy('batas_permohonan', 'asc')
                 ->limit(5)
-                ->get()
+                ->get(),
+            
+            // Activity chart data (daily/weekly/monthly)
+            'activity_chart' => $this->prepareActivityChartData(),
+            
+            // Notification counts untuk user saat ini
+            'notifications' => [
+                'total' => Notifikasi::where('user_id', $user->id)->count(),
+                'unread' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', false)
+                    ->count(),
+                'read' => Notifikasi::where('user_id', $user->id)
+                    ->where('is_read', true)
+                    ->count(),
+            ],
         ];
 
         return view('pages.dashboard.kab_kota', compact('stats'));

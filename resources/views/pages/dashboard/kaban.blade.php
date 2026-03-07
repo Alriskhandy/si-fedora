@@ -11,9 +11,9 @@
                     <div class="d-flex align-items-end row">
                         <div class="col-sm-7">
                             <div class="card-body">
-                                <h3 class="card-title">Dashboard Kepala Badan</h3>
+                                <h3 class="card-title">DASHBOARD SI-FEDORA</h3>
                                 <h5 class="card-title text-secondary">Selamat datang, {{ auth()->user()->name }}!</h5>
-                                <p class="mb-4">Monitoring & Approval terhadap hasil evaluasi dari tim fasilitasi.</p>
+                                <p class="mb-4">Silahkan melihat ringkasan statistik SI-FEDORA pada halaman ini.</p>
                             </div>
                         </div>
                         <div class="col-sm-5 text-center text-sm-left">
