@@ -2,6 +2,89 @@
 
 @use('Illuminate\Support\Facades\Storage')
 
+@push('styles')
+    <style>
+        /* Table row hover effect */
+        .document-row {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .document-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .document-row.active {
+            background-color: #e7f3ff;
+            border-left: 3px solid #4e73df;
+        }
+
+        /* Avatar sizing */
+        .avatar-sm {
+            width: 38px;
+            height: 38px;
+        }
+
+        .avatar-initial {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Badge improvements */
+        .badge {
+            font-weight: 500;
+        }
+
+        /* Card improvements */
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        /* Preview area */
+        .preview-area {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            color: #6c757d;
+        }
+
+        .preview-placeholder i {
+            font-size: 4rem;
+            opacity: 0.3;
+            margin-bottom: 1rem;
+        }
+
+        .document-list-card {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .document-list-card::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .document-list-card::-webkit-scrollbar-thumb {
+            background: #dee2e6;
+            border-radius: 3px;
+        }
+
+        .document-list-card::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+    </style>
+@endpush
+
 @section('title', 'Detail Arsip Dokumen')
 
 @section('main')
@@ -23,470 +106,725 @@
             </a>
         </div>
 
-        <!-- Permohonan Info Card -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <p class="text-muted small mb-1">Kabupaten/Kota</p>
-                        <h5 class="mb-3">{{ $permohonan->kabupatenKota->nama ?? 'N/A' }}</h5>
+        <!-- 2 Column Layout -->
+        <div class="row">
+            <!-- Left Column: Document Lists -->
+            <div class="col-lg-7">
+                <!-- Card 1: Hasil Fasilitasi -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0 text-white">
+                            <i class='bx bx-file-find me-2'></i>
+                            Hasil Fasilitasi
+                        </h5>
+                        <p class="small mb-0 mt-1 opacity-75">Dokumen hasil fasilitasi, tindak lanjut, dan penetapan</p>
                     </div>
-                    <div class="col-md-3">
-                        <p class="text-muted small mb-1">Jenis Dokumen</p>
-                        <h6 class="mb-3">{{ $permohonan->jenisDokumen->nama_dokumen ?? 'N/A' }}</h6>
+                    <div class="card-body p-0 document-list-card">
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;" class="px-4">No</th>
+                                        <th style="width: 40%;">Nama Dokumen</th>
+                                        <th style="width: 15%;" class="text-center">Jenis</th>
+                                        <th style="width: 15%;" class="text-center">Ukuran</th>
+                                        <th style="width: 25%;" class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $rowNum = 1;
+                                    @endphp
+
+                                    {{-- Hasil Fasilitasi --}}
+                                    @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->draft_final_file)
+                                        <tr class="document-row"
+                                            data-file-url="{{ Storage::url($permohonan->hasilFasilitasi->draft_final_file) }}"
+                                            data-file-name="Dokumen Hasil Fasilitasi">
+                                            <td class="px-4">{{ $rowNum++ }}</td>
+                                            <td>
+                                                <div class="fw-semibold">Dokumen Hasil Fasilitasi</div>
+                                                <small class="text-muted">Hasil evaluasi tim pokja</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-label-danger">PDF</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @php
+                                                    $filePath = storage_path(
+                                                        'app/public/' . $permohonan->hasilFasilitasi->draft_final_file,
+                                                    );
+                                                    $fileSize = file_exists($filePath)
+                                                        ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                        : '0';
+                                                @endphp
+                                                {{ $fileSize }} MB
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                    data-file-url="{{ Storage::url($permohonan->hasilFasilitasi->draft_final_file) }}">
+                                                    <i class="bx bx-show"></i>
+                                                </button>
+                                                <a href="{{ Storage::url($permohonan->hasilFasilitasi->draft_final_file) }}"
+                                                    target="_blank" class="btn btn-sm btn-outline-success">
+                                                    <i class="bx bx-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endif
+
+                                    {{-- Tindak Lanjut --}}
+                                    @php
+                                        $dokumenTindakLanjut = $permohonan->dokumenTahapan
+                                            ->where('tahapan_id', 6)
+                                            ->filter(function ($dok) {
+                                                return $dok->file_path;
+                                            });
+                                    @endphp
+                                    @foreach ($dokumenTindakLanjut as $dok)
+                                        <tr class="document-row" data-file-url="{{ Storage::url($dok->file_path) }}"
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Tindak Lanjut' }}">
+                                            <td class="px-4">{{ $rowNum++ }}</td>
+                                            <td>
+                                                <div class="fw-semibold">
+                                                    {{ $dok->nama_dokumen ?? 'Dokumen Tindak Lanjut' }}</div>
+                                                <small class="text-muted">Tindak lanjut hasil fasilitasi</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-label-danger">PDF</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @php
+                                                    $filePath = storage_path('app/public/' . $dok->file_path);
+                                                    $fileSize = file_exists($filePath)
+                                                        ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                        : '0';
+                                                @endphp
+                                                {{ $fileSize }} MB
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                    data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                    <i class="bx bx-show"></i>
+                                                </button>
+                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="bx bx-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+
+                                    {{-- Penetapan Perda --}}
+                                    @php
+                                        $dokumenPenetapan = $permohonan->dokumenTahapan
+                                            ->where('tahapan_id', 7)
+                                            ->filter(function ($dok) {
+                                                return $dok->file_path;
+                                            });
+                                    @endphp
+                                    @foreach ($dokumenPenetapan as $dok)
+                                        <tr class="document-row" data-file-url="{{ Storage::url($dok->file_path) }}"
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Penetapan Perda' }}">
+                                            <td class="px-4">{{ $rowNum++ }}</td>
+                                            <td>
+                                                <div class="fw-semibold">
+                                                    {{ $dok->nama_dokumen ?? 'Dokumen Penetapan Perda' }}</div>
+                                                <small class="text-muted">Dokumen penetapan peraturan daerah</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-label-danger">PDF</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @php
+                                                    $filePath = storage_path('app/public/' . $dok->file_path);
+                                                    $fileSize = file_exists($filePath)
+                                                        ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                        : '0';
+                                                @endphp
+                                                {{ $fileSize }} MB
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                    data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                    <i class="bx bx-show"></i>
+                                                </button>
+                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="bx bx-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+
+                                    @if ($rowNum == 1)
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">
+                                                <i class='bx bx-info-circle me-1'></i>
+                                                Belum ada dokumen
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <p class="text-muted small mb-1">Tahun</p>
-                        <h6 class="mb-3">{{ $permohonan->tahun }}</h6>
+                </div>
+
+                <!-- Card 2: Persyaratan & Kelengkapan -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-warning text-dark py-3">
+                        <h5 class="card-title mb-0">
+                            <i class='bx bx-folder me-2'></i>
+                            Persyaratan & Kelengkapan
+                        </h5>
+                        <p class="small mb-0 mt-1 opacity-75">Dokumen permohonan dan verifikasi</p>
                     </div>
-                    <div class="col-md-2">
-                        <p class="text-muted small mb-1">Tahapan Saat Ini</p>
-                        @if($permohonan->tahapanAktif && $permohonan->tahapanAktif->masterTahapan)
-                            <span class="badge bg-label-info">
-                                {{ $permohonan->tahapanAktif->masterTahapan->nama_tahapan }}
-                            </span>
-                        @else
-                            <span class="badge bg-label-secondary">Belum Dimulai</span>
-                        @endif
+                    <div class="card-body p-0 document-list-card">
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;" class="px-4">No</th>
+                                        <th style="width: 40%;">Nama Dokumen</th>
+                                        <th style="width: 15%;" class="text-center">Jenis</th>
+                                        <th style="width: 15%;" class="text-center">Ukuran</th>
+                                        <th style="width: 25%;" class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $rowNum = 1;
+                                    @endphp
+
+                                    {{-- Dokumen Permohonan --}}
+                                    @if ($permohonan->permohonanDokumen && $permohonan->permohonanDokumen->count() > 0)
+                                        @foreach ($permohonan->permohonanDokumen as $dok)
+                                            @if ($dok->file_path)
+                                                @php
+                                                    $fileExtension = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
+                                                    $fileTypeLabel = match($fileExtension) {
+                                                        'pdf' => ['label' => 'PDF', 'class' => 'bg-label-danger'],
+                                                        'xlsx', 'xls' => ['label' => 'EXCEL', 'class' => 'bg-label-success'],
+                                                        default => ['label' => strtoupper($fileExtension), 'class' => 'bg-label-secondary']
+                                                    };
+                                                @endphp
+                                                <tr class="document-row"
+                                                    data-file-url="{{ Storage::url($dok->file_path) }}"
+                                                    data-file-name="{{ $dok->masterKelengkapan->nama_dokumen ?? 'Dokumen Permohonan' }}">
+                                                    <td class="px-4">{{ $rowNum++ }}</td>
+                                                    <td>
+                                                        <div class="fw-semibold">
+                                                            {{ $dok->masterKelengkapan->nama_dokumen ?? 'Dokumen' }}
+                                                        </div>
+                                                        <small class="text-muted">Dokumen permohonan</small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge {{ $fileTypeLabel['class'] }}">{{ $fileTypeLabel['label'] }}</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @php
+                                                            $filePath = storage_path('app/public/' . $dok->file_path);
+                                                            $fileSize = file_exists($filePath)
+                                                                ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                                : '0';
+                                                        @endphp
+                                                        {{ $fileSize }} MB
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                            data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                            <i class="bx bx-show"></i>
+                                                        </button>
+                                                        <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                            class="btn btn-sm btn-outline-success">
+                                                            <i class="bx bx-download"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                    @endif
+
+                                    {{-- Dokumen Kelengkapan Lainnya dari Tahapan Permohonan --}}
+                                    @if ($permohonan->dokumenTahapan && $permohonan->dokumenTahapan->count() > 0)
+                                        @foreach ($permohonan->dokumenTahapan as $dok)
+                                            @if ($dok->file_path && $dok->tahapan_id == 1)
+                                                @php
+                                                    $fileExtension = strtolower(pathinfo($dok->file_path, PATHINFO_EXTENSION));
+                                                    $fileTypeLabel = match($fileExtension) {
+                                                        'pdf' => ['label' => 'PDF', 'class' => 'bg-label-danger'],
+                                                        'xlsx', 'xls' => ['label' => 'EXCEL', 'class' => 'bg-label-success'],
+                                                        default => ['label' => strtoupper($fileExtension), 'class' => 'bg-label-secondary']
+                                                    };
+                                                @endphp
+                                                <tr class="document-row"
+                                                    data-file-url="{{ Storage::url($dok->file_path) }}"
+                                                    data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Kelengkapan' }}">
+                                                    <td class="px-4">{{ $rowNum++ }}</td>
+                                                    <td>
+                                                        <div class="fw-semibold">
+                                                            {{ $dok->nama_dokumen ?? 'Dokumen' }}</div>
+                                                        <small class="text-muted">Dokumen kelengkapan tambahan</small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge {{ $fileTypeLabel['class'] }}">{{ $fileTypeLabel['label'] }}</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @php
+                                                            $filePath = storage_path('app/public/' . $dok->file_path);
+                                                            $fileSize = file_exists($filePath)
+                                                                ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                                : '0';
+                                                        @endphp
+                                                        {{ $fileSize }} MB
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                            data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                            <i class="bx bx-show"></i>
+                                                        </button>
+                                                        <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                            class="btn btn-sm btn-outline-success">
+                                                            <i class="bx bx-download"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                    @endif
+
+                                    {{-- Laporan Verifikasi --}}
+                                    @if ($permohonan->laporanVerifikasi && $permohonan->laporanVerifikasi->file_laporan)
+                                        <tr class="document-row"
+                                            data-file-url="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}"
+                                            data-file-name="Laporan Verifikasi">
+                                            <td class="px-4">{{ $rowNum++ }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class='bx bx-file-blank text-danger me-2 fs-5'></i>
+                                                    <div>
+                                                        <div class="fw-semibold">Laporan Verifikasi</div>
+                                                        <small class="text-muted">Hasil verifikasi</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-label-danger">PDF</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @php
+                                                    $filePath = storage_path('app/public/' . $permohonan->laporanVerifikasi->file_laporan);
+                                                    $fileSize = file_exists($filePath)
+                                                        ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                        : '0';
+                                                @endphp
+                                                {{ $fileSize }} MB
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                    data-file-url="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}">
+                                                    <i class="bx bx-show"></i>
+                                                </button>
+                                                <a href="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}"
+                                                    target="_blank" class="btn btn-sm btn-outline-success">
+                                                    <i class="bx bx-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endif
+
+                                    @if ($rowNum == 1)
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">
+                                                <i class='bx bx-info-circle me-1'></i>
+                                                Belum ada dokumen
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <p class="text-muted small mb-1">Status Akhir</p>
-                        @if($permohonan->status_akhir == 'selesai')
-                            <span class="badge bg-success">Selesai</span>
-                        @elseif($permohonan->status_akhir == 'ditolak')
-                            <span class="badge bg-danger">Ditolak</span>
-                        @else
-                            <span class="badge bg-warning">Proses</span>
-                        @endif
+                </div>
+
+                <!-- Card 3: File/Dokumen Lainnya -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-info text-white py-3">
+                        <h5 class="card-title mb-0 text-white">
+                            <i class='bx bx-folder-open me-2'></i>
+                            File & Dokumen Lainnya
+                        </h5>
+                        <p class="small mb-0 mt-1 opacity-75">Jadwal, undangan, dan surat-surat</p>
+                    </div>
+                    <div class="card-body p-0 document-list-card">
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;" class="px-4">No</th>
+                                        <th style="width: 40%;">Nama Dokumen</th>
+                                        <th style="width: 15%;" class="text-center">Jenis</th>
+                                        <th style="width: 15%;" class="text-center">Ukuran</th>
+                                        <th style="width: 25%;" class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $rowNum = 1;
+                                        $hasDocuments = false;
+                                    @endphp
+
+                                    {{-- Dokumentasi Pelaksanaan --}}
+                                    @php
+                                        $dokumenPelaksanaan = $permohonan->dokumenTahapan
+                                            ->where('tahapan_id', 4)
+                                            ->filter(function ($dok) {
+                                                return $dok->file_path;
+                                            });
+                                    @endphp
+                                    @foreach ($dokumenPelaksanaan as $dok)
+                                        @php
+                                            $hasDocuments = true;
+                                        @endphp
+                                        <tr class="document-row" data-file-url="{{ Storage::url($dok->file_path) }}"
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumentasi Pelaksanaan' }}">
+                                            <td class="px-4">{{ $rowNum++ }}</td>
+                                            <td>
+                                                <div class="fw-semibold">
+                                                    {{ $dok->nama_dokumen ?? 'Dokumentasi Pelaksanaan' }}</div>
+                                                <small class="text-muted">Dokumentasi pelaksanaan fasilitasi</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-label-danger">PDF</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @php
+                                                    $filePath = storage_path('app/public/' . $dok->file_path);
+                                                    $fileSize = file_exists($filePath)
+                                                        ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                        : '0';
+                                                @endphp
+                                                {{ $fileSize }} MB
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                    data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                    <i class="bx bx-show"></i>
+                                                </button>
+                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="bx bx-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+
+                                    {{-- Undangan Pelaksanaan --}}
+                                    @if ($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->count() > 0)
+                                        @foreach ($permohonan->undanganPelaksanaan as $undangan)
+                                            @if ($undangan->file_undangan)
+                                                @php
+                                                    $hasDocuments = true;
+                                                @endphp
+                                                <tr class="document-row"
+                                                    data-file-url="{{ Storage::url($undangan->file_undangan) }}"
+                                                    data-file-name="Undangan Pelaksanaan">
+                                                    <td class="px-4">{{ $rowNum++ }}</td>
+                                                    <td>
+                                                        <div class="fw-semibold">Undangan Pelaksanaan</div>
+                                                        <small
+                                                            class="text-muted">{{ $undangan->nomor_undangan ?? 'Undangan' }}</small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-label-danger">PDF</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @php
+                                                            $filePath = storage_path(
+                                                                'app/public/' . $undangan->file_undangan,
+                                                            );
+                                                            $fileSize = file_exists($filePath)
+                                                                ? number_format(filesize($filePath) / (1024 * 1024), 2)
+                                                                : '0';
+                                                        @endphp
+                                                        {{ $fileSize }} MB
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary preview-btn me-1"
+                                                            data-file-url="{{ Storage::url($undangan->file_undangan) }}">
+                                                            <i class="bx bx-show"></i>
+                                                        </button>
+                                                        <a href="{{ Storage::url($undangan->file_undangan) }}"
+                                                            target="_blank" class="btn btn-sm btn-outline-success">
+                                                            <i class="bx bx-download"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                    @endif
+
+                                    @if (!$hasDocuments)
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">
+                                                <i class='bx bx-info-circle me-1'></i>
+                                                Belum ada dokumen
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Preview Area -->
+            <div class="col-lg-5">
+                <div class="preview-area">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="card-title mb-0">
+                                <i class='bx bx-show me-2 text-primary'></i>
+                                Preview Dokumen
+                            </h5>
+                        </div>
+                        <div class="card-body p-0" id="preview-container">
+                            <div class="preview-placeholder">
+                                <i class='bx bx-file'></i>
+                                <h5 class="text-muted">Belum ada dokumen dipilih</h5>
+                                <p class="text-muted small">Klik pada dokumen di samping untuk melihat preview</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Documents Grid -->
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            
-            <!-- 1. Dokumen Permohonan -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['dokumen_permohonan'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-primary">
-                                    <i class="bx bx-file"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['dokumen_permohonan'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['dokumen_permohonan'] }} File
-                            </span>
+    <!-- Modal Preview Excel -->
+    <div class="modal fade" id="excelPreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="excelPreviewTitle">
+                        <i class="bx bx-file me-2"></i><span id="excelFileName">Preview Excel</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="excelLoadingSpinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
                         </div>
-                        <h5 class="card-title mb-2">Dokumen Permohonan</h5>
-                        <p class="text-muted small mb-3">Dokumen awal yang diajukan pemohon</p>
-                        
-                        @if($documentCounts['dokumen_permohonan'] > 0)
-                            <div class="list-group list-group-flush mb-3">
-                                @foreach(($permohonan->permohonanDokumen ?? collect())->take(3) as $dok)
-                                    <div class="list-group-item px-0 py-2">
-                                        <small class="d-flex justify-content-between">
-                                            <span>
-                                                <i class="bx bx-file-blank me-1"></i>
-                                                @if($dok->masterKelengkapan)
-                                                    {{ str()->limit($dok->masterKelengkapan->nama_dokumen, 30) }}
-                                                @else
-                                                    {{ str()->limit($dok->file_name ?? 'Dokumen', 30) }}
-                                                @endif
-                                            </span>
-                                            @if($dok->file_path)
-                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank" class="text-success">
-                                                    <i class="bx bx-download"></i>
-                                                </a>
-                                            @endif
-                                        </small>
-                                    </div>
-                                @endforeach
-                                @if($permohonan->permohonanDokumen && $permohonan->permohonanDokumen->count() > 3)
-                                    <small class="text-muted">+{{ $permohonan->permohonanDokumen->count() - 3 }} lainnya</small>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada dokumen</p>
-                        @endif
+                        <p class="mt-3 text-muted">Memuat file Excel...</p>
+                    </div>
+                    <div id="excelPreviewContent" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Pilih Sheet:</label>
+                            <select id="sheetSelector" class="form-select form-select-sm" style="width: 250px;">
+                            </select>
+                        </div>
+                        <div id="excelTableContainer" class="table-responsive"
+                            style="max-height: 500px; overflow: auto;">
+                        </div>
+                    </div>
+                    <div id="excelErrorMessage" style="display: none;" class="alert alert-danger">
+                        <i class="bx bx-error-circle me-2"></i>
+                        <span id="errorText"></span>
                     </div>
                 </div>
-            </div>
-
-            <!-- 2. Dokumen Tahapan -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['dokumen_tahapan'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-info">
-                                    <i class="bx bx-layer"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['dokumen_tahapan'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['dokumen_tahapan'] }} File
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Dokumen Tahapan</h5>
-                        <p class="text-muted small mb-3">Dokumen yang diupload selama proses</p>
-                        
-                        @if($documentCounts['dokumen_tahapan'] > 0)
-                            <div class="list-group list-group-flush mb-3">
-                                @foreach(($permohonan->dokumenTahapan ?? collect())->take(3) as $dok)
-                                    <div class="list-group-item px-0 py-2">
-                                        <small class="d-flex justify-content-between">
-                                            <span>
-                                                <i class="bx bx-file-blank me-1"></i>
-                                                {{ str()->limit($dok->nama_file ?? 'Dokumen Tahapan', 30) }}
-                                            </span>
-                                            @if($dok->file_path)
-                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank" class="text-success">
-                                                    <i class="bx bx-download"></i>
-                                                </a>
-                                            @endif
-                                        </small>
-                                    </div>
-                                @endforeach
-                                @if($permohonan->dokumenTahapan && $permohonan->dokumenTahapan->count() > 3)
-                                    <small class="text-muted">+{{ $permohonan->dokumenTahapan->count() - 3 }} lainnya</small>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada dokumen</p>
-                        @endif
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" id="downloadExcelBtn" class="btn btn-success" style="display: none;">
+                        <i class="bx bx-download me-1"></i>Download File
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
-
-            <!-- 3. Laporan Verifikasi -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['laporan_verifikasi'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-warning">
-                                    <i class="bx bx-check-shield"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['laporan_verifikasi'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['laporan_verifikasi'] > 0 ? '1 Dokumen' : '0 Dokumen' }}
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Laporan Verifikasi</h5>
-                        <p class="text-muted small mb-3">Hasil verifikasi dokumen</p>
-                        
-                        @if($permohonan->laporanVerifikasi)
-                            <div class="mb-3">
-                                <small class="text-muted d-block mb-1">Status:</small>
-                                <span class="badge bg-label-success mb-2">Sudah Diverifikasi</span>
-                                @if($permohonan->laporanVerifikasi->file_laporan)
-                                    <div class="mt-2">
-                                        <a href="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}" 
-                                           target="_blank" class="text-success small">
-                                            <i class="bx bx-download me-1"></i>Download Laporan
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada laporan</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Hasil Fasilitasi -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['hasil_fasilitasi'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-success">
-                                    <i class="bx bx-edit"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['hasil_fasilitasi'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['hasil_fasilitasi'] > 0 ? '1 Dokumen' : '0 Dokumen' }}
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Hasil Fasilitasi</h5>
-                        <p class="text-muted small mb-3">Dokumen hasil evaluasi tim</p>
-                        
-                        @if($permohonan->hasilFasilitasi)
-                            <div class="mb-3">
-                                <small class="text-muted d-block mb-1">Status:</small>
-                                @if($permohonan->hasilFasilitasi->status_draft == 'disetujui_kaban')
-                                    <span class="badge bg-success mb-2">Disetujui Kepala Badan</span>
-                                @elseif($permohonan->hasilFasilitasi->status_draft == 'submitted_to_kaban')
-                                    <span class="badge bg-info mb-2">Menunggu Persetujuan</span>
-                                @elseif($permohonan->hasilFasilitasi->status_draft == 'submitted')
-                                    <span class="badge bg-warning mb-2">Diajukan</span>
-                                @else
-                                    <span class="badge bg-label-secondary mb-2">Draft</span>
-                                @endif
-                                @if($permohonan->hasilFasilitasi->draft_file_final)
-                                    <div class="mt-2">
-                                        <a href="{{ route('hasil-fasilitasi.download-draft-final', $permohonan) }}" 
-                                           target="_blank" class="text-success small">
-                                            <i class="bx bx-download me-1"></i>Download Dokumen
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
-                            <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada hasil fasilitasi</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Jadwal & Undangan -->
-            <div class="col">
-                <div class="card h-100 {{ ($documentCounts['jadwal_fasilitasi'] + $documentCounts['undangan_pelaksanaan']) > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-info">
-                                    <i class="bx bx-calendar"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ ($documentCounts['jadwal_fasilitasi'] + $documentCounts['undangan_pelaksanaan']) > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['jadwal_fasilitasi'] + $documentCounts['undangan_pelaksanaan'] }} Dokumen
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Jadwal & Undangan</h5>
-                        <p class="text-muted small mb-3">Jadwal dan undangan pelaksanaan</p>
-                        
-                        @if($documentCounts['jadwal_fasilitasi'] > 0 || $documentCounts['undangan_pelaksanaan'] > 0)
-                            <div class="mb-3">
-                                @if($documentCounts['jadwal_fasilitasi'] > 0)
-                                    <div class="mb-2">
-                                        <small class="text-muted">Jadwal Fasilitasi: </small>
-                                        <span class="badge bg-label-primary">1</span>
-                                        @if($permohonan->jadwalFasilitasi)
-                                            <div class="mt-2">
-                                                <a href="{{ route('jadwal.show', $permohonan->jadwalFasilitasi) }}" 
-                                                   class="text-success small">
-                                                    <i class="bx bx-show me-1"></i>Lihat Jadwal
-                                                </a>
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endif
-                                @if($documentCounts['undangan_pelaksanaan'] > 0)
-                                    <div class="mb-2">
-                                        <small class="text-muted">Undangan: </small>
-                                        <span class="badge bg-label-primary">{{ $documentCounts['undangan_pelaksanaan'] }}</span>
-                                        @if($permohonan->undanganPelaksanaan && $permohonan->undanganPelaksanaan->isNotEmpty())
-                                            <div class="mt-2">
-                                                <a href="{{ route('undangan-pelaksanaan.show', $permohonan) }}" 
-                                                   class="text-success small">
-                                                    <i class="bx bx-show me-1"></i>Lihat Undangan
-                                                </a>
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada jadwal/undangan</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. Surat-Surat Resmi -->
-            <div class="col">
-                <div class="card h-100 {{ ($documentCounts['surat_pemberitahuan'] + $documentCounts['surat_rekomendasi'] + $documentCounts['surat_penyampaian_hasil']) > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-danger">
-                                    <i class="bx bx-envelope"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ ($documentCounts['surat_pemberitahuan'] + $documentCounts['surat_rekomendasi'] + $documentCounts['surat_penyampaian_hasil']) > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['surat_pemberitahuan'] + $documentCounts['surat_rekomendasi'] + $documentCounts['surat_penyampaian_hasil'] }} Surat
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Surat-Surat Resmi</h5>
-                        <p class="text-muted small mb-3">Surat Pemberitahuan, Rekomendasi, dll</p>
-                        
-                        @if($documentCounts['surat_pemberitahuan'] > 0 || $documentCounts['surat_rekomendasi'] > 0 || $documentCounts['surat_penyampaian_hasil'] > 0)
-                            <div class="mb-3">
-                                @if($documentCounts['surat_pemberitahuan'] > 0)
-                                    <div class="mb-2">
-                                        <small class="text-muted">Surat Pemberitahuan: </small>
-                                        <span class="badge bg-label-primary">{{ $documentCounts['surat_pemberitahuan'] }}</span>
-                                    </div>
-                                @endif
-                                @if($documentCounts['surat_rekomendasi'] > 0)
-                                    <div class="mb-2">
-                                        <small class="text-muted">Surat Rekomendasi: </small>
-                                        <span class="badge bg-label-primary">1</span>
-                                    </div>
-                                @endif
-                                @if($documentCounts['surat_penyampaian_hasil'] > 0)
-                                    <div class="mb-2">
-                                        <small class="text-muted">Surat Penyampaian Hasil: </small>
-                                        <span class="badge bg-label-primary">1</span>
-                                    </div>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada surat</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7. Perpanjangan Waktu -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['perpanjangan_waktu'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-warning">
-                                    <i class="bx bx-time-five"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['perpanjangan_waktu'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['perpanjangan_waktu'] }} Pengajuan
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Perpanjangan Waktu</h5>
-                        <p class="text-muted small mb-3">Pengajuan perpanjangan waktu</p>
-                        
-                        @if($documentCounts['perpanjangan_waktu'] > 0)
-                            <div class="list-group list-group-flush mb-3">
-                                @foreach(($permohonan->perpanjanganWaktu ?? collect())->take(2) as $perpanjangan)
-                                    <div class="list-group-item px-0 py-2">
-                                        <small>
-                                            <span class="badge bg-label-{{ $perpanjangan->status == 'disetujui' ? 'success' : ($perpanjangan->status == 'ditolak' ? 'danger' : 'warning') }}">
-                                                {{ ucfirst($perpanjangan->status) }}
-                                            </span>
-                                        </small>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Tidak ada perpanjangan</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- 8. Tindak Lanjut -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['tindak_lanjut'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-primary">
-                                    <i class="bx bx-task"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['tindak_lanjut'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['tindak_lanjut'] > 0 ? '1 Dokumen' : '0 Dokumen' }}
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Tindak Lanjut</h5>
-                        <p class="text-muted small mb-3">Dokumen tindak lanjut fasilitasi</p>
-                        
-                        @if($permohonan->tindakLanjut)
-                            <div class="mb-3">
-                                <small class="text-muted d-block mb-1">Status:</small>
-                                @if($permohonan->tindakLanjut->status == 'submitted')
-                                    <span class="badge bg-success mb-2">Sudah Disubmit</span>
-                                @else
-                                    <span class="badge bg-label-secondary mb-2">Draft</span>
-                                @endif
-                                @if($permohonan->tindakLanjut->file_path)
-                                    <div class="mt-2">
-                                        <a href="{{ route('tindak-lanjut.download', $permohonan) }}" 
-                                           target="_blank" class="text-success small">
-                                            <i class="bx bx-download me-1"></i>Download Dokumen
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada tindak lanjut</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- 9. Penetapan Perda -->
-            <div class="col">
-                <div class="card h-100 {{ $documentCounts['penetapan_perda'] > 0 ? 'border-success' : 'border-secondary' }}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-success">
-                                    <i class="bx bx-check-circle"></i>
-                                </span>
-                            </div>
-                            <span class="badge {{ $documentCounts['penetapan_perda'] > 0 ? 'bg-success' : 'bg-secondary' }}">
-                                {{ $documentCounts['penetapan_perda'] > 0 ? '1 Dokumen' : '0 Dokumen' }}
-                            </span>
-                        </div>
-                        <h5 class="card-title mb-2">Penetapan Perda</h5>
-                        <p class="text-muted small mb-3">Dokumen penetapan akhir</p>
-                        
-                        @if($permohonan->penetapanPerda)
-                            <div class="mb-3">
-                                @if($permohonan->penetapanPerda->nomor_penetapan)
-                                    <small class="text-muted d-block mb-1">Nomor Penetapan:</small>
-                                    <span class="badge bg-label-success mb-2">{{ $permohonan->penetapanPerda->nomor_penetapan }}</span>
-                                @else
-                                    <span class="badge bg-label-info mb-2">Penetapan tersedia</span>
-                                @endif
-                                @if($permohonan->penetapanPerda->file_penetapan)
-                                    <div class="mt-2">
-                                        <a href="{{ route('penetapan-perda.download', $permohonan) }}" 
-                                           target="_blank" class="text-success small">
-                                            <i class="bx bx-download me-1"></i>Download Dokumen
-                                        </a>
-                                    </div>
-                                @endif
-                            </div>
-                            <a href="{{ route('permohonan.show-tabs', $permohonan) }}" class="btn btn-sm btn-success w-100">
-                                <i class="bx bx-show me-1"></i> Lihat Detail
-                            </a>
-                        @else
-                            <p class="text-muted small mb-0"><i class="bx bx-info-circle me-1"></i>Belum ada penetapan</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <!-- SheetJS Library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle preview button clicks
+            const previewButtons = document.querySelectorAll('.preview-btn');
+            const documentRows = document.querySelectorAll('.document-row');
+            const previewContainer = document.getElementById('preview-container');
+
+            function showPreview(fileUrl, fileName) {
+                const extension = fileUrl.split('.').pop().toLowerCase();
+
+                let previewHtml = '';
+
+                if (extension === 'pdf') {
+                    previewHtml = `
+                            <div class="p-3">
+                                <div class="alert alert-info mb-3">
+                                    <i class='bx bx-info-circle me-2'></i>
+                                    <strong>${fileName}</strong>
+                                </div>
+                                <iframe src="${fileUrl}" style="width: 100%; height: 600px; border: none;" frameborder="0"></iframe>
+                            </div>
+                        `;
+                } else if (['xlsx', 'xls'].includes(extension)) {
+                    // Show Excel in modal
+                    showExcelPreview(fileUrl, fileName);
+                    return;
+                } else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
+                    previewHtml = `
+                            <div class="p-3">
+                                <div class="alert alert-info mb-3">
+                                    <i class='bx bx-info-circle me-2'></i>
+                                    <strong>${fileName}</strong>
+                                </div>
+                                <img src="${fileUrl}" class="img-fluid" alt="${fileName}">
+                            </div>
+                        `;
+                } else {
+                    previewHtml = `
+                            <div class="preview-placeholder">
+                                <i class='bx bx-file'></i>
+                                <h5 class="text-muted">Preview tidak tersedia</h5>
+                                <p class="text-muted small">Format file ini tidak dapat ditampilkan</p>
+                                <a href="${fileUrl}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                                    <i class='bx bx-download me-1'></i> Download File
+                                </a>
+                            </div>
+                        `;
+                }
+
+                previewContainer.innerHTML = previewHtml;
+            }
+
+            previewButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const fileUrl = this.getAttribute('data-file-url');
+                    const fileName = this.closest('tr').getAttribute('data-file-name') || 'Dokumen';
+
+                    // Remove active class from all rows
+                    documentRows.forEach(row => row.classList.remove('active'));
+
+                    // Add active class to clicked row
+                    this.closest('tr').classList.add('active');
+
+                    showPreview(fileUrl, fileName);
+                });
+            });
+
+            // Handle row clicks
+            documentRows.forEach(row => {
+                row.addEventListener('click', function() {
+                    const fileUrl = this.getAttribute('data-file-url');
+                    const fileName = this.getAttribute('data-file-name') || 'Dokumen';
+
+                    if (fileUrl) {
+                        // Remove active class from all rows
+                        documentRows.forEach(r => r.classList.remove('active'));
+
+                        // Add active class to clicked row
+                        this.classList.add('active');
+
+                        showPreview(fileUrl, fileName);
+                    }
+                });
+            });
+        });
+
+        // ============================================
+        // EXCEL PREVIEW FUNCTIONALITY
+        // ============================================
+        let currentWorkbook = null;
+        let currentFileUrl = null;
+
+        async function showExcelPreview(fileUrl, fileName) {
+            currentFileUrl = fileUrl;
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('excelPreviewModal'));
+            modal.show();
+
+            // Reset modal content
+            document.getElementById('excelFileName').textContent = fileName;
+            document.getElementById('excelLoadingSpinner').style.display = 'block';
+            document.getElementById('excelPreviewContent').style.display = 'none';
+            document.getElementById('excelErrorMessage').style.display = 'none';
+            document.getElementById('downloadExcelBtn').style.display = 'none';
+
+            try {
+                // Fetch and parse Excel file
+                const response = await fetch(fileUrl);
+                if (!response.ok) throw new Error('Gagal memuat file');
+
+                const arrayBuffer = await response.arrayBuffer();
+                const data = new Uint8Array(arrayBuffer);
+                currentWorkbook = XLSX.read(data, {
+                    type: 'array'
+                });
+
+                // Populate sheet selector
+                const sheetSelector = document.getElementById('sheetSelector');
+                sheetSelector.innerHTML = '';
+                currentWorkbook.SheetNames.forEach((sheetName, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = sheetName;
+                    sheetSelector.appendChild(option);
+                });
+
+                // Show first sheet
+                displaySheet(0);
+
+                // Show preview content
+                document.getElementById('excelLoadingSpinner').style.display = 'none';
+                document.getElementById('excelPreviewContent').style.display = 'block';
+                document.getElementById('downloadExcelBtn').style.display = 'inline-block';
+
+            } catch (error) {
+                console.error('Error loading Excel:', error);
+                document.getElementById('excelLoadingSpinner').style.display = 'none';
+                document.getElementById('excelErrorMessage').style.display = 'block';
+                document.getElementById('errorText').textContent = 'Gagal memuat file Excel: ' + error.message;
+            }
+        }
+
+        // Handle sheet selector change
+        document.getElementById('sheetSelector').addEventListener('change', function() {
+            displaySheet(parseInt(this.value));
+        });
+
+        // Display selected sheet
+        function displaySheet(sheetIndex) {
+            if (!currentWorkbook) return;
+
+            const sheetName = currentWorkbook.SheetNames[sheetIndex];
+            const worksheet = currentWorkbook.Sheets[sheetName];
+
+            // Convert to HTML table
+            const html = XLSX.utils.sheet_to_html(worksheet, {
+                header: '',
+                footer: ''
+            });
+
+            // Apply Bootstrap table classes
+            const styledHtml = html.replace(
+                '<table>',
+                '<table class="table table-bordered table-striped table-hover table-sm">'
+            );
+
+            document.getElementById('excelTableContainer').innerHTML = styledHtml;
+        }
+
+        // Handle download button
+        document.getElementById('downloadExcelBtn').addEventListener('click', function() {
+            if (currentFileUrl) {
+                window.location.href = currentFileUrl;
+            }
+        });
+    </script>
+@endpush

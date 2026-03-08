@@ -96,6 +96,7 @@ Route::middleware(['auth'])->group(function () {
     // ArsipController - Archive of all documents
     Route::prefix('arsip')->name('arsip.')->controller(ArsipController::class)->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/jenis/{jenisDokumenId}', 'listByJenis')->name('listByJenis');
         Route::get('/{permohonan}', 'show')->name('show');
     });
 

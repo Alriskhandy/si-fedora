@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MasterJenisDokumen;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
 
@@ -12,12 +13,31 @@ class ArsipController extends Controller
      */
     public function index(Request $request)
     {
+        // Get all jenis dokumen with count of permohonan
+        $jenisDokumenList = MasterJenisDokumen::withCount(['permohonan' => function($query) {
+            $query->where('status_akhir', 'selesai'); // Only count completed documents
+        }])
+        ->orderBy('nama')
+        ->get();
+
+        return view('pages.arsip.index', compact('jenisDokumenList'));
+    }
+
+    /**
+     * Display list of permohonan by jenis dokumen
+     */
+    public function listByJenis(Request $request, $jenisDokumenId)
+    {
+        $jenisDokumen = MasterJenisDokumen::findOrFail($jenisDokumenId);
+        
         $query = Permohonan::with([
             'kabupatenKota', 
             'jenisDokumen', 
             'tahapanAktif.masterTahapan',
             'pemohon'
-        ]);
+        ])
+        ->where('jenis_dokumen_id', $jenisDokumenId)
+        ->where('status_akhir', 'selesai');
 
         // Filter by search
         if ($request->filled('search')) {
@@ -26,16 +46,8 @@ class ArsipController extends Controller
                 $q->whereHas('kabupatenKota', function($q) use ($search) {
                     $q->where('nama', 'like', '%' . $search . '%');
                 })
-                ->orWhereHas('jenisDokumen', function($q) use ($search) {
-                    $q->where('nama_dokumen', 'like', '%' . $search . '%');
-                })
                 ->orWhere('tahun', 'like', '%' . $search . '%');
             });
-        }
-
-        // Filter by jenis dokumen
-        if ($request->filled('jenis_dokumen_id')) {
-            $query->where('jenis_dokumen_id', $request->jenis_dokumen_id);
         }
 
         // Filter by tahun
@@ -43,18 +55,16 @@ class ArsipController extends Controller
             $query->where('tahun', $request->tahun);
         }
 
-        // Filter by status
-        if ($request->filled('status_akhir')) {
-            $query->where('status_akhir', $request->status_akhir);
-        }
-
         $permohonan = $query->latest()->paginate(15);
         
         // Get filter options
-        $jenisDokumenList = \App\Models\MasterJenisDokumen::orderBy('nama')->get();
-        $tahunList = Permohonan::selectRaw('DISTINCT tahun')->orderByDesc('tahun')->pluck('tahun');
+        $tahunList = Permohonan::where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('status_akhir', 'selesai')
+            ->selectRaw('DISTINCT tahun')
+            ->orderByDesc('tahun')
+            ->pluck('tahun');
 
-        return view('pages.arsip.index', compact('permohonan', 'jenisDokumenList', 'tahunList'));
+        return view('pages.arsip.list', compact('permohonan', 'jenisDokumen', 'tahunList'));
     }
 
     /**

@@ -1,11 +1,10 @@
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
 
-    <div class="app-brand demo">
+    <div class="app-brand demo d-flex justify-content-center mb-3">
         <a href="{{ route('dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo">
-                <img src="{{ asset('assets/img/logo.webp') }}" alt="Logo SIFEDORA" width="40">
+                <img src="{{ asset('assets/img/logo.webp') }}" alt="Logo SIFEDORA" width="80">
             </span>
-            <span class="app-brand-text demo menu-text fw-bolder ms-2">SIFEDORA</span>
         </a>
 
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">

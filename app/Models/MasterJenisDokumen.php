@@ -26,6 +26,12 @@ class MasterJenisDokumen extends Model
         return $this->hasMany(MasterBab::class, 'jenis_dokumen_id');
     }
 
+    // Relasi ke permohonan
+    public function permohonan()
+    {
+        return $this->hasMany(Permohonan::class, 'jenis_dokumen_id');
+    }
+
     // Scope untuk jenis dokumen aktif
     public function scopeActive($query)
     {
