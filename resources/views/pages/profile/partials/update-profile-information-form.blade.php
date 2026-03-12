@@ -44,10 +44,30 @@
         </div>
 
         <div class="col-md-6 mb-3">
-            <label for="phone" class="form-label">No. Telepon</label>
-            <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone"
-                name="phone" value="{{ old('phone', $user->phone) }}" placeholder="08xx-xxxx-xxxx">
-            @error('phone')
+            <label for="no_hp" class="form-label">
+                No. WhatsApp
+                @if($user->phone_verified_at)
+                    <span class="badge bg-success ms-1">
+                        <i class='bx bxs-badge-check'></i> Terverifikasi
+                    </span>
+                @else
+                    <span class="badge bg-warning ms-1">
+                        <i class='bx bx-error-circle'></i> Belum Verifikasi
+                    </span>
+                @endif
+            </label>
+            <input type="text" class="form-control @error('no_hp') is-invalid @enderror" id="no_hp"
+                name="no_hp" value="{{ old('no_hp', $user->no_hp) }}" placeholder="628123456789">
+            <small class="text-muted">
+                Format: 628xxx (dimulai dengan 62, tanpa +, tanpa spasi). 
+                @if(!$user->phone_verified_at && $user->no_hp)
+                    <span class="text-warning fw-bold">Silakan verifikasi nomor Anda.</span>
+                @endif
+                @if($user->phone_verified_at)
+                    <span class="text-info">Mengubah nomor memerlukan verifikasi ulang.</span>
+                @endif
+            </small>
+            @error('no_hp')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>

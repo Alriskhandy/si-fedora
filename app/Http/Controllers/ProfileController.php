@@ -53,7 +53,18 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
+        // Reset phone verification if phone number changed
+        if ($user->isDirty('no_hp')) {
+            $user->phone_verified_at = null;
+        }
+
         $user->save();
+
+        // If phone number changed, redirect to verification
+        if ($user->wasChanged('no_hp') && $user->no_hp) {
+            return Redirect::route('phone.verify')
+                ->with('status', 'Nomor WhatsApp berhasil diubah. Silakan verifikasi nomor baru Anda.');
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

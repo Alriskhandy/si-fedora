@@ -6,9 +6,10 @@
     <meta charset="utf-8" />
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-    <meta name="description" content="Sistem Informasi Fedora - Halaman Lupa Password" />
+    <meta name="description" content="Sistem Informasi Fedora - Verifikasi Nomor HP" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Lupa Password - SIFEDORA</title>
+    <title>Verifikasi Nomor HP - SIFEDORA</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
@@ -100,11 +101,6 @@
             color: #ffffff !important;
         }
 
-        body.dark-mode .input-group-text:hover {
-            background-color: #3d4a64 !important;
-            color: #4dabf7 !important;
-        }
-
         body.dark-mode a {
             color: #4dabf7;
         }
@@ -140,22 +136,12 @@
             border-color: #1e4976;
         }
 
-        body.dark-mode .form-check-input {
-            background-color: #2d3a54 !important;
-            border-color: #3d4a64 !important;
-        }
-
-        body.dark-mode .form-check-input:checked {
-            background-color: #4dabf7 !important;
-            border-color: #4dabf7 !important;
-        }
-
-        body.dark-mode .form-check-label {
-            color: #ffffff !important;
-        }
-
         body.dark-mode .invalid-feedback {
             color: #ea868f;
+        }
+
+        body.dark-mode .text-muted {
+            color: #8a95a5 !important;
         }
 
         /* Animated Background Particles */
@@ -370,6 +356,39 @@
             }
         }
 
+        /* Phone Icon */
+        .phone-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #32e39f 0%, #46f033 100%);
+            border-radius: 50%;
+            font-size: 2.5rem;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        body.dark-mode .phone-icon {
+            background: linear-gradient(135deg, #32e39f 0%, #46f033 100%);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(105, 255, 175, 0.7);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(105, 108, 255, 0);
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .theme-toggle {
@@ -395,17 +414,12 @@
             <div class="authentication-inner">
                 <div class="card">
                     <div class="card-body">
-                        <div class="app-brand justify-content-center">
-                            <a href="{{ url('/logo/index') }}" class="app-brand-link gap-2">
-                                <span class="app-brand-logo demo">
-                                    <img src="{{ asset('assets/img/logo.webp') }}" alt="Logo SIFEDORA" width="150">
-                                </span>
-                            </a>
+                        <div class="phone-icon">
+                            <i class='bx bxl-whatsapp'></i>
                         </div>
 
-                        <h5 class="mb-2 text-center">Lupa Password?</h5>
-                        <p class="mb-4 text-center">Masukkan email Anda dan kami akan mengirimkan link reset password
-                        </p>
+                        <h5 class="mb-2 text-center">Verifikasi Nomor WhatsApp</h5>
+                        <p class="mb-4 text-center">Masukkan nomor WhatsApp Anda untuk menerima kode verifikasi</p>
 
                         @if (session('status'))
                             <div class="alert alert-success mb-3" role="alert">
@@ -413,42 +427,49 @@
                             </div>
                         @endif
 
-                        @if ($errors->any())
-                            <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
+                        @if (session('error'))
+                            <div class="alert alert-danger mb-3" role="alert">
+                                {{ session('error') }}
                             </div>
                         @endif
 
-                        <form id="formAuthentication" class="mb-3" action="{{ route('password.email') }}"
+                        <form id="formPhoneVerification" class="mb-3" action="{{ route('phone.verify.send') }}"
                             method="POST">
                             @csrf
 
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                    id="email" name="email" value="{{ old('email') }}"
-                                    placeholder="Masukkan email Anda" required autofocus />
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <label for="phone" class="form-label">Nomor WhatsApp</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+62</span>
+                                    <input type="text" class="form-control @error('phone') is-invalid @enderror"
+                                        id="phone" name="phone" 
+                                        value="{{ old('phone', $user->no_hp ? preg_replace('/^62/', '', $user->no_hp) : '') }}"
+                                        placeholder="812345678901" required autofocus pattern="[0-9]{9,13}"
+                                        maxlength="13" />
+                                </div>
+                                <small class="text-muted">
+                                    Masukkan nomor WhatsApp tanpa awalan 0 atau +62
+                                    @if($user->no_hp && !$user->phone_verified_at)
+                                        <span class="text-warning fw-bold">(Nomor saat ini belum terverifikasi)</span>
+                                    @endif
+                                </small>
+                                @error('phone')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
 
                             <div class="mb-3">
-                                <button class="btn btn-primary d-grid w-100" type="submit">
-                                    Kirim Link Reset Password
-                                </button>
+                                <button class="btn btn-primary d-grid w-100" type="submit">Kirim Kode Verifikasi</button>
                             </div>
                         </form>
 
                         <p class="text-center">
-                            <a href="{{ url('/') }}">
-                                <i class='bx bx-chevron-left'></i>
-                                Kembali ke halaman login
-                            </a>
+                            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-link text-decoration-none p-0">
+                                    <i class='bx bx-log-out'></i> Keluar dari akun
+                                </button>
+                            </form>
                         </p>
                     </div>
                 </div>
@@ -515,6 +536,25 @@
             }
 
             createParticles();
+
+            // Phone number formatting
+            const phoneInput = document.getElementById('phone');
+            phoneInput.addEventListener('input', function(e) {
+                // Remove non-digit characters
+                let value = this.value.replace(/\D/g, '');
+
+                // Remove leading zero if present
+                if (value.startsWith('0')) {
+                    value = value.substring(1);
+                }
+
+                // Remove +62 if user accidentally pastes it
+                if (value.startsWith('62')) {
+                    value = value.substring(2);
+                }
+
+                this.value = value;
+            });
         });
     </script>
 </body>

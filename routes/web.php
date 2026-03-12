@@ -69,7 +69,7 @@ Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 // ========================================
 // PROTECTED ROUTES - ALL AUTHENTICATED USERS
 // ========================================
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified.phone'])->group(function () {
     
     // ============================================================
     // CORE SYSTEM - All Authenticated Users

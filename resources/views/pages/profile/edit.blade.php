@@ -28,7 +28,28 @@
             </div>
         @endif
 
-        <div class="row"
+        @if (session('status') && session('status') !== 'profile-updated')
+            <div class="alert alert-info alert-dismissible" role="alert">
+                {{ session('status') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if (auth()->user()->no_hp && !auth()->user()->phone_verified_at)
+            <div class="alert alert-warning alert-dismissible d-flex align-items-center" role="alert">
+                <i class='bx bx-error-circle fs-4 me-2'></i>
+                <div>
+                    <strong>Verifikasi Nomor WhatsApp Diperlukan</strong><br>
+                    <small>Nomor WhatsApp Anda belum diverifikasi. Silakan verifikasi untuk menerima notifikasi sistem.</small>
+                </div>
+                <a href="{{ route('phone.verify') }}" class="btn btn-sm btn-warning ms-auto">
+                    <i class='bx bx-check-shield me-1'></i> Verifikasi Sekarang
+                </a>
+                <button type="button" class="btn-close ms-2" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        <div class="row">
             <!-- Kolom Kiri: Foto Profil & Password -->
             <div class="col-lg-4">
                 <!-- Foto Profil -->
@@ -47,6 +68,12 @@
                         </div>
                         <h5 class="mb-1">{{ auth()->user()->name }}</h5>
                         <p class="text-muted mb-1">{{ auth()->user()->email }}</p>
+                        @if (auth()->user()->no_hp)
+                            <p class="text-muted mb-1">
+                                <i class='bx bxl-whatsapp text-success'></i> 
+                                {{ auth()->user()->no_hp }}
+                            </p>
+                        @endif
                         @if (auth()->user()->kabupatenKota)
                             <p class="text-muted small">{{ auth()->user()->kabupatenKota->getFullNameAttribute() }}</p>
                         @endif
