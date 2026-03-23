@@ -9,15 +9,15 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\OtpCode;
-use App\Services\WahaService;
+use App\Services\FonteService;
 
 class PhoneVerificationController extends Controller
 {
-    protected $wahaService;
+    protected $fonteService;
 
-    public function __construct(WahaService $wahaService)
+    public function __construct(FonteService $fonteService)
     {
-        $this->wahaService = $wahaService;
+        $this->fonteService = $fonteService;
     }
 
     /**
@@ -64,12 +64,12 @@ class PhoneVerificationController extends Controller
         // Simpan phone ke session untuk keperluan form OTP
         Session::put('otp_phone', $phone);
 
-        // Send OTP via WhatsApp using WAHA
+        // Send OTP via WhatsApp using Fonnte
         try {
-            $result = $this->wahaService->sendOTP($phone, $otp);
+            $result = $this->fonteService->sendOTP($phone, $otp);
             
             if (isset($result['success']) && $result['success'] === false) {
-                Log::error("Failed to send OTP via WAHA: " . ($result['error'] ?? 'Unknown error'));
+                Log::error("Failed to send OTP via Fonnte: " . ($result['error'] ?? 'Unknown error'));
                 return back()->with('error', 'Gagal mengirim kode OTP. Silakan coba lagi.');
             }
             
@@ -206,12 +206,12 @@ class PhoneVerificationController extends Controller
         $otpData = OtpCode::generate($phone, $user->id);
         $otp = $otpData['code'];
 
-        // Send OTP via WhatsApp using WAHA
+        // Send OTP via WhatsApp using Fonnte
         try {
-            $result = $this->wahaService->sendOTP($phone, $otp);
+            $result = $this->fonteService->sendOTP($phone, $otp);
             
             if (isset($result['success']) && $result['success'] === false) {
-                Log::error("Failed to resend OTP via WAHA: " . ($result['error'] ?? 'Unknown error'));
+                Log::error("Failed to resend OTP via Fonnte: " . ($result['error'] ?? 'Unknown error'));
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal mengirim kode OTP. Silakan coba lagi.'
