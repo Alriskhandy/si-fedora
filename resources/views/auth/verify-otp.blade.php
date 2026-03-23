@@ -688,8 +688,7 @@
                                 </p>
                                 <p>
                                     <small>Tidak menerima kode?
-                                        <a href="#" id="resendLink" class="text-decoration-none"
-                                            onclick="resendOtp(event)">
+                                        <a href="#" id="resendLink" class="text-decoration-none">
                                             Kirim ulang
                                         </a>
                                     </small>
@@ -1046,6 +1045,11 @@
 
             // Focus first input
             otpInputs[0].focus();
+            
+            // Attach resend link event listener
+            resendLink.addEventListener('click', function(event) {
+                resendOtp(event);
+            });
         });
 
         function resendOtp(event) {
