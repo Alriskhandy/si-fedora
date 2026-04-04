@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\KabupatenKota;
 use App\Models\MasterJenisDokumen;
 use App\Models\UserKabkotaAssignment;
+use App\Services\FonteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -213,9 +214,19 @@ class TimAssignmentController extends Controller
 
             DB::commit();
 
+            // Kirim notifikasi WhatsApp ke semua anggota tim
+            $this->sendTimAssignmentNotification(
+                $validated['kabupaten_kota_id'],
+                $validated['jenis_dokumen_id'],
+                $validated['tahun'],
+                $validated['verifikator_id'],
+                $validated['koordinator_fasilitator_id'],
+                $validated['evaluator_ids']
+            );
+
             return redirect()
                 ->route('tim-assignment.index')
-                ->with('success', 'Tim assignment berhasil ditambahkan.');
+                ->with('success', 'Tim assignment berhasil ditambahkan dan notifikasi telah dikirim.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error creating assignment: ' . $e->getMessage());
@@ -408,9 +419,19 @@ class TimAssignmentController extends Controller
 
             DB::commit();
 
+            // Kirim notifikasi WhatsApp ke semua anggota tim (termasuk yang baru)
+            $this->sendTimAssignmentNotification(
+                $validated['kabupaten_kota_id'],
+                $validated['jenis_dokumen_id'] ?? null,
+                $validated['tahun'],
+                $validated['verifikator_id'],
+                $validated['koordinator_fasilitator_id'],
+                $validated['evaluator_ids']
+            );
+
             return redirect()
                 ->route('tim-assignment.index')
-                ->with('success', 'Tim assignment berhasil diupdate.');
+                ->with('success', 'Tim assignment berhasil diupdate dan notifikasi telah dikirim.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error updating assignment: ' . $e->getMessage());
@@ -490,6 +511,104 @@ class TimAssignmentController extends Controller
                 'success' => false,
                 'message' => 'Gagal mengubah status tim',
             ], 500);
+        }
+    }
+
+    /**
+     * Kirim notifikasi WhatsApp ke anggota tim yang baru ditambahkan
+     * 
+     * @param int $kabupatenKotaId
+     * @param int|null $jenisDokumenId
+     * @param int $tahun
+     * @param int $verifikatorId
+     * @param int $koordinatorId
+     * @param array $evaluatorIds
+     * @return void
+     */
+    private function sendTimAssignmentNotification(
+        $kabupatenKotaId,
+        $jenisDokumenId,
+        $tahun,
+        $verifikatorId,
+        $koordinatorId,
+        $evaluatorIds
+    ) {
+        try {
+            $fonteService = app(FonteService::class);
+            
+            // Get data
+            $kabkota = KabupatenKota::find($kabupatenKotaId);
+            $jenisDokumen = $jenisDokumenId ? MasterJenisDokumen::find($jenisDokumenId) : null;
+            
+            // Collect all unique user IDs
+            $allUserIds = array_unique(array_merge(
+                [$verifikatorId],
+                [$koordinatorId],
+                $evaluatorIds
+            ));
+            
+            // Get users with phone numbers
+            $users = User::whereIn('id', $allUserIds)
+                ->whereNotNull('no_hp')
+                ->get();
+            
+            if ($users->isEmpty()) {
+                Log::info('No users with phone numbers found for tim assignment notification');
+                return;
+            }
+            
+            // Prepare bulk messages
+            $recipients = [];
+            foreach ($users as $user) {
+                // Determine role
+                $role = '';
+                if ($user->id == $verifikatorId) {
+                    $role = 'PIC/Verifikator';
+                } elseif ($user->id == $koordinatorId) {
+                    $role = 'Koordinator Fasilitator';
+                } else {
+                    $role = 'Anggota Fasilitator';
+                }
+                
+                // Build message
+                $message = "📢 *Penugasan Tim Baru*\n\n";
+                $message .= "Halo *{$user->name}*,\n\n";
+                $message .= "Anda telah ditugaskan sebagai *{$role}* untuk:\n\n";
+                $message .= "📍 Kabupaten/Kota: *{$kabkota->nama}*\n";
+                if ($jenisDokumen) {
+                    $message .= "📄 Jenis Dokumen: *{$jenisDokumen->nama}*\n";
+                }
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                $message .= "Silakan login ke sistem untuk melihat detail penugasan Anda.\n\n";
+                $message .= "_*SI-FEDORA*_\n";
+                $message .= "_si-fedora.malutprov.go.id_";
+                
+                $recipients[] = [
+                    'target' => $user->no_hp,
+                    'message' => $message,
+                    'delay' => '1-3'
+                ];
+            }
+            
+            // Send bulk messages
+            if (!empty($recipients)) {
+                $result = $fonteService->sendBulkMessage($recipients);
+                
+                if ($result['success']) {
+                    Log::info('Tim assignment notifications sent successfully', [
+                        'kabkota_id' => $kabupatenKotaId,
+                        'tahun' => $tahun,
+                        'total_sent' => count($recipients)
+                    ]);
+                } else {
+                    Log::error('Failed to send tim assignment notifications', $result);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending tim assignment notifications: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Don't throw exception to prevent blocking the main process
         }
     }
 

@@ -153,4 +153,56 @@ class FonteService
             ];
         }
     }
+
+    /**
+     * Kirim pesan ke multiple nomor sekaligus (Bulk Message)
+     * 
+     * @param array $recipients Array of ['target' => phone, 'message' => message, 'delay' => '1-3']
+     * @return array Response dari Fonnte API
+     */
+    public function sendBulkMessage(array $recipients)
+    {
+        try {
+            // Format semua nomor telepon
+            $formattedData = [];
+            foreach ($recipients as $recipient) {
+                $formattedData[] = [
+                    'target' => $this->formatPhone($recipient['target']),
+                    'message' => $recipient['message'],
+                    'delay' => $recipient['delay'] ?? '1-3', // Default delay 1-3 detik
+                ];
+            }
+
+            $response = Http::withHeaders([
+                'Authorization' => $this->token
+            ])->asForm()->post($this->baseUrl . '/send', [
+                'data' => json_encode($formattedData)
+            ]);
+
+            $result = $response->json();
+            
+            // Log response untuk debugging
+            Log::info('Fonnte sendBulkMessage response', [
+                'total_recipients' => count($recipients),
+                'status' => $response->status(),
+                'response' => $result
+            ]);
+
+            return [
+                'success' => $response->successful(),
+                'total' => count($recipients),
+                'data' => $result
+            ];
+        } catch (\Exception $e) {
+            Log::error('Fonnte sendBulkMessage error: ' . $e->getMessage(), [
+                'total_recipients' => count($recipients),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 }
