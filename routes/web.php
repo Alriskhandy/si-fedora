@@ -173,6 +173,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::get('/{permohonan}/create', 'create')->name('create');
         Route::post('/{permohonan}', 'store')->name('store');
         Route::get('/{permohonan}', 'show')->name('show');
+        Route::put('/{permohonan}', 'update')->name('update');
     });
 
     // ============================================================

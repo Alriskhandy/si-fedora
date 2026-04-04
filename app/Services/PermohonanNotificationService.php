@@ -100,24 +100,93 @@ class PermohonanNotificationService
     }
 
     /**
-     * Kirim notifikasi saat jadwal ditetapkan
+     * Kirim notifikasi saat jadwal ditetapkan oleh kaban
+     * Target: Admin (untuk buat undangan), Tim Fedora, Pemohon
+     */
+    /**
+     * Kirim notifikasi saat kaban menetapkan jadwal fasilitasi
+     * Target: Admin Peran saja (untuk membuat undangan)
+     * Nantinya admin peran akan mengirim undangan ke tim fedora dan pemohon dengan notifikasi tersendiri
      */
     public function notifyJadwalDitetapkan(Permohonan $permohonan)
     {
         try {
             $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon', 'penetapanJadwal']);
 
-            // Kirim ke pemohon
-            $this->notifyPemohon($permohonan, 'jadwal_ditetapkan');
+            // Kirim ke Admin Peran untuk membuat undangan (database + WA)
+            $admins = User::role('admin_peran')->get();
+            
+            if (!$admins->isEmpty()) {
+                $notifData = $this->getNotificationData($permohonan, 'jadwal_ditetapkan', 'admin');
 
-            // Kirim ke tim fedora
-            $this->notifyTimFedora($permohonan, 'jadwal_ditetapkan');
+                // Kirim notifikasi database
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'title' => $notifData['title'],
+                        'message' => $notifData['message'],
+                        'type' => $notifData['type'],
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => $notifData['action_url'],
+                        'is_read' => false,
+                    ]);
+                }
 
-            Log::info('Jadwal ditetapkan notifications sent successfully', [
+                // Kirim WhatsApp bulk
+                $this->sendBulkWhatsApp($admins, $permohonan, 'jadwal_ditetapkan', 'admin');
+            }
+
+            Log::info('Jadwal ditetapkan notifications sent to admin_peran successfully', [
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
             Log::error('Error sending jadwal notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi saat jadwal diubah oleh kaban
+     * Target: Admin Peran saja (untuk update undangan jika diperlukan)
+     * Nantinya admin peran akan mengirim undangan perubahan ke tim fedora dan pemohon jika diperlukan
+     */
+    public function notifyJadwalDiubah(Permohonan $permohonan)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon', 'penetapanJadwal']);
+
+            // Kirim ke Admin Peran untuk update undangan (database + WA)
+            $admins = User::role('admin_peran')->get();
+            
+            if (!$admins->isEmpty()) {
+                $notifData = $this->getNotificationData($permohonan, 'jadwal_diubah');
+
+                // Kirim notifikasi database
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'title' => $notifData['title'],
+                        'message' => $notifData['message'],
+                        'type' => $notifData['type'],
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => $notifData['action_url'],
+                        'is_read' => false,
+                    ]);
+                }
+
+                // Kirim WhatsApp bulk
+                $this->sendBulkWhatsApp($admins, $permohonan, 'jadwal_diubah');
+            }
+
+            Log::info('Jadwal diubah notifications sent to admin_peran successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending jadwal diubah notifications: ' . $e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -172,6 +241,56 @@ class PermohonanNotificationService
             ]);
         } catch (\Exception $e) {
             Log::error('Error sending laporan verifikasi notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi saat admin mengirim undangan pelaksanaan
+     * Target: Tim Fedora dan Pemohon yang menerima undangan
+     */
+    public function notifyUndanganDikirim(Permohonan $permohonan, array $penerimaUserIds)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon', 'penetapanJadwal']);
+
+            $recipients = [];
+            foreach ($penerimaUserIds as $userId) {
+                $user = User::find($userId);
+                if (!$user) continue;
+
+                // Kirim notifikasi database (sudah di-handle di controller)
+                // Hanya kirim WhatsApp di sini
+                if ($user->no_hp) {
+                    $message = $this->getWhatsAppMessage($permohonan, 'undangan_dikirim', $user);
+                    $recipients[] = [
+                        'target' => $user->no_hp,
+                        'message' => $message,
+                        'delay' => '2-4'
+                    ];
+                }
+            }
+
+            // Kirim WhatsApp bulk
+            if (!empty($recipients)) {
+                $result = $this->fonteService->sendBulkMessage($recipients);
+
+                if ($result['success']) {
+                    Log::info('Undangan pelaksanaan WhatsApp sent', [
+                        'permohonan_id' => $permohonan->id,
+                        'total_sent' => count($recipients)
+                    ]);
+                }
+            }
+
+            Log::info('Undangan pelaksanaan notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+                'total_penerima' => count($penerimaUserIds),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending undangan pelaksanaan notifications: ' . $e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -449,9 +568,49 @@ class PermohonanNotificationService
                 break;
 
             case 'jadwal_ditetapkan':
-                $data['title'] = 'Jadwal Fasilitasi Ditetapkan';
-                $data['message'] = "Jadwal pelaksanaan fasilitasi untuk permohonan {$kabkota} telah ditetapkan.";
-                $data['type'] = 'info';
+                if ($additionalData === 'admin') {
+                    // Untuk admin: instruksi buat undangan
+                    $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
+                    $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
+                    $lokasi = $permohonan->penetapanJadwal->lokasi ?? '';
+                    
+                    $data['title'] = 'Jadwal Ditetapkan - Buat Undangan Pelaksanaan';
+                    $data['message'] = sprintf(
+                        'Jadwal fasilitasi untuk %s - %s tahun %s telah ditetapkan oleh Kaban. Pelaksanaan: %s s/d %s%s. Silakan buat undangan pelaksanaan.',
+                        $kabkota,
+                        $jenisDokumen,
+                        $tahun,
+                        $tanggalMulai,
+                        $tanggalSelesai,
+                        $lokasi ? ' di ' . $lokasi : ''
+                    );
+                    $data['type'] = 'info';
+                    $data['action_url'] = route('permohonan.show', $permohonan);
+                } else {
+                    // Untuk pemohon dan tim fedora
+                    $data['title'] = 'Jadwal Fasilitasi Ditetapkan';
+                    $data['message'] = "Jadwal pelaksanaan fasilitasi untuk permohonan {$kabkota} telah ditetapkan.";
+                    $data['type'] = 'info';
+                }
+                break;
+
+            case 'jadwal_diubah':
+                $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
+                $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
+                $lokasi = $permohonan->penetapanJadwal->lokasi ?? '';
+                
+                $data['title'] = 'Jadwal Fasilitasi Diperbarui';
+                $data['message'] = sprintf(
+                    'Jadwal pelaksanaan fasilitasi untuk %s - %s tahun %s telah diperbarui. Jadwal baru: %s s/d %s%s. Harap catat perubahan ini.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun,
+                    $tanggalMulai,
+                    $tanggalSelesai,
+                    $lokasi ? ' di ' . $lokasi : ''
+                );
+                $data['type'] = 'warning';
+                $data['action_url'] = route('permohonan.tahapan.jadwal', $permohonan);
                 break;
 
             case 'hasil_dibuat':
@@ -473,6 +632,24 @@ class PermohonanNotificationService
                 $data['title'] = 'Laporan Verifikasi Telah Dibuat';
                 $data['message'] = "Laporan verifikasi untuk permohonan {$kabkota} telah dibuat dengan status: {$statusText}.";
                 $data['type'] = 'success';
+                break;
+
+            case 'undangan_dikirim':
+                $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
+                $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
+                $lokasi = $permohonan->penetapanJadwal->lokasi ?? '';
+                
+                $data['title'] = 'Undangan Pelaksanaan Fasilitasi';
+                $data['message'] = sprintf(
+                    'Anda diundang untuk mengikuti kegiatan fasilitasi untuk %s - %s tahun %s. Pelaksanaan: %s s/d %s%s. Silakan download file undangan lengkap.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun,
+                    $tanggalMulai,
+                    $tanggalSelesai,
+                    $lokasi ? ' di ' . $lokasi : ''
+                );
+                $data['type'] = 'info';
                 break;
 
             default:
@@ -548,7 +725,53 @@ class PermohonanNotificationService
                 $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
-                $message .= "Silakan login ke sistem untuk melihat detail jadwal dan undangan.\n\n";
+                
+                // Detail jadwal
+                if ($permohonan->penetapanJadwal) {
+                    $tanggalMulai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
+                    $tanggalSelesai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
+                    $message .= "📆 Tanggal Pelaksanaan: *{$tanggalMulai}*\n";
+                    if ($tanggalMulai != $tanggalSelesai) {
+                        $message .= "📆 Sampai: *{$tanggalSelesai}*\n";
+                    }
+                    if ($permohonan->penetapanJadwal->lokasi) {
+                        $message .= "📍 Lokasi: *{$permohonan->penetapanJadwal->lokasi}*\n";
+                    }
+                    $message .= "\n";
+                }
+                
+                if ($additionalData === 'admin' && $user->hasRole('admin_peran')) {
+                    $message .= "🎯 *Aksi Diperlukan*\n";
+                    $message .= "Silakan buat undangan pelaksanaan untuk permohonan ini.\n\n";
+                } else {
+                    $message .= "Silakan login ke sistem untuk melihat detail jadwal dan undangan.\n\n";
+                }
+                break;
+
+            case 'jadwal_diubah':
+                $message .= "⚠️ *Perubahan Jadwal Pelaksanaan Fasilitasi*\n\n";
+                $message .= "Jadwal pelaksanaan fasilitasi telah diperbarui:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                
+                // Detail jadwal baru
+                if ($permohonan->penetapanJadwal) {
+                    $tanggalMulai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
+                    $tanggalSelesai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
+                    $message .= "📆 *Jadwal Baru:*\n";
+                    $message .= "   Tanggal: *{$tanggalMulai}*\n";
+                    if ($tanggalMulai != $tanggalSelesai) {
+                        $message .= "   Sampai: *{$tanggalSelesai}*\n";
+                    }
+                    if ($permohonan->penetapanJadwal->lokasi) {
+                        $message .= "   Lokasi: *{$permohonan->penetapanJadwal->lokasi}*\n";
+                    }
+                    $message .= "\n";
+                }
+                
+                $message .= "⚠️ *Harap catat perubahan jadwal ini.*\n";
+                $message .= "Silakan login ke sistem untuk melihat detail lengkap jadwal yang telah diperbarui.\n\n";
                 break;
 
             case 'hasil_dibuat':
@@ -588,6 +811,33 @@ class PermohonanNotificationService
                 }
                 
                 $message .= "Silakan login ke sistem untuk melihat detail laporan verifikasi.\n\n";
+                break;
+
+            case 'undangan_dikirim':
+                $message .= "📨 *Undangan Pelaksanaan Fasilitasi*\n\n";
+                $message .= "Anda diundang untuk mengikuti kegiatan fasilitasi/evaluasi dokumen:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                
+                // Detail jadwal pelaksanaan
+                if ($permohonan->penetapanJadwal) {
+                    $tanggalMulai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
+                    $tanggalSelesai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
+                    $message .= "📆 *Jadwal Pelaksanaan:*\n";
+                    $message .= "   Tanggal: *{$tanggalMulai}*\n";
+                    if ($tanggalMulai != $tanggalSelesai) {
+                        $message .= "   Sampai: *{$tanggalSelesai}*\n";
+                    }
+                    if ($permohonan->penetapanJadwal->lokasi) {
+                        $message .= "   Lokasi: *{$permohonan->penetapanJadwal->lokasi}*\n";
+                    }
+                    $message .= "\n";
+                }
+                
+                $message .= "📎 *File undangan lengkap telah tersedia.*\n";
+                $message .= "Silakan login ke sistem untuk download file undangan dan melihat detail lengkap kegiatan.\n\n";
+                $message .= "⚠️ Harap konfirmasi kehadiran Anda melalui sistem.\n\n";
                 break;
 
             default:

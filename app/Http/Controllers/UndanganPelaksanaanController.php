@@ -325,12 +325,13 @@ class UndanganPelaksanaanController extends Controller
     }
 
     /**
-     * Kirim notifikasi ke penerima
+     * Kirim notifikasi ke penerima (database + WhatsApp)
      */
     private function sendNotifications(UndanganPelaksanaan $undangan, Permohonan $permohonan, array $penerimaIds): void
     {
         $jadwal = $permohonan->penetapanJadwal;
 
+        // Kirim notifikasi database
         foreach ($penerimaIds as $userId) {
             $user = User::find($userId);
             if (!$user) continue;
@@ -359,5 +360,9 @@ class UndanganPelaksanaanController extends Controller
                 Log::error('Gagal mengirim notifikasi', ['user_id' => $user->id, 'error' => $e->getMessage()]);
             }
         }
+
+        // Kirim WhatsApp melalui notification service
+        $notificationService = app(\App\Services\PermohonanNotificationService::class);
+        $notificationService->notifyUndanganDikirim($permohonan, $penerimaIds);
     }
 }

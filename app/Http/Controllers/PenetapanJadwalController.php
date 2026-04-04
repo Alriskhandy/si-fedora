@@ -148,28 +148,9 @@ class PenetapanJadwalController extends Controller
                 'tanggal_selesai' => $request->tanggal_selesai,
             ]);
 
-            // Notifikasi ke admin untuk membuat undangan pelaksanaan
-            $admins = User::role('admin_peran')->get();
-            
-            foreach ($admins as $admin) {
-                Notifikasi::create([
-                    'user_id' => $admin->id,
-                    'title' => 'Jadwal Ditetapkan - Buat Undangan Pelaksanaan',
-                    'message' => sprintf(
-                        'Jadwal fasilitasi untuk %s - %s tahun %s telah ditetapkan oleh Kaban. Pelaksanaan: %s s/d %s%s. Silakan buat undangan pelaksanaan.',
-                        $permohonan->kabupatenKota->nama ?? 'N/A',
-                        $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
-                        $permohonan->tahun,
-                        \Carbon\Carbon::parse($request->tanggal_mulai)->format('d M Y'),
-                        \Carbon\Carbon::parse($request->tanggal_selesai)->format('d M Y'),
-                        $request->lokasi ? ' di ' . $request->lokasi : ''
-                    ),
-                    'type' => 'info',
-                    'action_url' => route('permohonan.show', $permohonan),
-                    'notifiable_type' => Permohonan::class,
-                    'notifiable_id' => $permohonan->id,
-                ]);
-            }
+            // Kirim notifikasi ke admin, tim fedora, dan pemohon (database + WhatsApp)
+            $notificationService = app(\App\Services\PermohonanNotificationService::class);
+            $notificationService->notifyJadwalDitetapkan($permohonan);
 
             DB::commit();
 
@@ -195,5 +176,119 @@ class PenetapanJadwalController extends Controller
         }
 
         return view('pages.penetapan-jadwal.show', compact('permohonan', 'penetapan'));
+    }
+
+    /**
+     * Update penetapan jadwal
+     */
+    public function update(Request $request, Permohonan $permohonan)
+    {
+        $penetapan = $permohonan->penetapanJadwal;
+
+        if (!$penetapan) {
+            return redirect()->route('penetapan-jadwal.create', $permohonan)
+                ->with('error', 'Jadwal fasilitasi belum ditetapkan.');
+        }
+
+        $request->validate([
+            'jadwal_fasilitasi_id' => 'nullable|exists:jadwal_fasilitasi,id',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'lokasi' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+        ]);
+
+        // Load relasi untuk activity log
+        $permohonan->load(['kabupatenKota', 'jenisDokumen']);
+
+        try {
+            DB::beginTransaction();
+
+            // Simpan data lama untuk perbandingan
+            $dataLama = [
+                'tanggal_mulai' => $penetapan->tanggal_mulai,
+                'tanggal_selesai' => $penetapan->tanggal_selesai,
+                'lokasi' => $penetapan->lokasi,
+                'latitude' => $penetapan->latitude,
+                'longitude' => $penetapan->longitude,
+            ];
+
+            // Update penetapan jadwal
+            $penetapan->update([
+                'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
+                'tanggal_mulai' => $request->tanggal_mulai,
+                'tanggal_selesai' => $request->tanggal_selesai,
+                'lokasi' => $request->lokasi,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'diubah_oleh' => Auth::id(),
+                'tanggal_perubahan' => now(),
+            ]);
+
+            // Update tahapan permohonan jika ada
+            try {
+                $tahapanPenetapan = \App\Models\MasterTahapan::where('nama_tahapan', 'Penetapan Jadwal')->first();
+                if ($tahapanPenetapan) {
+                    $permohonan->tahapan()->updateOrCreate(
+                        [
+                            'permohonan_id' => $permohonan->id,
+                            'tahapan_id' => $tahapanPenetapan->id
+                        ],
+                        [
+                            'catatan' => sprintf(
+                                'Jadwal fasilitasi telah diperbarui (%s s/d %s). Menunggu pembuatan undangan pelaksanaan.',
+                                \Carbon\Carbon::parse($request->tanggal_mulai)->format('d M Y'),
+                                \Carbon\Carbon::parse($request->tanggal_selesai)->format('d M Y')
+                            ),
+                            'updated_by' => Auth::id(),
+                        ]
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::warning('Gagal update tahapan: ' . $e->getMessage());
+            }
+
+            // Activity log
+            activity()
+                ->performedOn($permohonan)
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'penetapan_id' => $penetapan->id,
+                    'data_lama' => $dataLama,
+                    'data_baru' => [
+                        'tanggal_mulai' => $request->tanggal_mulai,
+                        'tanggal_selesai' => $request->tanggal_selesai,
+                        'lokasi' => $request->lokasi,
+                        'latitude' => $request->latitude,
+                        'longitude' => $request->longitude,
+                    ],
+                    'kabupaten_kota' => $permohonan->kabupatenKota->nama ?? null,
+                    'jenis_dokumen' => $permohonan->jenisDokumen->nama_dokumen ?? null,
+                    'tahun' => $permohonan->tahun,
+                ])
+                ->log('Jadwal fasilitasi diperbarui oleh Kaban');
+
+            Log::info('Jadwal fasilitasi diperbarui', [
+                'permohonan_id' => $permohonan->id,
+                'penetapan_id' => $penetapan->id,
+                'diubah_oleh' => auth()->user()->name,
+                'tanggal_mulai_lama' => $dataLama['tanggal_mulai'],
+                'tanggal_mulai_baru' => $request->tanggal_mulai,
+            ]);
+
+            // Kirim notifikasi update jadwal ke admin, tim fedora, dan pemohon (database + WhatsApp)
+            $notificationService = app(\App\Services\PermohonanNotificationService::class);
+            $notificationService->notifyJadwalDiubah($permohonan);
+
+            DB::commit();
+
+            return redirect()->route('penetapan-jadwal.show', $permohonan)
+                ->with('success', 'Jadwal fasilitasi berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error update penetapan jadwal: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memperbarui jadwal: ' . $e->getMessage());
+        }
     }
 }
