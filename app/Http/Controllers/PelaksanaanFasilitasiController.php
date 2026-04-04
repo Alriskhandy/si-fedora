@@ -27,49 +27,71 @@ class PelaksanaanFasilitasiController extends Controller
         }
 
         $request->validate([
-            'jenis_dokumen' => 'required|string|max:255',
-            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,xls,xlsx,pptx|max:10240', // 10MB
+            'files' => 'required|array|min:1',
+            'files.*' => 'required|file|mimes:pdf,jpg,jpeg,png,xls,xlsx,pptx|max:10240', // 10MB per file
+        ], [
+            'files.required' => 'Pilih minimal 1 file untuk diupload.',
+            'files.*.mimes' => 'Format file harus: PDF, JPG, JPEG, PNG, XLS, XLSX, atau PPTX.',
+            'files.*.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
         try {
             // Get master tahapan pelaksanaan
             $masterTahapan = MasterTahapan::where('nama_tahapan', 'Pelaksanaan')->firstOrFail();
 
-            // Upload file
-            $file = $request->file('file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs(
-                'dokumen-tahapan/pelaksanaan/' . $permohonan->id,
-                $fileName,
-                'public'
-            );
+            $uploadedCount = 0;
+            $uploadedFiles = [];
 
-            // Create dokumen record
-            $dokumen = DokumenTahapan::create([
-                'permohonan_id' => $permohonan->id,
-                'tahapan_id' => $masterTahapan->id,
-                'user_id' => Auth::id(),
-                'nama_dokumen' => $request->jenis_dokumen,
-                'file_path' => $filePath,
-                'file_name' => $fileName,
-                'file_size' => $file->getSize(),
-                'file_type' => $file->getMimeType(),
-                'status' => 'menunggu',
-            ]);
+            // Loop through all uploaded files
+            foreach ($request->file('files') as $file) {
+                // Get original filename and remove extension for document name
+                $originalName = $file->getClientOriginalName();
+                $namaDokumen = pathinfo($originalName, PATHINFO_FILENAME);
+                
+                // Create unique filename with timestamp
+                $fileName = time() . '_' . uniqid() . '_' . $originalName;
+                
+                // Upload file
+                $filePath = $file->storeAs(
+                    'dokumen-tahapan/pelaksanaan/' . $permohonan->id,
+                    $fileName,
+                    'public'
+                );
+
+                // Create dokumen record
+                $dokumen = DokumenTahapan::create([
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapan->id,
+                    'user_id' => Auth::id(),
+                    'nama_dokumen' => $namaDokumen,
+                    'file_path' => $filePath,
+                    'file_name' => $fileName,
+                    'file_size' => $file->getSize(),
+                    'file_type' => $file->getMimeType(),
+                    'status' => 'menunggu',
+                ]);
+
+                $uploadedFiles[] = $namaDokumen;
+                $uploadedCount++;
+            }
 
             // Log activity
             activity()
-                ->performedOn($dokumen)
+                ->performedOn($permohonan)
                 ->causedBy(Auth::user())
                 ->withProperties([
                     'permohonan_id' => $permohonan->id,
-                    'jenis_dokumen' => $request->jenis_dokumen,
-                    'file_name' => $fileName,
+                    'jumlah_file' => $uploadedCount,
+                    'files' => $uploadedFiles,
                 ])
-                ->log('Upload dokumen pelaksanaan: ' . $request->jenis_dokumen);
+                ->log('Upload ' . $uploadedCount . ' dokumen pelaksanaan');
+
+            $message = $uploadedCount > 1 
+                ? $uploadedCount . ' dokumen berhasil diupload.' 
+                : 'Dokumen berhasil diupload.';
 
             return redirect()->route('permohonan.tahapan.pelaksanaan', $permohonan)
-                ->with('success', 'Dokumen berhasil diupload.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             Log::error('Error upload dokumen pelaksanaan: ' . $e->getMessage());
@@ -230,48 +252,9 @@ class PelaksanaanFasilitasiController extends Controller
                 ])
                 ->log('Tahapan Pelaksanaan diselesaikan, lanjut ke tahapan Hasil');
 
-            // Kirim notifikasi ke pemohon
-            Notifikasi::create([
-                'user_id' => $permohonan->user_id,
-                'title' => 'Pelaksanaan Fasilitasi Selesai',
-                'message' => sprintf(
-                    'Tahapan Pelaksanaan Fasilitasi untuk %s telah diselesaikan. Sistem akan melanjutkan ke tahapan Hasil Fasilitasi.',
-                    $permohonan->jenisDokumen->nama_dokumen ?? 'permohonan Anda'
-                ),
-                'type' => 'success',
-                'action_url' => route('permohonan.tahapan.pelaksanaan', $permohonan),
-                'notifiable_type' => Permohonan::class,
-                'notifiable_id' => $permohonan->id,
-            ]);
-
-            // Kirim notifikasi ke tim fasilitasi yang di-assign
-            $timFasilitasi = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->where(function ($q) use ($permohonan) {
-                    $q->whereNull('jenis_dokumen_id')
-                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
-                })
-                ->with('user')
-                ->get();
-
-            foreach ($timFasilitasi as $assignment) {
-                if ($assignment->user && $assignment->user->hasAnyRole(['fasilitator', 'koordinator'])) {
-                    Notifikasi::create([
-                        'user_id' => $assignment->user_id,
-                        'title' => 'Input Hasil Fasilitasi Diperlukan',
-                        'message' => sprintf(
-                            'Pelaksanaan fasilitasi untuk %s - %s telah selesai. Silakan input hasil fasilitasi pada tahapan berikutnya.',
-                            $permohonan->kabupatenKota->nama ?? 'N/A',
-                            $permohonan->jenisDokumen->nama_dokumen ?? 'N/A'
-                        ),
-                        'type' => 'info',
-                        'action_url' => route('permohonan.tahapan.hasil', $permohonan),
-                        'notifiable_type' => Permohonan::class,
-                        'notifiable_id' => $permohonan->id,
-                    ]);
-                }
-            }
+            // Kirim notifikasi melalui notification service (database + WhatsApp)
+            $notificationService = app(\App\Services\PermohonanNotificationService::class);
+            $notificationService->notifyPelaksanaanSelesai($permohonan);
 
             return redirect()->back()->with('success', 'Tahapan Pelaksanaan berhasil diselesaikan. Tahapan Hasil sudah dimulai.');
 

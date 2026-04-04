@@ -63,7 +63,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class='bx bx-file me-1'></i>Dokumenentasi Pelaksanaan</h6>
+                        <h6 class="mb-0"><i class='bx bx-file me-1'></i>Dokumentasi Pelaksanaan</h6>
                         <div class="d-flex gap-2">
                             @if (auth()->user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin']))
                                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
@@ -135,8 +135,12 @@
                     @if (isset($isCompleted) && $isCompleted && $currentTahapan)
                         <div class="alert alert-success mb-3">
                             <i class='bx bx-check-circle me-2'></i>
-                            Tahapan Pelaksanaan telah diselesaikan pada
+                            <strong>Tahapan Pelaksanaan telah diselesaikan</strong> pada
                             {{ $currentTahapan->updated_at ? $currentTahapan->updated_at->format('d F Y, H:i') . " WIT" : '-' }}
+                            <br>
+                            <small class="text-muted mt-1 d-block">
+                                <i class='bx bx-info-circle'></i> Anda masih dapat mengelola dokumentasi pelaksanaan (upload/hapus dokumen) walaupun tahapan telah selesai.
+                            </small>
                         </div>
                     @endif
 
@@ -237,14 +241,14 @@
                             <i class='bx bx-file bx-lg text-muted mb-3 d-block'></i>
                             <p class="text-muted mb-0">Belum ada dokumen pelaksanaan yang diupload.</p>
                             @if (auth()->user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin']))
-                                <small class="text-muted">Klik tombol "Upload Dokumen" untuk menambahkan.</small>
+                                <small class="text-muted">Klik tombol "Upload Dokumen" untuk menambahkan. Anda bisa upload beberapa file sekaligus.</small>
                             @endif
                         </div>
                     @endif
 
                     <!-- Daftar Jenis Dokumen yang Dibutuhkan -->
                     <div class="alert alert-light border mt-4">
-                        <strong><i class='bx bx-list-ul me-1'></i>Dokumen yang Diperlukan:</strong>
+                        <strong><i class='bx bx-list-ul me-1'></i>Contoh Dokumen Pelaksanaan:</strong>
                         <ul class="mb-0 mt-2">
                             <li>Daftar Hadir Peserta</li>
                             <li>Sambutan Pembukaan</li>
@@ -252,8 +256,11 @@
                             <li>Berita Acara Pelaksanaan</li>
                             <li>Notulensi Rapat</li>
                             <li>Dokumentasi Foto Kegiatan</li>
-                            <li>Dokumen Pendukung Lainnya</li>
+                            <li>Atau dokumen pelaksanaan lainnya sesuai kebutuhan</li>
                         </ul>
+                        <small class="text-muted mt-2 d-block">
+                            <i class='bx bx-info-circle'></i> Nama dokumen akan diambil otomatis dari nama file. Anda dapat mengupload beberapa file sekaligus.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -275,36 +282,26 @@
                                 @csrf
                                 <div class="modal-body">
                                     <div class="mb-3">
-                                        <label for="jenis_dokumen" class="form-label">Jenis Dokumen <span
+                                        <label for="files" class="form-label">File Dokumen <span
                                                 class="text-danger">*</span></label>
-                                        <select class="form-select @error('jenis_dokumen') is-invalid @enderror"
-                                            id="jenis_dokumen" name="jenis_dokumen" required>
-                                            <option value="">Pilih Jenis Dokumen</option>
-                                            <option value="Daftar Hadir">Daftar Hadir Peserta</option>
-                                            <option value="Sambutan">Sambutan Pembukaan</option>
-                                            <option value="Materi Presentasi">Materi Presentasi</option>
-                                            <option value="Berita Acara">Berita Acara Pelaksanaan</option>
-                                            <option value="Notulensi">Notulensi Rapat</option>
-                                            <option value="Dokumentasi Foto">Dokumentasi Foto</option>
-                                            <option value="Lainnya">Dokumen Lainnya</option>
-                                        </select>
-                                        @error('jenis_dokumen')
+                                        <input type="file" class="form-control @error('files') is-invalid @enderror @error('files.*') is-invalid @enderror"
+                                            id="files" name="files[]" accept=".pdf,.xls,.xlsx,.pptx,.jpg,.jpeg,.png"
+                                            multiple required>
+                                        <div class="form-text">
+                                            <i class='bx bx-info-circle'></i> Anda bisa memilih <strong>lebih dari 1 file sekaligus</strong>. Nama dokumen akan diambil dari nama file.
+                                            <br>Format: PDF, XLS, XLSX, PPTX, JPG, JPEG, PNG. Maksimal 10MB per file.
+                                        </div>
+                                        @error('files')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        @error('files.*')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-
-                                    <div class="mb-3">
-                                        <label for="file" class="form-label">File Dokumen <span
-                                                class="text-danger">*</span></label>
-                                        <input type="file" class="form-control @error('file') is-invalid @enderror"
-                                            id="file" name="file" accept=".pdf,.xls,.xlsx,.pptx,.jpg,.jpeg,.png"
-                                            required>
-                                        <div class="form-text">
-                                            Format: PDF, XLS, XLSX, PPTX, JPG, JPEG, PNG. Maksimal 10MB.
-                                        </div>
-                                        @error('file')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                    <div id="fileList" class="mb-3" style="display: none;">
+                                        <label class="form-label">File yang dipilih:</label>
+                                        <ul id="selectedFiles" class="list-group list-group-flush">
+                                        </ul>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -453,5 +450,41 @@
             const modal = new bootstrap.Modal(document.getElementById('previewModal'));
             modal.show();
         }
+
+        // Handle multiple file selection preview
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('files');
+            const fileList = document.getElementById('fileList');
+            const selectedFiles = document.getElementById('selectedFiles');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const files = e.target.files;
+                    
+                    if (files.length > 0) {
+                        selectedFiles.innerHTML = '';
+                        
+                        Array.from(files).forEach((file, index) => {
+                            const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                            const listItem = document.createElement('li');
+                            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            listItem.innerHTML = `
+                                <div>
+                                    <i class='bx bx-file me-2'></i>
+                                    <strong>${file.name}</strong>
+                                    <small class="text-muted ms-2">(${fileSize} MB)</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">${index + 1}</span>
+                            `;
+                            selectedFiles.appendChild(listItem);
+                        });
+                        
+                        fileList.style.display = 'block';
+                    } else {
+                        fileList.style.display = 'none';
+                    }
+                });
+            }
+        });
     </script>
 @endpush

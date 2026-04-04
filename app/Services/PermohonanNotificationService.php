@@ -248,6 +248,29 @@ class PermohonanNotificationService
     }
 
     /**
+     * Kirim notifikasi saat tahapan pelaksanaan selesai
+     * Target: Fasilitator untuk input hasil fasilitasi
+     */
+    public function notifyPelaksanaanSelesai(Permohonan $permohonan)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
+
+            // Kirim ke Fasilitator yang di-assign untuk input hasil
+            $this->notifyTimFedoraFasilitator($permohonan, 'pelaksanaan_selesai');
+
+            Log::info('Pelaksanaan selesai notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending pelaksanaan selesai notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
      * Kirim notifikasi saat admin mengirim undangan pelaksanaan
      * Target: Tim Fedora dan Pemohon yang menerima undangan
      */
@@ -378,6 +401,59 @@ class PermohonanNotificationService
     }
 
     /**
+     * Kirim notifikasi ke Fasilitator saja (untuk pelaksanaan selesai)
+     */
+    private function notifyTimFedoraFasilitator(Permohonan $permohonan, $event, $additionalData = null)
+    {
+        // Get fasilitator yang di-assign untuk kab/kota dan tahun ini
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('tahun', $permohonan->tahun)
+            ->where('is_active', true)
+            ->where(function ($q) use ($permohonan) {
+                $q->whereNull('jenis_dokumen_id')
+                    ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
+            })
+            ->with('user')
+            ->get();
+
+        // Filter hanya yang punya user dan user adalah fasilitator/koordinator
+        $fasilitators = $assignments->filter(function($assignment) {
+            return $assignment->user && $assignment->user->hasAnyRole(['fasilitator', 'koordinator']);
+        });
+
+        if ($fasilitators->isEmpty()) {
+            Log::info('No fasilitator assigned for this permohonan', [
+                'permohonan_id' => $permohonan->id,
+                'kab_kota_id' => $permohonan->kab_kota_id,
+                'tahun' => $permohonan->tahun,
+            ]);
+            return;
+        }
+
+        $notifData = $this->getNotificationData($permohonan, $event, $additionalData);
+
+        // Kirim notifikasi database
+        foreach ($fasilitators as $assignment) {
+            if ($assignment->user) {
+                Notifikasi::create([
+                    'user_id' => $assignment->user_id,
+                    'title' => $notifData['title'],
+                    'message' => $notifData['message'],
+                    'type' => $notifData['type'],
+                    'model_type' => Permohonan::class,
+                    'model_id' => $permohonan->id,
+                    'action_url' => $notifData['action_url'],
+                    'is_read' => false,
+                ]);
+            }
+        }
+
+        // Kirim WhatsApp bulk
+        $users = $fasilitators->pluck('user')->filter();
+        $this->sendBulkWhatsApp($users, $permohonan, $event, $additionalData);
+    }
+
+    /**
      * Kirim notifikasi ke Verifikator saja (untuk dokumen revisi uploaded)
      */
     private function notifyTimFedoraVerifikator(Permohonan $permohonan, $event, $additionalData = null)
@@ -390,9 +466,7 @@ class PermohonanNotificationService
                 $q->whereNull('jenis_dokumen_id')
                     ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
             })
-            ->with(['user' => function($q) {
-                $q->role('verifikator');
-            }])
+            ->with('user')
             ->get();
 
         // Filter hanya yang punya user dan user adalah verifikator
@@ -652,6 +726,18 @@ class PermohonanNotificationService
                 $data['type'] = 'info';
                 break;
 
+            case 'pelaksanaan_selesai':
+                $data['title'] = 'Input Hasil Fasilitasi Diperlukan';
+                $data['message'] = sprintf(
+                    'Pelaksanaan fasilitasi untuk %s - %s tahun %s telah selesai. Silakan segera input hasil fasilitasi pada tahapan berikutnya.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun
+                );
+                $data['type'] = 'warning';
+                $data['action_url'] = route('permohonan.tahapan.hasil', $permohonan);
+                break;
+
             default:
                 $data['title'] = 'Notifikasi Permohonan';
                 $data['message'] = "Ada update untuk permohonan {$kabkota}.";
@@ -838,6 +924,16 @@ class PermohonanNotificationService
                 $message .= "📎 *File undangan lengkap telah tersedia.*\n";
                 $message .= "Silakan login ke sistem untuk download file undangan dan melihat detail lengkap kegiatan.\n\n";
                 $message .= "⚠️ Harap konfirmasi kehadiran Anda melalui sistem.\n\n";
+                break;
+
+            case 'pelaksanaan_selesai':
+                $message .= "✅ *Pelaksanaan Fasilitasi Selesai*\n\n";
+                $message .= "Pelaksanaan kegiatan fasilitasi/evaluasi telah diselesaikan:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                
+                    $message .= "Silakan segera melakukan input hasil fasilitasi/evaluasi pada sistem.\n\n";
                 break;
 
             default:
