@@ -181,8 +181,16 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     
     // PermohonanController (All authenticated users can view, Pemohon can manage)
     Route::prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
-        // View routes - accessible by all authenticated users
+        // List view - accessible by all authenticated users
         Route::get('/', 'index')->name('index');
+        
+        // Management routes - only pemohon (must be before routes with {permohonan} parameter)
+        Route::middleware(['role:pemohon'])->group(function () {
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+        });
+        
+        // View routes with parameter - accessible by all authenticated users
         Route::get('/{permohonan}', 'show')->name('show');
         Route::get('/{permohonan}/tab', 'showWithTabs')->name('show-tabs');
         
@@ -200,10 +208,8 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
             Route::put('/update-deadline', 'updateDeadline')->name('update-deadline')->middleware('role:admin_peran|superadmin');
         });
         
-        // Management routes - only pemohon
+        // More management routes - only pemohon
         Route::middleware(['role:pemohon'])->group(function () {
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
             Route::get('/{permohonan}/edit', 'edit')->name('edit');
             Route::put('/{permohonan}', 'update')->name('update');
             Route::delete('/{permohonan}', 'destroy')->name('destroy');
