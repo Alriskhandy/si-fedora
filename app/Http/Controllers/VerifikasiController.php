@@ -9,6 +9,8 @@ use App\Models\Notifikasi;
 use App\Models\User;
 use App\Models\MasterTahapan;
 use App\Models\PermohonanTahapan;
+use App\Models\UserKabkotaAssignment;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -223,12 +225,12 @@ class VerifikasiController extends Controller
             }
             
             // Load relasi
-            $permohonan->load(['kabupatenKota', 'jenisDokumen']);
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
             
             // Update status permohonan
             $hasRevision = $totalRevision > 0;
-            // Status menjadi 'revisi' jika ada revisi, tetap 'proses' jika semua verified
-            $newStatus = $hasRevision ? 'revisi' : 'proses';
+            // Status menjadi 'revisi' jika ada revisi, 'selesai' jika semua verified (agar admin bisa buat laporan)
+            $newStatus = $hasRevision ? 'revisi' : 'selesai';
             
             $permohonan->update(['status_akhir' => $newStatus]);
             
@@ -326,47 +328,51 @@ class VerifikasiController extends Controller
 
     /**
      * Kirim notifikasi:
-     * - Jika tidak ada revisi: notifikasi ke admin untuk membuat laporan
-     * - Jika ada revisi: notifikasi ke pemohon untuk upload ulang dokumen
+     * - Jika semua verified: notifikasi ke admin (database + WA) untuk buat laporan
+     * - Jika ada revisi: notifikasi ke pemohon (database + WA) dengan detail dokumen yang perlu revisi
      */
     private function sendNotifications($permohonan, $hasRevision, $totalVerified, $totalRevision)
     {
+        $notificationService = app(PermohonanNotificationService::class);
+        
+        // Tentukan status verifikasi
+        $status = $hasRevision ? 'revisi' : 'lengkap';
+        
+        // Kirim notifikasi via service (database + WhatsApp)
+        $notificationService->notifyVerifikasiSelesai($permohonan, $status);
+        
         if ($hasRevision) {
-            // Notifikasi ke pemohon untuk upload ulang dokumen yang perlu revisi
+            // ADA DOKUMEN YANG PERLU REVISI - Kirim notifikasi tambahan ke pemohon dengan detail (database saja, WA sudah via service)
+            
+            // Ambil daftar dokumen yang perlu revisi
+            $dokumenRevisi = $permohonan->permohonanDokumen()
+                ->where('status_verifikasi', 'revision')
+                ->with('masterKelengkapan')
+                ->get();
+            
+            $daftarDokumen = $dokumenRevisi->map(function ($dok) {
+                return '• ' . ($dok->masterKelengkapan->nama_kelengkapan ?? 'Dokumen');
+            })->implode("\n");
+            
+            // Notifikasi database tambahan ke pemohon dengan detail dokumen
             Notifikasi::create([
                 'user_id' => $permohonan->user_id,
-                'title' => 'Dokumen Perlu Revisi',
+                'title' => 'Segera Upload Ulang Dokumen yang Perlu Revisi',
                 'message' => sprintf(
-                    'Terdapat %s dokumen yang perlu direvisi dari total %s dokumen. Silakan periksa catatan verifikasi dan upload ulang dokumen yang diperlukan.',
+                    "Verifikasi untuk permohonan Anda (%s - %s tahun %s) telah selesai.\n\n" .
+                    "Terdapat %s dokumen yang perlu diperbaiki dan diupload kembali:\n\n%s\n\n" .
+                    "Silakan login ke sistem untuk melihat catatan verifikator dan upload ulang dokumen yang telah diperbaiki.",
+                    $permohonan->kabupatenKota->nama ?? 'N/A',
+                    $permohonan->jenisDokumen->nama ?? 'N/A',
+                    $permohonan->tahun,
                     $totalRevision,
-                    $totalVerified + $totalRevision
+                    $daftarDokumen
                 ),
-                'type' => 'revision',
+                'type' => 'warning',
                 'action_url' => route('permohonan.tahapan.verifikasi', $permohonan),
-                'notifiable_type' => Permohonan::class,
-                'notifiable_id' => $permohonan->id,
+                'model_type' => Permohonan::class,
+                'model_id' => $permohonan->id,
             ]);
-        } else {
-            // Notifikasi ke admin_peran untuk membuat laporan verifikasi
-            $admins = User::role('admin_peran')->get();
-            
-            foreach ($admins as $admin) {
-                Notifikasi::create([
-                    'user_id' => $admin->id,
-                    'title' => 'Verifikasi Selesai - Cek & Buat Laporan',
-                    'message' => sprintf(
-                        'Verifikasi untuk %s - %s tahun %s telah selesai oleh verifikator. Semua %s dokumen telah diverifikasi dan sesuai. Silakan cek kelengkapan dan buat laporan verifikasi.',
-                        $permohonan->kabupatenKota->nama ?? 'N/A',
-                        $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
-                        $permohonan->tahun,
-                        $totalVerified
-                    ),
-                    'type' => 'info',
-                    'action_url' => route('permohonan.tahapan.verifikasi', $permohonan),
-                    'notifiable_type' => Permohonan::class,
-                    'notifiable_id' => $permohonan->id,
-                ]);
-            }
         }
     }
 }

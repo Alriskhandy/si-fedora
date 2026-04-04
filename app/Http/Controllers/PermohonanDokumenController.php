@@ -110,6 +110,7 @@ class PermohonanDokumenController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:pdf,xlsx,xls|max:102400', // 100MB
+            'redirect_to' => 'nullable|in:permohonan,verifikasi', // Allow redirect target
         ], [
             'file.required' => 'File harus diupload',
             'file.mimes' => 'File harus berformat PDF atau Excel (xlsx, xls)',
@@ -154,12 +155,55 @@ class PermohonanDokumenController extends Controller
                 'file_name' => $fileName,
                 'file_size' => $file->getSize(),
                 'file_type' => $file->getMimeType(),
-                'status_verifikasi' => 'pending',
+                'status_verifikasi' => 'pending', // Reset status verifikasi
             ]);
 
-            // Redirect kembali ke halaman tahapan permohonan
-            return redirect()->route('permohonan.tahapan.permohonan', $permohonanDokumen->permohonan_id)
-                ->with('success', 'Dokumen "' . $permohonanDokumen->masterKelengkapan->nama_dokumen . '" berhasil diupload');
+            $namaDokumen = $permohonanDokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen';
+            $wasRevision = $permohonanDokumen->wasRecentlyCreated ? false : ($permohonanDokumen->getOriginal('status_verifikasi') === 'revision');
+
+            // Update status permohonan jika ada dokumen yang diupload ulang dari status revisi
+            if ($permohonan->status_akhir === 'revisi') {
+                // Cek apakah masih ada dokumen dengan status 'revision'
+                $masihAdaRevisi = $permohonan->permohonanDokumen()
+                    ->where('status_verifikasi', 'revision')
+                    ->where('id', '!=', $permohonanDokumen->id)
+                    ->exists();
+                
+                // Jika sudah tidak ada dokumen revisi lagi, ubah status menjadi 'proses' untuk verifikasi ulang
+                if (!$masihAdaRevisi) {
+                    $permohonan->update(['status_akhir' => 'proses']);
+                    
+                    // Update tahapan Verifikasi kembali ke status proses
+                    $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+                    if ($masterTahapanVerifikasi) {
+                        \App\Models\PermohonanTahapan::updateOrCreate(
+                            [
+                                'permohonan_id' => $permohonan->id,
+                                'tahapan_id' => $masterTahapanVerifikasi->id,
+                            ],
+                            [
+                                'status' => 'proses',
+                                'catatan' => 'Dokumen revisi telah diupload ulang pada ' . now()->format('d M Y H:i') . '. Menunggu verifikasi ulang dari Tim Fedora.',
+                                'updated_by' => Auth::id(),
+                            ]
+                        );
+                    }
+
+                    // Kirim notifikasi ke verifikator (database + WhatsApp) jika dokumen sebelumnya berstatus revisi
+                    $notificationService = app(\App\Services\PermohonanNotificationService::class);
+                    $notificationService->notifyDokumenRevisiUploaded($permohonan, $namaDokumen);
+                }
+            }
+
+            // Determine redirect target
+            $redirectTo = $request->input('redirect_to', 'permohonan');
+            $redirectRoute = $redirectTo === 'verifikasi' 
+                ? 'permohonan.tahapan.verifikasi' 
+                : 'permohonan.tahapan.permohonan';
+
+            // Redirect with success message
+            return redirect()->route($redirectRoute, $permohonanDokumen->permohonan_id)
+                ->with('success', 'Dokumen "' . $namaDokumen . '" berhasil diupload');
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat upload: ' . $e->getMessage());
         }

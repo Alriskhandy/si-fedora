@@ -20,6 +20,12 @@
             margin-top: 0.5rem;
             border-radius: 4px;
         }
+
+        /* Alert small variant */
+        .alert-sm {
+            font-size: 0.875rem;
+            margin-bottom: 0;
+        }
     </style>
 @endpush
 
@@ -131,16 +137,47 @@
             @endif
         @elseif($permohonan->status_akhir == 'revisi')
             @if ($isPemohon)
+                @php
+                    $dokumenRevisi = $permohonan->permohonanDokumen->where('status_verifikasi', 'revision')->count();
+                @endphp
                 <div class="alert alert-danger">
                     <i class='bx bx-error-circle me-2'></i>
                     <strong>Dokumen Perlu Revisi</strong><br>
-                    Terdapat dokumen yang perlu diperbaiki. Silakan periksa catatan verifikasi di bawah.
+                    Terdapat <strong>{{ $dokumenRevisi }} dokumen</strong> yang perlu diperbaiki. Silakan periksa catatan verifikasi di bawah dan upload ulang dokumen yang telah diperbaiki.
                 </div>
             @else
                 <div class="alert alert-warning">
                     <i class='bx bx-info-circle me-2'></i>
                     Permohonan memerlukan revisi dokumen dari pemohon.
                 </div>
+            @endif
+        @elseif($permohonan->status_akhir == 'selesai')
+            @if ($isPemohon)
+                <div class="alert alert-success">
+                    <i class='bx bx-check-circle me-2'></i>
+                    <strong>Verifikasi Selesai</strong><br>
+                    Semua dokumen telah diverifikasi dan sesuai. Permohonan Anda akan diproses ke tahap berikutnya.
+                </div>
+            @elseif($isVerifikator)
+                <div class="alert alert-success">
+                    <i class='bx bx-check-circle me-2'></i>
+                    <strong>Verifikasi Telah Selesai</strong><br>
+                    Semua dokumen telah diverifikasi. Menunggu admin membuat laporan verifikasi.
+                </div>
+            @elseif($isAdmin)
+                @if(!$permohonan->laporanVerifikasi)
+                    <div class="alert alert-info">
+                        <i class='bx bx-info-circle me-2'></i>
+                        <strong>Siap Membuat Laporan</strong><br>
+                        Verifikasi dokumen telah selesai. Silakan buat laporan verifikasi di bawah ini untuk melanjutkan proses.
+                    </div>
+                @else
+                    <div class="alert alert-success">
+                        <i class='bx bx-check-circle me-2'></i>
+                        <strong>Laporan Telah Dibuat</strong><br>
+                        Laporan verifikasi telah dibuat dan permohonan siap dilanjutkan ke tahap berikutnya.
+                    </div>
+                @endif
             @endif
         @endif
 
@@ -343,7 +380,7 @@
                                         </th>
                                     @else
                                         <th width="15%">Status Verifikasi</th>
-                                        <th width="30%">Catatan</th>
+                                        <th width="30%">{{ $isPemohon && $permohonan->status_akhir == 'revisi' ? 'Catatan / Aksi' : 'Catatan' }}</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -401,6 +438,10 @@
                                                 <span class="badge bg-danger">
                                                     Revisi
                                                 </span>
+                                            @elseif($dokumen->status_verifikasi === 'pending' && $permohonan->status_akhir === 'revisi')
+                                                <span class="badge bg-warning">
+                                                    Menunggu Verifikasi Ulang
+                                                </span>
                                             @else
                                                 <span class="badge bg-secondary">
                                                     Belum Diverifikasi
@@ -423,7 +464,60 @@
                                                     <textarea class="form-control form-control-sm dokumen-catatan" data-dokumen-id="{{ $dokumen->id }}" rows="2"
                                                         placeholder="Catatan verifikasi (opsional)">{{ $dokumen->catatan_verifikasi }}</textarea>
                                                 </div>
+                                            @elseif ($isPemohon && $permohonan->status_akhir == 'revisi')
+                                                @if ($dokumen->status_verifikasi == 'revision')
+                                                    {{-- Dokumen perlu revisi - tampilkan catatan dan form upload --}}
+                                                    @if ($dokumen->catatan_verifikasi)
+                                                        <div class="alert alert-danger alert-sm p-2 mb-2">
+                                                            <small>
+                                                                <i class='bx bx-error-circle'></i>
+                                                                <strong>Catatan Verifikator:</strong><br>
+                                                                {{ $dokumen->catatan_verifikasi }}
+                                                            </small>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    {{-- Form upload ulang --}}
+                                                    <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
+                                                        method="POST" enctype="multipart/form-data"
+                                                        class="upload-dokumen-form" data-dokumen-id="{{ $dokumen->id }}">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="hidden" name="redirect_to" value="verifikasi">
+                                                        <input type="file" name="file" class="d-none file-input"
+                                                            accept=".pdf,.xlsx,.xls" required>
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-warning btn-upload-trigger w-100">
+                                                            <i class="bx bx-upload"></i> Upload Ulang Dokumen
+                                                        </button>
+                                                        <small class="d-block mt-1 text-muted text-center">PDF atau Excel (Max 100MB)</small>
+                                                    </form>
+                                                @elseif ($dokumen->status_verifikasi == 'pending')
+                                                    {{-- Dokumen sudah diupload ulang, menunggu verifikasi --}}
+                                                    <div class="alert alert-warning alert-sm p-2">
+                                                        <small>
+                                                            <i class='bx bx-time-five'></i>
+                                                            <strong>Dokumen telah diupload ulang</strong><br>
+                                                            Menunggu verifikasi dari Tim Fedora
+                                                        </small>
+                                                    </div>
+                                                    @if ($dokumen->catatan_verifikasi)
+                                                        <small class="text-muted d-block mt-2">
+                                                            <em>Catatan sebelumnya:</em><br>
+                                                            {{ $dokumen->catatan_verifikasi }}
+                                                        </small>
+                                                    @endif
+                                                @elseif ($dokumen->status_verifikasi == 'verified')
+                                                    {{-- Dokumen sudah verified --}}
+                                                    <small class="text-success">
+                                                        <i class='bx bx-check-circle'></i>
+                                                        Dokumen telah diverifikasi dan sesuai
+                                                    </small>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             @else
+                                                {{-- Tampilan default untuk pemohon dan role lain --}}
                                                 @if ($dokumen->catatan_verifikasi)
                                                     <small
                                                         class="text-{{ $dokumen->status_verifikasi === 'verified' ? 'success' : 'danger' }}">
@@ -501,6 +595,89 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <script>
+        // ============================================
+        // UPLOAD DOKUMEN FUNCTIONALITY (untuk pemohon re-upload dokumen revisi)
+        // ============================================
+        
+        // Handle file upload button trigger
+        document.querySelectorAll('.btn-upload-trigger').forEach(button => {
+            button.addEventListener('click', function() {
+                const form = this.closest('.upload-dokumen-form');
+                const fileInput = form.querySelector('.file-input');
+                fileInput.click();
+            });
+        });
+
+        // Auto submit on file selection with validation
+        document.querySelectorAll('.file-input').forEach(input => {
+            input.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+                    const allowedTypes = [
+                        'application/pdf',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    ];
+
+                    // Validate file size
+                    if (file.size > maxSize) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'File Terlalu Besar',
+                            text: 'Ukuran file maksimal adalah 100MB',
+                            confirmButtonColor: '#d33'
+                        });
+                        this.value = ''; // Reset input
+                        return;
+                    }
+
+                    // Validate file type
+                    if (!allowedTypes.includes(file.type)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Format File Tidak Didukung',
+                            text: 'File harus berformat PDF atau Excel (xlsx, xls)',
+                            confirmButtonColor: '#d33'
+                        });
+                        this.value = ''; // Reset input
+                        return;
+                    }
+
+                    const form = this.closest('.upload-dokumen-form');
+                    const button = form.querySelector('.btn-upload-trigger');
+
+                    // Konfirmasi upload ulang
+                    Swal.fire({
+                        title: 'Upload Ulang Dokumen?',
+                        html: `File yang akan diupload: <strong>${file.name}</strong><br>Ukuran: <strong>${(file.size / 1024 / 1024).toFixed(2)} MB</strong>`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Upload',
+                        cancelButtonText: 'Batal',
+                        confirmButtonColor: '#ffc107',
+                        cancelButtonColor: '#6c757d'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Show loading state
+                            button.disabled = true;
+                            button.innerHTML =
+                                '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+
+                            // Submit form
+                            form.submit();
+                        } else {
+                            // Reset input jika batal
+                            this.value = '';
+                        }
+                    });
+                }
+            });
+        });
+
+        // ============================================
+        // VERIFIKASI FUNCTIONALITY (untuk verifikator)
+        // ============================================
         // Submit verification
         document.getElementById('submitVerificationBtn')?.addEventListener('click', function() {
             const verifications = [];

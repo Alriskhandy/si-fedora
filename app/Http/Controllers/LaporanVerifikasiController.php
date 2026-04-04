@@ -8,6 +8,7 @@ use App\Models\Notifikasi;
 use App\Models\User;
 use App\Models\MasterTahapan;
 use App\Models\PermohonanTahapan;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -233,68 +234,17 @@ class LaporanVerifikasiController extends Controller
     }
 
     /**
-     * Kirim notifikasi ke kaban, pemohon, dan tim fedora
+     * Kirim notifikasi ke kaban, tim fedora, dan pemohon (database + WhatsApp)
      */
     private function sendNotifications($permohonan, $laporan)
     {
-        // Notifikasi ke Kaban untuk penetapan jadwal
-        $kaban = User::role('kaban')->get();
+        $notificationService = app(PermohonanNotificationService::class);
         
-        foreach ($kaban as $user) {
-            Notifikasi::create([
-                'user_id' => $user->id,
-                'title' => 'Penetapan Jadwal Diperlukan',
-                'message' => sprintf(
-                    'Verifikasi untuk %s - Kab/Kota %s tahun %s telah selesai dengan status %s. Silakan tetapkan jadwal pelaksanaan fasilitasi.',
-                    $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
-                    $permohonan->kabupatenKota->nama ?? 'N/A',
-                    $permohonan->tahun,
-                    $laporan->status_kelengkapan == 'lengkap' ? 'Lengkap' : 'Tidak Lengkap'
-                ),
-                'type' => 'info',
-                'action_url' => route('permohonan.show', $permohonan),
-                'notifiable_type' => Permohonan::class,
-                'notifiable_id' => $permohonan->id,
-            ]);
-        }
-
-        // Notifikasi ke Pemohon
-        Notifikasi::create([
-            'user_id' => $permohonan->user_id,
-            'title' => 'Laporan Verifikasi Selesai',
-            'message' => sprintf(
-                'Laporan verifikasi untuk permohonan Anda (%s - Kab/Kota %s tahun %s) telah dibuat dengan status %s. Proses akan dilanjutkan ke tahap berikutnya.',
-                $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
-                $permohonan->kabupatenKota->nama ?? 'N/A',
-                $permohonan->tahun,
-                $laporan->status_kelengkapan == 'lengkap' ? 'Lengkap' : 'Tidak Lengkap'
-            ),
-            'type' => $laporan->status_kelengkapan == 'lengkap' ? 'success' : 'warning',
-            'action_url' => route('permohonan.show', $permohonan),
-            'notifiable_type' => Permohonan::class,
-            'notifiable_id' => $permohonan->id,
-        ]);
-
-        // Notifikasi ke Tim Fedora (Verifikator dan Fasilitator)
-        $timFedora = User::role(['verifikator', 'fasilitator'])->get();
-        
-        foreach ($timFedora as $user) {
-            Notifikasi::create([
-                'user_id' => $user->id,
-                'title' => 'Laporan Verifikasi Dibuat',
-                'message' => sprintf(
-                    'Laporan verifikasi untuk %s - Kab/Kota %s tahun %s telah dibuat oleh admin dengan status %s.',
-                    $permohonan->jenisDokumen->nama_dokumen ?? 'N/A',
-                    $permohonan->kabupatenKota->nama ?? 'N/A',
-                    $permohonan->tahun,
-                    $laporan->status_kelengkapan == 'lengkap' ? 'Lengkap' : 'Tidak Lengkap'
-                ),
-                'type' => 'info',
-                'action_url' => route('permohonan.show', $permohonan),
-                'notifiable_type' => Permohonan::class,
-                'notifiable_id' => $permohonan->id,
-            ]);
-        }
+        // Kirim notifikasi lengkap (database + WhatsApp) ke:
+        // - Kaban (untuk penetapan jadwal)
+        // - Tim Fedora (Verifikator & Fasilitator)
+        // - Pemohon
+        $notificationService->notifyLaporanVerifikasiDibuat($permohonan, $laporan->status_kelengkapan);
     }
 
     /**
