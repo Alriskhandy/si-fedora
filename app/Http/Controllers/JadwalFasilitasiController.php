@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\JadwalFasilitasi;
 use App\Models\MasterJenisDokumen;
 use App\Models\Notifikasi;
+use App\Models\User;
 use Illuminate\Http\Request;
+use App\Services\FonteService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -123,6 +125,10 @@ class JadwalFasilitasiController extends Controller
             ]);
         }
 
+        if ($request->status === 'published'){
+            $this->sendWhatsAppNotification($jadwal, 'created');
+        }
+
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil ditambahkan.');
     }
 
@@ -234,6 +240,10 @@ class JadwalFasilitasiController extends Controller
             ]);
         }
 
+        if ($request->status === 'published' && $oldData['status'] !== 'published') {
+            $this->sendWhatsAppNotification($jadwal, 'published');
+        }
+
         return redirect()->route('jadwal.index')->with('success', 'Jadwal fasilitasi berhasil diperbarui.');
     }
 
@@ -289,5 +299,84 @@ class JadwalFasilitasiController extends Controller
         $filename = 'Penyampaian_Jadwal_' . str_replace(' ', '_', $jadwal->jenisDokumen->nama) . '_' . $jadwal->tahun_anggaran . '.pdf';
         
         return response()->download($filePath, $filename);
+    }
+
+    /**
+     * Kirim notifikasi WhatsApp ke semua user dengan role pemohon
+     * 
+     * @param JadwalFasilitasi $jadwal
+     * @param string $action ('created' atau 'published')
+     * @return void
+     */
+    private function sendWhatsAppNotification(JadwalFasilitasi $jadwal, $action = 'created')
+    {
+        try {
+            $fonteService = app(FonteService::class);
+            
+            // Get all users with role 'pemohon' and have WhatsApp number
+            $pemohonUsers = User::role('pemohon')
+                ->whereNotNull('no_hp')
+                ->get();
+            
+            if ($pemohonUsers->isEmpty()) {
+                Log::info('No pemohon users with phone numbers found for jadwal fasilitasi notification');
+                return;
+            }
+            
+            // Prepare bulk messages
+            $recipients = [];
+            foreach ($pemohonUsers as $user) {
+                // Build message based on action
+                if ($action === 'created') {
+                    $message = "📅 *Jadwal Fasilitasi Baru*\n\n";
+                    $message .= "Halo *{$user->name}*,\n\n";
+                    $message .= "Kami informasikan bahwa telah dibuka jadwal fasilitasi/evaluasi dokumen perencanaan:\n\n";
+                } else {
+                    $message = "📅 *Jadwal Fasilitasi Dibuka*\n\n";
+                    $message .= "Halo *{$user->name}*,\n\n";
+                    $message .= "Jadwal fasilitasi/evaluasi dokumen perencanaan telah dipublikasikan:\n\n";
+                }
+                
+                $message .= "📄 Jenis Dokumen: *{$jadwal->jenisDokumen->nama}*\n";
+                $message .= "📅 Tahun Anggaran: *{$jadwal->tahun_anggaran}*\n";
+                $message .= "🗓️ Periode: *" . $jadwal->tanggal_mulai->format('d/m/Y') . " - " . $jadwal->tanggal_selesai->format('d/m/Y') . "*\n";
+                
+                if ($jadwal->batas_permohonan) {
+                    $message .= "⏰ Batas Permohonan: *" . $jadwal->batas_permohonan->format('d/m/Y') . "*\n";
+                }
+                
+                $message .= "\nSilakan login ke sistem untuk mengajukan permohonan fasilitasi/evaluasi dokumen Anda.\n\n";
+                $message .= "_*SI-FEDORA*_\n";
+                $message .= "_si-fedora.malutprov.go.id_";
+                
+                $recipients[] = [
+                    'target' => $user->no_hp,
+                    'message' => $message,
+                    'delay' => '2-4'
+                ];
+            }
+            
+            // Send bulk messages
+            if (!empty($recipients)) {
+                $result = $fonteService->sendBulkMessage($recipients);
+                
+                if ($result['success']) {
+                    Log::info('Jadwal fasilitasi WhatsApp notifications sent successfully', [
+                        'jadwal_id' => $jadwal->id,
+                        'jenis_dokumen' => $jadwal->jenisDokumen->nama,
+                        'tahun' => $jadwal->tahun_anggaran,
+                        'total_sent' => count($recipients),
+                        'action' => $action
+                    ]);
+                } else {
+                    Log::error('Failed to send jadwal fasilitasi WhatsApp notifications', $result);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending jadwal fasilitasi WhatsApp notifications: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Don't throw exception to prevent blocking the main process
+        }
     }
 }

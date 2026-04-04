@@ -532,7 +532,8 @@ class TimAssignmentController extends Controller
         $verifikatorId,
         $koordinatorId,
         $evaluatorIds
-    ) {
+    ) 
+    {
         try {
             $fonteService = app(FonteService::class);
             
