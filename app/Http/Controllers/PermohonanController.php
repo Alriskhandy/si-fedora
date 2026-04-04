@@ -12,6 +12,7 @@ use App\Models\MasterTahapan;
 use App\Models\Notifikasi;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -383,46 +384,9 @@ class PermohonanController extends Controller
                 ])
                 ->log('Permohonan fasilitasi diajukan oleh ' . Auth::user()->name . ' dan menunggu verifikasi');
 
-            // Kirim notifikasi ke verifikator yang ditugaskan
-            $verifikators = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->where(function ($q) use ($permohonan) {
-                    $q->whereNull('jenis_dokumen_id')
-                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
-                })
-                ->with('user')
-                ->get();
-
-            foreach ($verifikators as $assignment) {
-                if ($assignment->user && $assignment->user->hasRole('verifikator')) {
-                    Notifikasi::create([
-                        'user_id' => $assignment->user_id,
-                        'title' => 'Permohonan Baru Perlu Diverifikasi',
-                        'message' => 'Permohonan fasilitasi dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' untuk tahun ' . $permohonan->tahun . ' memerlukan verifikasi Anda.',
-                        'type' => 'info',
-                        'model_type' => Permohonan::class,
-                        'model_id' => $permohonan->id,
-                        'action_url' => route('permohonan.show', $permohonan),
-                        'is_read' => false,
-                    ]);
-                }
-            }
-
-            // Kirim notifikasi ke admin
-            $admins = User::role(['admin_peran', 'kaban', 'superadmin'])->get();
-            foreach ($admins as $admin) {
-                Notifikasi::create([
-                    'user_id' => $admin->id,
-                    'title' => 'Permohonan Baru Diajukan',
-                    'message' => 'Permohonan fasilitasi baru dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' untuk tahun ' . $permohonan->tahun . ' telah diajukan.',
-                    'type' => 'info',
-                    'model_type' => Permohonan::class,
-                    'model_id' => $permohonan->id,
-                    'action_url' => route('permohonan.show', $permohonan),
-                    'is_read' => false,
-                ]);
-            }
+            // Kirim notifikasi (database + WhatsApp) ke Admin dan Tim Fedora
+            $notificationService = app(PermohonanNotificationService::class);
+            $notificationService->notifyPermohonanSubmitted($permohonan);
 
             DB::commit();
 
