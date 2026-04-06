@@ -515,19 +515,25 @@ class HasilFasilitasiController extends Controller
         $isAdmin = $this->isAdmin();
         $isVerifikator = $this->isVerifikator($permohonan);
         $isTimMember = $this->isTimMember($permohonan);
+        $isPemohon = Auth::user()->hasRole('pemohon') && $permohonan->user_id === Auth::id();
+        $isKaban = $this->isKepalaBadan();
 
-        if (!$isAdmin && !$isTimMember && !$isVerifikator) {
+        // Check access - allow admin, tim member, verifikator, pemohon, and kaban
+        if (!$isAdmin && !$isTimMember && !$isVerifikator && !$isPemohon && !$isKaban) {
             abort(403, 'Anda tidak memiliki akses untuk melihat hasil fasilitasi ini.');
         }
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
         if (!$hasilFasilitasi) {
-            // Verifikator tidak bisa create, redirect ke index
-            if ($isVerifikator && !$isTimMember) {
-                return redirect()->route('hasil-fasilitasi.index')
-                    ->with('info', 'Hasil fasilitasi belum dibuat.');
+            // Jika belum ada hasil, redirect verifikator dan pemohon ke halaman tahapan hasil
+            // Mereka akan melihat info "sedang dalam proses"
+            if (($isVerifikator || $isPemohon) && !$isTimMember) {
+                return redirect()->route('permohonan.tahapan.hasil', $permohonan)
+                    ->with('info', 'Hasil fasilitasi sedang dalam proses penyusunan oleh tim fasilitator.');
             }
+            
+            // Fasilitator dan admin bisa create
             return redirect()->route('hasil-fasilitasi.create', $permohonan)
                 ->with('info', 'Hasil fasilitasi belum dibuat.');
         }
@@ -568,7 +574,7 @@ class HasilFasilitasiController extends Controller
         // Pass isVerifikator to view
         $isKoordinator = $this->isKoordinator($permohonan);
         
-        return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo'));
+        return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo', 'isPemohon'));
     }
 
     /**

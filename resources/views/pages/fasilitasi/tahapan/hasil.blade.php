@@ -86,14 +86,32 @@
                     ->where('tahun', $permohonan->tahun)
                     ->where('is_active', true)
                     ->exists();
+
+            // Cek apakah user adalah verifikator yang di-assign
+            $isVerifikator =
+                auth()
+                    ->user()
+                    ->hasRole('verifikator') &&
+                \App\Models\UserKabkotaAssignment::where('user_id', auth()->id())
+                    ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                    ->where('tahun', $permohonan->tahun)
+                    ->where('is_active', true)
+                    ->exists();
+
+            // Cek apakah user adalah pemohon
+            $isPemohon = auth()->user()->hasRole('pemohon') && $permohonan->user_id === auth()->id();
+            
+            // Cek apakah user adalah kaban atau auditor
+            $isKabanOrAuditor = auth()->user()->hasAnyRole(['kaban', 'auditor']);
         @endphp
 
-        <!-- Info Batas Waktu (hanya untuk admin & tim fedora) -->
+        <!-- Info Batas Waktu (untuk admin, tim fedora, dan verifikator) -->
         @if (
             $tahapanHasil &&
                 $batasWaktu &&
                 (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']) ||
-                    $isFasilitator))
+                    $isFasilitator ||
+                    $isVerifikator))
             <div class="card border-0 shadow-sm mb-4 {{ $isOverdue ? 'border-danger' : 'border-warning' }}"
                 style="border-left: 4px solid {{ $isOverdue ? '#dc3545' : '#ffc107' }} !important;">
                 <div class="card-body">
@@ -117,7 +135,7 @@
                                         Aktif
                                     </span>
                                     <span class="fw-bold ms-2">
-                                        {{ $batasWaktu->format('d F Y, H:i') }}
+                                        {{ $batasWaktu->format('d F Y, H:i') }} WIT
                                     </span>
                                     <span class="text-muted small">
                                         ({{ $batasWaktu->diffForHumans() }})
@@ -127,17 +145,49 @@
                         </div>
                         <div class="col-auto">
                             <div class="d-flex gap-2">
-                                @if (
-                                    $isFasilitator ||
-                                        auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']))
-                                    @if (!$permohonan->hasilFasilitasi || $permohonan->hasilFasilitasi->status_validasi !== 'tervalidasi')
+                                @if ($isFasilitator)
+                                    @if (!$permohonan->hasilFasilitasi)
+                                        {{-- Belum ada hasil, tombol input --}}
                                         <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
                                             class="btn btn-primary shadow-sm">
-                                            <i
-                                                class='bx {{ !$permohonan->hasilFasilitasi ? 'bx-plus-circle' : 'bx-edit' }} me-1'></i>
-                                            {{ !$permohonan->hasilFasilitasi ? 'Input' : 'Lihat' }}
+                                            <i class='bx bx-plus-circle me-1'></i>
+                                            Input Hasil
+                                        </a>
+                                    @elseif($permohonan->hasilFasilitasi->status_validasi !== 'tervalidasi')
+                                        {{-- Sudah ada hasil tapi belum tervalidasi, tombol edit --}}
+                                        <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                            class="btn btn-warning shadow-sm">
+                                            <i class='bx bx-edit me-1'></i>
+                                            Edit Hasil
+                                        </a>
+                                        <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                            class="btn btn-outline-primary shadow-sm">
+                                            <i class='bx bx-show me-1'></i>
+                                            Lihat Detail
+                                        </a>
+                                    @else
+                                        {{-- Sudah tervalidasi, hanya lihat --}}
+                                        <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                            class="btn btn-outline-primary shadow-sm">
+                                            <i class='bx bx-show me-1'></i>
+                                            Lihat Detail
                                         </a>
                                     @endif
+                                @elseif(auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']))
+                                    @if ($permohonan->hasilFasilitasi)
+                                        <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                            class="btn btn-primary shadow-sm">
+                                            <i class='bx bx-show me-1'></i>
+                                            Lihat Detail
+                                        </a>
+                                    @endif
+                                @elseif($isVerifikator && $permohonan->hasilFasilitasi)
+                                    {{-- Verifikator hanya bisa lihat --}}
+                                    <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                        class="btn btn-outline-primary shadow-sm">
+                                        <i class='bx bx-show me-1'></i>
+                                        Lihat Detail
+                                    </a>
                                 @endif
                                 @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']))
                                     <button type="button" class="btn btn-warning shadow-sm" data-bs-toggle="modal"
@@ -152,16 +202,55 @@
             </div>
         @endif
 
+        <!-- Info untuk Pemohon, Kaban, dan Auditor saat Proses Input Hasil Sedang Berlangsung -->
+        @if (
+            ($isPemohon || $isKabanOrAuditor) &&
+                $tahapanHasil &&
+                $tahapanHasil->status === 'proses' &&
+                (!$permohonan->hasilFasilitasi ||
+                    !$permohonan->hasilFasilitasi->draft_final_file ||
+                    $permohonan->hasilFasilitasi->status_draft !== 'disetujui_kaban'))
+            <div class="alert alert-info border-0 shadow-sm mb-4">
+                <div class="d-flex align-items-start">
+                    <div class="flex-shrink-0 me-3">
+                        <i class='bx bx-time-five' style="font-size: 32px;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading fw-bold mb-2">
+                            <i class='bx bx-loader-circle bx-spin me-1'></i>
+                            Hasil Fasilitasi Sedang Diproses
+                        </h5>
+                        <p class="mb-0"> 
+                            @if ($isPemohon)
+                                Anda akan mendapat notifikasi ketika dokumen hasil sudah tersedia untuk diunduh.
+                            @else
+                                Dokumen hasil akan tersedia setelah proses penyusunan selesai.
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Penyampaian Hasil Fasilitasi / Evaluasi Disetujui Kepala Badan -->
         @if (
             $permohonan->hasilFasilitasi &&
                 $permohonan->hasilFasilitasi->draft_final_file &&
-                $permohonan->hasilFasilitasi->status_draft === 'disetujui_kaban')
+                $permohonan->hasilFasilitasi->status_draft === 'disetujui_kaban' &&
+                (auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']) ||
+                    $isFasilitator ||
+                    $isVerifikator ||
+                    $isPemohon))
             <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);">
+                <div class="card-header bg-gradient text-white"
+                    style="background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);">
                     <h5 class="fw-bold mb-1">
+                        <i class='bx bx-check-shield me-2'></i>
                         Penyampaian Hasil Fasilitasi / Evaluasi
                     </h5>
+                    <p class="mb-0 small opacity-75">
+                        Dokumen hasil evaluasi telah disetujui dan siap diunduh
+                    </p>
                 </div>
                 <div class="card-body">
                     <div class="row g-0">
