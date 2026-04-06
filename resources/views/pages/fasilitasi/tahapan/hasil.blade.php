@@ -155,7 +155,7 @@
                                         </a>
                                     @elseif($permohonan->hasilFasilitasi->status_validasi !== 'tervalidasi')
                                         {{-- Sudah ada hasil tapi belum tervalidasi, tombol edit --}}
-                                        <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
+                                        <a href="{{ route('hasil-fasilitasi.create', $permohonan) }}"
                                             class="btn btn-warning shadow-sm">
                                             <i class='bx bx-edit me-1'></i>
                                             Edit Hasil

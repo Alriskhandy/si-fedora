@@ -226,7 +226,7 @@
                                             <input type="file"
                                                 class="form-control @error('draft_final_file') is-invalid @enderror"
                                                 id="draft_final_file" name="draft_final_file" accept=".pdf" required>
-                                            <small class="text-muted">Format: PDF, Maksimal: 10MB</small>
+                                            <small class="text-muted">Format: PDF, Maksimal: 100MB</small>
                                             @error('draft_final_file')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror

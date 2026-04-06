@@ -28,11 +28,11 @@ class PelaksanaanFasilitasiController extends Controller
 
         $request->validate([
             'files' => 'required|array|min:1',
-            'files.*' => 'required|file|mimes:pdf,jpg,jpeg,png,xls,xlsx,pptx|max:10240', // 10MB per file
+            'files.*' => 'required|file|mimes:pdf,jpg,jpeg,png,xls,xlsx,pptx|max:102400', // 100MB per file
         ], [
             'files.required' => 'Pilih minimal 1 file untuk diupload.',
             'files.*.mimes' => 'Format file harus: PDF, JPG, JPEG, PNG, XLS, XLSX, atau PPTX.',
-            'files.*.max' => 'Ukuran file maksimal 10MB.',
+            'files.*.max' => 'Ukuran file maksimal 100MB.',
         ]);
 
         try {

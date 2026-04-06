@@ -271,6 +271,115 @@ class PermohonanNotificationService
     }
 
     /**
+     * Kirim notifikasi saat draft hasil fasilitasi diajukan ke Kaban
+     * Target: Kaban untuk persetujuan
+     */
+    public function notifyDraftSubmittedToKaban(Permohonan $permohonan)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
+
+            // Kirim ke Kaban untuk persetujuan (database + WA)
+            $this->notifyKaban($permohonan, 'draft_submitted_to_kaban');
+
+            Log::info('Draft submitted to kaban notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending draft submitted to kaban notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi saat draft hasil fasilitasi disetujui oleh Kaban
+     * Target: Admin Peran, Tim Fedora, dan Pemohon
+     */
+    public function notifyDraftApproved(Permohonan $permohonan, $keterangan = null)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
+
+            // 1. Kirim ke Admin Peran (database + WA)
+            $admins = User::role('admin_peran')->get();
+            if (!$admins->isEmpty()) {
+                $notifData = $this->getNotificationData($permohonan, 'draft_approved', $keterangan);
+
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'title' => $notifData['title'],
+                        'message' => $notifData['message'],
+                        'type' => $notifData['type'],
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => $notifData['action_url'],
+                        'is_read' => false,
+                    ]);
+                }
+                $this->sendBulkWhatsApp($admins, $permohonan, 'draft_approved', $keterangan);
+            }
+
+            // 2. Kirim ke Tim Fedora (database + WA)
+            $this->notifyTimFedora($permohonan, 'draft_approved', $keterangan);
+
+            // 3. Kirim ke Pemohon (database + WA)
+            $this->notifyPemohon($permohonan, 'draft_approved', $keterangan);
+
+            Log::info('Draft approved notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending draft approved notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi saat draft hasil fasilitasi ditolak/revisi oleh Kaban
+     * Target: Admin Peran
+     */
+    public function notifyDraftRejected(Permohonan $permohonan, $catatanPenolakan)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
+
+            // Kirim ke Admin Peran (database + WA)
+            $admins = User::role('admin_peran')->get();
+            if (!$admins->isEmpty()) {
+                $notifData = $this->getNotificationData($permohonan, 'draft_rejected', $catatanPenolakan);
+
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'title' => $notifData['title'],
+                        'message' => $notifData['message'],
+                        'type' => $notifData['type'],
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => $notifData['action_url'],
+                        'is_read' => false,
+                    ]);
+                }
+                $this->sendBulkWhatsApp($admins, $permohonan, 'draft_rejected', $catatanPenolakan);
+            }
+
+            Log::info('Draft rejected notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending draft rejected notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
      * Kirim notifikasi saat admin mengirim undangan pelaksanaan
      * Target: Tim Fedora dan Pemohon yang menerima undangan
      */
@@ -738,6 +847,48 @@ class PermohonanNotificationService
                 $data['action_url'] = route('permohonan.tahapan.hasil', $permohonan);
                 break;
 
+            case 'draft_submitted_to_kaban':
+                $data['title'] = 'Dokumen Menunggu Persetujuan';
+                $data['message'] = sprintf(
+                    'Dokumen hasil fasilitasi untuk permohonan %s (%s tahun %s) telah diajukan dan menunggu persetujuan Anda.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun
+                );
+                $data['type'] = 'warning';
+                $data['action_url'] = route('hasil-fasilitasi.show', $permohonan);
+                break;
+
+            case 'draft_approved':
+                $data['title'] = 'Dokumen Hasil Fasilitasi Disetujui';
+                $data['message'] = sprintf(
+                    'Dokumen hasil fasilitasi untuk permohonan %s (%s tahun %s) telah disetujui oleh Kepala Badan.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun
+                );
+                if ($additionalData) {
+                    $data['message'] .= ' Keterangan: ' . $additionalData;
+                }
+                $data['type'] = 'success';
+                $data['action_url'] = route('hasil-fasilitasi.show', $permohonan);
+                break;
+
+            case 'draft_rejected':
+                $data['title'] = 'Dokumen Memerlukan Revisi';
+                $data['message'] = sprintf(
+                    'Dokumen hasil fasilitasi untuk permohonan %s (%s tahun %s) memerlukan revisi dari Kepala Badan.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun
+                );
+                if ($additionalData) {
+                    $data['message'] .= ' Catatan: ' . $additionalData;
+                }
+                $data['type'] = 'warning';
+                $data['action_url'] = route('hasil-fasilitasi.show', $permohonan);
+                break;
+
             default:
                 $data['title'] = 'Notifikasi Permohonan';
                 $data['message'] = "Ada update untuk permohonan {$kabkota}.";
@@ -934,6 +1085,42 @@ class PermohonanNotificationService
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
                 
                     $message .= "Silakan segera melakukan input hasil fasilitasi/evaluasi pada sistem.\n\n";
+                break;
+
+            case 'draft_submitted_to_kaban':
+                $message .= "📋 *Dokumen Menunggu Persetujuan*\n\n";
+                $message .= "Dokumen hasil fasilitasi/evaluasi telah diajukan dan menunggu persetujuan Anda:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                $message .= "⚠️ Status: *Menunggu Persetujuan Kepala Badan*\n\n";
+                $message .= "Silakan login ke sistem untuk meninjau dan memberikan persetujuan terhadap dokumen hasil fasilitasi.\n\n";
+                break;
+
+            case 'draft_approved':
+                $message .= "✅ *Dokumen Disetujui*\n\n";
+                $message .= "Dokumen hasil fasilitasi/evaluasi telah disetujui oleh Kepala Badan:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                $message .= "✅ Status: *Disetujui oleh Kepala Badan*\n\n";
+                
+                if ($additionalData) {
+                    $message .= "📝 *Keterangan:*\n{$additionalData}\n\n";
+                }
+                
+                $message .= "Dokumen dapat dilanjutkan ke tahapan berikutnya. Silakan login ke sistem untuk melihat detail lebih lanjut.\n\n";
+                break;
+
+            case 'draft_rejected':
+                $message .= "⚠️ *Dokumen Memerlukan Revisi*\n\n";
+                $message .= "Dokumen hasil fasilitasi/evaluasi memerlukan revisi dari Kepala Badan:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                $message .= "⚠️ Status: *Memerlukan Revisi*\n\n";
+                
+                $message .= "Silakan perbaiki dokumen sesuai catatan, kemudian upload ulang dan ajukan kembali untuk persetujuan.\n\n";
                 break;
 
             default:

@@ -13,6 +13,7 @@ use App\Models\UserKabkotaAssignment;
 use App\Models\Notifikasi;
 use App\Models\User;
 use App\Services\HasilFasilitasiDocumentService;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,10 +36,14 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 class HasilFasilitasiController extends Controller
 {
     protected $documentService;
+    protected $notificationService;
 
-    public function __construct(HasilFasilitasiDocumentService $documentService)
-    {
+    public function __construct(
+        HasilFasilitasiDocumentService $documentService,
+        PermohonanNotificationService $notificationService
+    ) {
         $this->documentService = $documentService;
+        $this->notificationService = $notificationService;
     }
 
     // ============================================================
@@ -459,7 +464,7 @@ class HasilFasilitasiController extends Controller
             'ringkasan_hasil' => 'required|string',
             'rekomendasi' => 'required|string',
             'catatan_fasilitator' => 'nullable|string',
-            'file_draft' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'file_draft' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
         ]);
 
         try {
@@ -1136,11 +1141,11 @@ class HasilFasilitasiController extends Controller
 
             // Validate file must be PDF
             $request->validate([
-                'draft_final_file' => 'required|file|mimes:pdf|max:10240', // max 10MB
+                'draft_final_file' => 'required|file|mimes:pdf|max:102400', // max 100MB
             ], [
                 'draft_final_file.required' => 'File PDF wajib diupload',
                 'draft_final_file.mimes' => 'File harus berformat PDF',
-                'draft_final_file.max' => 'Ukuran file maksimal 10MB',
+                'draft_final_file.max' => 'Ukuran file maksimal 100MB',
             ]);
 
             // Delete old draft final if exists
@@ -1265,7 +1270,10 @@ class HasilFasilitasiController extends Controller
                 ])
                 ->log('Hasil fasilitasi diajukan ke Kepala Badan untuk persetujuan');
 
-            // Notifikasi ke Kepala Badan dan Admin
+            // Notifikasi ke Kepala Badan (database + WhatsApp)
+            $this->notificationService->notifyDraftSubmittedToKaban($permohonan);
+
+            // Notifikasi ke Kepala Badan dan Admin (database only - legacy)
             $this->notifyAdminAndKaban(
                 $permohonan,
                 'Dokumen Menunggu Persetujuan',

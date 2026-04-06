@@ -289,7 +289,7 @@
                                             multiple required>
                                         <div class="form-text">
                                             <i class='bx bx-info-circle'></i> Anda bisa memilih <strong>lebih dari 1 file sekaligus</strong>. Nama dokumen akan diambil dari nama file.
-                                            <br>Format: PDF, XLS, XLSX, PPTX, JPG, JPEG, PNG. Maksimal 10MB per file.
+                                            <br>Format: PDF, XLS, XLSX, PPTX, JPG, JPEG, PNG. Maksimal 100MB per file.
                                         </div>
                                         @error('files')
                                             <div class="invalid-feedback">{{ $message }}</div>

@@ -9,6 +9,7 @@ use App\Models\MasterTahapan;
 use App\Models\Notifikasi;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,13 @@ use Illuminate\Support\Facades\Log;
  */
 class ApprovalController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(PermohonanNotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     // ============================================================
     // AUTHORIZATION HELPER METHODS
     // ============================================================
@@ -399,8 +407,14 @@ class ApprovalController extends Controller
                 ])
                 ->log('Draft final hasil fasilitasi disetujui oleh Kepala Badan');
 
+            // Kirim notifikasi ke Admin Peran, Tim Fedora, dan Pemohon (database + WhatsApp)
+            try {
+                $this->notificationService->notifyDraftApproved($permohonan, $request->keterangan_kaban);
+            } catch (\Exception $e) {
+                Log::error('Failed to send notifications via notification service: ' . $e->getMessage());
+            }
 
-            // Notifikasi ke pemohon
+            // Notifikasi legacy (database only) - backup
             try {
                 $this->notifyPemohon(
                     $permohonan,
@@ -496,7 +510,14 @@ class ApprovalController extends Controller
                 ])
                 ->log('Draft final hasil fasilitasi ditolak oleh Kepala Badan dan memerlukan revisi');
 
-            // Notifikasi ke admin
+            // Kirim notifikasi ke Admin Peran (database + WhatsApp)
+            try {
+                $this->notificationService->notifyDraftRejected($permohonan, $request->catatan_penolakan);
+            } catch (\Exception $e) {
+                Log::error('Failed to send rejection notifications via notification service: ' . $e->getMessage());
+            }
+
+            // Notifikasi legacy ke admin (database only) - backup
             try {
                 $this->notifyAdmins(
                     $permohonan,

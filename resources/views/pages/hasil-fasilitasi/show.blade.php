@@ -1,5 +1,18 @@
 @extends('layouts.app')
 
+@push('styles')
+    <style>
+        /* SweetAlert2 z-index fix */
+        .swal2-container {
+            z-index: 99999 !important;
+        }
+
+        .swal2-backdrop-show {
+            z-index: 99998 !important;
+        }
+    </style>
+@endpush
+
 @section('main')
     <div class="container-xxl flex-grow-1 container-p-y">
         <!-- Header -->
@@ -226,7 +239,7 @@
                                             <input type="file"
                                                 class="form-control @error('draft_final_file') is-invalid @enderror"
                                                 id="draft_final_file" name="draft_final_file" accept=".pdf" required>
-                                            <small class="text-muted">Format: PDF, Maksimal: 10MB</small>
+                                            <small class="text-muted">Format: PDF, Maksimal: 100MB</small>
                                             @error('draft_final_file')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
@@ -269,10 +282,9 @@
                                                     Draft final siap untuk diajukan ke Kepala Badan untuk mendapatkan
                                                     persetujuan.
                                                 </p>
-                                                <form
+                                                <form id="submitToKabanForm"
                                                     action="{{ route('hasil-fasilitasi.submit-to-kaban', $permohonan->id) }}"
-                                                    method="POST"
-                                                    onsubmit="return confirm('Ajukan dokumen ini ke Kepala Badan untuk persetujuan?')">
+                                                    method="POST">
                                                     @csrf
                                                     <button type="submit" class="btn btn-success w-100">
                                                         <i class="bx bx-send"></i> Ajukan ke Kaban
@@ -504,6 +516,9 @@
 @endsection
 
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         // Reload iframe when modal is opened to clear cache
         const previewModal = document.getElementById('previewPdfModal');
@@ -515,6 +530,47 @@
                     const currentSrc = iframe.src.split('?')[0];
                     iframe.src = currentSrc + '?v=' + new Date().getTime();
                 }
+            });
+        }
+
+        // SweetAlert untuk konfirmasi submit ke Kaban
+        const submitToKabanForm = document.getElementById('submitToKabanForm');
+        if (submitToKabanForm) {
+            submitToKabanForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: 'Ajukan ke Kepala Badan?',
+                    html: 'Dokumen hasil fasilitasi akan diajukan ke Kepala Badan untuk mendapatkan persetujuan.<br><br>Pastikan dokumen sudah sesuai dan lengkap.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bx bx-send me-1"></i> Ya, Ajukan',
+                    cancelButtonText: '<i class="bx bx-x me-1"></i> Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        confirmButton: 'btn btn-success',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show loading
+                        Swal.fire({
+                            title: 'Sedang Mengajukan...',
+                            html: 'Mohon tunggu sebentar',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                        
+                        // Submit form
+                        submitToKabanForm.submit();
+                    }
+                });
             });
         }
     </script>
