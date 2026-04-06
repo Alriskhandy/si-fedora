@@ -9,6 +9,7 @@ use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,12 @@ use Illuminate\Support\Facades\Storage;
 
 class PenetapanPerdaController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(PermohonanNotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
 
     /**
      * Upload dokumen penetapan perda ke DokumenTahapan (belum submit)
@@ -149,7 +156,16 @@ class PenetapanPerdaController extends Controller
                 ->causedBy(Auth::user())
                 ->log('Dokumen penetapan perda disubmit oleh ' . Auth::user()->name);
 
+            // Kirim notifikasi via PermohonanNotificationService (database + WhatsApp)
+            try {
+                $this->notificationService->notifyPenetapanPerdaSubmitted($permohonan);
+            } catch (\Exception $e) {
+                Log::error('Failed to send penetapan perda submitted notifications via service: ' . $e->getMessage());
+                // Continue execution - legacy notification below will still work
+            }
+
             // Kirim notifikasi ke Superadmin, Admin Peran, Kaban, dan Tim yang di-assign
+            // (Legacy notification as backup)
             // 1. Users dengan role tertentu
             $roleUsers = User::whereHas('roles', function ($q) {
                 $q->whereIn('name', ['superadmin', 'admin_peran', 'kaban']);

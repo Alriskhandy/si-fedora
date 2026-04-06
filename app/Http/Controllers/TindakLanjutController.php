@@ -9,6 +9,7 @@ use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,13 @@ use Illuminate\Support\Facades\Storage;
 
 class TindakLanjutController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(PermohonanNotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     /**
      * Download file laporan tindak lanjut
      */
@@ -181,6 +189,14 @@ class TindakLanjutController extends Controller
                 ->causedBy(Auth::user())
                 ->log('Dokumen tindak lanjut disubmit oleh ' . Auth::user()->name);
 
+            // Kirim notifikasi ke Admin Peran dan Tim Fedora (database + WhatsApp)
+            try {
+                $this->notificationService->notifyTindakLanjutSubmitted($permohonan);
+            } catch (\Exception $e) {
+                Log::error('Failed to send notifications via notification service: ' . $e->getMessage());
+            }
+
+            // Kirim notifikasi legacy (database only) - backup
             // Kirim notifikasi ke Superadmin, Admin Peran, Kaban, dan Tim yang di-assign
             // 1. Users dengan role tertentu
             $roleUsers = User::whereHas('roles', function ($q) {

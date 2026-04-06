@@ -380,6 +380,92 @@ class PermohonanNotificationService
     }
 
     /**
+     * Kirim notifikasi saat dokumen tindak lanjut disubmit oleh pemohon
+     * Target: Admin Peran dan Tim Fedora
+     */
+    public function notifyTindakLanjutSubmitted(Permohonan $permohonan)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
+
+            // 1. Kirim ke Admin Peran (database + WA)
+            $admins = User::role('admin_peran')->get();
+            if (!$admins->isEmpty()) {
+                $notifData = $this->getNotificationData($permohonan, 'tindak_lanjut_submitted');
+
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'title' => $notifData['title'],
+                        'message' => $notifData['message'],
+                        'type' => $notifData['type'],
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => $notifData['action_url'],
+                        'is_read' => false,
+                    ]);
+                }
+                $this->sendBulkWhatsApp($admins, $permohonan, 'tindak_lanjut_submitted');
+            }
+
+            // 2. Kirim ke Tim Fedora (database + WA)
+            $this->notifyTimFedora($permohonan, 'tindak_lanjut_submitted');
+
+            Log::info('Tindak lanjut submitted notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending tindak lanjut submitted notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi saat pemohon submit dokumen penetapan perda
+     * Target: Admin Peran dan Tim Fedora
+     */
+    public function notifyPenetapanPerdaSubmitted(Permohonan $permohonan)
+    {
+        try {
+            $permohonan->load(['kabupatenKota', 'jenisDokumen', 'pemohon']);
+
+            // 1. Kirim ke Admin Peran (database + WA)
+            $admins = User::role('admin_peran')->get();
+            if (!$admins->isEmpty()) {
+                $notifData = $this->getNotificationData($permohonan, 'penetapan_perda_submitted');
+
+                foreach ($admins as $admin) {
+                    Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'title' => $notifData['title'],
+                        'message' => $notifData['message'],
+                        'type' => $notifData['type'],
+                        'model_type' => Permohonan::class,
+                        'model_id' => $permohonan->id,
+                        'action_url' => $notifData['action_url'],
+                        'is_read' => false,
+                    ]);
+                }
+                $this->sendBulkWhatsApp($admins, $permohonan, 'penetapan_perda_submitted');
+            }
+
+            // 2. Kirim ke Tim Fedora (database + WA)
+            $this->notifyTimFedora($permohonan, 'penetapan_perda_submitted');
+
+            Log::info('Penetapan perda submitted notifications sent successfully', [
+                'permohonan_id' => $permohonan->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending penetapan perda submitted notifications: ' . $e->getMessage(), [
+                'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
      * Kirim notifikasi saat admin mengirim undangan pelaksanaan
      * Target: Tim Fedora dan Pemohon yang menerima undangan
      */
@@ -889,6 +975,30 @@ class PermohonanNotificationService
                 $data['action_url'] = route('hasil-fasilitasi.show', $permohonan);
                 break;
 
+            case 'tindak_lanjut_submitted':
+                $data['title'] = 'Dokumen Tindak Lanjut Fasilitasi / Evaluasi Disubmit';
+                $data['message'] = sprintf(
+                    'Pemohon telah submit dokumen tindak lanjut untuk permohonan %s (%s tahun %s).',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun
+                );
+                $data['type'] = 'info';
+                $data['action_url'] = route('permohonan.tahapan.tindak-lanjut', $permohonan);
+                break;
+
+            case 'penetapan_perda_submitted':
+                $data['title'] = 'Dokumen Penetapan PERDA / PERKADA Disubmit';
+                $data['message'] = sprintf(
+                    'Pemohon telah submit dokumen penetapan PERDA / PERKADA untuk permohonan %s (%s tahun %s). Proses permohonan sudah selesai.',
+                    $kabkota,
+                    $jenisDokumen,
+                    $tahun
+                );
+                $data['type'] = 'success';
+                $data['action_url'] = route('permohonan.tahapan.penetapan', $permohonan);
+                break;
+
             default:
                 $data['title'] = 'Notifikasi Permohonan';
                 $data['message'] = "Ada update untuk permohonan {$kabkota}.";
@@ -1120,7 +1230,31 @@ class PermohonanNotificationService
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
                 $message .= "⚠️ Status: *Memerlukan Revisi*\n\n";
                 
+                if ($additionalData) {
+                    $message .= "📝 *Catatan Revisi dari Kepala Badan:*\n{$additionalData}\n\n";
+                }
+                
                 $message .= "Silakan perbaiki dokumen sesuai catatan, kemudian upload ulang dan ajukan kembali untuk persetujuan.\n\n";
+                break;
+
+            case 'tindak_lanjut_submitted':
+                $message .= "📋 *Dokumen Tindak Lanjut Fasilitasi / Evaluasi Disubmit*\n\n";
+                $message .= "Pemohon telah submit dokumen tindak lanjut hasil fasilitasi/evaluasi:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                $message .= "✅ Status: *Dokumen Tindak Lanjut Telah Disubmit*\n\n";
+                $message .= "Silakan login ke sistem untuk melihat dokumen tindak lanjut yang telah disubmit oleh pemohon.\n\n";
+                break;
+
+            case 'penetapan_perda_submitted':
+                $message .= "📋 *Dokumen Penetapan PERDA / PERKADA Disubmit*\n\n";
+                $message .= "Pemohon telah submit dokumen penetapan PERDA / PERKADA:\n\n";
+                $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n\n";
+                $message .= "✅ Status: *Selesai - Proses Permohonan Telah Lengkap*\n\n";
+                $message .= "Silakan login ke sistem untuk melihat dokumen penetapan PERDA / PERKADA yang telah disubmit oleh pemohon.\n\n";
                 break;
 
             default:
