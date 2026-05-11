@@ -940,9 +940,11 @@ class HasilFasilitasiController extends Controller
             $filepath = $this->documentService->generateDocx($permohonan, $sistematika, $urusan);
 
             // Generate PDF dari Blade template (DomPDF) agar format konsisten
-            $kabkota = $permohonan->kabupatenKota->nama;
-            $tahun   = $permohonan->tahun ?? date('Y');
-            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact('sistematika', 'urusan', 'kabkota', 'tahun'))
+            $kabkota      = $permohonan->kabupatenKota->nama;
+            $tahun        = $permohonan->tahun ?? date('Y');
+            $jenisDokumen = strtoupper($permohonan->jenisDokumen->nama ?? 'DOKUMEN');
+            $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
+            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact('sistematika', 'urusan', 'kabkota', 'tahun', 'jenisDokumen', 'jenisWilayah'))
                 ->setPaper('a4', 'portrait');
 
             $pdfPath    = str_replace('.docx', '.pdf', $filepath);

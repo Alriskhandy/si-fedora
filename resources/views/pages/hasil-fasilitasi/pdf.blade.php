@@ -90,8 +90,8 @@
 <body>
     <!-- Header -->
     <div class="header">
-        <h1>Hasil Fasilitasi</h1>
-        <h1>Rancangan Akhir {{ strtoupper($kabkota) }}</h1>
+        <h1>Hasil Fasilitasi Rancangan Akhir {{ $jenisDokumen }}</h1>
+        <h1>{{ $jenisWilayah }} {{ strtoupper($kabkota) }}</h1>
         <h1>Tahun {{ $tahun }}</h1>
     </div>
 

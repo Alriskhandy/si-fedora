@@ -27,8 +27,10 @@ class HasilFasilitasiDocumentService
      */
     public function generateDocx(Permohonan $permohonan, $sistematika, $urusan): string
     {
-        $kabkota = $permohonan->kabupatenKota->nama;
-        $tahun   = $permohonan->tahun ?? date('Y');
+        $kabkota      = $permohonan->kabupatenKota->nama;
+        $tahun        = $permohonan->tahun ?? date('Y');
+        $jenisDokumen = strtoupper($permohonan->jenisDokumen->nama ?? 'DOKUMEN');
+        $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
 
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Arial');
@@ -41,6 +43,18 @@ class HasilFasilitasiDocumentService
             'marginLeft'   => 1701, // 3 cm
             'marginRight'  => 1134,
         ]);
+
+        // Judul dokumen
+        $judul = 'Hasil Fasilitasi Rancangan Akhir ' . $jenisDokumen
+               . ' ' . $jenisWilayah . ' ' . $kabkota
+               . ' Tahun ' . $tahun;
+
+        $section->addText($judul, [
+            'name'   => 'Arial',
+            'size'   => 12,
+            'bold'   => true,
+        ], ['alignment' => 'center']);
+        $section->addTextBreak(1);
 
         // Pengantar Sistematika
         $section->addText(
