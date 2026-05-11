@@ -132,7 +132,7 @@
                         }
                     @endphp
 
-                    @if (isset($isCompleted) && $isCompleted && $currentTahapan)
+                    @if (isset($isCompleted) && $isCompleted && $currentTahapan && auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'fasilitator', 'verifikator']))
                         <div class="alert alert-success mb-3">
                             <i class='bx bx-check-circle me-2'></i>
                             <strong>Tahapan Pelaksanaan telah diselesaikan</strong> pada
