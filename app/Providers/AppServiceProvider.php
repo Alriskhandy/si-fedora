@@ -32,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
         // Register policies
         Gate::policy(PerpanjanganWaktu::class, PerpanjanganWaktuPolicy::class);
 
+        // Batasi akses Log Viewer hanya untuk superadmin
+        Gate::define('viewLogViewer', function ($user) {
+            return $user->hasRole('superadmin');
+        });
+
         // Register custom WhatsApp notification channel
         Notification::extend('whatsapp', function ($app) {
             return $app->make(WhatsAppChannel::class);

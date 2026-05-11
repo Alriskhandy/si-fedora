@@ -226,6 +226,12 @@
                     <div data-i18n="Notifikasi">Notifikasi Sistem</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->is('log-viewer*') ? 'active' : '' }}">
+                <a href="{{ url('log-viewer') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bug-alt"></i>
+                    <div data-i18n="Log Viewer">Monitoring Log</div>
+                </a>
+            </li>
         @endif
 
         <!-- ============================================= -->
