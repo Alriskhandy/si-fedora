@@ -68,13 +68,21 @@
         .urus-header { background-color: #f0f0f0; font-weight: bold; }
         .empty-state { text-align: center; font-style: italic; color: #666; }
 
-        /* Styling untuk konten HTML dari TinyMCE */
-        td p          { margin: 0 0 4px 0; }
-        td ul, td ol  { margin: 2px 0 4px 0; padding-left: 18px; }
-        td li         { margin-bottom: 2px; }
+        /* Cegah judul seksi terpisah dari tabel di halaman berbeda */
+        .section-title { page-break-after: avoid; }
+        .section-desc  { page-break-after: avoid; }
+
+        /* Cegah header tabel terpisah dari baris isi */
+        thead { display: table-header-group; page-break-after: avoid; }
+        tr    { page-break-inside: avoid; }
+
+        /* Styling untuk konten HTML dari TinyMCE — spacing diperketat */
+        td p            { margin: 0; padding: 0; line-height: 1.3; }
+        td ul, td ol    { margin: 0; padding-left: 16px; }
+        td li           { margin: 0; padding: 0; line-height: 1.3; }
         td strong, td b { font-weight: bold; }
-        td em, td i   { font-style: italic; }
-        td u          { text-decoration: underline; }
+        td em, td i     { font-style: italic; }
+        td u            { text-decoration: underline; }
         td s, td strike { text-decoration: line-through; }
     </style>
 </head>

@@ -90,14 +90,14 @@ class HasilFasilitasiDocumentService
         ];
         $table = $section->addTable($tableStyle);
 
-        // Baris header
-        $headerRow = $table->addRow();
+        // Baris header — tblHeader agar berulang di halaman baru dan tidak terpisah dari isi
+        $headerRow = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
         $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
         $this->addHeaderCell($headerRow, self::BAB_WIDTH, 'Bab/Sub Bab');
         $this->addHeaderCell($headerRow, self::CATATAN_WIDTH, 'Catatan Penyempurnaan');
 
         if ($sistematika->count() === 0) {
-            $row  = $table->addRow();
+            $row  = $table->addRow(null, ['cantSplit' => true]);
             $cell = $row->addCell(self::CONTENT_WIDTH, ['gridSpan' => 3]);
             $cell->addText('Tidak ada catatan penyempurnaan', ['italic' => true], ['alignment' => 'center']);
             return;
@@ -110,7 +110,7 @@ class HasilFasilitasiDocumentService
         foreach ($grouped as $item) {
             // Baris header bab (satu baris per bab, colspan 3)
             if ($currentBab !== $item['bab_id']) {
-                $row  = $table->addRow();
+                $row  = $table->addRow(null, ['cantSplit' => true]);
                 $cell = $row->addCell(self::CONTENT_WIDTH, [
                     'gridSpan' => 3,
                     'bgColor'  => 'e8f4f8',
@@ -122,7 +122,7 @@ class HasilFasilitasiDocumentService
                 $currentBab = $item['bab_id'];
             }
 
-            $row = $table->addRow();
+            $row = $table->addRow(null, ['cantSplit' => true]);
 
             // Kolom nomor
             $row->addCell(self::NO_WIDTH, ['valign' => 'top'])
@@ -163,14 +163,14 @@ class HasilFasilitasiDocumentService
         ];
         $table = $section->addTable($tableStyle);
 
-        // Baris header
-        $headerRow = $table->addRow();
+        // Baris header — tblHeader agar tidak terpisah dari isi
+        $headerRow = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
         $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
         $this->addHeaderCell($headerRow, self::URUSAN_WIDTH, 'Masukan/Saran');
         $this->addHeaderCell($headerRow, self::KET_WIDTH, 'Keterangan');
 
         if ($urusan->count() === 0) {
-            $row  = $table->addRow();
+            $row  = $table->addRow(null, ['cantSplit' => true]);
             $cell = $row->addCell(self::CONTENT_WIDTH, ['gridSpan' => 3]);
             $cell->addText('Tidak ada catatan masukan', ['italic' => true], ['alignment' => 'center']);
             return;
@@ -180,7 +180,7 @@ class HasilFasilitasiDocumentService
 
         foreach ($grouped as $group) {
             // Baris header urusan (colspan 3)
-            $row        = $table->addRow();
+            $row        = $table->addRow(null, ['cantSplit' => true]);
             $headerCell = $row->addCell(self::CONTENT_WIDTH, [
                 'gridSpan' => 3,
                 'bgColor'  => 'f0f0f0',
@@ -192,7 +192,7 @@ class HasilFasilitasiDocumentService
 
             // Baris per item catatan
             foreach ($group['items'] as $index => $catatan) {
-                $row = $table->addRow();
+                $row = $table->addRow(null, ['cantSplit' => true]);
 
                 $row->addCell(self::NO_WIDTH, ['valign' => 'top'])
                     ->addText(($index + 1) . '.', ['name' => 'Arial', 'size' => 11], ['alignment' => 'center']);
