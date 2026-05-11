@@ -18,13 +18,51 @@
 
         <ul class="navbar-nav flex-row align-items-center ms-auto">
             {{-- Modul Pengguna --}}
-            <li class="nav-item me-2">
-                <a class="btn btn-sm btn-outline-primary" href="{{ asset('modul-pengguna/MODUL PENGGUNAAN SI FEDORA.pdf') }}" 
-                   target="_blank" title="Download Modul Pengguna">
-                    <i class="bx bx-book-open me-1"></i>
-                    <span class="d-none d-md-inline">Modul Penggunaan</span>
-                </a>
-            </li>
+            @php
+                $navUserRole = auth()->user()->getRoleNames()->first() ?? '';
+                $navModulList = \App\Models\Modul::forRole($navUserRole)->latest()->get();
+            @endphp
+
+            @if (auth()->user()->hasRole('superadmin'))
+                {{-- Superadmin: ke halaman kelola modul --}}
+                <li class="nav-item me-2">
+                    <a class="btn btn-sm btn-outline-primary {{ request()->routeIs('modul.*') ? 'active' : '' }}"
+                       href="{{ route('modul.index') }}" title="Kelola Modul Pengguna">
+                        <i class="bx bx-book-open me-1"></i>
+                        <span class="d-none d-md-inline">Modul Pengguna</span>
+                    </a>
+                </li>
+            @elseif ($navModulList->count() === 1)
+                {{-- Satu modul: langsung download --}}
+                <li class="nav-item me-2">
+                    <a class="btn btn-sm btn-outline-primary"
+                       href="{{ route('modul.download', $navModulList->first()) }}"
+                       title="Download {{ $navModulList->first()->judul }}">
+                        <i class="bx bx-download me-1"></i>
+                        <span class="d-none d-md-inline">Modul Pengguna</span>
+                    </a>
+                </li>
+            @elseif ($navModulList->count() > 1)
+                {{-- Banyak modul: dropdown pilih modul --}}
+                <li class="nav-item dropdown me-2">
+                    <a class="btn btn-sm btn-outline-primary dropdown-toggle"
+                       href="#" data-bs-toggle="dropdown" aria-expanded="false"
+                       title="Modul Pengguna">
+                        <i class="bx bx-book-open me-1"></i>
+                        <span class="d-none d-md-inline">Modul Pengguna</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @foreach ($navModulList as $navModul)
+                            <li>
+                                <a class="dropdown-item" href="{{ route('modul.download', $navModul) }}">
+                                    <i class="bx bx-download me-1 text-primary"></i>
+                                    {{ $navModul->judul }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </li>
+            @endif
 
             {{-- Notifications --}}
             <li class="nav-item navbar-dropdown dropdown">

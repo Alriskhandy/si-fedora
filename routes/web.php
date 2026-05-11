@@ -38,6 +38,7 @@ use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
 use App\Http\Controllers\LogoController;
 use App\Http\Controllers\ArsipController;
+use App\Http\Controllers\ModulController;
 
 /*
 |--------------------------------------------------------------------------
@@ -145,6 +146,21 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
 
         // MasterBabController
         Route::resource('master-bab', MasterBabController::class)->parameters(['master-bab' => 'masterBab']);
+    });
+
+    // ============================================================
+    // MODUL PENGGUNA
+    // ============================================================
+    Route::prefix('modul')->name('modul.')->controller(ModulController::class)->group(function () {
+        // Semua role yang login bisa lihat dan download
+        Route::get('/', 'index')->name('index');
+        Route::get('/{modul}/download', 'download')->name('download');
+
+        // Hanya superadmin yang bisa upload dan hapus
+        Route::middleware(['role:superadmin'])->group(function () {
+            Route::post('/', 'store')->name('store');
+            Route::delete('/{modul}', 'destroy')->name('destroy');
+        });
     });
 
     // ============================================================
