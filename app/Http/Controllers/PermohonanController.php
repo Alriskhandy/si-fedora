@@ -446,9 +446,18 @@ class PermohonanController extends Controller
             'jenisDokumen',
             'jadwalFasilitasi',
             'createdBy',
-            'permohonanDokumen.masterKelengkapan',
             'permohonanDokumen.verifiedBy'
         ]);
+
+        $permohonan->setRelation(
+            'permohonanDokumen',
+            $permohonan->permohonanDokumen()
+                ->with('masterKelengkapan')
+                ->join('master_kelengkapan_verifikasi', 'permohonan_dokumen.master_kelengkapan_id', '=', 'master_kelengkapan_verifikasi.id')
+                ->orderBy('master_kelengkapan_verifikasi.urutan')
+                ->select('permohonan_dokumen.*')
+                ->get()
+        );
         // dd($permohonan);
 
         return view('pages.fasilitasi.tahapan.permohonan', compact('permohonan'));
