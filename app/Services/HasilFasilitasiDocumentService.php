@@ -219,9 +219,12 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Sanitasi HTML dari TinyMCE agar kompatibel dengan Html::addHtml() PhpWord.
-     * Mempertahankan bold, italic, underline, list, paragraf — hanya
-     * menghapus elemen yang tidak didukung (nested table, script, dll).
+     * Konversi HTML dari TinyMCE ke XHTML valid yang diterima DOMDocument::loadXML()
+     * yang digunakan secara internal oleh Html::addHtml() PhpWord.
+     *
+     * TinyMCE menghasilkan HTML5 (<br>, <li>text<br>more</li>) yang tidak valid
+     * sebagai XML. Metode ini menggunakan DOMDocument::loadHTML() yang lenient
+     * untuk parse HTML, lalu saveXML() untuk menghasilkan XHTML valid (<br/>).
      */
     private function sanitizeHtml(string $html): string
     {
@@ -233,14 +236,34 @@ class HasilFasilitasiDocumentService
         $html = preg_replace('/<table[^>]*>.*?<\/table>/is', '', $html);
 
         // Normalisasi strike/del → <s> (yang dikenali PhpWord)
-        $html = str_replace(['<strike>', '</strike>', '<del>', '</del>'], ['<s>', '</s>', '<s>', '</s>'], $html);
+        $html = str_replace(
+            ['<strike>', '</strike>', '<del>', '</del>'],
+            ['<s>', '</s>', '<s>', '</s>'],
+            $html
+        );
 
-        // Pastikan ada elemen block — bungkus jika hanya teks biasa
-        if (!preg_match('/<(p|ul|ol|h[1-6]|div)[^>]*>/i', $html)) {
-            $html = '<p>' . $html . '</p>';
+        // Konversi HTML5 → XHTML menggunakan DOMDocument
+        // loadHTML() lenient (menerima <br>, tag tidak tertutup, dll)
+        // saveXML() menghasilkan format XML valid (<br/>, semua tag tertutup)
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(
+            '<html><head><meta charset="UTF-8"></head><body>' . $html . '</body></html>',
+            LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING
+        );
+        libxml_clear_errors();
+
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if (!$body) {
+            return '<p>' . htmlspecialchars(strip_tags($html), ENT_XML1, 'UTF-8') . '</p>';
         }
 
-        return $html;
+        $xhtml = '';
+        foreach ($body->childNodes as $node) {
+            $xhtml .= $dom->saveXML($node);
+        }
+
+        return $xhtml ?: '<p></p>';
     }
 
     /**
