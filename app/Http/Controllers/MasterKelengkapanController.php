@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MasterKelengkapanVerifikasi;
 use App\Models\MasterJenisDokumen;
+use App\Models\MasterTahapan;
 use Illuminate\Http\Request;
 
 class MasterKelengkapanController extends Controller
@@ -31,7 +32,7 @@ class MasterKelengkapanController extends Controller
             $query->where('wajib', $request->wajib);
         }
 
-        $kelengkapan = $query->orderBy('urutan')->orderBy('id')->get();
+        $kelengkapan = $query->orderBy('jenis_dokumen_id')->orderBy('urutan')->get();
         $jenisDokumen = MasterJenisDokumen::where('status', true)->get();
         
         return view('pages.master-kelengkapan.index', compact('kelengkapan', 'jenisDokumen'));
@@ -46,11 +47,20 @@ class MasterKelengkapanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_dokumen' => 'required|string|max:255',
-            'jenis_dokumen_id' => 'nullable|exists:master_jenis_dokumen,id',
-            'deskripsi' => 'nullable|string',
-            'wajib' => 'required|boolean',
+            'nama_dokumen'    => 'required|string|max:255',
+            'jenis_dokumen_id'=> 'required|exists:master_jenis_dokumen,id',
+            'deskripsi'       => 'nullable|string',
+            'wajib'           => 'required|boolean',
+        ], [
+            'jenis_dokumen_id.required' => 'Jenis dokumen wajib dipilih.',
+            'jenis_dokumen_id.exists'   => 'Jenis dokumen tidak valid.',
         ]);
+
+        // Kelengkapan verifikasi selalu berada di tahapan Permohonan (urutan 1)
+        $validated['tahapan_id'] = MasterTahapan::where('urutan', 1)->value('id') ?? 1;
+
+        // Urutan otomatis: setelah data terakhir untuk jenis dokumen yang sama
+        $validated['urutan'] = MasterKelengkapanVerifikasi::where('jenis_dokumen_id', $validated['jenis_dokumen_id'])->max('urutan') + 1;
 
         MasterKelengkapanVerifikasi::create($validated);
 
@@ -67,11 +77,20 @@ class MasterKelengkapanController extends Controller
     public function update(Request $request, MasterKelengkapanVerifikasi $masterKelengkapan)
     {
         $validated = $request->validate([
-            'nama_dokumen' => 'required|string|max:255',
-            'jenis_dokumen_id' => 'nullable|exists:master_jenis_dokumen,id',
-            'deskripsi' => 'nullable|string',
-            'wajib' => 'required|boolean',
+            'nama_dokumen'    => 'required|string|max:255',
+            'jenis_dokumen_id'=> 'required|exists:master_jenis_dokumen,id',
+            'deskripsi'       => 'nullable|string',
+            'wajib'           => 'required|boolean',
+            'urutan'          => 'required|integer|min:1',
+        ], [
+            'jenis_dokumen_id.required' => 'Jenis dokumen wajib dipilih.',
+            'jenis_dokumen_id.exists'   => 'Jenis dokumen tidak valid.',
+            'urutan.required'           => 'Urutan wajib diisi.',
+            'urutan.min'                => 'Urutan minimal 1.',
         ]);
+
+        // Kelengkapan verifikasi selalu berada di tahapan Permohonan (urutan 1)
+        $validated['tahapan_id'] = MasterTahapan::where('urutan', 1)->value('id') ?? 1;
 
         $masterKelengkapan->update($validated);
 

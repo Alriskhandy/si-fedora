@@ -44,10 +44,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="jenis_dokumen_id" class="form-label">Jenis Dokumen</label>
+                                <label for="jenis_dokumen_id" class="form-label">Jenis Dokumen <span class="text-danger">*</span></label>
                                 <select class="form-select @error('jenis_dokumen_id') is-invalid @enderror"
-                                    id="jenis_dokumen_id" name="jenis_dokumen_id">
-                                    <option value="">Pilih Jenis Dokumen (Opsional)</option>
+                                    id="jenis_dokumen_id" name="jenis_dokumen_id" required>
+                                    <option value="">Pilih Jenis Dokumen</option>
                                     @foreach ($jenisDokumen as $jenis)
                                         <option value="{{ $jenis->id }}"
                                             {{ old('jenis_dokumen_id') == $jenis->id ? 'selected' : '' }}>
@@ -60,6 +60,7 @@
                                 @enderror
                                 <small class="text-muted">Pilih jenis dokumen yang sesuai (RKPD, KUA-PPAS, dll)</small>
                             </div>
+
 
                             <div class="mb-3">
                                 <label for="deskripsi" class="form-label">Deskripsi</label>

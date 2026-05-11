@@ -185,8 +185,10 @@ class PermohonanController extends Controller
             ]);
         }
 
-        // Auto-generate dokumen persyaratan berdasarkan master_kelengkapan_verifikasi
-        $kelengkapanList = MasterKelengkapanVerifikasi::orderBy('urutan')->get();
+        // Auto-generate dokumen persyaratan sesuai jenis dokumen yang difasilitasi
+        $kelengkapanList = MasterKelengkapanVerifikasi::where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
+            ->orderBy('urutan')
+            ->get();
         foreach ($kelengkapanList as $kelengkapan) {
             PermohonanDokumen::create([
                 'permohonan_id' => $permohonan->id,
@@ -447,6 +449,7 @@ class PermohonanController extends Controller
             'permohonanDokumen.masterKelengkapan',
             'permohonanDokumen.verifiedBy'
         ]);
+        // dd($permohonan);
 
         return view('pages.fasilitasi.tahapan.permohonan', compact('permohonan'));
     }

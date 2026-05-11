@@ -47,10 +47,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="jenis_dokumen_id" class="form-label">Jenis Dokumen</label>
+                                <label for="jenis_dokumen_id" class="form-label">Jenis Dokumen <span class="text-danger">*</span></label>
                                 <select class="form-select @error('jenis_dokumen_id') is-invalid @enderror"
-                                    id="jenis_dokumen_id" name="jenis_dokumen_id">
-                                    <option value="">Pilih Jenis Dokumen (Opsional)</option>
+                                    id="jenis_dokumen_id" name="jenis_dokumen_id" required>
+                                    <option value="">Pilih Jenis Dokumen</option>
                                     @foreach ($jenisDokumen as $jenis)
                                         <option value="{{ $jenis->id }}"
                                             {{ old('jenis_dokumen_id', $masterKelengkapan->jenis_dokumen_id) == $jenis->id ? 'selected' : '' }}>
@@ -62,6 +62,16 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="text-muted">Pilih jenis dokumen yang sesuai (RKPD, KUA-PPAS, dll)</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="urutan" class="form-label">Urutan <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control @error('urutan') is-invalid @enderror"
+                                    id="urutan" name="urutan" value="{{ old('urutan', $masterKelengkapan->urutan) }}" min="1" required>
+                                @error('urutan')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted">Nomor urutan tampil kelengkapan ini dalam daftar</small>
                             </div>
 
                             <div class="mb-3">
