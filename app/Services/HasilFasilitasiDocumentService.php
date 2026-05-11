@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Shared\Html;
-use PhpOffice\PhpWord\Style\Table as TableStyle;
 
 class HasilFasilitasiDocumentService
 {
@@ -87,7 +86,7 @@ class HasilFasilitasiDocumentService
             'borderSize'  => 6,
             'borderColor' => '000000',
             'width'       => self::CONTENT_WIDTH,
-            'unit'        => TableStyle::WIDTH_TWIP,
+            'unit'        => 'dxa',
         ];
         $table = $section->addTable($tableStyle);
 
@@ -160,7 +159,7 @@ class HasilFasilitasiDocumentService
             'borderSize'  => 6,
             'borderColor' => '000000',
             'width'       => self::CONTENT_WIDTH,
-            'unit'        => TableStyle::WIDTH_TWIP,
+            'unit'        => 'dxa',
         ];
         $table = $section->addTable($tableStyle);
 
