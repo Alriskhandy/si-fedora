@@ -3,11 +3,11 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Hasil Fasilitasi RKPD {{ $kabkota }} Tahun {{ $tahun }}</title>
+    <title>Hasil Fasilitasi {{ $kabkota }} Tahun {{ $tahun }}</title>
     <style>
         body {
-            font-family: sans-serif;
-            font-size: 10pt;
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
             line-height: 1.5;
             color: #000;
         }
@@ -18,33 +18,30 @@
         }
 
         .header h1 {
-            font-size: 14pt;
+            font-size: 13pt;
             font-weight: bold;
-            margin: 5px 0;
+            margin: 4px 0;
             text-transform: uppercase;
         }
 
         .section-title {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
-            margin-top: 25px;
-            margin-bottom: 10px;
+            margin-top: 20px;
+            margin-bottom: 8px;
         }
 
         .section-desc {
-            margin-bottom: 15px;
-            text-align: justify;
+            margin-bottom: 12px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
-        table,
-        th,
-        td {
+        table, th, td {
             border: 1px solid #000;
         }
 
@@ -52,42 +49,33 @@
             background-color: #f0f0f0;
             font-weight: bold;
             text-align: center;
-            padding: 8px;
+            padding: 6px 8px;
             vertical-align: middle;
         }
 
         td {
-            padding: 8px;
+            padding: 6px 8px;
             vertical-align: top;
         }
 
-        .no-col {
-            width: 5%;
-            text-align: center;
-        }
+        .no-col    { width: 5%;  text-align: center; }
+        .bab-col   { width: 25%; }
+        .cat-col   { width: 70%; }
+        .ket-col   { width: 20%; }
+        .mas-col   { width: 75%; }
 
-        .title-col {
-            width: 25%;
-        }
+        .bab-header  { background-color: #e8f4f8; }
+        .urus-header { background-color: #f0f0f0; font-weight: bold; }
+        .empty-state { text-align: center; font-style: italic; color: #666; }
 
-        .content-col {
-            width: 70%;
-        }
-
-        .urusan-header {
-            font-weight: bold;
-            background-color: #f9f9f9;
-        }
-
-        .empty-state {
-            text-align: center;
-            font-style: italic;
-            color: #666;
-        }
-
-        .page-break {
-            page-break-after: always;
-        }
+        /* Styling untuk konten HTML dari TinyMCE */
+        td p          { margin: 0 0 4px 0; }
+        td ul, td ol  { margin: 2px 0 4px 0; padding-left: 18px; }
+        td li         { margin-bottom: 2px; }
+        td strong, td b { font-weight: bold; }
+        td em, td i   { font-style: italic; }
+        td u          { text-decoration: underline; }
+        td s, td strike { text-decoration: line-through; }
     </style>
 </head>
 
@@ -95,83 +83,70 @@
     <!-- Header -->
     <div class="header">
         <h1>Hasil Fasilitasi</h1>
-        <h1>Rancangan Akhir RKPD {{ strtoupper($kabkota) }}</h1>
+        <h1>Rancangan Akhir {{ strtoupper($kabkota) }}</h1>
         <h1>Tahun {{ $tahun }}</h1>
     </div>
 
     <!-- Bagian I: Sistematika -->
-    <div class="section-title">I. Sistematika dan Substansi Rancangan Akhir RKPD</div>
+    <div class="section-title">I. Sistematika dan Substansi Rancangan Akhir</div>
     <div class="section-desc">
-        Catatan penyempurnaan terhadap sistematika dan rancangan akhir RKPD {{ $kabkota }}, sebagai berikut:
+        Catatan penyempurnaan terhadap sistematika dan substansi sebagai berikut:
     </div>
 
     <table>
         <thead>
             <tr>
                 <th class="no-col">No.</th>
-                <th class="title-col">Bab/Sub Bab</th>
-                <th class="content-col">Catatan Penyempurnaan</th>
+                <th class="bab-col">Bab/Sub Bab</th>
+                <th class="cat-col">Catatan Penyempurnaan</th>
             </tr>
         </thead>
         <tbody>
             @if ($sistematika->count() > 0)
                 @php
-                    // Helper function to clean HTML
-                    function cleanHtml($content) {
-                        if (is_object($content) && method_exists($content, 'render')) {
-                            $content = $content->render();
-                        }
-                        $content = (string) $content;
-                        $content = str_replace(['<br>', '<br/>', '<br />'], "\n", $content);
-                        $content = preg_replace('/<\/p>\s*<p>/', "\n\n", $content);
-                        $content = preg_replace('/<li>/', '• ', $content);
-                        $content = preg_replace('/<\/li>/', "\n", $content);
-                        $content = strip_tags($content);
-                        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                        return trim($content);
-                    }
+                    $counter    = 1;
+                    $currentBab = null;
+                    $grouped    = [];
 
-                    $counter = 1;
-                    $currentBabId = null;
-                    // Group items by bab and sub_bab
-                    $groupedItems = [];
                     foreach ($sistematika as $item) {
-                        $babId = $item->master_bab_id;
-                        $subBab = $item->sub_bab ?: $item->masterBab->nama_bab ?? '-';
-                        $key = $babId . '|' . $subBab;
+                        $babId  = $item->master_bab_id;
+                        $subBab = $item->sub_bab ?: ($item->masterBab->nama_bab ?? '-');
+                        $key    = $babId . '|' . $subBab;
 
-                        if (!isset($groupedItems[$key])) {
-                            $groupedItems[$key] = [
-                                'bab_id' => $babId,
+                        if (!isset($grouped[$key])) {
+                            $grouped[$key] = [
+                                'bab_id'   => $babId,
                                 'bab_nama' => $item->masterBab->nama_bab ?? '-',
-                                'sub_bab' => $subBab,
-                                'catatan' => [],
+                                'sub_bab'  => $subBab,
+                                'catatan'  => [],
                             ];
                         }
-                        $groupedItems[$key]['catatan'][] = $item->catatan_penyempurnaan;
+                        $grouped[$key]['catatan'][] = $item->catatan_penyempurnaan;
                     }
                 @endphp
-                @foreach ($groupedItems as $groupedItem)
-                    {{-- Tampilkan header bab jika bab berubah --}}
-                    @if ($currentBabId !== $groupedItem['bab_id'])
+
+                @foreach ($grouped as $item)
+                    @if ($currentBab !== $item['bab_id'])
                         <tr>
-                            <td class="no-col" style="background-color: #e8f4f8;"></td>
-                            <td colspan="2" style="background-color: #e8f4f8;">
-                                <strong>{{ $groupedItem['bab_nama'] }}</strong>
+                            <td class="no-col bab-header"></td>
+                            <td colspan="2" class="bab-header">
+                                <strong>{{ $item['bab_nama'] }}</strong>
                             </td>
                         </tr>
-                        @php $currentBabId = $groupedItem['bab_id']; @endphp
+                        @php $currentBab = $item['bab_id']; @endphp
                     @endif
 
-                    {{-- Tampilkan item dengan catatan digabung --}}
                     <tr>
                         <td class="no-col">{{ $counter }}</td>
-                        <td>{{ $groupedItem['sub_bab'] }}</td>
-                        <td>
-                            @foreach ($groupedItem['catatan'] as $index => $catatan)
-                                {{ $index + 1 }}. {{ cleanHtml($catatan) }}
+                        <td class="bab-col">{{ $item['sub_bab'] }}</td>
+                        <td class="cat-col">
+                            @foreach ($item['catatan'] as $idx => $catatan)
+                                @if (count($item['catatan']) > 1)
+                                    <strong>{{ $idx + 1 }}.</strong>
+                                @endif
+                                {!! $catatan !!}
                                 @if (!$loop->last)
-                                    <br><br>
+                                    <hr style="border:none; margin: 4px 0;">
                                 @endif
                             @endforeach
                         </td>
@@ -195,42 +170,36 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 5%; text-align: center;">No</th>
-                <th style="width: 85%;">Masukan/Saran</th>
-                <th style="width: 10%;">Keterangan</th>
+                <th class="no-col">No.</th>
+                <th class="mas-col">Masukan/Saran</th>
+                <th class="ket-col">Keterangan</th>
             </tr>
         </thead>
         <tbody>
             @if ($urusan->count() > 0)
                 @php
-                    // Group urusan by master_urusan
                     $groupedUrusan = [];
                     foreach ($urusan as $item) {
-                        $urusanId = $item->master_urusan_id;
-                        $namaUrusan = $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama;
-                        if (!isset($groupedUrusan[$urusanId])) {
-                            $groupedUrusan[$urusanId] = [
-                                'nama' => $namaUrusan,
+                        $id = $item->master_urusan_id;
+                        if (!isset($groupedUrusan[$id])) {
+                            $groupedUrusan[$id] = [
+                                'nama'  => $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama ?? '-',
                                 'items' => [],
                             ];
                         }
-                        $groupedUrusan[$urusanId]['items'][] = $item->catatan_masukan;
+                        $groupedUrusan[$id]['items'][] = $item->catatan_masukan;
                     }
                 @endphp
 
-                @foreach ($groupedUrusan as $urusan)
-                    {{-- Header urusan --}}
+                @foreach ($groupedUrusan as $group)
                     <tr>
-                        <td colspan="3" style="background-color: #f0f0f0; font-weight: bold;">Urusan
-                            {{ $urusan['nama'] }}</td>
+                        <td colspan="3" class="urus-header">Urusan {{ $group['nama'] }}</td>
                     </tr>
-
-                    {{-- Items with numbering --}}
-                    @foreach ($urusan['items'] as $index => $catatan)
+                    @foreach ($group['items'] as $idx => $catatan)
                         <tr>
-                            <td style="text-align: center;">{{ $index + 1 }}.</td>
-                            <td>{{ cleanHtml($catatan) }}</td>
-                            <td></td>
+                            <td class="no-col">{{ $idx + 1 }}.</td>
+                            <td class="mas-col">{!! $catatan !!}</td>
+                            <td class="ket-col"></td>
                         </tr>
                     @endforeach
                 @endforeach

@@ -614,37 +614,28 @@
         // Initialize TinyMCE
         tinymce.init({
             selector: '.tinymce-editor',
-            height: 200,
+            height: 220,
             menubar: false,
-            plugins: [
-                'advlist', 'autolink', 'lists', 'link', 'charmap', 'preview',
-                'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                'table', 'help', 'wordcount'
-            ],
-            toolbar: 'undo redo | blocks | ' +
-                'bold italic underline strikethrough | alignleft aligncenter ' +
-                'alignright alignjustify | bullist numlist outdent indent | ' +
-                'removeformat | table | code | help',
-            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px }',
+            plugins: ['advlist', 'autolink', 'lists', 'searchreplace', 'wordcount'],
+            toolbar: 'undo redo | bold italic underline strikethrough | ' +
+                     'bullist numlist outdent indent | removeformat',
+            // Font dan ukuran disesuaikan dengan dokumen Word/PDF yang dihasilkan
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; margin: 8px; }' +
+                           'p { margin: 0 0 4px 0; } ul, ol { margin: 2px 0; padding-left: 20px; }',
             branding: false,
             promotion: false,
             statusbar: false,
 
-            // Paste settings
-            paste_as_text: false,
-            paste_webkit_styles: 'font-weight font-style text-decoration',
-            paste_retain_style_properties: 'color font-size font-weight font-style text-decoration',
-
-            // Clean up HTML
-            valid_elements: 'p,br,strong/b,em/i,u,s,strike,del,h1,h2,h3,h4,h5,h6,' +
-                'ul,ol,li,a[href|title|target],blockquote,pre,code,table,thead,tbody,tr,th,td,' +
-                'span[class|style],div[class|style],sub,sup',
-
+            // Hanya izinkan elemen yang dirender dengan baik oleh PhpWord dan DomPDF
+            valid_elements: 'p,br,strong/b,em/i,u,s/strike/del,ul,ol,li,span[style],sub,sup',
             valid_styles: {
-                '*': 'color,font-size,font-weight,font-style,text-decoration,text-align'
+                '*': 'font-weight,font-style,text-decoration'
             },
 
-            // Setup function
+            paste_as_text: false,
+            paste_webkit_styles: 'font-weight font-style text-decoration',
+            paste_retain_style_properties: 'font-weight font-style text-decoration',
+
             setup: function(editor) {
                 editor.on('init', function() {
                     console.log('TinyMCE initialized for: ' + editor.id);

@@ -936,26 +936,22 @@ class HasilFasilitasiController extends Controller
                 ->select('hasil_fasilitasi_urusan.*')
                 ->get();
 
-            // Generate document using service
-            $content = $this->documentService->generateWordDocument($permohonan, $sistematika, $urusan);
+            // Generate dokumen DOCX menggunakan PhpWord (format native, format TinyMCE terjaga)
+            $filepath = $this->documentService->generateDocx($permohonan, $sistematika, $urusan);
 
-            // Save Word document to file
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
-            $filepath = $this->documentService->saveDocument($content, $filename);
+            // Generate PDF dari Blade template (DomPDF) agar format konsisten
+            $kabkota = $permohonan->kabupatenKota->nama;
+            $tahun   = $permohonan->tahun ?? date('Y');
+            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact('sistematika', 'urusan', 'kabkota', 'tahun'))
+                ->setPaper('a4', 'portrait');
 
-            // Generate and save PDF file with same base name
-            $pdfFilename = str_replace('.doc', '.pdf', $filename);
-            $pdf = PDF::loadHTML($content)->setPaper('a4', 'portrait');
-            
-            // Save PDF to storage
-            $pdfPath = 'hasil-fasilitasi/' . $pdfFilename;
-            $pdfContent = $pdf->output();
-            Storage::disk('public')->put($pdfPath, $pdfContent);
+            $pdfPath    = str_replace('.docx', '.pdf', $filepath);
+            Storage::disk('public')->put($pdfPath, $pdf->output());
 
-            // Update draft_file in hasil_fasilitasi
+            // Update draft_file di hasil_fasilitasi (simpan path .docx)
             $hasilFasilitasi->update([
                 'draft_file' => $filepath,
-                'updated_by' => Auth::id()
+                'updated_by' => Auth::id(),
             ]);
 
             activity()
@@ -1009,11 +1005,11 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'File draft belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
             }
 
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
+            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.docx';
             return response()->download(
                 $this->documentService->getStoragePath($hasilFasilitasi->draft_file),
                 $filename,
-                ['Content-Type' => 'application/msword']
+                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
             );
         } catch (\Exception $e) {
             Log::error('Error downloading Word hasil fasilitasi: ' . $e->getMessage());
@@ -1048,7 +1044,7 @@ class HasilFasilitasiController extends Controller
             }
 
             // Get PDF path (same as Word but with .pdf extension)
-            $pdfPath = str_replace('.doc', '.pdf', $hasilFasilitasi->draft_file);
+            $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
             
             // Check if PDF file exists
             if (!Storage::disk('public')->exists($pdfPath)) {
@@ -1094,7 +1090,7 @@ class HasilFasilitasiController extends Controller
             }
 
             // Get PDF path (same as Word but with .pdf extension)
-            $pdfPath = str_replace('.doc', '.pdf', $hasilFasilitasi->draft_file);
+            $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
             
             // Check if PDF file exists
             if (!Storage::disk('public')->exists($pdfPath)) {

@@ -1,216 +1,274 @@
-<?php
+  <?php
 
 namespace App\Services;
 
 use App\Models\Permohonan;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Shared\Html;
+use PhpOffice\PhpWord\Style\Table as TableStyle;
 
 class HasilFasilitasiDocumentService
 {
+    // Lebar kolom dalam twips (A4 dengan margin 2cm kiri/kanan = ~9072 twips total)
+    private const CONTENT_WIDTH = 9072;
+    private const NO_WIDTH      = 454;   // 5%
+    private const BAB_WIDTH     = 2268;  // 25%
+    private const CATATAN_WIDTH = 6350;  // 70%
+    private const URUSAN_WIDTH  = 6804;  // 75%
+    private const KET_WIDTH     = 1814;  // 20%
+
     /**
-     * Generate Word document content
+     * Generate dokumen DOCX menggunakan PhpOffice/PhpWord.
+     * HTML dari TinyMCE di-render native ke format Word sehingga format (bold,
+     * italic, list, dll) terjaga dan konsisten dengan tampilan editor.
+     *
+     * @return string filepath relatif dari storage/public
      */
-    public function generateWordDocument(Permohonan $permohonan, $sistematika, $urusan): string
+    public function generateDocx(Permohonan $permohonan, $sistematika, $urusan): string
     {
         $kabkota = $permohonan->kabupatenKota->nama;
-        $tahun = date('Y');
+        $tahun   = $permohonan->tahun ?? date('Y');
 
-        $html = $this->getDocumentHeader($kabkota, $tahun);
-        $html .= $this->generateSistematikaSection($sistematika, $kabkota);
-        $html .= $this->generateUrusanSection($urusan);
-        $html .= $this->getDocumentFooter();
+        $phpWord = new PhpWord();
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(11);
 
-        return $html;
+        $section = $phpWord->addSection([
+            'paperSize'    => 'A4',
+            'marginTop'    => 1134, // 2 cm
+            'marginBottom' => 1134,
+            'marginLeft'   => 1701, // 3 cm
+            'marginRight'  => 1134,
+        ]);
+
+        // Pengantar Sistematika
+        $section->addText(
+            'Catatan penyempurnaan terhadap sistematika dan substansi sebagai berikut:',
+            ['name' => 'Arial', 'size' => 11]
+        );
+        $section->addTextBreak(1);
+
+        $this->addSistematikaTable($section, $sistematika);
+        $section->addTextBreak(1);
+
+        // Pengantar Urusan
+        $section->addText(
+            'Masukan terkait penyelenggaraan urusan Pemerintah Daerah sebagai berikut:',
+            ['name' => 'Arial', 'size' => 11]
+        );
+        $section->addTextBreak(1);
+
+        $this->addUrusanTable($section, $urusan);
+
+        // Simpan ke storage
+        $safeName = str_replace([' ', '/'], '_', $kabkota);
+        $filename = 'Hasil_Fasilitasi_' . $safeName . '_' . $tahun . '.docx';
+        $filepath = 'hasil-fasilitasi/' . $filename;
+        $fullPath = storage_path('app/public/' . $filepath);
+
+        if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+        }
+
+        $writer = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($fullPath);
+
+        return $filepath;
     }
 
     /**
-     * Get document header with styles
+     * Tambah tabel Sistematika ke dalam section PhpWord
      */
-    private function getDocumentHeader(string $kabkota, string $tahun): string
+    private function addSistematikaTable($section, $sistematika): void
     {
-        return '<!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            font-size: 12pt; 
-                            line-height: 1.5; 
-                            margin: 20px;
-                        }
-                        h2 { 
-                            font-size: 12pt; 
-                            font-weight: normal; 
-                            margin-top: 20px; 
-                            margin-bottom: 10px; 
-                        }
-                        table { 
-                            width: 100%; 
-                            border-collapse: collapse; 
-                            margin-bottom: 20px; 
-                        }
-                        table, th, td { 
-                            border: 1px solid black; 
-                        }
-                        th, td { 
-                            padding: 8px; 
-                            vertical-align: top; 
-                            font-size: 12pt;
-                        }
-                        th { 
-                            font-weight: bold; 
-                            text-align: center; 
-                        }
-                        .no-col { 
-                            width: 5%; 
-                            text-align: center; 
-                        }
-                        .title-col { 
-                            width: 25%; 
-                        }
-                        .content-col { 
-                            width: 70%; 
-                        }
-                    </style>
-                </head>
-                <body>';
-    }
+        $tableStyle = [
+            'borderSize'  => 6,
+            'borderColor' => '000000',
+            'width'       => self::CONTENT_WIDTH,
+            'unit'        => TableStyle::WIDTH_TWIP,
+        ];
+        $table = $section->addTable($tableStyle);
 
-    /**
-     * Generate Sistematika section
-     */
-    private function generateSistematikaSection($sistematika, string $kabkota): string
-    {
-        $html = '
-            <p>Catatan penyempurnaan terhadap sistematika dan substansi sebagai berikut:</p>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th class="no-col">No.</th>
-                        <th class="title-col">Bab/Sub Bab</th>
-                        <th class="content-col">Catatan Penyempurnaan</th>
-                    </tr>
-                </thead>
-                <tbody>';
+        // Baris header
+        $headerRow = $table->addRow();
+        $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
+        $this->addHeaderCell($headerRow, self::BAB_WIDTH, 'Bab/Sub Bab');
+        $this->addHeaderCell($headerRow, self::CATATAN_WIDTH, 'Catatan Penyempurnaan');
 
-                if ($sistematika->count() > 0) {
-                    $counter = 1;
-                    $currentBabId = null;
-                    $groupedItems = $this->groupSistematika($sistematika);
+        if ($sistematika->count() === 0) {
+            $row  = $table->addRow();
+            $cell = $row->addCell(self::CONTENT_WIDTH, ['gridSpan' => 3]);
+            $cell->addText('Tidak ada catatan penyempurnaan', ['italic' => true], ['alignment' => 'center']);
+            return;
+        }
 
-                    foreach ($groupedItems as $groupedItem) {
-                        // Display bab header if changed
-                        if ($currentBabId !== $groupedItem['bab_id']) {
-                            $html .= '<tr>
-                                <td colspan="3">' . $this->formatTitleWithRomanNumerals(htmlspecialchars($groupedItem['bab_nama'])) . '</td>
-                            </tr>';
-                            $currentBabId = $groupedItem['bab_id'];
-                        }
+        $grouped    = $this->groupSistematika($sistematika);
+        $currentBab = null;
+        $counter    = 1;
 
-                        // Merge catatan with numbering
-                        $catatanGabungan = $this->mergeCatatan($groupedItem['catatan']);
+        foreach ($grouped as $item) {
+            // Baris header bab (satu baris per bab, colspan 3)
+            if ($currentBab !== $item['bab_id']) {
+                $row  = $table->addRow();
+                $cell = $row->addCell(self::CONTENT_WIDTH, [
+                    'gridSpan' => 3,
+                    'bgColor'  => 'e8f4f8',
+                ]);
+                $cell->addText(
+                    $this->formatTitleWithRomanNumerals($item['bab_nama']),
+                    ['name' => 'Arial', 'size' => 11]
+                );
+                $currentBab = $item['bab_id'];
+            }
 
-                        $html .= '<tr>
-                            <td class="no-col">' . $counter . '</td>
-                            <td>' . $this->formatTitleWithRomanNumerals(htmlspecialchars($groupedItem['sub_bab'])) . '</td>
-                            <td>' . $catatanGabungan . '</td>
-                        </tr>';
+            $row = $table->addRow();
 
-                        $counter++;
-                    }
-                } else {
-                    $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan penyempurnaan</td></tr>';
+            // Kolom nomor
+            $row->addCell(self::NO_WIDTH, ['valign' => 'top'])
+                ->addText((string) $counter, ['name' => 'Arial', 'size' => 11], ['alignment' => 'center']);
+
+            // Kolom bab/sub bab
+            $row->addCell(self::BAB_WIDTH, ['valign' => 'top'])
+                ->addText(
+                    $this->formatTitleWithRomanNumerals(html_entity_decode($item['sub_bab'], ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+                    ['name' => 'Arial', 'size' => 11]
+                );
+
+            // Kolom catatan — render HTML TinyMCE langsung ke PhpWord
+            $catatanCell = $row->addCell(self::CATATAN_WIDTH, ['valign' => 'top']);
+            $totalCatatan = count($item['catatan']);
+            foreach ($item['catatan'] as $idx => $catatan) {
+                if ($idx > 0) {
+                    $catatanCell->addTextBreak();
                 }
+                $prefix = $totalCatatan > 1 ? ($idx + 1) . '. ' : '';
+                Html::addHtml($catatanCell, $prefix . $this->sanitizeHtml($catatan), false, false);
+            }
 
-                $html .= '</tbody>
-            </table>';
+            $counter++;
+        }
+    }
+
+    /**
+     * Tambah tabel Urusan ke dalam section PhpWord
+     */
+    private function addUrusanTable($section, $urusan): void
+    {
+        $tableStyle = [
+            'borderSize'  => 6,
+            'borderColor' => '000000',
+            'width'       => self::CONTENT_WIDTH,
+            'unit'        => TableStyle::WIDTH_TWIP,
+        ];
+        $table = $section->addTable($tableStyle);
+
+        // Baris header
+        $headerRow = $table->addRow();
+        $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
+        $this->addHeaderCell($headerRow, self::URUSAN_WIDTH, 'Masukan/Saran');
+        $this->addHeaderCell($headerRow, self::KET_WIDTH, 'Keterangan');
+
+        if ($urusan->count() === 0) {
+            $row  = $table->addRow();
+            $cell = $row->addCell(self::CONTENT_WIDTH, ['gridSpan' => 3]);
+            $cell->addText('Tidak ada catatan masukan', ['italic' => true], ['alignment' => 'center']);
+            return;
+        }
+
+        $grouped = $this->groupUrusan($urusan);
+
+        foreach ($grouped as $group) {
+            // Baris header urusan (colspan 3)
+            $row        = $table->addRow();
+            $headerCell = $row->addCell(self::CONTENT_WIDTH, [
+                'gridSpan' => 3,
+                'bgColor'  => 'f0f0f0',
+            ]);
+            $headerCell->addText(
+                'Urusan ' . html_entity_decode($group['nama'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                ['bold' => true, 'name' => 'Arial', 'size' => 11]
+            );
+
+            // Baris per item catatan
+            foreach ($group['items'] as $index => $catatan) {
+                $row = $table->addRow();
+
+                $row->addCell(self::NO_WIDTH, ['valign' => 'top'])
+                    ->addText(($index + 1) . '.', ['name' => 'Arial', 'size' => 11], ['alignment' => 'center']);
+
+                $masukanCell = $row->addCell(self::URUSAN_WIDTH, ['valign' => 'top']);
+                Html::addHtml($masukanCell, $this->sanitizeHtml($catatan), false, false);
+
+                $row->addCell(self::KET_WIDTH, ['valign' => 'top'])->addText('');
+            }
+        }
+    }
+
+    /**
+     * Tambah cell header tabel dengan style standar
+     */
+    private function addHeaderCell($row, int $width, string $text): void
+    {
+        $row->addCell($width, ['bgColor' => 'f0f0f0', 'valign' => 'center'])
+            ->addText(
+                $text,
+                ['bold' => true, 'name' => 'Arial', 'size' => 11],
+                ['alignment' => 'center']
+            );
+    }
+
+    /**
+     * Sanitasi HTML dari TinyMCE agar kompatibel dengan Html::addHtml() PhpWord.
+     * Mempertahankan bold, italic, underline, list, paragraf — hanya
+     * menghapus elemen yang tidak didukung (nested table, script, dll).
+     */
+    private function sanitizeHtml(string $html): string
+    {
+        if (empty(trim(strip_tags($html)))) {
+            return '<p></p>';
+        }
+
+        // Hapus nested table (tidak didukung di dalam cell PhpWord)
+        $html = preg_replace('/<table[^>]*>.*?<\/table>/is', '', $html);
+
+        // Normalisasi strike/del → <s> (yang dikenali PhpWord)
+        $html = str_replace(['<strike>', '</strike>', '<del>', '</del>'], ['<s>', '</s>', '<s>', '</s>'], $html);
+
+        // Pastikan ada elemen block — bungkus jika hanya teks biasa
+        if (!preg_match('/<(p|ul|ol|h[1-6]|div)[^>]*>/i', $html)) {
+            $html = '<p>' . $html . '</p>';
+        }
 
         return $html;
     }
 
     /**
-     * Generate Urusan section
-     */
-    private function generateUrusanSection($urusan): string
-    {
-        $html = '
-            <p>Masukan terkait penyelenggaraan urusan Pemerintah Daerah sebagai berikut:</p>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 5%; text-align: center;">No</th>
-                        <th style="width: 70%;">Masukan/Saran</th>
-                        <th style="width: 25%;">Keterangan</th>
-                    </tr>
-                </thead>
-                <tbody>';
-
-                if ($urusan->count() > 0) {
-                    $groupedUrusan = $this->groupUrusan($urusan);
-
-                    foreach ($groupedUrusan as $urusan) {
-                        // Header urusan
-                        $html .= '<tr>
-                            <td colspan="3">Urusan ' . htmlspecialchars($urusan['nama']) . '</td>
-                        </tr>';
-
-                        // Items with numbering
-                        foreach ($urusan['items'] as $index => $catatan) {
-                            $html .= '<tr>
-                                <td style="text-align: center;">' . ($index + 1) . '.</td>
-                                <td>' . $this->cleanHtmlContent($catatan) . '</td>
-                                <td></td>
-                            </tr>';
-                        }
-                    }
-                } else {
-                    $html .= '<tr><td colspan="3" style="text-align: center; font-style: italic;">Tidak ada catatan masukan</td></tr>';
-                }
-
-                $html .= '</tbody>
-            </table>';
-
-        return $html;
-    }
-
-    /**
-     * Get document footer
-     */
-    private function getDocumentFooter(): string
-    {
-        return '
-            </body>
-            </html>';
-    }
-
-    /**
-     * Group sistematika by bab and sub_bab
+     * Group sistematika by bab dan sub_bab
      */
     private function groupSistematika($sistematika): array
     {
-        $groupedItems = [];
+        $grouped = [];
 
         foreach ($sistematika as $item) {
-            $babId = $item->master_bab_id;
+            $babId  = $item->master_bab_id;
             $subBab = $item->sub_bab ?: ($item->masterBab->nama_bab ?? '-');
-            $key = $babId . '|' . $subBab;
+            $key    = $babId . '|' . $subBab;
 
-            if (!isset($groupedItems[$key])) {
-                $groupedItems[$key] = [
-                    'bab_id' => $babId,
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'bab_id'   => $babId,
                     'bab_nama' => $item->masterBab->nama_bab ?? '-',
-                    'sub_bab' => $subBab,
-                    'catatan' => []
+                    'sub_bab'  => $subBab,
+                    'catatan'  => [],
                 ];
             }
 
-            $groupedItems[$key]['catatan'][] = $item->catatan_penyempurnaan;
+            $grouped[$key]['catatan'][] = $item->catatan_penyempurnaan;
         }
 
-        return $groupedItems;
+        return $grouped;
     }
 
     /**
@@ -218,109 +276,53 @@ class HasilFasilitasiDocumentService
      */
     private function groupUrusan($urusan): array
     {
-        $groupedUrusan = [];
+        $grouped = [];
 
         foreach ($urusan as $item) {
-            $urusanId = $item->master_urusan_id;
+            $id = $item->master_urusan_id;
 
-            if (!isset($groupedUrusan[$urusanId])) {
-                $groupedUrusan[$urusanId] = [
-                    'nama' => $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama,
-                    'items' => []
+            if (!isset($grouped[$id])) {
+                $grouped[$id] = [
+                    'nama'  => $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama ?? '-',
+                    'items' => [],
                 ];
             }
 
-            $groupedUrusan[$urusanId]['items'][] = $item->catatan_masukan;
+            $grouped[$id]['items'][] = $item->catatan_masukan;
         }
 
-        return $groupedUrusan;
+        return $grouped;
     }
 
     /**
-     * Merge catatan with numbering
-     */
-    private function mergeCatatan(array $catatanArray): string
-    {
-        $merged = '';
-
-        foreach ($catatanArray as $index => $catatan) {
-            $cleanContent = $this->cleanHtmlContent($catatan);
-            $merged .= ($index + 1) . '. ' . $cleanContent;
-
-            if ($index < count($catatanArray) - 1) {
-                $merged .= '<br><br>';
-            }
-        }
-
-        return $merged;
-    }
-
-    /**
-     * Format title with proper Roman numeral capitalization
-     * Example: "BAB II EVALUASI" -> "Bab II Evaluasi"
+     * Format judul dengan angka Romawi kapital (contoh: "bab ii evaluasi" → "Bab II Evaluasi")
      */
     private function formatTitleWithRomanNumerals(string $title): string
     {
-        // Convert to title case first
         $title = ucwords(strtolower($title));
-        
-        // Fix Roman numerals (I, II, III, IV, V, VI, VII, VIII, IX, X, XI, XII, XIII, XIV, XV, XVI, XVII, XVIII, XIX, XX)
+
         $title = preg_replace_callback(
             '/\b(i{1,3}|iv|vi{0,3}|ix|xi{0,3}|xiv|xv|xvi{0,3}|xix|xx)\b/i',
-            function($matches) {
-                return strtoupper($matches[0]);
-            },
+            fn($m) => strtoupper($m[0]),
             $title
         );
-        
+
         return $title;
     }
 
     /**
-     * Clean HTML content from TinyMCE/RichText
-     * Renders RichText objects to HTML or returns sanitized HTML string
-     */
-    private function cleanHtmlContent($content): string
-    {
-        // If it's a RichText object, render it first
-        if (is_object($content) && method_exists($content, 'render')) {
-            $content = $content->render();
-        }
-
-        // Convert to string if not already
-        $content = (string) $content;
-
-        // Replace common HTML tags with plain text equivalents
-        $content = str_replace(['<br>', '<br/>', '<br />'], "\n", $content);
-        $content = preg_replace('/<\/p>\s*<p>/', "\n\n", $content);
-        $content = preg_replace('/<li>/', '• ', $content);
-        $content = preg_replace('/<\/li>/', "\n", $content);
-
-        // Strip all remaining HTML tags
-        $content = strip_tags($content);
-
-        // Decode HTML entities
-        $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        // Clean up extra whitespace
-        $content = trim($content);
-
-        return $content;
-    }
-
-    /**
-     * Save document to storage and return filepath
+     * Simpan konten string ke storage dan kembalikan filepath relatif.
+     * Dipertahankan untuk backward compatibility.
      */
     public function saveDocument(string $content, string $filename): string
     {
         $filepath = 'hasil-fasilitasi/' . $filename;
         Storage::disk('public')->put($filepath, $content);
-
         return $filepath;
     }
 
     /**
-     * Get full storage path
+     * Kembalikan path absolut dari filepath relatif storage/public
      */
     public function getStoragePath(string $filepath): string
     {
