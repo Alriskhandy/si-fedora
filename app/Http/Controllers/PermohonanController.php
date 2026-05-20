@@ -39,35 +39,35 @@ class PermohonanController extends Controller
                 ->where('is_active', true)
                 ->get();
 
-            $timPermohonanIds = \App\Models\TimVerifikasiAssignment::where('user_id', $userId)
-                ->pluck('permohonan_id');
+            $query->where(function ($q) use ($assignments, $userId) {
+                // Permohonan dari assignment aktif
+                if ($assignments->isNotEmpty()) {
+                    $q->orWhere(function ($qq) use ($assignments) {
+                        $qq->where(function ($sub) use ($assignments) {
+                            foreach ($assignments as $assignment) {
+                                $sub->orWhere(function ($s) use ($assignment) {
+                                    $s->where('kab_kota_id', $assignment->kabupaten_kota_id);
+                                    if ($assignment->tahun) {
+                                        $s->where('tahun', $assignment->tahun);
+                                    }
+                                    if ($assignment->jenis_dokumen_id) {
+                                        $s->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                                    }
+                                });
+                            }
+                        })->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+                    });
+                }
 
-            if ($assignments->isNotEmpty() || $timPermohonanIds->isNotEmpty()) {
-                $query->where(function ($q) use ($assignments, $timPermohonanIds) {
-                    // Permohonan dari UserKabkotaAssignment
-                    if ($assignments->isNotEmpty()) {
-                        foreach ($assignments as $assignment) {
-                            $q->orWhere(function ($qq) use ($assignment) {
-                                $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
-                                    ->where('tahun', $assignment->tahun);
-
-                                if ($assignment->jenis_dokumen_id) {
-                                    $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
-                                }
-                            });
-                        }
-                    }
-
-                    // Permohonan dari TimVerifikasiAssignment
-                    if ($timPermohonanIds->isNotEmpty()) {
-                        $q->orWhereIn('id', $timPermohonanIds);
-                    }
+                // Permohonan selesai yang pernah diverifikasi langsung oleh user ini
+                // (menangani kasus pergantian PIC / verifikator)
+                $q->orWhere(function ($qq) use ($userId) {
+                    $qq->where('status_akhir', 'selesai')
+                        ->whereHas('permohonanDokumen', function ($sub) use ($userId) {
+                            $sub->where('verified_by', $userId)->whereNotNull('verified_at');
+                        });
                 });
-
-                $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+            });
         } elseif (Auth::user()->hasRole('fasilitator')) {
             // Fasilitator lewat UserKabkotaAssignment
             $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
