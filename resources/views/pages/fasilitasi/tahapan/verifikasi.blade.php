@@ -52,9 +52,16 @@
                     </ol>
                 </nav>
             </div>
-            <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-secondary">
-                <i class='bx bx-arrow-back me-1'></i> Kembali
-            </a>
+            <div class="d-flex gap-2">
+                @if ($isVerifikator && $permohonan->status_akhir === 'selesai')
+                    <a href="{{ route('verifikasi.lembar-verifikasi', $permohonan) }}" class="btn btn-success">
+                        <i class='bx bx-download me-1'></i> Download Lembar Verifikasi
+                    </a>
+                @endif
+                <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-secondary">
+                    <i class='bx bx-arrow-back me-1'></i> Kembali
+                </a>
+            </div>
         </div>
 
         <!-- Alert Messages -->

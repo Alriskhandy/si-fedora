@@ -268,6 +268,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::post('/{permohonan}/verifikasi', 'verifikasi')->name('verifikasi');
         Route::post('/{permohonan}/verifikasi-dokumen', 'verifikasiDokumen')->name('verifikasi-dokumen');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
+        Route::get('/{permohonan}/lembar-verifikasi', 'generateLembarVerifikasi')->name('lembar-verifikasi');
     });
 
     // LaporanVerifikasiController (Admin only)

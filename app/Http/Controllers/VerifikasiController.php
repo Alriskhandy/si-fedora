@@ -15,6 +15,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Font;
 
 class VerifikasiController extends Controller
 {
@@ -323,6 +329,169 @@ class VerifikasiController extends Controller
             'status' => $status,
             'total_verified' => $totalVerified,
             'total_revision' => $totalRevision,
+        ]);
+    }
+
+    public function generateLembarVerifikasi(Permohonan $permohonan)
+    {
+        $permohonan->load([
+            'kabupatenKota',
+            'jenisDokumen',
+            'permohonanDokumen.masterKelengkapan',
+            'permohonanDokumen.verifiedBy',
+        ]);
+
+        $namaKabKota = $permohonan->kabupatenKota->nama ?? 'Kabupaten/Kota';
+        $jenisDokumen = $permohonan->jenisDokumen->nama ?? 'Dokumen';
+        $tahun = $permohonan->tahun;
+
+        $dokumenList = $permohonan->permohonanDokumen
+            ->sortBy(fn($d) => $d->masterKelengkapan->urutan ?? 999);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set default font Arial
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(8);
+
+        // ── Judul baris 1 ──────────────────────────────────────────────
+        $judul1 = 'DOKUMEN PERSYARATAN FASILITASI ' . strtoupper($jenisDokumen);
+        $sheet->setCellValue('A1', $judul1);
+        $sheet->mergeCells('A1:H1');
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => ['name' => 'Arial', 'size' => 11, 'bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // ── Judul baris 2 ──────────────────────────────────────────────
+        $judul2 = strtoupper($namaKabKota) . ' TAHUN ' . $tahun;
+        $sheet->setCellValue('A2', $judul2);
+        $sheet->mergeCells('A2:H2');
+        $sheet->getStyle('A2')->applyFromArray([
+            'font' => ['name' => 'Arial', 'size' => 11, 'bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // ── Header kolom baris 3 ───────────────────────────────────────
+        $headers = ['NO', 'URAIAN', 'ADA', 'TIDAK ADA', 'TANGGAL SURAT', 'TANGGAL PENYAMPAIAN', 'TANGGAL VERIFIKASI', 'KET'];
+        foreach ($headers as $i => $header) {
+            $col = chr(65 + $i);
+            $sheet->setCellValue("{$col}3", $header);
+        }
+        $sheet->getStyle('A3:H3')->applyFromArray([
+            'font' => ['name' => 'Arial', 'size' => 8, 'bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'ffffff']],
+        ]);
+
+        // ── Sub-header angka baris 4 ───────────────────────────────────
+        for ($i = 1; $i <= 8; $i++) {
+            $col = chr(64 + $i);
+            $sheet->setCellValue("{$col}4", $i);
+        }
+        $sheet->getStyle('A4:H4')->applyFromArray([
+            'font' => ['name' => 'Arial', 'size' => 8],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'BFBFBF']],
+        ]);
+
+        // ── Data dokumen ───────────────────────────────────────────────
+        $row = 5;
+        $no = 1;
+        $formNo = 1;
+
+        $formatTanggal = function ($date) {
+            if (!$date) return '';
+            $bulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $d = \Carbon\Carbon::parse($date);
+            return $d->day . ' ' . $bulan[$d->month] . ' ' . $d->year;
+        };
+
+        foreach ($dokumenList as $dokumen) {
+            $namaDokumen = $dokumen->masterKelengkapan->nama_dokumen ?? '-';
+            $isForm = preg_match('/^form\s/i', $namaDokumen);
+
+            $noValue = $isForm ? 'FORM ' . $formNo++ : $no++;
+
+            // Tanggal upload oleh pemohon (created_at dari permohonan_dokumen)
+            $tglPenyampaian = $formatTanggal($dokumen->created_at);
+            // Tanggal verifikasi
+            $tglVerifikasi = $formatTanggal($dokumen->verified_at);
+
+            $sheet->setCellValue("A{$row}", $noValue);
+            $sheet->setCellValue("B{$row}", $namaDokumen);
+            $sheet->setCellValue("C{$row}", "\u{2713}"); // ✓
+            $sheet->setCellValue("D{$row}", '');
+            $sheet->setCellValue("E{$row}", '');
+            $sheet->setCellValue("F{$row}", $tglPenyampaian);
+            $sheet->setCellValue("G{$row}", $tglVerifikasi);
+            $sheet->setCellValue("H{$row}", '');
+
+            $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                'font' => ['name' => 'Arial', 'size' => 8],
+                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            ]);
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $row++;
+        }
+
+        // ── Border seluruh tabel ───────────────────────────────────────
+        $lastRow = $row - 1;
+        if ($lastRow >= 3) {
+            $sheet->getStyle("A3:H{$lastRow}")->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000'],
+                    ],
+                ],
+            ]);
+        }
+
+        // ── TTD ────────────────────────────────────────────────────────
+        $ttdRow = $lastRow + 2;
+        $tglGenerate = now()->day . ' ' . ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][now()->month] . ' ' . now()->year;
+
+        $sheet->setCellValue("H{$ttdRow}", "Sofifi, {$tglGenerate}");
+        $sheet->setCellValue("H" . ($ttdRow + 1), "Verifikator - PIC {$namaKabKota}");
+
+        $sheet->getStyle("H{$ttdRow}:H" . ($ttdRow + 1))->applyFromArray([
+            'font' => ['name' => 'Arial', 'size' => 8],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        // ── Lebar kolom ────────────────────────────────────────────────
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(45);
+        $sheet->getColumnDimension('C')->setWidth(8);
+        $sheet->getColumnDimension('D')->setWidth(10);
+        $sheet->getColumnDimension('E')->setWidth(18);
+        $sheet->getColumnDimension('F')->setWidth(18);
+        $sheet->getColumnDimension('G')->setWidth(18);
+        $sheet->getColumnDimension('H')->setWidth(20);
+
+        // Tinggi baris header
+        $sheet->getRowDimension(1)->setRowHeight(20);
+        $sheet->getRowDimension(2)->setRowHeight(20);
+        $sheet->getRowDimension(3)->setRowHeight(30);
+
+        // ── Output ─────────────────────────────────────────────────────
+        $fileName = 'Lembar Verifikasi Dokumen Persyaratan Fasilitasi ' . $jenisDokumen . ' ' . $tahun . ' ' . $namaKabKota . '.xlsx';
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 
