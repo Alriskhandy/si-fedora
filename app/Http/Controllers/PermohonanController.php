@@ -33,29 +33,39 @@ class PermohonanController extends Controller
         if (Auth::user()->hasRole('pemohon')) {
             $query->where('user_id', Auth::id());
         } elseif (Auth::user()->hasRole('verifikator')) {
-            // Verifikator lewat UserKabkotaAssignment
-            $assignments = \App\Models\UserKabkotaAssignment::where('user_id', Auth::id())
+            $userId = Auth::id();
+
+            $assignments = \App\Models\UserKabkotaAssignment::where('user_id', $userId)
                 ->where('is_active', true)
                 ->get();
 
-            if ($assignments->isNotEmpty()) {
-                $query->where(function ($q) use ($assignments) {
-                    foreach ($assignments as $assignment) {
-                        $q->orWhere(function ($qq) use ($assignment) {
-                            $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
-                                ->where('tahun', $assignment->tahun);
+            $timPermohonanIds = \App\Models\TimVerifikasiAssignment::where('user_id', $userId)
+                ->pluck('permohonan_id');
 
-                            // Filter by jenis dokumen jika ada
-                            if ($assignment->jenis_dokumen_id) {
-                                $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
-                            }
-                        });
+            if ($assignments->isNotEmpty() || $timPermohonanIds->isNotEmpty()) {
+                $query->where(function ($q) use ($assignments, $timPermohonanIds) {
+                    // Permohonan dari UserKabkotaAssignment
+                    if ($assignments->isNotEmpty()) {
+                        foreach ($assignments as $assignment) {
+                            $q->orWhere(function ($qq) use ($assignment) {
+                                $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                                    ->where('tahun', $assignment->tahun);
+
+                                if ($assignment->jenis_dokumen_id) {
+                                    $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                                }
+                            });
+                        }
+                    }
+
+                    // Permohonan dari TimVerifikasiAssignment
+                    if ($timPermohonanIds->isNotEmpty()) {
+                        $q->orWhereIn('id', $timPermohonanIds);
                     }
                 });
-                // Hanya tampilkan permohonan yang sudah disubmit
+
                 $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
             } else {
-                // Jika tidak ada assignment, tampilkan hasil kosong
                 $query->whereRaw('1 = 0');
             }
         } elseif (Auth::user()->hasRole('fasilitator')) {
