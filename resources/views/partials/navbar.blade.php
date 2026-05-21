@@ -27,7 +27,7 @@
                 {{-- Superadmin: ke halaman kelola modul --}}
                 <li class="nav-item me-2">
                     <a class="btn btn-sm btn-outline-primary {{ request()->routeIs('modul.*') ? 'active' : '' }}"
-                       href="{{ route('modul.index') }}" title="Kelola Modul Pengguna">
+                        href="{{ route('modul.index') }}" title="Kelola Modul Pengguna">
                         <i class="bx bx-book-open me-1"></i>
                         <span class="d-none d-md-inline">Modul Pengguna</span>
                     </a>
@@ -36,8 +36,8 @@
                 {{-- Satu modul: langsung download --}}
                 <li class="nav-item me-2">
                     <a class="btn btn-sm btn-outline-primary"
-                       href="{{ route('modul.download', $navModulList->first()) }}"
-                       title="Download {{ $navModulList->first()->judul }}">
+                        href="{{ route('modul.download', $navModulList->first()) }}"
+                        title="Download {{ $navModulList->first()->judul }}">
                         <i class="bx bx-download me-1"></i>
                         <span class="d-none d-md-inline">Modul Pengguna</span>
                     </a>
@@ -45,9 +45,8 @@
             @elseif ($navModulList->count() > 1)
                 {{-- Banyak modul: dropdown pilih modul --}}
                 <li class="nav-item dropdown me-2">
-                    <a class="btn btn-sm btn-outline-primary dropdown-toggle"
-                       href="#" data-bs-toggle="dropdown" aria-expanded="false"
-                       title="Modul Pengguna">
+                    <a class="btn btn-sm btn-outline-primary dropdown-toggle" href="#" data-bs-toggle="dropdown"
+                        aria-expanded="false" title="Modul Pengguna">
                         <i class="bx bx-book-open me-1"></i>
                         <span class="d-none d-md-inline">Modul Pengguna</span>
                     </a>
@@ -66,9 +65,9 @@
 
             {{-- Notifications --}}
             <li class="nav-item navbar-dropdown dropdown">
-                <a class="nav-link dropdown-toggle hide-arrow" href="{{ route('notifikasi.index') }}" >
+                <a class="nav-link dropdown-toggle hide-arrow" href="{{ route('notifikasi.index') }}">
                     <i class="bx bx-bell bx-sm"></i>
-                    @if($unreadNotifications > 0)
+                    @if ($unreadNotifications > 0)
                         <span class="badge bg-danger rounded-pill badge-notifications">{{ $unreadNotifications }}</span>
                     @endif
                 </a>
@@ -78,8 +77,9 @@
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                        @if(Auth::user()->foto_profile)
-                            <img src="{{ asset('storage/' . Auth::user()->foto_profile) }}" alt="Avatar" class="w-px-40 h-auto rounded-circle">
+                        @if (Auth::user()->foto_profile)
+                            <img src="{{ asset('storage/' . Auth::user()->foto_profile) }}" alt="Avatar"
+                                class="w-px-40 h-px-40 rounded-circle object-fit-cover">
                         @else
                             <span class="avatar-initial rounded-circle bg-label-primary">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
@@ -93,8 +93,9 @@
                             <div class="d-flex">
                                 <div class="flex-shrink-0 me-3">
                                     <div class="avatar avatar-online">
-                                        @if(Auth::user()->foto_profile)
-                                            <img src="{{ asset('storage/' . Auth::user()->foto_profile) }}" alt="Avatar" class="w-px-40 h-auto rounded-circle">
+                                        @if (Auth::user()->foto_profile)
+                                            <img src="{{ asset('storage/' . Auth::user()->foto_profile) }}"
+                                                alt="Avatar" class="w-px-40 h-px-40 rounded-circle object-fit-cover">
                                         @else
                                             <span class="avatar-initial rounded-circle bg-label-primary">
                                                 {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
@@ -103,9 +104,9 @@
                                     </div>
                                 </div>
                                 <div class="flex-grow-1">
-                                  
+
                                     <span class="fw-semibold d-block">{{ Auth::user()->name }}</span>
-                                
+
                                     <small class="text-muted">{{ Auth::user()->email }}</small>
                                 </div>
                             </div>
