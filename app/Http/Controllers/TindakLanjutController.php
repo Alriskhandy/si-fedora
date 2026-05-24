@@ -165,7 +165,9 @@ class TindakLanjutController extends Controller
                 ]
             );
 
-            // Cari tahapan Penetapan Perda dan set menjadi proses
+            // CATATAN: Status Permohonan TIDAK diubah pada tahapan tindak lanjut ini
+            // Status Permohonan hanya akan diubah menjadi 'selesai' ketika submit di tahapan terakhir (penetapan perda)
+            // Sekarang setup tahapan Penetapan Perda untuk dimulai
             $tahapanPenetapan = \App\Models\MasterTahapan::where('id', 7)
                 ->first();
 

@@ -93,14 +93,15 @@ class VerifikasiController extends Controller
         }
 
         // Update status permohonan berdasarkan hasil verifikasi
-        $newStatus = $request->status_verifikasi === 'verified' && $allVerified ? 'selesai' : 'revisi';
+        // CATATAN: Status menjadi 'revisi' jika ada revisi, 'proses' jika semua verified
+        $newStatus = $request->status_verifikasi === 'verified' && $allVerified ? 'proses' : 'revisi';
 
         $permohonan->update([
             'status_akhir' => $newStatus,
         ]);
 
-        $message = $newStatus === 'selesai'
-            ? 'Verifikasi berhasil! Dokumen lengkap dan dapat dilanjutkan ke evaluasi.'
+        $message = $newStatus === 'proses'
+            ? 'Verifikasi berhasil! Dokumen lengkap dan dapat dilanjutkan ke tahapan berikutnya.'
             : 'Verifikasi selesai! Dokumen perlu revisi oleh pemohon.';
 
         return redirect()->route('verifikasi.index')->with('success', $message);
@@ -235,8 +236,9 @@ class VerifikasiController extends Controller
             
             // Update status permohonan
             $hasRevision = $totalRevision > 0;
-            // Status menjadi 'revisi' jika ada revisi, 'selesai' jika semua verified (agar admin bisa buat laporan)
-            $newStatus = $hasRevision ? 'revisi' : 'selesai';
+
+            // Status menjadi 'revisi' jika ada revisi, 'proses' jika semua verified
+            $newStatus = $hasRevision ? 'revisi' : 'proses';
             
             $permohonan->update(['status_akhir' => $newStatus]);
             

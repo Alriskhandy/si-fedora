@@ -145,7 +145,9 @@ class PenetapanPerdaController extends Controller
                 ]
             );
 
-            // Update status permohonan menjadi selesai
+            // Update status permohonan menjadi selesai (TAHAPAN TERAKHIR)
+            // Catatan: Status Permohonan hanya berubah menjadi 'selesai' di tahapan terakhir (penetapan perda)
+            // Pada tahapan sebelumnya (seperti tahapan permohonan), status tetap 'proses'
             $permohonan->update([
                 'status_akhir' => 'selesai'
             ]);

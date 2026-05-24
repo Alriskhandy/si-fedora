@@ -345,7 +345,8 @@ class PermohonanController extends Controller
             // Load relationships yang diperlukan
             $permohonan->load(['kabupatenKota', 'jenisDokumen']);
 
-            // Update status ke proses
+            // Update status ke proses (tahapan permohonan)
+            // Status hanya akan menjadi 'selesai' ketika submit di tahapan penetapan perda (tahapan terakhir)
             $permohonan->status_akhir = 'proses';
             $permohonan->submitted_at = now();
             $permohonan->save();
