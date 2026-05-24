@@ -67,17 +67,21 @@ class JadwalFasilitasiController extends Controller
             'jenis_dokumen' => 'required|in:' . implode(',', $validJenisDokumen),
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'batas_permohonan' => 'nullable|date|before_or_equal:tanggal_mulai',
+            'batas_permohonan' => 'nullable|date|before_or_equal:tanggal_selesai',
             'undangan_file' => 'nullable|file|mimes:pdf|max:5120',
             'status' => 'required|in:draft,published,closed',
         ]);
+
+        // Set jam 23:59:59 pada tanggal selesai agar user masih dapat mengupload di tanggal yang sama
+        $tanggalSelesai = \Carbon\Carbon::parse($request->tanggal_selesai)->setTime(23, 59, 59);
+        $batasPermohonan = $request->batas_permohonan ? \Carbon\Carbon::parse($request->batas_permohonan)->setTime(23, 59, 59) : null;
 
         $data = [
             'tahun_anggaran' => $request->tahun_anggaran,
             'jenis_dokumen' => strtolower($request->jenis_dokumen),
             'tanggal_mulai' => $request->tanggal_mulai,
-            'tanggal_selesai' => $request->tanggal_selesai,
-            'batas_permohonan' => $request->batas_permohonan,
+            'tanggal_selesai' => $tanggalSelesai,
+            'batas_permohonan' => $batasPermohonan,
             'status' => $request->status,
             'dibuat_oleh' => Auth::user()->id,
         ];
@@ -166,17 +170,21 @@ class JadwalFasilitasiController extends Controller
             'jenis_dokumen' => 'required|in:' . implode(',', $validJenisDokumen),
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'batas_permohonan' => 'nullable|date|before_or_equal:tanggal_mulai',
+            'batas_permohonan' => 'nullable|date|before_or_equal:tanggal_selesai',
             'undangan_file' => 'nullable|file|mimes:pdf|max:5120',
             'status' => 'required|in:draft,published,closed',
         ]);
+
+        // Set jam 23:59:59 pada tanggal selesai agar user masih dapat mengupload di tanggal yang sama
+        $tanggalSelesai = \Carbon\Carbon::parse($request->tanggal_selesai)->setTime(23, 59, 59);
+        $batasPermohonan = $request->batas_permohonan ? \Carbon\Carbon::parse($request->batas_permohonan)->setTime(23, 59, 59) : null;
 
         $data = [
             'tahun_anggaran' => $request->tahun_anggaran,
             'jenis_dokumen' => strtolower($request->jenis_dokumen),
             'tanggal_mulai' => $request->tanggal_mulai,
-            'tanggal_selesai' => $request->tanggal_selesai,
-            'batas_permohonan' => $request->batas_permohonan,
+            'tanggal_selesai' => $tanggalSelesai,
+            'batas_permohonan' => $batasPermohonan,
             'status' => $request->status,
             'updated_by' => Auth::user()->id,
         ];
