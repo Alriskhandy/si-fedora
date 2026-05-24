@@ -65,4 +65,14 @@ class HasilFasilitasi extends Model
     {
         return $this->hasMany(HasilFasilitasiSistematika::class, 'hasil_fasilitasi_id');
     }
+
+    public function hasilForm()
+    {
+        return $this->hasMany(HasilFasilitasiForm::class, 'hasil_fasilitasi_id');
+    }
+
+    public function hasilRekomendasi()
+    {
+        return $this->hasMany(HasilFasilitasiRekomendasi::class, 'hasil_fasilitasi_id');
+    }
 }

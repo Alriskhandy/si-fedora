@@ -6,6 +6,8 @@ use App\Models\Permohonan;
 use App\Models\HasilFasilitasi;
 use App\Models\HasilFasilitasiUrusan;
 use App\Models\HasilFasilitasiSistematika;
+use App\Models\HasilFasilitasiForm;
+use App\Models\HasilFasilitasiRekomendasi;
 use App\Models\MasterUrusan;
 use App\Models\MasterBab;
 use App\Models\MasterJenisDokumen;
@@ -398,7 +400,12 @@ class HasilFasilitasiController extends Controller
 
         // Load hasil fasilitasi dengan relasi
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
-        $hasilFasilitasi->load('hasilSistematika.masterBab', 'hasilSistematika.user', 'hasilUrusan.masterUrusan', 'hasilUrusan.user');
+        $hasilFasilitasi->load([
+            'hasilSistematika.masterBab', 'hasilSistematika.user',
+            'hasilUrusan.masterUrusan', 'hasilUrusan.user',
+            'hasilForm.user',
+            'hasilRekomendasi.user',
+        ]);
 
         // Sort sistematika by bab urutan
         $sortedSistematika = $hasilFasilitasi->hasilSistematika->sortBy(function ($item) {
@@ -411,6 +418,10 @@ class HasilFasilitasiController extends Controller
             return $item->masterUrusan->urutan ?? 999;
         });
         $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
+
+        // Sort form & rekomendasi by created_at
+        $hasilFasilitasi->setRelation('hasilForm', $hasilFasilitasi->hasilForm->sortBy('created_at'));
+        $hasilFasilitasi->setRelation('hasilRekomendasi', $hasilFasilitasi->hasilRekomendasi->sortBy('created_at'));
 
         // Check if current user is koordinator (fasilitator dengan is_pic=true)
         $isKoordinator = $this->isKoordinator($permohonan);
@@ -684,8 +695,10 @@ class HasilFasilitasiController extends Controller
                     ? $sistematika->catatan_penyempurnaan->render()
                     : $sistematika->catatan_penyempurnaan,
                 'masterBab' => $sistematika->masterBab,
+                'bab_urutan' => $sistematika->masterBab->urutan ?? 999,
                 'user' => $sistematika->user,
                 'created_at' => $sistematika->created_at->format('d/m/Y H:i'),
+                'created_at_ts' => $sistematika->created_at->timestamp,
             ];
 
             return response()->json([
@@ -829,8 +842,10 @@ class HasilFasilitasiController extends Controller
                     ? $urusan->catatan_masukan->render()
                     : $urusan->catatan_masukan,
                 'masterUrusan' => $urusan->masterUrusan,
+                'urusan_urutan' => $urusan->masterUrusan->urutan ?? 999,
                 'user' => $urusan->user,
                 'created_at' => $urusan->created_at->format('d/m/Y H:i'),
+                'created_at_ts' => $urusan->created_at->timestamp,
             ];
 
             return response()->json([
@@ -892,6 +907,192 @@ class HasilFasilitasiController extends Controller
                 'success' => true,
                 'message' => 'Item urusan berhasil dihapus'
             ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ============================================================
+    // KONSISTENSI & KESELARASAN (FORM) OPERATIONS
+    // ============================================================
+
+    public function storeForm(Request $request, Permohonan $permohonan)
+    {
+        if (!$this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
+            }
+
+            $item = HasilFasilitasiForm::create([
+                'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'catatan'             => $request->catatan,
+                'user_id'             => Auth::id(),
+            ]);
+
+            $item->load('user');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item konsistensi & keselarasan berhasil ditambahkan',
+                'data'    => [
+                    'id'            => $item->id,
+                    'catatan'       => $item->catatan,
+                    'user_id'       => $item->user_id,
+                    'user'          => $item->user,
+                    'created_at'    => $item->created_at->format('d/m/Y H:i'),
+                    'created_at_ts' => $item->created_at->timestamp,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateForm(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiForm::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (!$this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $item->update(['catatan' => $request->catatan]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item berhasil diperbarui',
+                'data'    => ['catatan' => $item->catatan],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteForm(Permohonan $permohonan, $id)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiForm::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (!$this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
+            $item->delete();
+
+            return response()->json(['success' => true, 'message' => 'Item berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ============================================================
+    // REKOMENDASI OPERATIONS
+    // ============================================================
+
+    public function storeRekomendasi(Request $request, Permohonan $permohonan)
+    {
+        if (!$this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
+            }
+
+            $item = HasilFasilitasiRekomendasi::create([
+                'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'catatan'             => $request->catatan,
+                'user_id'             => Auth::id(),
+            ]);
+
+            $item->load('user');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item rekomendasi berhasil ditambahkan',
+                'data'    => [
+                    'id'            => $item->id,
+                    'catatan'       => $item->catatan,
+                    'user_id'       => $item->user_id,
+                    'user'          => $item->user,
+                    'created_at'    => $item->created_at->format('d/m/Y H:i'),
+                    'created_at_ts' => $item->created_at->timestamp,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateRekomendasi(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiRekomendasi::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (!$this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $item->update(['catatan' => $request->catatan]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item rekomendasi berhasil diperbarui',
+                'data'    => ['catatan' => $item->catatan],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteRekomendasi(Permohonan $permohonan, $id)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiRekomendasi::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (!$this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
+            $item->delete();
+
+            return response()->json(['success' => true, 'message' => 'Item rekomendasi berhasil dihapus']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

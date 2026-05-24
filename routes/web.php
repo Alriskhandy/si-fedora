@@ -311,6 +311,12 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::delete('/{permohonan}/sistematika/{id}', 'deleteSistematika')->name('sistematika.delete');
         Route::post('/{permohonan}/urusan', 'storeUrusan')->name('urusan.store');
         Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
+        Route::post('/{permohonan}/form', 'storeForm')->name('form.store');
+        Route::put('/{permohonan}/form/{id}', 'updateForm')->name('form.update');
+        Route::delete('/{permohonan}/form/{id}', 'deleteForm')->name('form.delete');
+        Route::post('/{permohonan}/rekomendasi', 'storeRekomendasi')->name('rekomendasi.store');
+        Route::put('/{permohonan}/rekomendasi/{id}', 'updateRekomendasi')->name('rekomendasi.update');
+        Route::delete('/{permohonan}/rekomendasi/{id}', 'deleteRekomendasi')->name('rekomendasi.delete');
     });
     
     Route::middleware(['role:fasilitator|verifikator|admin_peran|superadmin|kaban'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
