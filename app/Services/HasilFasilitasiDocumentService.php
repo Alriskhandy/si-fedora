@@ -37,6 +37,13 @@ class HasilFasilitasiDocumentService
         // Wajib: escape XML special chars (&, <, >) agar DOCX tidak corrupt
         Settings::setOutputEscapingEnabled(true);
 
+        // Gunakan temp dir yang pasti writable di semua environment (lokal & production)
+        $tempDir = storage_path('app/temp/phpword');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        Settings::setTempDir($tempDir);
+
         $kabkota      = $permohonan->kabupatenKota->nama;
         $tahun        = $permohonan->tahun ?? date('Y');
         $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
@@ -196,7 +203,7 @@ class HasilFasilitasiDocumentService
         if ($form->count() > 0) {
             foreach ($form as $idx => $item) {
                 $letter  = chr(96 + $idx + 1);
-                $catatan = trim(strip_tags($item->catatan ?? ''));
+                $catatan = $this->cleanText($item->catatan ?? '');
                 $section->addText($letter . '.   ' . $catatan, $fN, $pIn);
             }
         } else {
@@ -216,7 +223,7 @@ class HasilFasilitasiDocumentService
         if ($rekomendasi->count() > 0) {
             foreach ($rekomendasi as $idx => $item) {
                 $num     = $idx + 1;
-                $catatan = trim(strip_tags($item->catatan ?? ''));
+                $catatan = $this->cleanText($item->catatan ?? '');
                 $section->addText($num . '.   ' . $catatan, $fN, $pIn);
             }
         } else {
@@ -330,9 +337,7 @@ class HasilFasilitasiDocumentService
 
             $row->addCell(self::BAB_WIDTH, ['valign' => 'top'])
                 ->addText(
-                    $this->formatTitleWithRomanNumerals(
-                        html_entity_decode($item['sub_bab'], ENT_QUOTES | ENT_HTML5, 'UTF-8')
-                    ),
+                    $this->formatTitleWithRomanNumerals($this->cleanText($item['sub_bab'])),
                     $fCell
                 );
 
@@ -340,7 +345,7 @@ class HasilFasilitasiDocumentService
             $totalCatatan = count($item['catatan']);
             foreach ($item['catatan'] as $idx => $catatan) {
                 $prefix = $totalCatatan > 1 ? ($idx + 1) . '. ' : '';
-                $plain  = $prefix . strip_tags(html_entity_decode($catatan ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                $plain  = $prefix . $this->cleanText($catatan ?? '');
                 $catatanCell->addText($plain, $fCell);
             }
 
@@ -387,7 +392,7 @@ class HasilFasilitasiDocumentService
             $row->addCell(self::NO_WIDTH)->addText('');
             $row->addCell(self::URUSAN_WIDTH)
                 ->addText(
-                    'Urusan ' . html_entity_decode($group['nama'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                    'Urusan ' . $this->cleanText($group['nama']),
                     $fCell
                 );
             $row->addCell(self::KET_WIDTH)->addText('');
@@ -400,7 +405,7 @@ class HasilFasilitasiDocumentService
 
                 $row->addCell(self::URUSAN_WIDTH, ['valign' => 'top'])
                     ->addText(
-                        strip_tags(html_entity_decode($catatan ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+                        $this->cleanText($catatan ?? ''),
                         $fCell
                     );
 
@@ -489,9 +494,31 @@ class HasilFasilitasiDocumentService
     }
 
     /**
+     * Bersihkan teks agar aman ditulis ke XML/DOCX:
+     * - strip HTML tags
+     * - decode HTML entities
+     * - hapus karakter kontrol ilegal XML 1.0 (kecuali tab, LF, CR)
+     * - pastikan UTF-8 valid (buang byte invalid)
+     */
+    private function cleanText(string $html): string
+    {
+        $text = strip_tags(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        // Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
+
+        // Pastikan string adalah UTF-8 valid; buang byte yang tidak valid
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        }
+
+        return $text;
+    }
+
+    /**
      * Format tanggal ke format Indonesia (misal: 30 Mei 2026).
      */
-    private function tanggalIndonesia(\DateTimeInterface $date = null): string
+    private function tanggalIndonesia(?\DateTimeInterface $date = null): string
     {
         $d = $date ?? new \DateTime();
         return $d->format('j') . ' ' . self::BULAN_ID[(int)$d->format('n')] . ' ' . $d->format('Y');
