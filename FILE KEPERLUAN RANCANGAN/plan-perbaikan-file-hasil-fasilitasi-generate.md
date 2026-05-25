@@ -133,3 +133,10 @@ Try these suggestions.
 
 ---
 
+# Mengganti library generate docx
+Nama Library: novay/laravel-word-template
+Perintah telah di jalankan:
+- composer require novay/laravel-word-template
+- php artisan vendor:publish --provider="Novay\Word\Providers\WordServiceProvider" -> config/word.php & storage/app/word
+
+1. Gantikan service dengan library yang baru dengan konfigurasi dan hasil generate yang sama dengan service sebelumnya.

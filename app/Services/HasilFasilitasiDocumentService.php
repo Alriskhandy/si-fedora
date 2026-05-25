@@ -3,10 +3,8 @@
 namespace App\Services;
 
 use App\Models\Permohonan;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpWord\PhpWord;
-use PhpOffice\PhpWord\IOFactory;
+use Novay\Word\Services\AdvancedService;
 use PhpOffice\PhpWord\Settings;
 
 class HasilFasilitasiDocumentService
@@ -36,16 +34,6 @@ class HasilFasilitasiDocumentService
         $rekomendasi = null,
         $kelengkapan = null
     ): string {
-        // [LOG] Mulai generate DOCX
-        Log::info('[DOCX] generateDocx START', [
-            'permohonan_id' => $permohonan->id,
-            'kabkota'       => $permohonan->kabupatenKota->nama ?? 'N/A',
-            'tahun'         => $permohonan->tahun,
-            'memory_start'  => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
-        ]);
-
-        try {
-
         // Wajib: escape XML special chars (&, <, >) agar DOCX tidak corrupt
         Settings::setOutputEscapingEnabled(true);
 
@@ -61,18 +49,9 @@ class HasilFasilitasiDocumentService
         $rekomendasi = $rekomendasi ?? collect();
         $kelengkapan = $kelengkapan ?? collect();
 
-        Log::info('[DOCX] Step 1: Data prepared', [
-            'jenisDokumen'    => $jenisDokumen,
-            'jenisWilayah'    => $jenisWilayah,
-            'form_count'      => $form->count(),
-            'rekomendasi_count' => $rekomendasi->count(),
-            'kelengkapan_count' => $kelengkapan->count(),
-            'sistematika_count' => $sistematika->count(),
-            'urusan_count'    => $urusan->count(),
-        ]);
-
-        // ─── PhpWord setup ───────────────────────────────────────────────────
-        $phpWord = new PhpWord();
+        // ─── Inisialisasi library ─────────────────────────────────────────────
+        $wordService = new AdvancedService();
+        $phpWord     = $wordService->getPhpWord();
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(12);
 
@@ -85,8 +64,6 @@ class HasilFasilitasiDocumentService
             'marginLeft'   => 1077,  // 1,9 cm
             'marginRight'  => 1418,  // 2,5 cm
         ]);
-
-        Log::info('[DOCX] Step 2: PhpWord section created');
 
         // ─── Font & paragraph styles ─────────────────────────────────────────
         $fN  = ['name' => 'Arial', 'size' => 12];               // normal
@@ -203,8 +180,6 @@ class HasilFasilitasiDocumentService
         );
         $section->addTextBreak(1);
 
-        Log::info('[DOCX] Step 3: Section I-V.1 written, adding sistematika table');
-
         // Caption tabel sistematika
         $section->addText('Tabel 1.1', $fN, $pC);
         $section->addText('Catatan Penyempurnaan', $fN, $pC);
@@ -215,8 +190,6 @@ class HasilFasilitasiDocumentService
         $section->addTextBreak(1);
         $this->addSistematikaTable($section, $sistematika);
         $section->addTextBreak(1);
-
-        Log::info('[DOCX] Step 4: Sistematika table done, adding form & urusan');
 
         // ─── 7b. V.2 Konsistensi & Keselarasan ───────────────────────────────
         $section->addText('2.   Konsistensi dan Keselarasan Perencanaan Pembangunan', $fN, $pL);
@@ -231,13 +204,11 @@ class HasilFasilitasiDocumentService
         }
         $section->addTextBreak(1);
 
-        // ─── 7c. V.3 Urusan Pemerintahan (halaman baru) ─────────────────────
+        // ─── 7c. V.3 Urusan Pemerintahan (halaman baru) ──────────────────────
         $section->addPageBreak();
         $section->addText('3.   Masukan Terkait Penyelenggaraan Urusan Pemerintah Daerah', $fN, $pL);
         $this->addUrusanTable($section, $urusan);
         $section->addTextBreak(1);
-
-        Log::info('[DOCX] Step 5: Urusan table done, adding rekomendasi & penutup');
 
         // ─── 8. VI. REKOMENDASI (halaman baru) ───────────────────────────────
         $section->addPageBreak();
@@ -287,60 +258,20 @@ class HasilFasilitasiDocumentService
         $sigCell->addText('Kepala Badan Perencanaan Pembangunan Daerah', $fN, $pTtd);
         $sigCell->addText('Provinsi Maluku Utara', $fN, $pTtd);
 
-        // ─── Simpan file ──────────────────────────────────────────────────────
-        $safeKabkota  = str_replace([' ', '/'], '_', $kabkota);
-        $safeJenis    = str_replace(' ', '_', $jenisDokumen);
-        $filename     = 'Draft_Lampiran_Hasil_Fasilitasi_' . $safeJenis . '_' . $safeKabkota . '_' . $tahun . '.docx';
-        $filepath     = 'hasil-fasilitasi/' . $filename;
-        $fullPath     = storage_path('app/public/' . $filepath);
+        // ─── Simpan via library ───────────────────────────────────────────────
+        $safeKabkota = str_replace([' ', '/'], '_', $kabkota);
+        $safeJenis   = str_replace(' ', '_', $jenisDokumen);
+        $filename    = 'Draft_Lampiran_Hasil_Fasilitasi_' . $safeJenis . '_' . $safeKabkota . '_' . $tahun . '.docx';
+        $filepath    = 'hasil-fasilitasi/' . $filename;
+        $fullPath    = storage_path('app/public/' . $filepath);
 
         if (!file_exists(dirname($fullPath))) {
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        Log::info('[DOCX] Step 6: Saving file', [
-            'fullPath'     => $fullPath,
-            'dir_writable' => is_writable(dirname($fullPath)),
-            'memory_before_save' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
-            'memory_limit' => ini_get('memory_limit'),
-        ]);
-
-        $writer = IOFactory::createWriter($phpWord, 'Word2007');
-        $writer->save($fullPath);
-
-        $fileSize = file_exists($fullPath) ? filesize($fullPath) : -1;
-        // Cek apakah file adalah ZIP yang valid (DOCX = ZIP)
-        $isValidZip = false;
-        if ($fileSize > 4) {
-            $fp = fopen($fullPath, 'rb');
-            $header = fread($fp, 4);
-            fclose($fp);
-            $isValidZip = ($header === "PK\x03\x04");
-        }
-
-        Log::info('[DOCX] Step 7: File saved', [
-            'exists'       => file_exists($fullPath),
-            'size_bytes'   => $fileSize,
-            'is_valid_zip' => $isValidZip,
-            'memory_end'   => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
-        ]);
-
-        if (!$isValidZip) {
-            Log::error('[DOCX] File is NOT a valid ZIP/DOCX!', ['fullPath' => $fullPath, 'size' => $fileSize]);
-        }
+        $wordService->save($fullPath);
 
         return $filepath;
-
-        } catch (\Throwable $e) {
-            Log::error('[DOCX] EXCEPTION during generateDocx', [
-                'message' => $e->getMessage(),
-                'class'   => get_class($e),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-                'trace'   => collect(explode("\n", $e->getTraceAsString()))->take(15)->implode("\n"),
-            ]);
-            throw $e;
-        }
     }
 
     /**
@@ -348,7 +279,7 @@ class HasilFasilitasiDocumentService
      */
     private function addSistematikaTable($section, $sistematika): void
     {
-        $fCell = ['name' => 'Arial', 'size' => 12];
+        $fCell   = ['name' => 'Arial', 'size' => 12];
         $pCenter = ['alignment' => 'center'];
 
         $tableStyle = [
@@ -359,7 +290,7 @@ class HasilFasilitasiDocumentService
         ];
         $table = $section->addTable($tableStyle);
 
-        // Header row – 3 sel terpisah, tanpa gridSpan
+        // Header row – 3 sel terpisah
         $headerRow = $table->addRow();
         $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
         $this->addHeaderCell($headerRow, self::BAB_WIDTH, 'Bab/Sub Bab');
@@ -380,7 +311,7 @@ class HasilFasilitasiDocumentService
 
         foreach ($grouped as $item) {
             if ($currentBab !== $item['bab_id']) {
-                // Bab header – tanpa gridSpan, teks di kolom Bab/Sub Bab
+                // Bab header – teks di kolom Bab/Sub Bab
                 $row = $table->addRow();
                 $row->addCell(self::NO_WIDTH)->addText('');
                 $row->addCell(self::BAB_WIDTH)
@@ -433,7 +364,7 @@ class HasilFasilitasiDocumentService
         ];
         $table = $section->addTable($tableStyle);
 
-        // Header row – 3 sel terpisah, tanpa gridSpan
+        // Header row – 3 sel terpisah
         $headerRow = $table->addRow();
         $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
         $this->addHeaderCell($headerRow, self::URUSAN_WIDTH, 'Masukan/Saran');
@@ -451,7 +382,7 @@ class HasilFasilitasiDocumentService
         $grouped = $this->groupUrusan($urusan);
 
         foreach ($grouped as $group) {
-            // Urusan group header – tanpa gridSpan, teks di kolom Masukan/Saran
+            // Urusan group header – teks di kolom Masukan/Saran
             $row = $table->addRow();
             $row->addCell(self::NO_WIDTH)->addText('');
             $row->addCell(self::URUSAN_WIDTH)
