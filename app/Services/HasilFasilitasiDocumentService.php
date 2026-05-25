@@ -3,99 +3,354 @@
 namespace App\Services;
 
 use App\Models\Permohonan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\Shared\Html;
+use PhpOffice\PhpWord\Settings;
 
 class HasilFasilitasiDocumentService
 {
-    // Lebar kolom dalam twips (A4 dengan margin 2cm kiri/kanan = ~9072 twips total)
-    private const CONTENT_WIDTH = 9072;
-    private const NO_WIDTH      = 454;   // 5%
-    private const BAB_WIDTH     = 2268;  // 25%
-    private const CATATAN_WIDTH = 6350;  // 70%
-    private const URUSAN_WIDTH  = 6804;  // 75%
-    private const KET_WIDTH     = 1814;  // 20%
+    // F4 content width: 21cm − 1.9cm(kiri) − 2.5cm(kanan) = 16.6cm = 9412 twips
+    private const CONTENT_WIDTH = 9412;
+    private const NO_WIDTH      = 471;   //  5%
+    private const BAB_WIDTH     = 2353;  // 25%
+    private const CATATAN_WIDTH = 6588;  // 70%
+    private const URUSAN_WIDTH  = 7059;  // 75%
+    private const KET_WIDTH     = 1882;  // 20%
+
+    private const BULAN_ID = [
+        '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    ];
 
     /**
-     * Generate dokumen DOCX menggunakan PhpOffice/PhpWord.
-     * HTML dari TinyMCE di-render native ke format Word sehingga format (bold,
-     * italic, list, dll) terjaga dan konsisten dengan tampilan editor.
-     *
-     * @return string filepath relatif dari storage/public
+     * Generate dokumen DOCX sesuai template resmi hasil fasilitasi.
+     * Kertas F4 (21×33 cm), Arial 12pt, spasi 1,5.
      */
-    public function generateDocx(Permohonan $permohonan, $sistematika, $urusan): string
-    {
-        $kabkota      = $permohonan->kabupatenKota->nama;
-        $tahun        = $permohonan->tahun ?? date('Y');
-        $jenisDokumen = strtoupper($permohonan->jenisDokumen->nama ?? 'DOKUMEN');
-        $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
-
-        $phpWord = new PhpWord();
-        $phpWord->setDefaultFontName('Arial');
-        $phpWord->setDefaultFontSize(11);
-
-        $section = $phpWord->addSection([
-            'paperSize'    => 'A4',
-            'marginTop'    => 1134, // 2 cm
-            'marginBottom' => 1134,
-            'marginLeft'   => 1701, // 3 cm
-            'marginRight'  => 1134,
+    public function generateDocx(
+        Permohonan $permohonan,
+        $sistematika,
+        $urusan,
+        $form        = null,
+        $rekomendasi = null,
+        $kelengkapan = null
+    ): string {
+        // [LOG] Mulai generate DOCX
+        Log::info('[DOCX] generateDocx START', [
+            'permohonan_id' => $permohonan->id,
+            'kabkota'       => $permohonan->kabupatenKota->nama ?? 'N/A',
+            'tahun'         => $permohonan->tahun,
+            'memory_start'  => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
         ]);
 
-        // Judul dokumen
-        $judul = 'Hasil Fasilitasi Rancangan Akhir ' . $jenisDokumen
-               . ' ' . $jenisWilayah . ' ' . $kabkota
-               . ' Tahun ' . $tahun;
+        try {
 
-        $section->addText($judul, [
-            'name'   => 'Arial',
-            'size'   => 12,
-            'bold'   => true,
-        ], ['alignment' => 'center']);
+        // Wajib: escape XML special chars (&, <, >) agar DOCX tidak corrupt
+        Settings::setOutputEscapingEnabled(true);
+
+        $kabkota      = $permohonan->kabupatenKota->nama;
+        $tahun        = $permohonan->tahun ?? date('Y');
+        $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
+        $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? 'Kabupaten'));
+        $ranperkada   = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
+        $jabatanTtd   = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
+        $tanggal      = $this->tanggalIndonesia();
+
+        $form        = $form        ?? collect();
+        $rekomendasi = $rekomendasi ?? collect();
+        $kelengkapan = $kelengkapan ?? collect();
+
+        Log::info('[DOCX] Step 1: Data prepared', [
+            'jenisDokumen'    => $jenisDokumen,
+            'jenisWilayah'    => $jenisWilayah,
+            'form_count'      => $form->count(),
+            'rekomendasi_count' => $rekomendasi->count(),
+            'kelengkapan_count' => $kelengkapan->count(),
+            'sistematika_count' => $sistematika->count(),
+            'urusan_count'    => $urusan->count(),
+        ]);
+
+        // ─── PhpWord setup ───────────────────────────────────────────────────
+        $phpWord = new PhpWord();
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(12);
+
+        // F4 paper (21 cm × 33 cm), margin: kiri 1,9 – atas 2,1 – bawah 2,3 – kanan 2,5 cm
+        $section = $phpWord->addSection([
+            'pageSizeW'    => 11907, // 21 cm × 567 twips/cm
+            'pageSizeH'    => 18711, // 33 cm × 567 twips/cm
+            'marginTop'    => 1191,  // 2,1 cm
+            'marginBottom' => 1304,  // 2,3 cm
+            'marginLeft'   => 1077,  // 1,9 cm
+            'marginRight'  => 1418,  // 2,5 cm
+        ]);
+
+        Log::info('[DOCX] Step 2: PhpWord section created');
+
+        // ─── Font & paragraph styles ─────────────────────────────────────────
+        $fN  = ['name' => 'Arial', 'size' => 12];               // normal
+        $fB  = ['name' => 'Arial', 'size' => 12, 'bold' => true]; // bold
+        $pL  = ['lineHeight' => 1.5, 'spaceAfter' => 0, 'spaceBefore' => 0, 'alignment' => 'both'];  // justify
+        $pC  = ['lineHeight' => 1.5, 'spaceAfter' => 0, 'spaceBefore' => 0, 'alignment' => 'center']; // center
+        $pIn = ['lineHeight' => 1.5, 'spaceAfter' => 0, 'spaceBefore' => 0, 'alignment' => 'both',   // justify + hanging indent
+                'indentation' => ['left' => 440, 'firstLine' => -440]];
+
+        // ─── 1. Header kiri atas ─────────────────────────────────────────────
+        $section->addText('Lampiran', $fN, $pL);
+        $section->addText('Nomor      :', $fN, $pL);
+        $section->addText('Tanggal    : ' . $tanggal, $fN, $pL);
         $section->addTextBreak(1);
 
-        // Pengantar Sistematika
+        // ─── 2. Judul (rata tengah, bold) ────────────────────────────────────
+        $section->addText('HASIL FASILITASI', $fB, $pC);
         $section->addText(
-            'Catatan penyempurnaan terhadap sistematika dan substansi sebagai berikut:',
-            ['name' => 'Arial', 'size' => 11]
+            'RANCANGAN AKHIR ' . strtoupper($jenisDokumen) . ' ' . strtoupper($jenisWilayah) . ' ' . strtoupper($kabkota),
+            $fB, $pC
+        );
+        $section->addText('TAHUN ' . $tahun, $fB, $pC);
+        $section->addTextBreak(1);
+
+        // ─── 3. I. PENDAHULUAN ───────────────────────────────────────────────
+        $section->addText('I.   PENDAHULUAN', $fN, $pL);
+        $section->addText(
+            'a.   Bahwa Sesuai amanat pasal 102 dalam Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian Dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah Tentang Rencana Pembangunan Jangka Panjang Daerah Dan Rencana Pembangunan Jangka Menengah Daerah, Serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rencana Pembangunan Jangka Menengah Daerah, Dan Rencana Kerja Pemerintah Daerah disebutkan bahwa Gubernur dan Bupati/Walikota menyampaikan Rancangan Perkada RKPD Provinsi dan Kabupaten/Kota untuk difasilitasi;',
+            $fN, $pIn
+        );
+        $section->addText(
+            'b.   Fasilitasi sebagaimana dimaksud merupakan tindakan pembinaan berupa pemberian pedoman dan petunjuk teknis, arahan, bimbingan teknis, supervisi, asistensi dan kerja sama serta monitoring dan evaluasi yang dilakukan oleh Gubernur kepada kabupaten/kota terhadap materi muatan rancangan produk hukum daerah berbentuk peraturan sebelum ditetapkan.',
+            $fN, $pIn
         );
         $section->addTextBreak(1);
 
+        // ─── 4. II. DASAR HUKUM ──────────────────────────────────────────────
+        $section->addText('II.   DASAR HUKUM', $fN, $pL);
+        $dasarHukum = [
+            'a' => 'Undang-Undang Nomor 25 Tahun 2004 tentang Sistem Perencanaan Pembangunan Nasional (Lembaran Negara Republik Indonesia Tahun 2004 Nomor 104, Tambahan Lembaran Negara Republik Indonesia Nomor 4421);',
+            'b' => 'Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintah Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244 Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah, terakhir dengan Undang-Undang Nomor 9 Tahun 2015 tentang Perubahan Kedua atas Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia tahun 2015 Nomor 58, Tambahan Lembar Negara Republik Indonesia Nomor 5679);',
+            'c' => 'Peraturan Pemerintah Nomor 12 Tahun 2019 tentang Pengelolaan Keuangan Daerah (Lembaran Negara Republik Indonesia Tahun 2019 Nomor 42, Tambahan Lembaran Negara Republik Indonesia Nomor 6322);',
+            'd' => 'Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Produk Hukum Daerah (Berita Negara Republik Indonesia Tahun 2015 Nomor 2036) sebagaimana telah diubah dengan Peraturan Menteri Dalam Negeri Nomor 120 Tahun 2018 tentang Perubahan atas Peraturan Menteri Dalam Negeri Nomor 80 Tahun 2015 tentang Pembentukan Produk Hukum Daerah (Berita Negara Republik Indonesia Tahun 2021 Nomor 157);',
+            'e' => 'Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian Dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah Tentang Rencana Pembangunan Jangka Panjang Daerah Dan Rencana Pembangunan Jangka Menengah Daerah, Serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rencana Pembangunan Jangka Menengah Daerah, Dan Rencana Kerja Pemerintah Daerah (Berita Negara Republik Indonesia Tahun 2017 Nomor 1312);',
+            'f' => 'Peraturan Menteri Dalam Negeri Nomor 70 Tahun 2019 tentang Sistem Informasi Pemerintahan Daerah (Berita Negara Republik Indonesia Tahun 2019 Nomor 1114);',
+            'g' => 'Peraturan Menteri Dalam Negeri Republik Indonesia Nomor 10 Tahun 2025 tentang Pedoman Penyusunan Rencana Kerja Pemerintah Daerah Tahun 2026;',
+            'h' => 'Instruksi Menteri Dalam Negeri Nomor 2 Tahun 2025 tentang Pedoman Penyusunan Rencana Pembangunan Jangka Menengah Daerah dan Rencana Strategis Perangkat Daerah Tahun 2025-2029;',
+            'i' => 'Keputusan Menteri Dalam Negeri Nomor 900.1.15.5-3406 Tahun 2024 tentang Perubahan Atas Keputusan Menteri Dalam Negeri Nomor 050-5889 Tahun 2021 tentang Hasil Verifikasi, Validasi dan Inventarisasi Pemutakhiran Klasifikasi, Kodefikasi dan Nomenklatur Perencanaan Pembangunan dan Keuangan Daerah.',
+        ];
+        foreach ($dasarHukum as $letter => $text) {
+            $section->addText($letter . '.   ' . $text, $fN, $pIn);
+        }
+        $section->addTextBreak(1);
+
+        // ─── 5. III. MAKSUD DAN TUJUAN ───────────────────────────────────────
+        $section->addText('III.   MAKSUD DAN TUJUAN', $fN, $pL);
+        $section->addText(
+            'Maksud dan tujuan dari fasilitasi Rancangan Perkada tentang ' . $jenisDokumen
+            . ' ' . $jenisWilayah . ' ' . $kabkota . ' Tahun ' . $tahun
+            . ' adalah memberikan masukan dan saran penyempurnaan terhadap Rancangan Akhir '
+            . $jenisDokumen . ' ' . $jenisWilayah . ' ' . $kabkota . ' Tahun ' . $tahun
+            . ' sehingga kebijakan perencanaan pembangunan tahunan ' . $jenisWilayah . ' '
+            . $kabkota . ' lebih berkualitas yang mengarah kepada semakin baiknya kinerja pembangunan daerah.',
+            $fN, $pL
+        );
+        $section->addTextBreak(1);
+
+        // ─── 6. IV. KELENGKAPAN PERSYARATAN FASILITASI ───────────────────────
+        $section->addText('IV.   KELENGKAPAN PERSYARATAN FASILITASI', $fN, $pL);
+        $section->addText(
+            'Fasilitasi terhadap Rancangan Perkada ' . $jenisDokumen . ' ' . $jenisWilayah
+            . ' ' . $kabkota . ' Tahun ' . $tahun
+            . ' dapat dilaksanakan berdasarkan persyaratan yang diterima. Selanjutnya telah dilakukan pemeriksaan terhadap persyaratan dimaksud dengan beberapa catatan antara lain:',
+            $fN, $pL
+        );
+        if ($kelengkapan->count() > 0) {
+            foreach ($kelengkapan as $idx => $doc) {
+                $namaDok = $doc->masterKelengkapan->nama_dokumen ?? $doc->file_name ?? '-';
+                $section->addText(($idx + 1) . '.   ' . $namaDok, $fN, $pIn);
+            }
+        } else {
+            $section->addText('1.   -', $fN, $pIn);
+        }
+        $section->addTextBreak(1);
+
+        // ─── 7. V. HASIL FASILITASI ──────────────────────────────────────────
+        $section->addText('V.   HASIL FASILITASI', $fN, $pL);
+        $section->addText(
+            'Berdasarkan hasil pencermatan serta diskusi Tim Fasilitasi dengan Pemerintah '
+            . $jenisWilayah . ' ' . $kabkota . ' terhadap Rancangan Akhir ' . $jenisDokumen
+            . ' ' . $jenisWilayah . ' ' . $kabkota . ' Tahun ' . $tahun
+            . ', terdapat beberapa hal yang perlu dilakukan penyesuaian dan penyempurnaan baik sistematika dan teknik penulisan maupun substansi dalam rancangan akhir '
+            . $jenisDokumen . ' ' . $jenisWilayah . ' ' . $kabkota
+            . '. Beberapa hal yang perlu disempurnakan dalam ' . strtoupper($ranperkada)
+            . ' tentang ' . $jenisDokumen . ' ' . $jenisWilayah . ' ' . $kabkota
+            . ' Tahun ' . $tahun . ', antara lain:',
+            $fN, $pL
+        );
+        $section->addTextBreak(1);
+
+        // ─── 7a. V.1 Sistematika ─────────────────────────────────────────────
+        $section->addText('1.   Sistematika dan Substansi Rancangan Akhir ' . $jenisDokumen, $fN, $pL);
+        $section->addText(
+            'a.   Sistematika Rancangan Akhir ' . $jenisDokumen . ' ' . $jenisWilayah . ' '
+            . $kabkota . ' Tahun ' . $tahun
+            . ' Telah Sesuai dengan ayat (1) Pasal 79 Peraturan Menteri Dalam Negeri Nomor 86 Tahun 2017 tentang Tata Cara Perencanaan, Pengendalian dan Evaluasi Pembangunan Daerah, Tata Cara Evaluasi Rancangan Peraturan Daerah Tentang Rencana Pembangunan Jangka Panjang Daerah dan Rencana Pembangunan Jangka Menengah Daerah, Serta Tata Cara Perubahan Rencana Pembangunan Jangka Panjang Daerah, Rencana Pembangunan Jangka Menengah Daerah, dan Rencana Kerja Pemerintah Daerah.',
+            $fN, $pIn
+        );
+        $section->addText(
+            'b.   Catatan penyempurnaan terhadap sistematika dan substansi Rancangan Peraturan '
+            . $jabatanTtd . ' tentang ' . $jenisDokumen . ' ' . $jenisWilayah . ' '
+            . $kabkota . ' Tahun ' . $tahun . ' sebagaimana pada tabel berikut:',
+            $fN, $pIn
+        );
+        $section->addTextBreak(1);
+
+        Log::info('[DOCX] Step 3: Section I-V.1 written, adding sistematika table');
+
+        // Caption tabel sistematika
+        $section->addText('Tabel 1.1', $fN, $pC);
+        $section->addText('Catatan Penyempurnaan', $fN, $pC);
+        $section->addText(
+            $ranperkada . ' tentang ' . $jenisDokumen . ' Tahun ' . $tahun,
+            $fN, $pC
+        );
+        $section->addTextBreak(1);
         $this->addSistematikaTable($section, $sistematika);
         $section->addTextBreak(1);
 
-        // Pengantar Urusan
-        $section->addText(
-            'Masukan terkait penyelenggaraan urusan Pemerintah Daerah sebagai berikut:',
-            ['name' => 'Arial', 'size' => 11]
-        );
+        Log::info('[DOCX] Step 4: Sistematika table done, adding form & urusan');
+
+        // ─── 7b. V.2 Konsistensi & Keselarasan ───────────────────────────────
+        $section->addText('2.   Konsistensi dan Keselarasan Perencanaan Pembangunan', $fN, $pL);
+        if ($form->count() > 0) {
+            foreach ($form as $idx => $item) {
+                $letter  = chr(96 + $idx + 1);
+                $catatan = trim(strip_tags($item->catatan ?? ''));
+                $section->addText($letter . '.   ' . $catatan, $fN, $pIn);
+            }
+        } else {
+            $section->addText('a.   -', $fN, $pIn);
+        }
         $section->addTextBreak(1);
 
+        // ─── 7c. V.3 Urusan Pemerintahan (halaman baru) ─────────────────────
+        $section->addPageBreak();
+        $section->addText('3.   Masukan Terkait Penyelenggaraan Urusan Pemerintah Daerah', $fN, $pL);
         $this->addUrusanTable($section, $urusan);
+        $section->addTextBreak(1);
 
-        // Simpan ke storage
-        $safeName = str_replace([' ', '/'], '_', $kabkota);
-        $filename = 'Hasil_Fasilitasi_' . $safeName . '_' . $tahun . '.docx';
-        $filepath = 'hasil-fasilitasi/' . $filename;
-        $fullPath = storage_path('app/public/' . $filepath);
+        Log::info('[DOCX] Step 5: Urusan table done, adding rekomendasi & penutup');
+
+        // ─── 8. VI. REKOMENDASI (halaman baru) ───────────────────────────────
+        $section->addPageBreak();
+        $section->addText('VI.   REKOMENDASI', $fN, $pL);
+        if ($rekomendasi->count() > 0) {
+            foreach ($rekomendasi as $idx => $item) {
+                $num     = $idx + 1;
+                $catatan = trim(strip_tags($item->catatan ?? ''));
+                $section->addText($num . '.   ' . $catatan, $fN, $pIn);
+            }
+        } else {
+            $section->addText('1.   -', $fN, $pIn);
+        }
+
+        // ─── 9. VII. PENUTUP (halaman baru) ──────────────────────────────────
+        $section->addPageBreak();
+        $section->addText('VII.   PENUTUP', $fN, $pL);
+        $section->addText(
+            'Demikian hasil fasilitasi terhadap Rancangan Perkada tentang ' . $jenisDokumen
+            . ' ' . $jenisWilayah . ' ' . $kabkota . ' Tahun ' . $tahun
+            . '. Masukan dari hasil fasilitasi dijadikan penyempurnaan Rancangan Perkada tentang '
+            . $jenisDokumen . ' ' . $jenisWilayah . ' ' . $kabkota . ' Tahun ' . $tahun
+            . ' sebelum ditetapkan menjadi Perkada tentang ' . $jenisDokumen
+            . ' ' . $jenisWilayah . ' ' . $kabkota . ' Tahun ' . $tahun . '.',
+            $fN, $pL
+        );
+        $section->addTextBreak(3);
+
+        // ─── 10. Tanda tangan (kanan bawah) ─────────────────────────────────
+        $phpWord->addTableStyle('ttd', [
+            'borderSize'  => 0,
+            'borderColor' => 'FFFFFF',
+            'width'       => self::CONTENT_WIDTH,
+            'unit'        => 'dxa',
+        ]);
+        $sigTable = $section->addTable('ttd');
+        $sigRow   = $sigTable->addRow();
+
+        $leftW  = intval(self::CONTENT_WIDTH * 0.55);
+        $rightW = self::CONTENT_WIDTH - $leftW;
+
+        $sigRow->addCell($leftW, ['borderSize' => 0, 'borderColor' => 'FFFFFF'])
+               ->addText('');
+
+        $sigCell = $sigRow->addCell($rightW, ['borderSize' => 0, 'borderColor' => 'FFFFFF']);
+        $pTtd    = ['alignment' => 'center', 'lineHeight' => 1.5, 'spaceAfter' => 0, 'spaceBefore' => 0];
+        $sigCell->addText('Kepala Badan Perencanaan Pembangunan Daerah', $fN, $pTtd);
+        $sigCell->addText('Provinsi Maluku Utara', $fN, $pTtd);
+
+        // ─── Simpan file ──────────────────────────────────────────────────────
+        $safeKabkota  = str_replace([' ', '/'], '_', $kabkota);
+        $safeJenis    = str_replace(' ', '_', $jenisDokumen);
+        $filename     = 'Draft_Lampiran_Hasil_Fasilitasi_' . $safeJenis . '_' . $safeKabkota . '_' . $tahun . '.docx';
+        $filepath     = 'hasil-fasilitasi/' . $filename;
+        $fullPath     = storage_path('app/public/' . $filepath);
 
         if (!file_exists(dirname($fullPath))) {
             mkdir(dirname($fullPath), 0755, true);
         }
 
+        Log::info('[DOCX] Step 6: Saving file', [
+            'fullPath'     => $fullPath,
+            'dir_writable' => is_writable(dirname($fullPath)),
+            'memory_before_save' => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
+            'memory_limit' => ini_get('memory_limit'),
+        ]);
+
         $writer = IOFactory::createWriter($phpWord, 'Word2007');
         $writer->save($fullPath);
 
+        $fileSize = file_exists($fullPath) ? filesize($fullPath) : -1;
+        // Cek apakah file adalah ZIP yang valid (DOCX = ZIP)
+        $isValidZip = false;
+        if ($fileSize > 4) {
+            $fp = fopen($fullPath, 'rb');
+            $header = fread($fp, 4);
+            fclose($fp);
+            $isValidZip = ($header === "PK\x03\x04");
+        }
+
+        Log::info('[DOCX] Step 7: File saved', [
+            'exists'       => file_exists($fullPath),
+            'size_bytes'   => $fileSize,
+            'is_valid_zip' => $isValidZip,
+            'memory_end'   => round(memory_get_usage(true) / 1024 / 1024, 2) . ' MB',
+        ]);
+
+        if (!$isValidZip) {
+            Log::error('[DOCX] File is NOT a valid ZIP/DOCX!', ['fullPath' => $fullPath, 'size' => $fileSize]);
+        }
+
         return $filepath;
+
+        } catch (\Throwable $e) {
+            Log::error('[DOCX] EXCEPTION during generateDocx', [
+                'message' => $e->getMessage(),
+                'class'   => get_class($e),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => collect(explode("\n", $e->getTraceAsString()))->take(15)->implode("\n"),
+            ]);
+            throw $e;
+        }
     }
 
     /**
-     * Tambah tabel Sistematika ke dalam section PhpWord
+     * Tambah tabel Sistematika ke dalam section PhpWord.
      */
     private function addSistematikaTable($section, $sistematika): void
     {
+        $fCell = ['name' => 'Arial', 'size' => 12];
+        $pCenter = ['alignment' => 'center'];
+
         $tableStyle = [
             'borderSize'  => 6,
             'borderColor' => '000000',
@@ -104,16 +359,18 @@ class HasilFasilitasiDocumentService
         ];
         $table = $section->addTable($tableStyle);
 
-        // Baris header — tblHeader agar berulang di halaman baru dan tidak terpisah dari isi
-        $headerRow = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
+        // Header row – 3 sel terpisah, tanpa gridSpan
+        $headerRow = $table->addRow();
         $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
         $this->addHeaderCell($headerRow, self::BAB_WIDTH, 'Bab/Sub Bab');
         $this->addHeaderCell($headerRow, self::CATATAN_WIDTH, 'Catatan Penyempurnaan');
 
         if ($sistematika->count() === 0) {
-            $row  = $table->addRow(null, ['cantSplit' => true]);
-            $cell = $row->addCell(self::CONTENT_WIDTH, ['gridSpan' => 3]);
-            $cell->addText('Tidak ada catatan penyempurnaan', ['italic' => true], ['alignment' => 'center']);
+            $row = $table->addRow();
+            $row->addCell(self::NO_WIDTH)->addText('');
+            $row->addCell(self::BAB_WIDTH)
+                ->addText('Tidak ada catatan penyempurnaan', ['italic' => true] + $fCell);
+            $row->addCell(self::CATATAN_WIDTH)->addText('');
             return;
         }
 
@@ -122,42 +379,38 @@ class HasilFasilitasiDocumentService
         $counter    = 1;
 
         foreach ($grouped as $item) {
-            // Baris header bab (satu baris per bab, colspan 3)
             if ($currentBab !== $item['bab_id']) {
-                $row  = $table->addRow(null, ['cantSplit' => true]);
-                $cell = $row->addCell(self::CONTENT_WIDTH, [
-                    'gridSpan' => 3,
-                    'bgColor'  => 'e8f4f8',
-                ]);
-                $cell->addText(
-                    $this->formatTitleWithRomanNumerals($item['bab_nama']),
-                    ['name' => 'Arial', 'size' => 11]
-                );
+                // Bab header – tanpa gridSpan, teks di kolom Bab/Sub Bab
+                $row = $table->addRow();
+                $row->addCell(self::NO_WIDTH)->addText('');
+                $row->addCell(self::BAB_WIDTH)
+                    ->addText(
+                        $this->formatTitleWithRomanNumerals($item['bab_nama']),
+                        $fCell
+                    );
+                $row->addCell(self::CATATAN_WIDTH)->addText('');
                 $currentBab = $item['bab_id'];
             }
 
-            $row = $table->addRow(null, ['cantSplit' => true]);
+            $row = $table->addRow();
 
-            // Kolom nomor
             $row->addCell(self::NO_WIDTH, ['valign' => 'top'])
-                ->addText((string) $counter, ['name' => 'Arial', 'size' => 11], ['alignment' => 'center']);
+                ->addText((string) $counter, $fCell, $pCenter);
 
-            // Kolom bab/sub bab
             $row->addCell(self::BAB_WIDTH, ['valign' => 'top'])
                 ->addText(
-                    $this->formatTitleWithRomanNumerals(html_entity_decode($item['sub_bab'], ENT_QUOTES | ENT_HTML5, 'UTF-8')),
-                    ['name' => 'Arial', 'size' => 11]
+                    $this->formatTitleWithRomanNumerals(
+                        html_entity_decode($item['sub_bab'], ENT_QUOTES | ENT_HTML5, 'UTF-8')
+                    ),
+                    $fCell
                 );
 
-            // Kolom catatan — render HTML TinyMCE langsung ke PhpWord
-            $catatanCell = $row->addCell(self::CATATAN_WIDTH, ['valign' => 'top']);
+            $catatanCell  = $row->addCell(self::CATATAN_WIDTH, ['valign' => 'top']);
             $totalCatatan = count($item['catatan']);
             foreach ($item['catatan'] as $idx => $catatan) {
-                if ($idx > 0) {
-                    $catatanCell->addTextBreak();
-                }
                 $prefix = $totalCatatan > 1 ? ($idx + 1) . '. ' : '';
-                Html::addHtml($catatanCell, $prefix . $this->sanitizeHtml($catatan), false, false);
+                $plain  = $prefix . strip_tags(html_entity_decode($catatan ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                $catatanCell->addText($plain, $fCell);
             }
 
             $counter++;
@@ -165,10 +418,13 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Tambah tabel Urusan ke dalam section PhpWord
+     * Tambah tabel Urusan ke dalam section PhpWord.
      */
     private function addUrusanTable($section, $urusan): void
     {
+        $fCell   = ['name' => 'Arial', 'size' => 12];
+        $pCenter = ['alignment' => 'center'];
+
         $tableStyle = [
             'borderSize'  => 6,
             'borderColor' => '000000',
@@ -177,42 +433,45 @@ class HasilFasilitasiDocumentService
         ];
         $table = $section->addTable($tableStyle);
 
-        // Baris header — tblHeader agar tidak terpisah dari isi
-        $headerRow = $table->addRow(null, ['tblHeader' => true, 'cantSplit' => true]);
+        // Header row – 3 sel terpisah, tanpa gridSpan
+        $headerRow = $table->addRow();
         $this->addHeaderCell($headerRow, self::NO_WIDTH, 'No.');
         $this->addHeaderCell($headerRow, self::URUSAN_WIDTH, 'Masukan/Saran');
         $this->addHeaderCell($headerRow, self::KET_WIDTH, 'Keterangan');
 
         if ($urusan->count() === 0) {
-            $row  = $table->addRow(null, ['cantSplit' => true]);
-            $cell = $row->addCell(self::CONTENT_WIDTH, ['gridSpan' => 3]);
-            $cell->addText('Tidak ada catatan masukan', ['italic' => true], ['alignment' => 'center']);
+            $row = $table->addRow();
+            $row->addCell(self::NO_WIDTH)->addText('');
+            $row->addCell(self::URUSAN_WIDTH)
+                ->addText('Tidak ada catatan masukan', ['italic' => true] + $fCell);
+            $row->addCell(self::KET_WIDTH)->addText('');
             return;
         }
 
         $grouped = $this->groupUrusan($urusan);
 
         foreach ($grouped as $group) {
-            // Baris header urusan (colspan 3)
-            $row        = $table->addRow(null, ['cantSplit' => true]);
-            $headerCell = $row->addCell(self::CONTENT_WIDTH, [
-                'gridSpan' => 3,
-                'bgColor'  => 'f0f0f0',
-            ]);
-            $headerCell->addText(
-                'Urusan ' . html_entity_decode($group['nama'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-                ['bold' => true, 'name' => 'Arial', 'size' => 11]
-            );
+            // Urusan group header – tanpa gridSpan, teks di kolom Masukan/Saran
+            $row = $table->addRow();
+            $row->addCell(self::NO_WIDTH)->addText('');
+            $row->addCell(self::URUSAN_WIDTH)
+                ->addText(
+                    'Urusan ' . html_entity_decode($group['nama'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                    $fCell
+                );
+            $row->addCell(self::KET_WIDTH)->addText('');
 
-            // Baris per item catatan
             foreach ($group['items'] as $index => $catatan) {
-                $row = $table->addRow(null, ['cantSplit' => true]);
+                $row = $table->addRow();
 
                 $row->addCell(self::NO_WIDTH, ['valign' => 'top'])
-                    ->addText(($index + 1) . '.', ['name' => 'Arial', 'size' => 11], ['alignment' => 'center']);
+                    ->addText(($index + 1) . '.', $fCell, $pCenter);
 
-                $masukanCell = $row->addCell(self::URUSAN_WIDTH, ['valign' => 'top']);
-                Html::addHtml($masukanCell, $this->sanitizeHtml($catatan), false, false);
+                $row->addCell(self::URUSAN_WIDTH, ['valign' => 'top'])
+                    ->addText(
+                        strip_tags(html_entity_decode($catatan ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8')),
+                        $fCell
+                    );
 
                 $row->addCell(self::KET_WIDTH, ['valign' => 'top'])->addText('');
             }
@@ -220,68 +479,20 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Tambah cell header tabel dengan style standar
+     * Tambah cell header tabel dengan style standar.
      */
     private function addHeaderCell($row, int $width, string $text): void
     {
-        $row->addCell($width, ['bgColor' => 'f0f0f0', 'valign' => 'center'])
+        $row->addCell($width, ['valign' => 'center'])
             ->addText(
                 $text,
-                ['bold' => true, 'name' => 'Arial', 'size' => 11],
+                ['name' => 'Arial', 'size' => 12],
                 ['alignment' => 'center']
             );
     }
 
     /**
-     * Konversi HTML dari TinyMCE ke XHTML valid yang diterima DOMDocument::loadXML()
-     * yang digunakan secara internal oleh Html::addHtml() PhpWord.
-     *
-     * TinyMCE menghasilkan HTML5 (<br>, <li>text<br>more</li>) yang tidak valid
-     * sebagai XML. Metode ini menggunakan DOMDocument::loadHTML() yang lenient
-     * untuk parse HTML, lalu saveXML() untuk menghasilkan XHTML valid (<br/>).
-     */
-    private function sanitizeHtml(string $html): string
-    {
-        if (empty(trim(strip_tags($html)))) {
-            return '<p></p>';
-        }
-
-        // Hapus nested table (tidak didukung di dalam cell PhpWord)
-        $html = preg_replace('/<table[^>]*>.*?<\/table>/is', '', $html);
-
-        // Normalisasi strike/del → <s> (yang dikenali PhpWord)
-        $html = str_replace(
-            ['<strike>', '</strike>', '<del>', '</del>'],
-            ['<s>', '</s>', '<s>', '</s>'],
-            $html
-        );
-
-        // Konversi HTML5 → XHTML menggunakan DOMDocument
-        // loadHTML() lenient (menerima <br>, tag tidak tertutup, dll)
-        // saveXML() menghasilkan format XML valid (<br/>, semua tag tertutup)
-        $dom = new \DOMDocument('1.0', 'UTF-8');
-        libxml_use_internal_errors(true);
-        $dom->loadHTML(
-            '<html><head><meta charset="UTF-8"></head><body>' . $html . '</body></html>',
-            LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING
-        );
-        libxml_clear_errors();
-
-        $body = $dom->getElementsByTagName('body')->item(0);
-        if (!$body) {
-            return '<p>' . htmlspecialchars(strip_tags($html), ENT_XML1, 'UTF-8') . '</p>';
-        }
-
-        $xhtml = '';
-        foreach ($body->childNodes as $node) {
-            $xhtml .= $dom->saveXML($node);
-        }
-
-        return $xhtml ?: '<p></p>';
-    }
-
-    /**
-     * Group sistematika by bab dan sub_bab
+     * Group sistematika by bab dan sub_bab.
      */
     private function groupSistematika($sistematika): array
     {
@@ -308,7 +519,7 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Group urusan by master_urusan_id
+     * Group urusan by master_urusan_id.
      */
     private function groupUrusan($urusan): array
     {
@@ -331,7 +542,7 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Format judul dengan angka Romawi kapital (contoh: "bab ii evaluasi" → "Bab II Evaluasi")
+     * Format judul dengan angka Romawi kapital.
      */
     private function formatTitleWithRomanNumerals(string $title): string
     {
@@ -347,9 +558,14 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Simpan konten string ke storage dan kembalikan filepath relatif.
-     * Dipertahankan untuk backward compatibility.
+     * Format tanggal ke format Indonesia (misal: 30 Mei 2026).
      */
+    private function tanggalIndonesia(\DateTimeInterface $date = null): string
+    {
+        $d = $date ?? new \DateTime();
+        return $d->format('j') . ' ' . self::BULAN_ID[(int)$d->format('n')] . ' ' . $d->format('Y');
+    }
+
     public function saveDocument(string $content, string $filename): string
     {
         $filepath = 'hasil-fasilitasi/' . $filename;
@@ -357,9 +573,6 @@ class HasilFasilitasiDocumentService
         return $filepath;
     }
 
-    /**
-     * Kembalikan path absolut dari filepath relatif storage/public
-     */
     public function getStoragePath(string $filepath): string
     {
         return storage_path('app/public/' . $filepath);

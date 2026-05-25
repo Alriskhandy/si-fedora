@@ -1137,16 +1137,30 @@ class HasilFasilitasiController extends Controller
                 ->select('hasil_fasilitasi_urusan.*')
                 ->get();
 
-            // Generate dokumen DOCX menggunakan PhpWord (format native, format TinyMCE terjaga)
-            $filepath = $this->documentService->generateDocx($permohonan, $sistematika, $urusan);
+            $form        = $hasilFasilitasi->hasilForm()->orderBy('id')->get();
+            $rekomendasi = $hasilFasilitasi->hasilRekomendasi()->orderBy('id')->get();
+            $kelengkapan = $permohonan->permohonanDokumen()->with('masterKelengkapan')->orderBy('id')->get();
 
-            // Generate PDF dari Blade template (DomPDF) agar format konsisten
+            // Tanggal generate dalam format Indonesia
+            $bulanId = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $tanggalGenerate = date('j') . ' ' . $bulanId[(int)date('n')] . ' ' . date('Y');
+
+            // Generate dokumen DOCX menggunakan PhpWord (format native, format TinyMCE terjaga)
+            $filepath = $this->documentService->generateDocx($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
+
+            // Generate PDF dari Blade template (DomPDF) — kertas F4 (21×33 cm)
             $kabkota      = $permohonan->kabupatenKota->nama;
             $tahun        = $permohonan->tahun ?? date('Y');
-            $jenisDokumen = strtoupper($permohonan->jenisDokumen->nama ?? 'DOKUMEN');
+            $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
             $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
-            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact('sistematika', 'urusan', 'kabkota', 'tahun', 'jenisDokumen', 'jenisWilayah'))
-                ->setPaper('a4', 'portrait');
+            $ranperkada   = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
+            $jabatanTtd   = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
+            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact(
+                'sistematika', 'urusan', 'form', 'rekomendasi', 'kelengkapan',
+                'kabkota', 'tahun', 'jenisDokumen', 'jenisWilayah',
+                'ranperkada', 'jabatanTtd', 'tanggalGenerate'
+            ))->setPaper([0, 0, 595.28, 935.43], 'portrait');
 
             $pdfPath    = str_replace('.docx', '.pdf', $filepath);
             Storage::disk('public')->put($pdfPath, $pdf->output());
