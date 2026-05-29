@@ -6,6 +6,7 @@ use App\Models\Permohonan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Novay\Word\Services\AdvancedService;
+use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
 
 class HasilFasilitasiDocumentService
@@ -24,8 +25,7 @@ class HasilFasilitasiDocumentService
     ];
 
     /**
-     * Generate dokumen DOCX sesuai template resmi hasil fasilitasi.
-     * Kertas F4 (21×33 cm), Arial 12pt, spasi 1,5.
+     * Build dokumen DOCX dan simpan ke file. Mengembalikan filepath relatif storage.
      */
     public function generateDocx(
         Permohonan $permohonan,
@@ -43,6 +43,78 @@ class HasilFasilitasiDocumentService
             'iconv_avail'   => function_exists('iconv'),
         ]);
 
+        $wordService  = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
+        $kabkota      = $permohonan->kabupatenKota->nama;
+        $tahun        = $permohonan->tahun ?? date('Y');
+        $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
+
+        $safeKabkota = str_replace([' ', '/'], '_', $kabkota);
+        $safeJenis   = str_replace(' ', '_', $jenisDokumen);
+        $filename    = 'Draft_Lampiran_Hasil_Fasilitasi_' . $safeJenis . '_' . $safeKabkota . '_' . $tahun . '.docx';
+        $filepath    = 'hasil-fasilitasi/' . $filename;
+        $fullPath    = storage_path('app/public/' . $filepath);
+
+        if (!file_exists(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+        }
+
+        Log::info('HasilFasilitasi: menyimpan DOCX', [
+            'path'         => $fullPath,
+            'dir_writable' => is_writable(dirname($fullPath)),
+        ]);
+
+        try {
+            $wordService->save($fullPath);
+        } catch (\Throwable $e) {
+            Log::error('HasilFasilitasi: gagal menyimpan DOCX', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile() . ':' . $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+
+        Log::info('HasilFasilitasi: DOCX berhasil disimpan', [
+            'path'      => $fullPath,
+            'file_size' => file_exists($fullPath) ? filesize($fullPath) : null,
+        ]);
+
+        return $filepath;
+    }
+
+    /**
+     * Build dokumen dan stream langsung ke php://output tanpa menyimpan ke storage.
+     */
+    public function streamDocx(
+        Permohonan $permohonan,
+        $sistematika,
+        $urusan,
+        $form        = null,
+        $rekomendasi = null,
+        $kelengkapan = null
+    ): void {
+        Log::info('HasilFasilitasi: stream DOCX on-demand', [
+            'permohonan_id' => $permohonan->id,
+        ]);
+
+        $wordService = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
+
+        $writer = IOFactory::createWriter($wordService->getPhpWord(), 'Word2007');
+        $writer->save('php://output');
+    }
+
+    /**
+     * Build seluruh konten dokumen ke dalam PhpWord dan kembalikan AdvancedService.
+     * Digunakan bersama oleh generateDocx() dan streamDocx().
+     */
+    private function buildDocument(
+        Permohonan $permohonan,
+        $sistematika,
+        $urusan,
+        $form        = null,
+        $rekomendasi = null,
+        $kelengkapan = null
+    ): AdvancedService {
         // Wajib: escape XML special chars (&, <, >) agar DOCX tidak corrupt
         Settings::setOutputEscapingEnabled(true);
 
@@ -279,39 +351,7 @@ class HasilFasilitasiDocumentService
         $sigCell->addText('Kepala Badan Perencanaan Pembangunan Daerah', $fN, $pTtd);
         $sigCell->addText('Provinsi Maluku Utara', $fN, $pTtd);
 
-        // ─── Simpan via library ───────────────────────────────────────────────
-        $safeKabkota = str_replace([' ', '/'], '_', $kabkota);
-        $safeJenis   = str_replace(' ', '_', $jenisDokumen);
-        $filename    = 'Draft_Lampiran_Hasil_Fasilitasi_' . $safeJenis . '_' . $safeKabkota . '_' . $tahun . '.docx';
-        $filepath    = 'hasil-fasilitasi/' . $filename;
-        $fullPath    = storage_path('app/public/' . $filepath);
-
-        if (!file_exists(dirname($fullPath))) {
-            mkdir(dirname($fullPath), 0755, true);
-        }
-
-        Log::info('HasilFasilitasi: menyimpan DOCX', [
-            'path'     => $fullPath,
-            'dir_writable' => is_writable(dirname($fullPath)),
-        ]);
-
-        try {
-            $wordService->save($fullPath);
-        } catch (\Throwable $e) {
-            Log::error('HasilFasilitasi: gagal menyimpan DOCX', [
-                'error' => $e->getMessage(),
-                'file'  => $e->getFile() . ':' . $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-
-        Log::info('HasilFasilitasi: DOCX berhasil disimpan', [
-            'path'      => $fullPath,
-            'file_size' => file_exists($fullPath) ? filesize($fullPath) : null,
-        ]);
-
-        return $filepath;
+        return $wordService;
     }
 
     /**
