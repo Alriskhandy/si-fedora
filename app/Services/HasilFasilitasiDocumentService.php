@@ -504,13 +504,16 @@ class HasilFasilitasiDocumentService
     {
         $text = strip_tags(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
-        // Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F
-        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
-
-        // Pastikan string adalah UTF-8 valid; buang byte yang tidak valid
-        if (!mb_check_encoding($text, 'UTF-8')) {
+        // 1. Buang byte UTF-8 tidak valid DULU — preg_replace /u mengembalikan null
+        //    jika string mengandung byte invalid, sehingga harus dibersihkan lebih dulu.
+        if (function_exists('iconv')) {
+            $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
+        } elseif (!mb_check_encoding($text, 'UTF-8')) {
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
+
+        // 2. Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
 
         return $text;
     }
