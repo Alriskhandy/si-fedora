@@ -43,6 +43,35 @@ class HasilFasilitasiDocumentService
             'iconv_avail'   => function_exists('iconv'),
         ]);
 
+        // Scan sumber data untuk karakter ilegal XML (U+FFFE, U+FFFF, kontrol chars)
+        $this->scanForXmlIllegalChars('kabupatenKota.nama', $permohonan->kabupatenKota->nama ?? '');
+        $this->scanForXmlIllegalChars('jenisDokumen.nama', $permohonan->jenisDokumen->nama ?? '');
+        $this->scanForXmlIllegalChars('kabupatenKota.jenis', $permohonan->kabupatenKota->jenis ?? '');
+        foreach ($sistematika as $idx => $item) {
+            $this->scanForXmlIllegalChars("sistematika[$idx].sub_bab", $item->sub_bab ?? '');
+            $this->scanForXmlIllegalChars("sistematika[$idx].catatan_penyempurnaan", $item->catatan_penyempurnaan ?? '');
+            $this->scanForXmlIllegalChars("sistematika[$idx].masterBab.nama_bab", $item->masterBab->nama_bab ?? '');
+        }
+        foreach ($urusan as $idx => $item) {
+            $this->scanForXmlIllegalChars("urusan[$idx].catatan_masukan", $item->catatan_masukan ?? '');
+            $this->scanForXmlIllegalChars("urusan[$idx].masterUrusan.nama", $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama ?? '');
+        }
+        if ($form) {
+            foreach ($form as $idx => $item) {
+                $this->scanForXmlIllegalChars("form[$idx].catatan", $item->catatan ?? '');
+            }
+        }
+        if ($rekomendasi) {
+            foreach ($rekomendasi as $idx => $item) {
+                $this->scanForXmlIllegalChars("rekomendasi[$idx].catatan", $item->catatan ?? '');
+            }
+        }
+        if ($kelengkapan) {
+            foreach ($kelengkapan as $idx => $doc) {
+                $this->scanForXmlIllegalChars("kelengkapan[$idx].nama_dokumen", $doc->masterKelengkapan->nama_dokumen ?? $doc->file_name ?? '');
+            }
+        }
+
         $phpWord      = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
         $kabkota      = $permohonan->kabupatenKota->nama;
         $tahun        = $permohonan->tahun ?? date('Y');
@@ -113,10 +142,10 @@ class HasilFasilitasiDocumentService
             'writable' => is_writable($tempDir),
         ]);
 
-        $kabkota      = $permohonan->kabupatenKota->nama;
+        $kabkota      = $this->cleanText($permohonan->kabupatenKota->nama ?? '');
         $tahun        = $permohonan->tahun ?? date('Y');
-        $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
-        $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? 'Kabupaten'));
+        $jenisDokumen = ucwords(strtolower($this->cleanText($permohonan->jenisDokumen->nama ?? 'Dokumen')));
+        $jenisWilayah = ucfirst(strtolower($this->cleanText($permohonan->kabupatenKota->jenis ?? 'Kabupaten')));
         $ranperkada   = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
         $jabatanTtd   = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
         $tanggal      = $this->tanggalIndonesia();
@@ -216,7 +245,7 @@ class HasilFasilitasiDocumentService
         );
         if ($kelengkapan->count() > 0) {
             foreach ($kelengkapan as $idx => $doc) {
-                $namaDok = $doc->masterKelengkapan->nama_dokumen ?? $doc->file_name ?? '-';
+                $namaDok = $this->cleanText($doc->masterKelengkapan->nama_dokumen ?? $doc->file_name ?? '-');
                 $section->addText(($idx + 1) . '.   ' . $namaDok, $fN, $pIn);
             }
         } else {
@@ -378,7 +407,7 @@ class HasilFasilitasiDocumentService
                 $row->addCell(self::NO_WIDTH)->addText('');
                 $row->addCell(self::BAB_WIDTH)
                     ->addText(
-                        $this->formatTitleWithRomanNumerals($item['bab_nama']),
+                        $this->formatTitleWithRomanNumerals($this->cleanText($item['bab_nama'])),
                         $fCell
                     );
                 $row->addCell(self::CATATAN_WIDTH)->addText('');
@@ -651,6 +680,22 @@ class HasilFasilitasiDocumentService
     {
         $d = $date ?? new \DateTime();
         return $d->format('j') . ' ' . self::BULAN_ID[(int)$d->format('n')] . ' ' . $d->format('Y');
+    }
+
+    /**
+     * Scan string untuk karakter ilegal XML dan log hasilnya (diagnostik sementara).
+     */
+    private function scanForXmlIllegalChars(string $field, string $value): void
+    {
+        if (preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', $value)) {
+            preg_match_all('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', $value, $matches);
+            $chars = array_map(fn($c) => sprintf('U+%04X', mb_ord($c, 'UTF-8')), $matches[0]);
+            Log::warning('HasilFasilitasi: karakter ilegal XML ditemukan', [
+                'field'   => $field,
+                'chars'   => array_unique($chars),
+                'preview' => mb_substr(strip_tags($value), 0, 120, 'UTF-8'),
+            ]);
+        }
     }
 
     public function saveDocument(string $content, string $filename): string
