@@ -5,7 +5,8 @@ namespace App\Services;
 use App\Models\Permohonan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Novay\Word\Services\AdvancedService;
+use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Settings;
 
 class HasilFasilitasiDocumentService
@@ -42,7 +43,7 @@ class HasilFasilitasiDocumentService
             'iconv_avail'   => function_exists('iconv'),
         ]);
 
-        $wordService  = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
+        $phpWord      = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
         $kabkota      = $permohonan->kabupatenKota->nama;
         $tahun        = $permohonan->tahun ?? date('Y');
         $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
@@ -63,7 +64,8 @@ class HasilFasilitasiDocumentService
         ]);
 
         try {
-            $wordService->save($fullPath);
+            $writer = IOFactory::createWriter($phpWord, 'Word2007');
+            $writer->save($fullPath);
         } catch (\Throwable $e) {
             Log::error('HasilFasilitasi: gagal menyimpan DOCX', [
                 'error' => $e->getMessage(),
@@ -77,6 +79,9 @@ class HasilFasilitasiDocumentService
             'path'      => $fullPath,
             'file_size' => file_exists($fullPath) ? filesize($fullPath) : null,
         ]);
+
+        // Integrity check: pastikan file adalah ZIP valid dengan document.xml yang bisa di-parse
+        $this->checkDocxIntegrity($fullPath);
 
         return $filepath;
     }
@@ -92,7 +97,7 @@ class HasilFasilitasiDocumentService
         $form        = null,
         $rekomendasi = null,
         $kelengkapan = null
-    ): AdvancedService {
+    ): PhpWord {
         // Wajib: escape XML special chars (&, <, >) agar DOCX tidak corrupt
         Settings::setOutputEscapingEnabled(true);
 
@@ -121,8 +126,7 @@ class HasilFasilitasiDocumentService
         $kelengkapan = $kelengkapan ?? collect();
 
         // ─── Inisialisasi library ─────────────────────────────────────────────
-        $wordService = new AdvancedService();
-        $phpWord     = $wordService->getPhpWord();
+        $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(12);
 
@@ -329,7 +333,7 @@ class HasilFasilitasiDocumentService
         $sigCell->addText('Kepala Badan Perencanaan Pembangunan Daerah', $fN, $pTtd);
         $sigCell->addText('Provinsi Maluku Utara', $fN, $pTtd);
 
-        return $wordService;
+        return $phpWord;
     }
 
     /**
@@ -542,6 +546,43 @@ class HasilFasilitasiDocumentService
         );
 
         return $title;
+    }
+
+    /**
+     * Periksa integritas DOCX: apakah ZIP valid dan document.xml bisa di-parse.
+     * Hanya untuk logging diagnostik — tidak melempar exception.
+     */
+    private function checkDocxIntegrity(string $fullPath): void
+    {
+        $zip    = new \ZipArchive();
+        $result = $zip->open($fullPath);
+
+        if ($result !== true) {
+            Log::error('HasilFasilitasi: DOCX bukan ZIP yang valid', [
+                'zip_error_code' => $result,
+                'path'           => $fullPath,
+            ]);
+            return;
+        }
+
+        $hasDocXml = $zip->locateName('word/document.xml') !== false;
+        $docXml    = $hasDocXml ? $zip->getFromName('word/document.xml') : null;
+        $numFiles  = $zip->numFiles;
+        $zip->close();
+
+        libxml_use_internal_errors(true);
+        $xmlValid  = $docXml ? (simplexml_load_string($docXml) !== false) : false;
+        $xmlErrors = array_map(fn($e) => trim($e->message), array_slice(libxml_get_errors(), 0, 5));
+        libxml_clear_errors();
+
+        Log::info('HasilFasilitasi: DOCX integrity check', [
+            'is_valid_zip'   => true,
+            'num_files'      => $numFiles,
+            'has_document'   => $hasDocXml,
+            'xml_valid'      => $xmlValid,
+            'xml_errors'     => $xmlErrors,
+            'xml_length'     => $docXml ? strlen($docXml) : null,
+        ]);
     }
 
     /**
