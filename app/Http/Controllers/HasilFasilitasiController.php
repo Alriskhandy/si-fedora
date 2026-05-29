@@ -73,20 +73,7 @@ class HasilFasilitasiController extends Controller
             ->where('is_active', true)
             ->first();
 
-        // Check if user is fasilitator with is_pic = true (koordinator) for this specific team
-        $isKoord = $assignment !== null;
-
-        Log::info('isKoordinator Check', [
-            'user_id' => Auth::id(),
-            'permohonan_id' => $permohonan->id,
-            'kab_kota_id' => $permohonan->kab_kota_id,
-            'jenis_dokumen_id' => $jenisDokumenId,
-            'tahun' => $permohonan->tahun,
-            'assignment_found' => $assignment ? 'YES' : 'NO',
-            'result' => $isKoord
-        ]);
-
-        return $isKoord;
+        return $assignment !== null;
     }
 
     /**
@@ -134,20 +121,7 @@ class HasilFasilitasiController extends Controller
             ->where('is_active', true)
             ->first();
 
-        $isMember = $assignment !== null;
-
-        Log::info('isTimMember Check', [
-            'user_id' => Auth::id(),
-            'permohonan_id' => $permohonan->id,
-            'kab_kota_id' => $permohonan->kab_kota_id,
-            'jenis_dokumen_id' => $jenisDokumenId,
-            'tahun' => $permohonan->tahun,
-            'assignment_found' => $assignment ? 'YES (role: ' . $assignment->role_type . ')' : 'NO',
-            'result' => $isMember
-        ]);
-
-        // Check if user is member of this specific team
-        return $isMember;
+        return $assignment !== null;
     }
 
     /**
@@ -425,7 +399,7 @@ class HasilFasilitasiController extends Controller
 
         // Check if current user is koordinator (fasilitator dengan is_pic=true)
         $isKoordinator = $this->isKoordinator($permohonan);
-        
+
         // Check if current user is admin
         $isAdmin = $this->isAdmin();
 
@@ -448,15 +422,6 @@ class HasilFasilitasiController extends Controller
                 'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values()
             ];
         }
-
-        // Debug log
-        Log::info('HasilFasilitasi Create', [
-            'user_id' => Auth::id(),
-            'permohonan_id' => $permohonan->id,
-            'isKoordinator' => $isKoordinator,
-            'tim_found' => $timInfo !== null
-        ]);
-        // dd($permohonan);
 
         return view('pages.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
     }

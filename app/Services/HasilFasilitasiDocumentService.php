@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Permohonan;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
@@ -35,43 +34,6 @@ class HasilFasilitasiDocumentService
         $rekomendasi = null,
         $kelengkapan = null
     ): string {
-        Log::info('HasilFasilitasi: mulai generate DOCX', [
-            'permohonan_id' => $permohonan->id,
-            'php_version'   => PHP_VERSION,
-            'os'            => PHP_OS,
-            'sys_temp_dir'  => sys_get_temp_dir(),
-            'iconv_avail'   => function_exists('iconv'),
-        ]);
-
-        // Scan sumber data untuk karakter ilegal XML (U+FFFE, U+FFFF, kontrol chars)
-        $this->scanForXmlIllegalChars('kabupatenKota.nama', $permohonan->kabupatenKota->nama ?? '');
-        $this->scanForXmlIllegalChars('jenisDokumen.nama', $permohonan->jenisDokumen->nama ?? '');
-        $this->scanForXmlIllegalChars('kabupatenKota.jenis', $permohonan->kabupatenKota->jenis ?? '');
-        foreach ($sistematika as $idx => $item) {
-            $this->scanForXmlIllegalChars("sistematika[$idx].sub_bab", $item->sub_bab ?? '');
-            $this->scanForXmlIllegalChars("sistematika[$idx].catatan_penyempurnaan", $item->catatan_penyempurnaan ?? '');
-            $this->scanForXmlIllegalChars("sistematika[$idx].masterBab.nama_bab", $item->masterBab->nama_bab ?? '');
-        }
-        foreach ($urusan as $idx => $item) {
-            $this->scanForXmlIllegalChars("urusan[$idx].catatan_masukan", $item->catatan_masukan ?? '');
-            $this->scanForXmlIllegalChars("urusan[$idx].masterUrusan.nama", $item->masterUrusan->nama_urusan ?? $item->masterUrusan->nama ?? '');
-        }
-        if ($form) {
-            foreach ($form as $idx => $item) {
-                $this->scanForXmlIllegalChars("form[$idx].catatan", $item->catatan ?? '');
-            }
-        }
-        if ($rekomendasi) {
-            foreach ($rekomendasi as $idx => $item) {
-                $this->scanForXmlIllegalChars("rekomendasi[$idx].catatan", $item->catatan ?? '');
-            }
-        }
-        if ($kelengkapan) {
-            foreach ($kelengkapan as $idx => $doc) {
-                $this->scanForXmlIllegalChars("kelengkapan[$idx].nama_dokumen", $doc->masterKelengkapan->nama_dokumen ?? $doc->file_name ?? '');
-            }
-        }
-
         $phpWord      = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
         $kabkota      = $permohonan->kabupatenKota->nama;
         $tahun        = $permohonan->tahun ?? date('Y');
@@ -87,30 +49,8 @@ class HasilFasilitasiDocumentService
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        Log::info('HasilFasilitasi: menyimpan DOCX', [
-            'path'         => $fullPath,
-            'dir_writable' => is_writable(dirname($fullPath)),
-        ]);
-
-        try {
-            $writer = IOFactory::createWriter($phpWord, 'Word2007');
-            $writer->save($fullPath);
-        } catch (\Throwable $e) {
-            Log::error('HasilFasilitasi: gagal menyimpan DOCX', [
-                'error' => $e->getMessage(),
-                'file'  => $e->getFile() . ':' . $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-
-        Log::info('HasilFasilitasi: DOCX berhasil disimpan', [
-            'path'      => $fullPath,
-            'file_size' => file_exists($fullPath) ? filesize($fullPath) : null,
-        ]);
-
-        // Integrity check: pastikan file adalah ZIP valid dengan document.xml yang bisa di-parse
-        $this->checkDocxIntegrity($fullPath);
+        $writer = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($fullPath);
 
         return $filepath;
     }
@@ -136,11 +76,6 @@ class HasilFasilitasiDocumentService
             mkdir($tempDir, 0755, true);
         }
         Settings::setTempDir($tempDir);
-
-        Log::debug('HasilFasilitasi: temp dir', [
-            'path'     => $tempDir,
-            'writable' => is_writable($tempDir),
-        ]);
 
         $kabkota      = $this->cleanText($permohonan->kabupatenKota->nama ?? '');
         $tahun        = $permohonan->tahun ?? date('Y');
@@ -578,43 +513,6 @@ class HasilFasilitasiDocumentService
     }
 
     /**
-     * Periksa integritas DOCX: apakah ZIP valid dan document.xml bisa di-parse.
-     * Hanya untuk logging diagnostik — tidak melempar exception.
-     */
-    private function checkDocxIntegrity(string $fullPath): void
-    {
-        $zip    = new \ZipArchive();
-        $result = $zip->open($fullPath);
-
-        if ($result !== true) {
-            Log::error('HasilFasilitasi: DOCX bukan ZIP yang valid', [
-                'zip_error_code' => $result,
-                'path'           => $fullPath,
-            ]);
-            return;
-        }
-
-        $hasDocXml = $zip->locateName('word/document.xml') !== false;
-        $docXml    = $hasDocXml ? $zip->getFromName('word/document.xml') : null;
-        $numFiles  = $zip->numFiles;
-        $zip->close();
-
-        libxml_use_internal_errors(true);
-        $xmlValid  = $docXml ? (simplexml_load_string($docXml) !== false) : false;
-        $xmlErrors = array_map(fn($e) => trim($e->message), array_slice(libxml_get_errors(), 0, 5));
-        libxml_clear_errors();
-
-        Log::info('HasilFasilitasi: DOCX integrity check', [
-            'is_valid_zip'   => true,
-            'num_files'      => $numFiles,
-            'has_document'   => $hasDocXml,
-            'xml_valid'      => $xmlValid,
-            'xml_errors'     => $xmlErrors,
-            'xml_length'     => $docXml ? strlen($docXml) : null,
-        ]);
-    }
-
-    /**
      * Bersihkan teks agar aman ditulis ke XML/DOCX:
      * - strip HTML tags & decode entities
      * - buang BOM dan zero-width characters
@@ -638,30 +536,15 @@ class HasilFasilitasiDocumentService
         // 4. Buang byte UTF-8 tidak valid DULU — preg_replace /u mengembalikan null
         //    jika string mengandung byte invalid, sehingga harus dibersihkan lebih dulu.
         if (function_exists('iconv')) {
-            $cleaned = @iconv('UTF-8', 'UTF-8//IGNORE', $text);
-            if ($cleaned === false || $cleaned !== $text) {
-                Log::warning('HasilFasilitasi: cleanText — byte UTF-8 invalid ditemukan dan dibuang', [
-                    'original_len' => strlen($text),
-                    'cleaned_len'  => $cleaned === false ? null : strlen($cleaned),
-                    'preview'      => mb_substr($text, 0, 80, 'UTF-8'),
-                ]);
-            }
-            $text = $cleaned ?: '';
+            $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
         } elseif (!mb_check_encoding($text, 'UTF-8')) {
-            Log::warning('HasilFasilitasi: cleanText — UTF-8 tidak valid (iconv tidak tersedia, pakai mb_convert_encoding)');
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
 
         // 5. Hapus karakter ilegal XML 1.0:
         //    - Kontrol: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+007F
         //    - Non-character: U+FFFE, U+FFFF (valid UTF-8 tapi di luar range XML #xE000–#xFFFD)
-        $before = $text;
-        $text   = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', '', $text) ?? '';
-        if ($text !== $before) {
-            Log::warning('HasilFasilitasi: cleanText — karakter ilegal XML ditemukan dan dibuang', [
-                'preview' => mb_substr($before, 0, 80, 'UTF-8'),
-            ]);
-        }
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', '', $text) ?? '';
 
         // 6. Normalisasi line endings (CR+LF / CR → LF), lalu ganti newline dengan spasi
         $text = str_replace(["\r\n", "\r"], "\n", $text);
@@ -680,22 +563,6 @@ class HasilFasilitasiDocumentService
     {
         $d = $date ?? new \DateTime();
         return $d->format('j') . ' ' . self::BULAN_ID[(int)$d->format('n')] . ' ' . $d->format('Y');
-    }
-
-    /**
-     * Scan string untuk karakter ilegal XML dan log hasilnya (diagnostik sementara).
-     */
-    private function scanForXmlIllegalChars(string $field, string $value): void
-    {
-        if (preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', $value)) {
-            preg_match_all('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', $value, $matches);
-            $chars = array_map(fn($c) => sprintf('U+%04X', mb_ord($c, 'UTF-8')), $matches[0]);
-            Log::warning('HasilFasilitasi: karakter ilegal XML ditemukan', [
-                'field'   => $field,
-                'chars'   => array_unique($chars),
-                'preview' => mb_substr(strip_tags($value), 0, 120, 'UTF-8'),
-            ]);
-        }
     }
 
     public function saveDocument(string $content, string $filename): string
