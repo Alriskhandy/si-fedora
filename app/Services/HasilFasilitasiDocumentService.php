@@ -623,11 +623,15 @@ class HasilFasilitasiDocumentService
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
 
-        // 5. Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+007F
+        // 5. Hapus karakter ilegal XML 1.0:
+        //    - Kontrol: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+007F
+        //    - Non-character: U+FFFE, U+FFFF (valid UTF-8 tapi di luar range XML #xE000–#xFFFD)
         $before = $text;
-        $text   = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
+        $text   = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{FFFE}\x{FFFF}]/u', '', $text) ?? '';
         if ($text !== $before) {
-            Log::warning('HasilFasilitasi: cleanText — karakter kontrol XML ilegal ditemukan dan dibuang');
+            Log::warning('HasilFasilitasi: cleanText — karakter ilegal XML ditemukan dan dibuang', [
+                'preview' => mb_substr($before, 0, 80, 'UTF-8'),
+            ]);
         }
 
         // 6. Normalisasi line endings (CR+LF / CR → LF), lalu ganti newline dengan spasi
