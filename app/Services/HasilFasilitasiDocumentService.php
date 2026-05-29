@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Permohonan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Novay\Word\Services\AdvancedService;
 use PhpOffice\PhpWord\Settings;
@@ -34,6 +35,14 @@ class HasilFasilitasiDocumentService
         $rekomendasi = null,
         $kelengkapan = null
     ): string {
+        Log::info('HasilFasilitasi: mulai generate DOCX', [
+            'permohonan_id' => $permohonan->id,
+            'php_version'   => PHP_VERSION,
+            'os'            => PHP_OS,
+            'sys_temp_dir'  => sys_get_temp_dir(),
+            'iconv_avail'   => function_exists('iconv'),
+        ]);
+
         // Wajib: escape XML special chars (&, <, >) agar DOCX tidak corrupt
         Settings::setOutputEscapingEnabled(true);
 
@@ -43,6 +52,11 @@ class HasilFasilitasiDocumentService
             mkdir($tempDir, 0755, true);
         }
         Settings::setTempDir($tempDir);
+
+        Log::debug('HasilFasilitasi: temp dir', [
+            'path'     => $tempDir,
+            'writable' => is_writable($tempDir),
+        ]);
 
         $kabkota      = $permohonan->kabupatenKota->nama;
         $tahun        = $permohonan->tahun ?? date('Y');
@@ -276,7 +290,26 @@ class HasilFasilitasiDocumentService
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        $wordService->save($fullPath);
+        Log::info('HasilFasilitasi: menyimpan DOCX', [
+            'path'     => $fullPath,
+            'dir_writable' => is_writable(dirname($fullPath)),
+        ]);
+
+        try {
+            $wordService->save($fullPath);
+        } catch (\Throwable $e) {
+            Log::error('HasilFasilitasi: gagal menyimpan DOCX', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile() . ':' . $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+
+        Log::info('HasilFasilitasi: DOCX berhasil disimpan', [
+            'path'      => $fullPath,
+            'file_size' => file_exists($fullPath) ? filesize($fullPath) : null,
+        ]);
 
         return $filepath;
     }
@@ -507,13 +540,26 @@ class HasilFasilitasiDocumentService
         // 1. Buang byte UTF-8 tidak valid DULU — preg_replace /u mengembalikan null
         //    jika string mengandung byte invalid, sehingga harus dibersihkan lebih dulu.
         if (function_exists('iconv')) {
-            $text = @iconv('UTF-8', 'UTF-8//IGNORE', $text) ?: '';
+            $cleaned = @iconv('UTF-8', 'UTF-8//IGNORE', $text);
+            if ($cleaned === false || $cleaned !== $text) {
+                Log::warning('HasilFasilitasi: cleanText — byte UTF-8 invalid ditemukan dan dibuang', [
+                    'original_len' => strlen($text),
+                    'cleaned_len'  => $cleaned === false ? null : strlen($cleaned),
+                    'preview'      => mb_substr($text, 0, 80, 'UTF-8'),
+                ]);
+            }
+            $text = $cleaned ?: '';
         } elseif (!mb_check_encoding($text, 'UTF-8')) {
+            Log::warning('HasilFasilitasi: cleanText — UTF-8 tidak valid (iconv tidak tersedia, pakai mb_convert_encoding)');
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
 
         // 2. Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F
-        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
+        $before = $text;
+        $text   = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
+        if ($text !== $before) {
+            Log::warning('HasilFasilitasi: cleanText — karakter kontrol XML ilegal ditemukan dan dibuang');
+        }
 
         return $text;
     }
