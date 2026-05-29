@@ -6,7 +6,6 @@ use App\Models\Permohonan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Novay\Word\Services\AdvancedService;
-use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Settings;
 
 class HasilFasilitasiDocumentService
@@ -80,27 +79,6 @@ class HasilFasilitasiDocumentService
         ]);
 
         return $filepath;
-    }
-
-    /**
-     * Build dokumen dan stream langsung ke php://output tanpa menyimpan ke storage.
-     */
-    public function streamDocx(
-        Permohonan $permohonan,
-        $sistematika,
-        $urusan,
-        $form        = null,
-        $rekomendasi = null,
-        $kelengkapan = null
-    ): void {
-        Log::info('HasilFasilitasi: stream DOCX on-demand', [
-            'permohonan_id' => $permohonan->id,
-        ]);
-
-        $wordService = $this->buildDocument($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
-
-        $writer = IOFactory::createWriter($wordService->getPhpWord(), 'Word2007');
-        $writer->save('php://output');
     }
 
     /**
@@ -568,16 +546,26 @@ class HasilFasilitasiDocumentService
 
     /**
      * Bersihkan teks agar aman ditulis ke XML/DOCX:
-     * - strip HTML tags
-     * - decode HTML entities
-     * - hapus karakter kontrol ilegal XML 1.0 (kecuali tab, LF, CR)
-     * - pastikan UTF-8 valid (buang byte invalid)
+     * - strip HTML tags & decode entities
+     * - buang BOM dan zero-width characters
+     * - normalisasi NBSP dan whitespace non-standar → spasi biasa
+     * - pastikan UTF-8 valid (buang byte invalid via iconv)
+     * - hapus karakter kontrol ilegal XML 1.0 (kecuali tab U+0009, LF U+000A, CR U+000D)
+     * - normalisasi line endings → spasi tunggal
      */
     private function cleanText(string $html): string
     {
+        // 1. Strip HTML tags & decode entities (termasuk &amp; &lt; &gt; &nbsp; dll)
         $text = strip_tags(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
-        // 1. Buang byte UTF-8 tidak valid DULU — preg_replace /u mengembalikan null
+        // 2. Buang BOM UTF-8 (EF BB BF) jika ada di awal
+        $text = ltrim($text, "\xEF\xBB\xBF");
+
+        // 3. Normalisasi NBSP (U+00A0 = \xc2\xa0) dan spasi khusus lainnya ke spasi biasa
+        //    Termasuk: thin space, en space, em space, narrow no-break space, dll.
+        $text = preg_replace('/[\x{00A0}\x{00AD}\x{200B}\x{200C}\x{200D}\x{200E}\x{200F}\x{FEFF}\x{2028}\x{2029}\x{202F}\x{205F}\x{3000}]/u', ' ', $text) ?? $text;
+
+        // 4. Buang byte UTF-8 tidak valid DULU — preg_replace /u mengembalikan null
         //    jika string mengandung byte invalid, sehingga harus dibersihkan lebih dulu.
         if (function_exists('iconv')) {
             $cleaned = @iconv('UTF-8', 'UTF-8//IGNORE', $text);
@@ -594,14 +582,21 @@ class HasilFasilitasiDocumentService
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
 
-        // 2. Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F
+        // 5. Hapus karakter kontrol ilegal XML 1.0: U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+007F
         $before = $text;
         $text   = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? '';
         if ($text !== $before) {
             Log::warning('HasilFasilitasi: cleanText — karakter kontrol XML ilegal ditemukan dan dibuang');
         }
 
-        return $text;
+        // 6. Normalisasi line endings (CR+LF / CR → LF), lalu ganti newline dengan spasi
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        $text = str_replace("\n", ' ', $text);
+
+        // 7. Rapikan spasi berulang
+        $text = preg_replace('/ {2,}/', ' ', $text) ?? $text;
+
+        return trim($text);
     }
 
     /**

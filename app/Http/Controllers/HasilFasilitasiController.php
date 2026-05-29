@@ -1205,59 +1205,31 @@ class HasilFasilitasiController extends Controller
      */
     public function downloadWord(Permohonan $permohonan)
     {
-        $hasilFasilitasi = $permohonan->hasilFasilitasi;
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi) {
-            return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            if (!$hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            if (!$hasilFasilitasi->draft_file || !Storage::disk('public')->exists($hasilFasilitasi->draft_file)) {
+                return redirect()->back()->with('error', 'File draft belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.docx';
+            return response()->download(
+                $this->documentService->getStoragePath($hasilFasilitasi->draft_file),
+                $filename,
+                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading Word hasil fasilitasi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengunduh dokumen: ' . $e->getMessage());
         }
-
-        if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
-        }
-
-        if (!$hasilFasilitasi->draft_file) {
-            return redirect()->back()->with('error', 'Draft belum dibuat. Silakan koordinator membuat draft terlebih dahulu.');
-        }
-
-        $sistematika = $hasilFasilitasi->hasilSistematika()
-            ->with('masterBab')
-            ->orderBy('master_bab_id')
-            ->orderBy('id')
-            ->get();
-
-        $urusan = $hasilFasilitasi->hasilUrusan()
-            ->with('masterUrusan')
-            ->join('master_urusan', 'hasil_fasilitasi_urusan.master_urusan_id', '=', 'master_urusan.id')
-            ->orderBy('master_urusan.urutan')
-            ->orderBy('hasil_fasilitasi_urusan.id')
-            ->select('hasil_fasilitasi_urusan.*')
-            ->get();
-
-        $form        = $hasilFasilitasi->hasilForm()->orderBy('id')->get();
-        $rekomendasi = $hasilFasilitasi->hasilRekomendasi()->orderBy('id')->get();
-        $kelengkapan = $permohonan->permohonanDokumen()->with('masterKelengkapan')->orderBy('id')->get();
-
-        $kabkota      = $permohonan->kabupatenKota->nama;
-        $tahun        = $permohonan->tahun ?? date('Y');
-        $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
-        $safeKabkota  = str_replace([' ', '/'], '_', $kabkota);
-        $safeJenis    = str_replace(' ', '_', $jenisDokumen);
-        $filename     = 'Hasil_Fasilitasi_' . $safeJenis . '_' . $safeKabkota . '_' . $tahun . '.docx';
-
-        $documentService = $this->documentService;
-
-        return response()->stream(
-            function () use ($documentService, $permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan) {
-                $documentService->streamDocx($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
-            },
-            200,
-            [
-                'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                'Cache-Control'       => 'no-cache, no-store, must-revalidate',
-                'Pragma'              => 'no-cache',
-            ]
-        );
     }
 
     /**
