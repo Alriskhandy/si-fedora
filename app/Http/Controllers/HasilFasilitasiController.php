@@ -815,15 +815,6 @@ class HasilFasilitasiController extends Controller
                 return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
             }
 
-            // Cek duplikat urusan
-            $exists = HasilFasilitasiUrusan::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
-                ->where('master_urusan_id', $request->master_urusan_id)
-                ->exists();
-
-            if ($exists) {
-                return response()->json(['error' => 'Urusan ini sudah ditambahkan'], 400);
-            }
-
             $urusan = HasilFasilitasiUrusan::create([
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
                 'master_urusan_id' => $request->master_urusan_id,
