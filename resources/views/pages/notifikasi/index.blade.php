@@ -12,16 +12,26 @@
                         <h4 class="mb-1">Notifikasi</h4>
                         <p class="mb-0 text-muted">Semua notifikasi dan pemberitahuan sistem</p>
                     </div>
-                    @if (count($notifikasi) > 0)
-                        <form action="{{ route('notifikasi.destroy-all') }}" method="POST"
-                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus semua notifikasi?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                <i class="bx bx-trash"></i> Hapus Semua
-                            </button>
-                        </form>
-                    @endif
+                    <div class="d-flex gap-2">
+                        @if ($stats['belum_dibaca'] > 0)
+                            <form action="{{ route('notifikasi.mark-all-read') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bx bx-check-double"></i> Tandai Semua Sudah Dibaca
+                                </button>
+                            </form>
+                        @endif
+                        @if (count($notifikasi) > 0)
+                            <form action="{{ route('notifikasi.destroy-all') }}" method="POST"
+                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus semua notifikasi?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bx bx-trash"></i> Hapus Semua
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -210,14 +220,7 @@
 
             @if ($notifikasi->total() > 0)
                 <div class="card-footer">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <form action="{{ route('notifikasi.mark-all-read') }}" method="POST" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                <i class="bx bx-check-double"></i> Tandai Semua Sudah Dibaca
-                            </button>
-                        </form>
-
+                    <div class="d-flex justify-content-end align-items-center">
                         <div>
                             {{ $notifikasi->links() }}
                         </div>

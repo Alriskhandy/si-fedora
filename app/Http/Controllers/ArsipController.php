@@ -15,7 +15,7 @@ class ArsipController extends Controller
     {
         // Get all jenis dokumen with count of permohonan
         $jenisDokumenList = MasterJenisDokumen::withCount(['permohonan' => function($query) {
-            $query->where('status_akhir', 'selesai'); // Only count completed documents
+            $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']); // Permohonan yang sudah diajukan
         }])
         ->orderBy('nama')
         ->get();
@@ -37,7 +37,7 @@ class ArsipController extends Controller
             'pemohon'
         ])
         ->where('jenis_dokumen_id', $jenisDokumenId)
-        ->where('status_akhir', 'selesai');
+        ->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
 
         // Filter by search
         if ($request->filled('search')) {
@@ -59,7 +59,7 @@ class ArsipController extends Controller
         
         // Get filter options
         $tahunList = Permohonan::where('jenis_dokumen_id', $jenisDokumenId)
-            ->where('status_akhir', 'selesai')
+            ->whereIn('status_akhir', ['proses', 'revisi', 'selesai'])
             ->selectRaw('DISTINCT tahun')
             ->orderByDesc('tahun')
             ->pluck('tahun');
