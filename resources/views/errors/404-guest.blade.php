@@ -333,9 +333,6 @@
                             <a href="javascript:history.back()" class="btn btn-outline-secondary">
                                 <i class="bx bx-arrow-back"></i> Kembali
                             </a>
-                            <a href="{{ route('login') }}" class="btn btn-primary">
-                                <i class="bx bx-log-in"></i> Login
-                            </a>
                         </div>
                     </div>
                 </div>

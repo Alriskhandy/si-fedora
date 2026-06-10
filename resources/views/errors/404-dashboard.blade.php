@@ -46,9 +46,6 @@
                     <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
                         <i class="bx bx-arrow-back"></i> Kembali
                     </a>
-                    <a href="{{ route('dashboard') }}" class="btn btn-primary">
-                        <i class="bx bx-home"></i> Ke Dashboard
-                    </a>
                 </div>
             </div>
         </div>
