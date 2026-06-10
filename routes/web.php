@@ -36,7 +36,6 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\PerpanjanganWaktuController;
 use App\Http\Controllers\TindakLanjutController;
 use App\Http\Controllers\PenetapanPerdaController;
-use App\Http\Controllers\LogoController;
 use App\Http\Controllers\ArsipController;
 use App\Http\Controllers\ModulController;
 
@@ -57,8 +56,6 @@ use App\Http\Controllers\ModulController;
 Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : view('auth.login');
 })->name('home');
-
-Route::get('/logo/index', [LogoController::class, 'index'])->name('logo.index');
 
 // ========================================
 // AUTHENTICATION ROUTES

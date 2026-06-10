@@ -396,11 +396,11 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="app-brand justify-content-center">
-                            <a href="{{ url('/logo/index') }}" class="app-brand-link gap-2">
+                            <span class="app-brand-link gap-2">
                                 <span class="app-brand-logo demo">
                                     <img src="{{ asset('assets/img/logo.webp') }}" alt="Logo SIFEDORA" width="150">
                                 </span>
-                            </a>
+                            </span>
                         </div>
 
                         <h5 class="mb-2 text-center">Lupa Password?</h5>
