@@ -677,9 +677,62 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
+     * Update item sistematika
+     * Hanya dapat dilakukan oleh pemilik item atau koordinator
+     *
+     * @param Request $request
+     * @param Permohonan $permohonan
+     * @param int $id ID dari HasilFasilitasiSistematika
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateSistematika(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate([
+            'sub_bab' => 'nullable|string',
+            'catatan_penyempurnaan' => 'required|string',
+        ]);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $sistematika = HasilFasilitasiSistematika::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('id', $id)
+                ->first();
+
+            if (!$sistematika) {
+                return response()->json(['error' => 'Item tidak ditemukan'], 404);
+            }
+
+            if (!$this->canManageItem($sistematika, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $sistematika->update([
+                'sub_bab' => $request->sub_bab,
+                'catatan_penyempurnaan' => $request->catatan_penyempurnaan,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item sistematika berhasil diperbarui',
+                'data' => [
+                    'sub_bab' => $sistematika->sub_bab,
+                    'catatan_penyempurnaan' => $sistematika->catatan_penyempurnaan,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Hapus item sistematika
      * Hanya dapat dilakukan oleh pemilik item atau koordinator
-     * 
+     *
      * @param Permohonan $permohonan
      * @param int $id ID dari HasilFasilitasiSistematika
      * @return \Illuminate\Http\JsonResponse
@@ -824,9 +877,59 @@ class HasilFasilitasiController extends Controller
     }
 
     /**
+     * Update item urusan
+     * Hanya dapat dilakukan oleh pemilik item atau koordinator
+     *
+     * @param Request $request
+     * @param Permohonan $permohonan
+     * @param int $id ID dari HasilFasilitasiUrusan
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateUrusan(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate([
+            'catatan_masukan' => 'required|string',
+        ]);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (!$hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $urusan = HasilFasilitasiUrusan::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('id', $id)
+                ->first();
+
+            if (!$urusan) {
+                return response()->json(['error' => 'Item tidak ditemukan'], 404);
+            }
+
+            if (!$this->canManageItem($urusan, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $urusan->update([
+                'catatan_masukan' => $request->catatan_masukan,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item urusan berhasil diperbarui',
+                'data' => [
+                    'catatan_masukan' => $urusan->catatan_masukan,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Hapus item urusan
      * Hanya dapat dilakukan oleh pemilik item atau koordinator
-     * 
+     *
      * @param Permohonan $permohonan
      * @param int $id ID dari HasilFasilitasiUrusan
      * @return \Illuminate\Http\JsonResponse

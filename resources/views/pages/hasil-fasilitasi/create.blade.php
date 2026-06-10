@@ -466,6 +466,11 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($hasilFasilitasi->hasilSistematika as $item)
+                                                        @php
+                                                            $catatanPenyempurnaan = is_string($item->catatan_penyempurnaan)
+                                                                ? $item->catatan_penyempurnaan
+                                                                : $item->catatan_penyempurnaan->render();
+                                                        @endphp
                                                         <tr class="sistematika-item"
                                                             data-id="{{ $item->id }}"
                                                             data-bab-urutan="{{ $item->masterBab->urutan ?? 999 }}"
@@ -479,9 +484,7 @@
                                                                         class="text-muted">{{ $item->sub_bab }}</span>
                                                                 @endif
                                                             </td>
-                                                            <td>{!! is_string($item->catatan_penyempurnaan)
-                                                                ? $item->catatan_penyempurnaan
-                                                                : $item->catatan_penyempurnaan->render() !!}</td>
+                                                            <td class="catatan-cell">{!! $catatanPenyempurnaan !!}</td>
                                                             <td>
                                                                 <small class="text-muted">
                                                                     {{ $item->user->name ?? '-' }}<br>
@@ -491,6 +494,13 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-warning btn-edit-sistematika"
+                                                                        data-id="{{ $item->id }}"
+                                                                        data-sub-bab="{{ $item->sub_bab }}"
+                                                                        data-catatan="{{ $catatanPenyempurnaan }}">
+                                                                        <i class="bx bx-edit"></i>
+                                                                    </button>
                                                                     <button type="button"
                                                                         class="btn btn-sm btn-danger btn-hapus-sistematika"
                                                                         data-id="{{ $item->id }}">
@@ -589,7 +599,7 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 @if ($isKoordinator || $item->user_id == Auth::id())
-                                                                    <button type="button" class="btn btn-sm btn-warning btn-edit-form" data-id="{{ $item->id }}" data-catatan="{{ htmlspecialchars($item->catatan) }}">
+                                                                    <button type="button" class="btn btn-sm btn-warning btn-edit-form" data-id="{{ $item->id }}" data-catatan="{{ $item->catatan }}">
                                                                         <i class="bx bx-edit"></i>
                                                                     </button>
                                                                     <button type="button" class="btn btn-sm btn-danger btn-hapus-form" data-id="{{ $item->id }}">
@@ -691,6 +701,11 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($hasilFasilitasi->hasilUrusan as $item)
+                                                        @php
+                                                            $catatanMasukan = is_string($item->catatan_masukan)
+                                                                ? $item->catatan_masukan
+                                                                : $item->catatan_masukan->render();
+                                                        @endphp
                                                         <tr class="urusan-item"
                                                             data-id="{{ $item->id }}"
                                                             data-urusan-urutan="{{ $item->masterUrusan->urutan ?? 999 }}"
@@ -699,7 +714,7 @@
                                                             <td class="text-center">{{ $loop->iteration }}</td>
                                                             <td><strong>{{ $item->masterUrusan->urutan }}.
                                                                     {{ $item->masterUrusan->nama_urusan }}</strong></td>
-                                                            <td>{!! is_string($item->catatan_masukan) ? $item->catatan_masukan : $item->catatan_masukan->render() !!}</td>
+                                                            <td class="catatan-cell">{!! $catatanMasukan !!}</td>
                                                             <td>
                                                                 <small class="text-muted">
                                                                     {{ $item->user->name ?? '-' }}<br>
@@ -709,6 +724,12 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-warning btn-edit-urusan"
+                                                                        data-id="{{ $item->id }}"
+                                                                        data-catatan="{{ $catatanMasukan }}">
+                                                                        <i class="bx bx-edit"></i>
+                                                                    </button>
                                                                     <button type="button"
                                                                         class="btn btn-sm btn-danger btn-hapus-urusan"
                                                                         data-id="{{ $item->id }}">
@@ -731,6 +752,7 @@
                                     @endif
                                 </div>
                             </div>
+                            
                             <!-- Tab 4: Rekomendasi -->
                             <div class="tab-pane fade" id="rekomendasi" role="tabpanel">
                                 <p class="text-muted mb-3">
@@ -806,7 +828,7 @@
                                                             </td>
                                                             <td class="text-center">
                                                                 @if ($isKoordinator || $item->user_id == Auth::id())
-                                                                    <button type="button" class="btn btn-sm btn-warning btn-edit-rekomendasi" data-id="{{ $item->id }}" data-catatan="{{ htmlspecialchars($item->catatan) }}">
+                                                                    <button type="button" class="btn btn-sm btn-warning btn-edit-rekomendasi" data-id="{{ $item->id }}" data-catatan="{{ $item->catatan }}">
                                                                         <i class="bx bx-edit"></i>
                                                                     </button>
                                                                     <button type="button" class="btn btn-sm btn-danger btn-hapus-rekomendasi" data-id="{{ $item->id }}">
@@ -831,6 +853,61 @@
 
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Sistematika -->
+    <div class="modal fade" id="editSistematikaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Edit Item Sistematika</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editSistematikaId">
+                    <div class="mb-3">
+                        <label class="form-label">Sub Bab (Opsional)</label>
+                        <input type="text" class="form-control" id="edit_sub_bab"
+                            placeholder="Contoh: 1.2 Dasar Hukum">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Catatan Penyempurnaan <span class="text-danger">*</span></label>
+                        <textarea class="form-control tinymce-editor" id="edit_catatan_penyempurnaan" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveEditSistematika">
+                        <i class="bx bx-save"></i> Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Urusan -->
+    <div class="modal fade" id="editUrusanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bx bx-edit me-2"></i>Edit Item Urusan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editUrusanId">
+                    <div class="mb-3">
+                        <label class="form-label">Catatan Masukan / Saran <span class="text-danger">*</span></label>
+                        <textarea class="form-control tinymce-editor" id="edit_catatan_masukan" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveEditUrusan">
+                        <i class="bx bx-save"></i> Simpan
+                    </button>
                 </div>
             </div>
         </div>
@@ -1115,10 +1192,13 @@
                         displayBabSubBab += `<br><span class="text-muted">${subBab}</span>`;
                     }
 
-                    // Check if user can delete (koordinator or owner)
-                    const canDelete = isKoordinator || data.data.user_id === currentUserId;
-                    const deleteButton = canDelete ?
-                        `<button type="button" class="btn btn-sm btn-danger btn-hapus-sistematika" data-id="${data.data.id}">
+                    // Check if user can manage (koordinator or owner)
+                    const canManage = isKoordinator || data.data.user_id === currentUserId;
+                    const actionButtons = canManage ?
+                        `<button type="button" class="btn btn-sm btn-warning btn-edit-sistematika" data-id="${data.data.id}" data-sub-bab="${subBab}" data-catatan="${encodeURIComponent(data.data.catatan_penyempurnaan)}">
+                                <i class="bx bx-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger btn-hapus-sistematika" data-id="${data.data.id}">
                                 <i class="bx bx-trash"></i>
                             </button>` :
                         `<span class="text-muted small">-</span>`;
@@ -1132,10 +1212,10 @@
                             data-created-at="${createdAtTs}">
                             <td class="text-center">${rowCount}</td>
                             <td>${displayBabSubBab}</td>
-                            <td>${data.data.catatan_penyempurnaan}</td>
+                            <td class="catatan-cell">${data.data.catatan_penyempurnaan}</td>
                             <td><small class="text-muted">${data.data.user ? data.data.user.name : '-'}<br><span class="text-secondary">${data.data.created_at}</span></small></td>
                             <td class="text-center">
-                                ${deleteButton}
+                                ${actionButtons}
                             </td>
                         </tr>
                     `;
@@ -1212,10 +1292,13 @@
                     const tbody = document.getElementById('tableUrusan') || listUrusan.querySelector('tbody');
                     const rowCount = tbody.querySelectorAll('tr').length + 1;
 
-                    // Check if user can delete (koordinator or owner)
-                    const canDelete = isKoordinator || data.data.user_id === currentUserId;
-                    const deleteButton = canDelete ?
-                        `<button type="button" class="btn btn-sm btn-danger btn-hapus-urusan" data-id="${data.data.id}">
+                    // Check if user can manage (koordinator or owner)
+                    const canManage = isKoordinator || data.data.user_id === currentUserId;
+                    const actionButtons = canManage ?
+                        `<button type="button" class="btn btn-sm btn-warning btn-edit-urusan" data-id="${data.data.id}" data-catatan="${encodeURIComponent(data.data.catatan_masukan)}">
+                                <i class="bx bx-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger btn-hapus-urusan" data-id="${data.data.id}">
                                 <i class="bx bx-trash"></i>
                             </button>` :
                         `<span class="text-muted small">-</span>`;
@@ -1229,10 +1312,10 @@
                             data-created-at="${urusanCreatedAtTs}">
                             <td class="text-center">${rowCount}</td>
                             <td><strong>${namaUrusan}</strong></td>
-                            <td>${data.data.catatan_masukan}</td>
+                            <td class="catatan-cell">${data.data.catatan_masukan}</td>
                             <td><small class="text-muted">${data.data.user ? data.data.user.name : '-'}<br><span class="text-secondary">${data.data.created_at}</span></small></td>
                             <td class="text-center">
-                                ${deleteButton}
+                                ${actionButtons}
                             </td>
                         </tr>
                     `;
@@ -1250,6 +1333,23 @@
 
         // Event delegation untuk tombol hapus
         document.addEventListener('click', async function(e) {
+            // Edit Sistematika
+            if (e.target.closest('.btn-edit-sistematika')) {
+                const btn = e.target.closest('.btn-edit-sistematika');
+                document.getElementById('editSistematikaId').value = btn.dataset.id;
+                document.getElementById('edit_sub_bab').value = btn.dataset.subBab || '';
+                tinymce.get('edit_catatan_penyempurnaan').setContent(decodeURIComponent(btn.dataset.catatan));
+                new bootstrap.Modal(document.getElementById('editSistematikaModal')).show();
+            }
+
+            // Edit Urusan
+            if (e.target.closest('.btn-edit-urusan')) {
+                const btn = e.target.closest('.btn-edit-urusan');
+                document.getElementById('editUrusanId').value = btn.dataset.id;
+                tinymce.get('edit_catatan_masukan').setContent(decodeURIComponent(btn.dataset.catatan));
+                new bootstrap.Modal(document.getElementById('editUrusanModal')).show();
+            }
+
             // Hapus Sistematika
             if (e.target.closest('.btn-hapus-sistematika')) {
                 const btn = e.target.closest('.btn-hapus-sistematika');
@@ -1466,6 +1566,61 @@
                     } else { showToast('error', data.error || 'Gagal menghapus'); }
                 } catch (err) { showToast('error', 'Terjadi kesalahan: ' + err.message); }
             }
+        });
+
+        // Save Edit Sistematika
+        document.getElementById('btnSaveEditSistematika').addEventListener('click', async function() {
+            const id = document.getElementById('editSistematikaId').value;
+            const subBab = document.getElementById('edit_sub_bab').value;
+            const catatan = tinymce.get('edit_catatan_penyempurnaan').getContent();
+            if (!catatan.trim()) { showToast('error', 'Catatan tidak boleh kosong'); return; }
+            try {
+                const res = await fetch(`/hasil-fasilitasi/${permohonanId}/sistematika/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ sub_bab: subBab, catatan_penyempurnaan: catatan })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const row = document.querySelector(`.sistematika-item[data-id="${id}"]`);
+                    row.querySelector('.catatan-cell').innerHTML = catatan;
+                    const editBtn = row.querySelector('.btn-edit-sistematika');
+                    editBtn.dataset.catatan = encodeURIComponent(catatan);
+                    editBtn.dataset.subBab = subBab;
+
+                    // Update tampilan sub bab
+                    const babSubBabCell = row.children[1];
+                    const namaBabEl = babSubBabCell.querySelector('strong');
+                    babSubBabCell.innerHTML = '';
+                    babSubBabCell.appendChild(namaBabEl);
+                    if (subBab) {
+                        babSubBabCell.insertAdjacentHTML('beforeend', `<br><span class="text-muted">${subBab}</span>`);
+                    }
+
+                    bootstrap.Modal.getInstance(document.getElementById('editSistematikaModal')).hide();
+                    showToast('success', data.message);
+                } else { showToast('error', data.error || 'Gagal menyimpan'); }
+            } catch (err) { showToast('error', 'Terjadi kesalahan: ' + err.message); }
+        });
+
+        // Save Edit Urusan
+        document.getElementById('btnSaveEditUrusan').addEventListener('click', async function() {
+            const id = document.getElementById('editUrusanId').value;
+            const catatan = tinymce.get('edit_catatan_masukan').getContent();
+            if (!catatan.trim()) { showToast('error', 'Catatan tidak boleh kosong'); return; }
+            try {
+                const res = await fetch(`/hasil-fasilitasi/${permohonanId}/urusan/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ catatan_masukan: catatan })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const row = document.querySelector(`.urusan-item[data-id="${id}"]`);
+                    row.querySelector('.catatan-cell').innerHTML = catatan;
+                    row.querySelector('.btn-edit-urusan').dataset.catatan = encodeURIComponent(catatan);
+                    bootstrap.Modal.getInstance(document.getElementById('editUrusanModal')).hide();
+                    showToast('success', data.message);
+                } else { showToast('error', data.error || 'Gagal menyimpan'); }
+            } catch (err) { showToast('error', 'Terjadi kesalahan: ' + err.message); }
         });
 
         // Save Edit Form

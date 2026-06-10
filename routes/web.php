@@ -308,8 +308,10 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
         Route::get('/{permohonan}/generate', 'generate')->name('generate'); // Koordinator only: create draft
         Route::post('/{permohonan}/sistematika', 'storeSistematika')->name('sistematika.store');
+        Route::put('/{permohonan}/sistematika/{id}', 'updateSistematika')->name('sistematika.update');
         Route::delete('/{permohonan}/sistematika/{id}', 'deleteSistematika')->name('sistematika.delete');
         Route::post('/{permohonan}/urusan', 'storeUrusan')->name('urusan.store');
+        Route::put('/{permohonan}/urusan/{id}', 'updateUrusan')->name('urusan.update');
         Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
         Route::post('/{permohonan}/form', 'storeForm')->name('form.store');
         Route::put('/{permohonan}/form/{id}', 'updateForm')->name('form.update');
