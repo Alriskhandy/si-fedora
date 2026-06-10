@@ -42,11 +42,6 @@ class PermohonanTahapan extends Model
         return $this->belongsTo(User::class, 'koordinator_id');
     }
 
-    public function logs()
-    {
-        return $this->hasMany(PermohonanTahapanLog::class);
-    }
-
     // Scope
     public function scopeByStatus($query, $status)
     {

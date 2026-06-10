@@ -139,19 +139,9 @@ class Permohonan extends Model
     }
 
     // Tim Relations
-    public function koordinator()
-    {
-        return $this->hasOne(KoordinatorAssignment::class);
-    }
-
     public function timFasilitasi()
     {
         return $this->hasMany(TimFasilitasiAssignment::class);
-    }
-
-    public function timVerifikasi()
-    {
-        return $this->hasMany(TimVerifikasiAssignment::class);
     }
 
     // Dokumen Relations
@@ -191,30 +181,10 @@ class Permohonan extends Model
         return $this->hasOne(HasilFasilitasi::class);
     }
 
-    public function fasilitasiBab()
-    {
-        return $this->hasMany(FasilitasiBab::class);
-    }
-
-    public function fasilitasiUrusan()
-    {
-        return $this->hasMany(FasilitasiUrusan::class);
-    }
-
     // Tindak Lanjut Relations
     public function tindakLanjut()
     {
         return $this->hasOne(TindakLanjut::class);
-    }
-
-    public function penetapanPerda()
-    {
-        return $this->hasOne(PenetapanPerda::class);
-    }
-
-    public function suratRekomendasi()
-    {
-        return $this->hasOne(SuratRekomendasi::class, 'permohonan_id');
     }
 
     // Other Relations

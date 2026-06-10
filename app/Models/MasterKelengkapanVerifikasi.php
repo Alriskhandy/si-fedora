@@ -36,11 +36,6 @@ class MasterKelengkapanVerifikasi extends Model
         return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
     }
 
-    public function dokumenVerifikasiDetail()
-    {
-        return $this->hasMany(DokumenVerifikasiDetail::class, 'master_kelengkapan_id');
-    }
-
     // Scope untuk dokumen wajib
     public function scopeWajib($query)
     {

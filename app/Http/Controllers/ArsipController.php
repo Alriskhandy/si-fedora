@@ -82,10 +82,8 @@ class ArsipController extends Controller
             'laporanVerifikasi',
             'hasilFasilitasi',
             'jadwalFasilitasi',
-            'suratRekomendasi',
             'perpanjanganWaktu',
             'tindakLanjut',
-            'penetapanPerda'
         ]);
 
         // Count documents by type
@@ -97,11 +95,9 @@ class ArsipController extends Controller
             'jadwal_fasilitasi' => $permohonan->jadwalFasilitasi ? 1 : 0,
             'undangan_pelaksanaan' => \App\Models\UndanganPelaksanaan::where('permohonan_id', $permohonan->id)->count(),
             'surat_pemberitahuan' => 0, // Surat pemberitahuan related to jadwal, not permohonan
-            'surat_rekomendasi' => $permohonan->suratRekomendasi ? 1 : 0,
             'surat_penyampaian_hasil' => ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->surat_penyampaian) ? 1 : 0,
             'perpanjangan_waktu' => $permohonan->perpanjanganWaktu ? $permohonan->perpanjanganWaktu->count() : 0,
             'tindak_lanjut' => $permohonan->tindakLanjut ? 1 : 0,
-            'penetapan_perda' => $permohonan->penetapanPerda ? 1 : 0,
         ];
 
         // Get surat pemberitahuan if jadwal exists

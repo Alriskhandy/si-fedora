@@ -184,20 +184,6 @@
                             </div>
                         </li>
                     @endif
-
-                    @if ($permohonan->penetapanPerda)
-                        <li class="timeline-item timeline-item-transparent">
-                            <span class="timeline-point timeline-point-success"></span>
-                            <div class="timeline-event">
-                                <div class="timeline-header mb-1">
-                                    <h6 class="mb-0">PERDA/PERKADA Ditetapkan</h6>
-                                    <small
-                                        class="text-muted">{{ $permohonan->penetapanPerda->tanggal_penetapan->format('d M Y') }}</small>
-                                </div>
-                                <p class="mb-0 text-muted">{{ $permohonan->penetapanPerda->nomor_penetapan }}</p>
-                            </div>
-                        </li>
-                    @endif
                 </ul>
             </div>
         </div>

@@ -6,7 +6,6 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\PerpanjanganWaktu;
 use App\Policies\PerpanjanganWaktuPolicy;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\Channels\WhatsAppChannel;
@@ -40,13 +39,6 @@ class AppServiceProvider extends ServiceProvider
         // Register custom WhatsApp notification channel
         Notification::extend('whatsapp', function ($app) {
             return $app->make(WhatsAppChannel::class);
-        });
-
-        Blade::if('hastemporary', function ($role) {
-            return auth()->check() &&
-                auth()->user()->activeTemporaryRoles()->whereHas('role', function ($q) use ($role) {
-                    $q->where('name', $role);
-                })->exists();
         });
 
         Paginator::useBootstrapFive();

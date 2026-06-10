@@ -22,12 +22,6 @@ class MasterUrusan extends Model
         'urutan',
     ];
 
-    // Relasi
-    public function fasilitasiUrusan()
-    {
-        return $this->hasMany(FasilitasiUrusan::class, 'urusan_id');
-    }
-
     // Accessor untuk nama kategori yang readable
     public function getKategoriLabelAttribute()
     {

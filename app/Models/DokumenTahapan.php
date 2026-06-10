@@ -52,16 +52,6 @@ class DokumenTahapan extends Model
         return $this->belongsTo(User::class, 'verified_by');
     }
 
-    public function verifikasiDetail()
-    {
-        return $this->hasMany(DokumenVerifikasiDetail::class, 'dokumen_tahapan_id');
-    }
-
-    public function revisi()
-    {
-        return $this->hasMany(DokumenRevisi::class, 'dokumen_tahapan_id');
-    }
-
     // Scope
     public function scopeByStatus($query, $status)
     {

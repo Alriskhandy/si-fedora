@@ -73,14 +73,3 @@ Berdasarkan _Alur Pelaksanaan Fasilitasi/Evaluasi Dokren Kab/Kota_, tahapan utam
 | Storage        | Laravel Filesystem (Local/Private Storage) |
 
 ---
-
-## 🚀 Instalasi dan Setup
-
-Pastikan telah menginstal **Composer**, **PHP ≥ 8.2**, dan **PostgreSQL**.
-
-### 1️⃣ Clone Repository
-
-```bash
-git clone https://github.com/bappeda-malut/si-fedora.git
-cd si-fedora
-```

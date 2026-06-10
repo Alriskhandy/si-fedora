@@ -115,11 +115,6 @@ class Evaluasi extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function suratRekomendasi()
-    {
-        return $this->hasOne(SuratRekomendasi::class);
-    }
-
     public function canEdit(): bool
     {
         return in_array($this->status, [self::STATUS_ASSIGNED, self::STATUS_IN_PROGRESS, self::STATUS_REVISION]);
