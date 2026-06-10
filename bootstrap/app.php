@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         // Cleanup expired OTP codes every hour
         $schedule->command('otp:cleanup')->hourly();
+
+        // Kirim pengingat H-3, H-2, H-1 batas waktu permohonan ke pemohon
+        $schedule->command('permohonan:remind-deadline')->dailyAt('08:00');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

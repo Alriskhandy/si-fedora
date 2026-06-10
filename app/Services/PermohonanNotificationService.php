@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\JadwalFasilitasi;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\User;
@@ -510,6 +511,67 @@ class PermohonanNotificationService
         } catch (\Exception $e) {
             Log::error('Error sending undangan pelaksanaan notifications: ' . $e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi pengingat batas waktu permohonan ke pemohon yang
+     * belum membuat permohonan untuk jadwal fasilitasi tertentu
+     * Target: Pemohon (database + WA)
+     *
+     * @param JadwalFasilitasi $jadwal
+     * @param User $pemohon
+     * @param int $sisaHari Jumlah hari tersisa sampai batas_permohonan
+     */
+    public function notifyPermohonanDeadlineReminder(JadwalFasilitasi $jadwal, User $pemohon, int $sisaHari)
+    {
+        try {
+            $jadwal->loadMissing('jenisDokumen');
+
+            $jenisDokumen = $jadwal->jenisDokumen->nama ?? '-';
+            $tahun = $jadwal->tahun_anggaran;
+            $batasTanggal = \Carbon\Carbon::parse($jadwal->batas_permohonan)->format('d F Y');
+            $hariText = $sisaHari == 1 ? '1 hari lagi' : "{$sisaHari} hari lagi";
+            $actionUrl = route('permohonan.create', ['jadwal_id' => $jadwal->id]);
+
+            // Notifikasi database
+            Notifikasi::create([
+                'user_id' => $pemohon->id,
+                'title' => 'Pengingat Batas Waktu Permohonan',
+                'message' => "Batas waktu pengajuan permohonan fasilitasi/evaluasi {$jenisDokumen} tahun {$tahun} tinggal {$hariText} (sampai {$batasTanggal}). Segera ajukan permohonan Anda.",
+                'type' => 'warning',
+                'model_type' => JadwalFasilitasi::class,
+                'model_id' => $jadwal->id,
+                'action_url' => $actionUrl,
+                'is_read' => false,
+            ]);
+
+            // Notifikasi WhatsApp
+            if ($pemohon->no_hp) {
+                $message = "⏰ *Pengingat Batas Waktu Permohonan*\n\n";
+                $message .= "Halo *{$pemohon->name}*,\n\n";
+                $message .= "Pengajuan permohonan fasilitasi/evaluasi belum Anda lakukan:\n\n";
+                $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
+                $message .= "📅 Tahun: *{$tahun}*\n";
+                $message .= "⏳ Batas Waktu: *{$batasTanggal}* ({$hariText})\n\n";
+                $message .= "Segera login ke sistem dan ajukan permohonan sebelum batas waktu berakhir.\n\n";
+                $message .= "_*SI-FEDORA*_\n";
+                $message .= "_si-fedora.malutprov.go.id_";
+
+                $this->fonteService->sendNotification($pemohon->no_hp, $message);
+            }
+
+            Log::info('Permohonan deadline reminder sent', [
+                'jadwal_fasilitasi_id' => $jadwal->id,
+                'user_id' => $pemohon->id,
+                'sisa_hari' => $sisaHari,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sending permohonan deadline reminder: ' . $e->getMessage(), [
+                'jadwal_fasilitasi_id' => $jadwal->id,
+                'user_id' => $pemohon->id,
                 'trace' => $e->getTraceAsString()
             ]);
         }
