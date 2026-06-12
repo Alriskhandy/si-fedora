@@ -19,11 +19,11 @@
         <ul class="navbar-nav flex-row align-items-center ms-auto">
             {{-- Modul Pengguna --}}
             @php
-                $navUserRole = auth()->user()->getRoleNames()->first() ?? '';
+                $navUserRole = auth()->user()?->getRoleNames()->first() ?? '';
                 $navModulList = \App\Models\Modul::forRole($navUserRole)->latest()->get();
             @endphp
 
-            @if (auth()->user()->hasRole('superadmin'))
+            @if (auth()->user()?->hasRole('superadmin'))
                 {{-- Superadmin: ke halaman kelola modul --}}
                 <li class="nav-item me-2">
                     <a class="btn btn-sm btn-outline-primary {{ request()->routeIs('modul.*') ? 'active' : '' }}"

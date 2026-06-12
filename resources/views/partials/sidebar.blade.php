@@ -35,7 +35,7 @@
         <!-- ============================================= -->
         <!-- PROSES FASILITASI - SEMUA ROLE (kecuali superadmin) -->
         <!-- ============================================= -->
-        @if (!auth()->user()->hasRole('superadmin'))
+        @if (!auth()->user()?->hasRole('superadmin'))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Proses Fasilitasi</span>
             </li>
@@ -51,7 +51,7 @@
                 <a href="{{ route('permohonan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-folder-open"></i>
                     <div data-i18n="Permohonan">
-                        @if (auth()->user()->hasRole('pemohon'))
+                        @if (auth()->user()?->hasRole('pemohon'))
                             Permohonan Saya
                         @else
                             Daftar Permohonan
@@ -60,7 +60,7 @@
                 </a>
             </li>
 
-            @if (auth()->user()->hasAnyRole(['pemohon', 'verifikator', 'fasilitator']))
+            @if (auth()->user()?->hasAnyRole(['pemohon', 'verifikator', 'fasilitator']))
                 <li
                     class="menu-item {{ request()->routeIs('my-undangan.*', 'undangan-pelaksanaan.*') ? 'active' : '' }}">
                     <a href="{{ route('my-undangan.index') }}" class="menu-link">
@@ -70,7 +70,7 @@
                 </li>
             @endif
 
-            @if (auth()->user()->hasAnyRole(['fasilitator', 'verifikator']))
+            @if (auth()->user()?->hasAnyRole(['fasilitator', 'verifikator']))
                 <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
                     <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-edit"></i>
@@ -85,7 +85,7 @@
         <!-- ============================================= -->
 
         {{-- KABAN: Approval & Penetapan --}}
-        @if (auth()->user()->hasRole('kaban'))
+        @if (auth()->user()?->hasRole('kaban'))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Persetujuan</span>
             </li>
@@ -104,7 +104,7 @@
         @endif
 
         {{-- ADMIN PERAN: Penjadwalan & Validasi --}}
-        @if (auth()->user()->hasRole('admin_peran'))
+        @if (auth()->user()?->hasRole('admin_peran'))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Validasi & Koordinasi</span>
             </li>
@@ -123,7 +123,7 @@
         @endif
 
         {{-- POKJA: Evaluasi Dokumen --}}
-        @if (auth()->user()->hasRole('pokja'))
+        @if (auth()->user()?->hasRole('pokja'))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Evaluasi</span>
             </li>
@@ -138,7 +138,7 @@
         <!-- ============================================= -->
         <!-- MANAJEMEN AKUN & TIM -->
         <!-- ============================================= -->
-        @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran']))
+        @if (auth()->user()?->hasAnyRole(['superadmin', 'admin_peran']))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Manajemen</span>
             </li>
@@ -159,7 +159,7 @@
         <!-- ============================================= -->
         <!-- MASTER DATA -->
         <!-- ============================================= -->
-        @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran']))
+        @if (auth()->user()?->hasAnyRole(['superadmin', 'admin_peran']))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Master Data</span>
             </li>
@@ -204,7 +204,7 @@
         <!-- ============================================= -->
         <!-- SISTEM (Superadmin Only) -->
         <!-- ============================================= -->
-        @if (auth()->user()->hasRole('superadmin'))
+        @if (auth()->user()?->hasRole('superadmin'))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Sistem</span>
             </li>
@@ -237,7 +237,7 @@
         <!-- ============================================= -->
         <!-- MONITORING & AUDIT -->
         <!-- ============================================= -->
-        @if (auth()->user()->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor']))
+        @if (auth()->user()?->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor']))
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Monitoring</span>
             </li>

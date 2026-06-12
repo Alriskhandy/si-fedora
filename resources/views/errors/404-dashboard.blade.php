@@ -39,9 +39,6 @@
                 <div class="error-code">404</div>
                 <h4 class="mb-3">Halaman Tidak Ditemukan ⚠️</h4>
                 <p class="mb-4">Oops! Halaman yang Anda cari tidak ditemukan.</p>
-                <p class="text-muted mb-4">
-                    {{ $exception->getMessage() ?: 'URL yang Anda akses mungkin salah atau halaman telah dipindahkan.' }}
-                </p>
                 <div class="mt-4">
                     <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
                         <i class="bx bx-arrow-back"></i> Kembali
