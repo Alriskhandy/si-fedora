@@ -252,7 +252,6 @@ class PermohonanController extends Controller
             'undanganPelaksanaan',
             'hasilFasilitasi',
             'tindakLanjut',
-            'penetapanPerda',
             'activityLogs.causer'
         ]);
 
