@@ -230,9 +230,33 @@
                                                         100MB)</small>
                                                 </form>
                                             @else
-                                                <span class="badge bg-success">
-                                                    <i class='bx bx-check'></i> Selesai
-                                                </span>
+                                                <div class="d-flex flex-column align-items-center gap-2">
+                                                    <div class="d-flex gap-1">
+                                                        <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
+                                                            method="POST" enctype="multipart/form-data"
+                                                            class="upload-dokumen-form" data-dokumen-id="{{ $dokumen->id }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <input type="file" name="file" class="d-none file-input"
+                                                                accept=".pdf,.xlsx,.xls" required>
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-outline-primary btn-upload-trigger"
+                                                                title="Upload Ulang">
+                                                                <i class="bx bx-upload"></i> Upload Ulang
+                                                            </button>
+                                                        </form>
+                                                        <form action="{{ route('permohonan-dokumen.remove-file', $dokumen) }}"
+                                                            method="POST" class="delete-dokumen-form">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-outline-danger btn-delete-dokumen"
+                                                                title="Hapus Dokumen">
+                                                                <i class="bx bx-trash"></i> Hapus
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
                                             @endif
                                         @else
                                             @if ($dokumen->is_ada)
@@ -371,6 +395,30 @@
                     // Submit form
                     form.submit();
                 }
+            });
+        });
+
+        // Handle delete/re-upload dokumen
+        document.querySelectorAll('.btn-delete-dokumen').forEach(button => {
+            button.addEventListener('click', function() {
+                const form = this.closest('.delete-dokumen-form');
+
+                Swal.fire({
+                    title: 'Hapus Dokumen?',
+                    text: 'File yang sudah diupload akan dihapus dan Anda dapat mengupload ulang dokumen yang benar.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.disabled = true;
+                        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                        form.submit();
+                    }
+                });
             });
         });
 

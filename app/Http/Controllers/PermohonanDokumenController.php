@@ -209,6 +209,46 @@ class PermohonanDokumenController extends Controller
         }
     }
 
+    public function removeFile(PermohonanDokumen $permohonanDokumen)
+    {
+        // Cek akses - hanya pemohon pemilik permohonan
+        if (Auth::user()->hasRole('pemohon')) {
+            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
+                return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
+            }
+        }
+
+        // Cek status permohonan - hanya bisa hapus jika status belum atau revisi
+        if (!in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
+            return back()->with('error', 'Dokumen tidak dapat dihapus. Permohonan sudah disubmit atau selesai.');
+        }
+
+        if (!$permohonanDokumen->file_path) {
+            return back()->with('error', 'Dokumen belum memiliki file untuk dihapus.');
+        }
+
+        // Hapus file dari storage
+        Storage::disk('public')->delete($permohonanDokumen->file_path);
+
+        $namaDokumen = $permohonanDokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen';
+
+        // Reset data dokumen, baris kelengkapan tetap ada agar bisa diupload ulang
+        $permohonanDokumen->update([
+            'is_ada' => false,
+            'file_path' => null,
+            'file_name' => null,
+            'file_size' => null,
+            'file_type' => null,
+            'status_verifikasi' => 'pending',
+            'catatan_verifikasi' => null,
+            'verified_by' => null,
+            'verified_at' => null,
+        ]);
+
+        return redirect()->route('permohonan.tahapan.permohonan', $permohonanDokumen->permohonan_id)
+            ->with('success', 'Dokumen "' . $namaDokumen . '" berhasil dihapus. Silakan upload ulang dokumen.');
+    }
+
     public function destroy(PermohonanDokumen $permohonanDokumen)
     {
         // Cek akses

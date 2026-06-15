@@ -235,6 +235,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     Route::middleware(['role:pemohon'])->group(function () {
         Route::resource('permohonan-dokumen', PermohonanDokumenController::class)->parameters(['permohonan-dokumen' => 'permohonanDokumen']);
         Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])->name('permohonan-dokumen.upload');
+        Route::delete('/permohonan-dokumen/{permohonanDokumen}/file', [PermohonanDokumenController::class, 'removeFile'])->name('permohonan-dokumen.remove-file');
     });
 
     // Dokumen Tahapan Routes (for upload documents at different stages)
