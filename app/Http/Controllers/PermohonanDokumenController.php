@@ -124,17 +124,17 @@ class PermohonanDokumenController extends Controller
             }
         }
 
-        // Cek batas permohonan/verifikasi dokumen
+        // Cek status permohonan - hanya bisa upload jika status belum atau revisi
         $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
-        if ($permohonan && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
+        if (!in_array($permohonan->status_akhir, ['belum', 'revisi'])) {
+            return back()->with('error', 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.');
+        }
+
+        // Cek batas permohonan - hanya berlaku untuk upload awal, bukan revisi
+        if ($permohonan->status_akhir !== 'revisi' && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
             if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
                 return back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
             }
-        }
-
-        // Cek status permohonan - hanya bisa upload jika status belum atau revisi
-        if (!in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
-            return back()->with('error', 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.');
         }
 
         try {
