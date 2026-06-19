@@ -31,9 +31,9 @@ class JadwalFasilitasi extends Model
 
     protected $casts = [
         'tahun_anggaran' => 'integer',
-        'tanggal_mulai' => 'date',
-        'tanggal_selesai' => 'date',
-        'batas_permohonan' => 'date',
+        'tanggal_mulai' => 'datetime',
+        'tanggal_selesai' => 'datetime',
+        'batas_permohonan' => 'datetime',
     ];
 
     // Relasi

@@ -161,7 +161,7 @@ class PermohonanController extends Controller
 
         // Cek apakah jadwal masih aktif
         $jadwal = JadwalFasilitasi::find($request->jadwal_fasilitasi_id);
-        if ($jadwal->batas_permohonan < now()) {
+        if ($jadwal->batas_permohonan && $jadwal->batas_permohonan->lt(now())) {
             return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
         }
 
