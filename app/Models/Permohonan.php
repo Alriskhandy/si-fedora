@@ -181,6 +181,11 @@ class Permohonan extends Model
         return $this->hasOne(HasilFasilitasi::class);
     }
 
+    public function penetapanPerda()
+    {
+        return $this->hasOne(PenetapanPerda::class);
+    }
+
     // Tindak Lanjut Relations
     public function tindakLanjut()
     {
