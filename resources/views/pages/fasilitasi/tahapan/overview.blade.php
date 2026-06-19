@@ -5,11 +5,6 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class='bx bx-info-circle me-2'></i>Informasi Permohonan</h5>
-                @if ($permohonan->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
-                    <a href="{{ route('permohonan.edit', $permohonan) }}" class="btn btn-sm btn-primary">
-                        <i class='bx bx-edit'></i> Edit
-                    </a>
-                @endif
             </div>
             <div class="card-body">
                 <div class="row mb-3">

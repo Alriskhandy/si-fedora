@@ -224,8 +224,6 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         
         // More management routes - only pemohon
         Route::middleware(['role:pemohon'])->group(function () {
-            Route::get('/{permohonan}/edit', 'edit')->name('edit');
-            Route::put('/{permohonan}', 'update')->name('update');
             Route::delete('/{permohonan}', 'destroy')->name('destroy');
             Route::post('/{permohonan}/submit', 'submit')->name('submit');
         });

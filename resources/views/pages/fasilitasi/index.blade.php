@@ -115,10 +115,6 @@
                                                             <i class="bx bx-show me-1"></i> Detail
                                                         </a>
                                                         @if ($item->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
-                                                            <a class="dropdown-item"
-                                                                href="{{ route('permohonan.edit', $item) }}">
-                                                                <i class="bx bx-edit-alt me-1"></i> Edit
-                                                            </a>
                                                             <form action="{{ route('permohonan.destroy', $item) }}"
                                                                 method="POST" class="d-inline">
                                                                 @csrf

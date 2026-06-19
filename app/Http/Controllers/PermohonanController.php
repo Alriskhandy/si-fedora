@@ -285,30 +285,6 @@ class PermohonanController extends Controller
         return view('pages.fasilitasi.show', compact('permohonan'));
     }
 
-    public function edit(Permohonan $permohonan)
-    {
-        // Hanya bisa edit kalo status belum
-        if ($permohonan->status_akhir !== 'belum') {
-            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa diedit.');
-        }
-
-        // Cek hak akses
-        $this->authorizeView($permohonan);
-
-        return view('permohonan.edit', compact('permohonan'));
-    }
-
-    public function update(Request $request, Permohonan $permohonan)
-    {
-        // Hanya bisa edit kalo status belum
-        if ($permohonan->status_akhir !== 'belum') {
-            return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa diedit.');
-        }
-
-        // Update logic here (for now just redirect)
-        return redirect()->route('permohonan.edit', $permohonan)->with('success', 'Permohonan berhasil diperbarui.');
-    }
-
     public function submit(Request $request, Permohonan $permohonan)
     {
         // Allow resubmit if status is 'proses' but submitted_at is null (failed submission)
