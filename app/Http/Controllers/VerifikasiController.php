@@ -237,7 +237,7 @@ class VerifikasiController extends Controller
             // Update status permohonan
             $hasRevision = $totalRevision > 0;
 
-            $newStatus = $hasRevision ? 'revisi' : 'selesai';
+            $newStatus = $hasRevision ? 'revisi' : 'proses';
             
             $permohonan->update(['status_akhir' => $newStatus]);
             
