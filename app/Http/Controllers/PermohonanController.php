@@ -272,7 +272,6 @@ class PermohonanController extends Controller
             'jenisDokumen',
             'jadwalFasilitasi',
             'penetapanJadwal',
-            'koordinator.koordinator',
             'permohonanDokumen.masterKelengkapan',
             'perpanjanganWaktu',
             'undanganPelaksanaan',
@@ -474,7 +473,6 @@ class PermohonanController extends Controller
             'jenisDokumen',
             'jadwalFasilitasi',
             'penetapanJadwal',
-            'koordinator.koordinator'
         ]);
 
         return view('pages.fasilitasi.tahapan.jadwal', compact('permohonan'));
