@@ -237,8 +237,7 @@ class VerifikasiController extends Controller
             // Update status permohonan
             $hasRevision = $totalRevision > 0;
 
-            // Status menjadi 'revisi' jika ada revisi, 'proses' jika semua verified
-            $newStatus = $hasRevision ? 'revisi' : 'proses';
+            $newStatus = $hasRevision ? 'revisi' : 'selesai';
             
             $permohonan->update(['status_akhir' => $newStatus]);
             
@@ -281,29 +280,37 @@ class VerifikasiController extends Controller
      */
     private function updateTahapanVerifikasi($permohonan, $hasRevision, $totalVerified, $totalRevision)
     {
-        // Hanya update tahapan jika ada revisi
-        if (!$hasRevision) {
-            return;
-        }
-
         $masterTahapan = MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
-        
+
         if (!$masterTahapan) {
             return;
         }
 
-        // Update tahapan Verifikasi menjadi status 'revisi'
-        PermohonanTahapan::updateOrCreate(
-            [
-                'permohonan_id' => $permohonan->id,
-                'tahapan_id' => $masterTahapan->id,
-            ],
-            [
-                'status' => 'revisi',
-                'catatan' => "Verifikasi - {$totalRevision} dokumen perlu revisi, {$totalVerified} dokumen sesuai. Menunggu pemohon upload ulang dokumen yang valid.",
-                'updated_by' => auth()->id(),
-            ]
-        );
+        if ($hasRevision) {
+            PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapan->id,
+                ],
+                [
+                    'status' => 'revisi',
+                    'catatan' => "Verifikasi - {$totalRevision} dokumen perlu revisi, {$totalVerified} dokumen sesuai. Menunggu pemohon upload ulang dokumen yang valid.",
+                    'updated_by' => auth()->id(),
+                ]
+            );
+        } else {
+            PermohonanTahapan::updateOrCreate(
+                [
+                    'permohonan_id' => $permohonan->id,
+                    'tahapan_id' => $masterTahapan->id,
+                ],
+                [
+                    'status' => 'selesai',
+                    'catatan' => "Verifikasi selesai - semua {$totalVerified} dokumen terverifikasi pada " . now()->format('d M Y H:i'),
+                    'updated_by' => auth()->id(),
+                ]
+            );
+        }
     }
 
     /**
