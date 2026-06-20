@@ -260,7 +260,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     
     // VerifikasiController (Verifikator only)
-    Route::middleware(['role:verifikator'])->prefix('verifikasi')->name('verifikasi.')->controller(VerifikasiController::class)->group(function () {
+    Route::middleware(['role:verifikator|admin_peran'])->prefix('verifikasi')->name('verifikasi.')->controller(VerifikasiController::class)->group(function () {
         Route::post('/{permohonan}/verifikasi', 'verifikasi')->name('verifikasi');
         Route::post('/{permohonan}/verifikasi-dokumen', 'verifikasiDokumen')->name('verifikasi-dokumen');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
