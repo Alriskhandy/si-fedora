@@ -34,6 +34,8 @@
         $isPemohon = auth()->user()->hasRole('pemohon');
         $isVerifikator = auth()->user()->hasRole('verifikator');
         $isAdmin = auth()->user()->hasRole('admin_peran');
+        $allDocsVerified = $permohonan->permohonanDokumen->count() > 0
+            && $permohonan->permohonanDokumen->every(fn($d) => $d->status_verifikasi === 'verified');
     @endphp
 
     <div class="container-xxl flex-grow-1 container-p-y">
@@ -53,7 +55,7 @@
                 </nav>
             </div>
             <div class="d-flex gap-2">
-                @if ($isVerifikator && $permohonan->status_akhir === 'selesai')
+                @if ($isVerifikator && ($permohonan->status_akhir === 'selesai' || $allDocsVerified))
                     <a href="{{ route('verifikasi.lembar-verifikasi', $permohonan) }}" class="btn btn-success">
                         <i class='bx bx-download me-1'></i> Download Lembar Verifikasi
                     </a>
@@ -104,10 +106,10 @@
                 @endif
             </div>
 
-            @if ($isPemohon && $permohonan->jadwalFasilitasi)
+            @if ($isPemohon)
                 @php
                     $dokumenBelumLengkap = $permohonan->permohonanDokumen->where('is_ada', false)->count() > 0;
-                    $batasWaktu = $permohonan->jadwalFasilitasi->batas_permohonan;
+                    $batasWaktu = $permohonan->getEffectiveDeadline();
                     $batasWaktuTerlewat = $batasWaktu ? now()->gt($batasWaktu) : false;
                 @endphp
 
@@ -117,7 +119,7 @@
                             <i class='bx bx-error-circle me-2'></i>
                             <strong>Batas Waktu Upload Terlewat!</strong><br>
                             <small>Batas upload: {{ \Carbon\Carbon::parse($batasWaktu)->format('d M Y, H:i') }}
-                                WIB</small><br>
+                                WIT</small><br>
                             <small class="text-muted">Dokumen yang belum lengkap:
                                 <strong>{{ $permohonan->permohonanDokumen->where('is_ada', false)->count() }}</strong></small>
                         </div>
@@ -129,18 +131,40 @@
                 @endif
             @endif
         @elseif ($permohonan->status_akhir == 'proses')
-            @if ($isPemohon)
-                <div class="alert alert-warning">
-                    <i class='bx bx-time-five me-2'></i>
-                    <strong>Sedang dalam Proses Verifikasi</strong><br>
-                    Permohonan Anda sedang diverifikasi oleh tim verifikator. Mohon menunggu.
-                </div>
-            @elseif($isVerifikator)
-                <div class="alert alert-primary">
-                    <i class='bx bx-info-circle me-2'></i>
-                    <strong>Permohonan Siap Diverifikasi</strong><br>
-                    Silakan lakukan verifikasi dokumen kelengkapan di bawah ini.
-                </div>
+            @if ($allDocsVerified)
+                @if ($isPemohon)
+                    <div class="alert alert-info">
+                        <i class='bx bx-time-five me-2'></i>
+                        <strong>Dokumen Telah Diverifikasi</strong><br>
+                        Semua dokumen telah diverifikasi. Menunggu admin membuat laporan verifikasi.
+                    </div>
+                @elseif($isVerifikator)
+                    <div class="alert alert-success">
+                        <i class='bx bx-check-circle me-2'></i>
+                        <strong>Verifikasi Telah Selesai</strong><br>
+                        Semua dokumen telah diverifikasi. Menunggu admin membuat laporan verifikasi.
+                    </div>
+                @elseif($isAdmin)
+                    <div class="alert alert-info">
+                        <i class='bx bx-info-circle me-2'></i>
+                        <strong>Siap Membuat Laporan</strong><br>
+                        Verifikasi dokumen telah selesai. Silakan buat laporan verifikasi di bawah ini untuk melanjutkan proses.
+                    </div>
+                @endif
+            @else
+                @if ($isPemohon)
+                    <div class="alert alert-warning">
+                        <i class='bx bx-time-five me-2'></i>
+                        <strong>Sedang dalam Proses Verifikasi</strong><br>
+                        Permohonan Anda sedang diverifikasi oleh tim verifikator. Mohon menunggu.
+                    </div>
+                @elseif($isVerifikator || $isAdmin)
+                    <div class="alert alert-primary">
+                        <i class='bx bx-info-circle me-2'></i>
+                        <strong>Permohonan Siap Diverifikasi</strong><br>
+                        Silakan lakukan verifikasi dokumen kelengkapan di bawah ini.
+                    </div>
+                @endif
             @endif
         @elseif($permohonan->status_akhir == 'revisi')
             @if ($isPemohon)
@@ -159,37 +183,19 @@
                 </div>
             @endif
         @elseif($permohonan->status_akhir == 'selesai')
-            @if ($isPemohon)
-                <div class="alert alert-success">
-                    <i class='bx bx-check-circle me-2'></i>
-                    <strong>Verifikasi Selesai</strong><br>
+            <div class="alert alert-success">
+                <i class='bx bx-check-circle me-2'></i>
+                <strong>Verifikasi Selesai</strong><br>
+                @if ($isPemohon)
                     Semua dokumen telah diverifikasi dan sesuai. Permohonan Anda akan diproses ke tahap berikutnya.
-                </div>
-            @elseif($isVerifikator)
-                <div class="alert alert-success">
-                    <i class='bx bx-check-circle me-2'></i>
-                    <strong>Verifikasi Telah Selesai</strong><br>
-                    Semua dokumen telah diverifikasi. Menunggu admin membuat laporan verifikasi.
-                </div>
-            @elseif($isAdmin)
-                @if(!$permohonan->laporanVerifikasi)
-                    <div class="alert alert-info">
-                        <i class='bx bx-info-circle me-2'></i>
-                        <strong>Siap Membuat Laporan</strong><br>
-                        Verifikasi dokumen telah selesai. Silakan buat laporan verifikasi di bawah ini untuk melanjutkan proses.
-                    </div>
                 @else
-                    <div class="alert alert-success">
-                        <i class='bx bx-check-circle me-2'></i>
-                        <strong>Laporan Telah Dibuat</strong><br>
-                        Laporan verifikasi telah dibuat dan permohonan siap dilanjutkan ke tahap berikutnya.
-                    </div>
+                    Laporan verifikasi telah dibuat dan permohonan siap dilanjutkan ke tahap berikutnya.
                 @endif
-            @endif
+            </div>
         @endif
 
         <!-- Laporan Verifikasi untuk Admin -->
-        @if ($isAdmin && $permohonan->status_akhir === 'selesai')
+        @if ($isAdmin && ($permohonan->status_akhir === 'selesai' || ($permohonan->status_akhir === 'proses' && $allDocsVerified)))
             <div class="row mb-4">
                 <!-- Statistik Verifikasi -->
                 <div class="col-lg-4">

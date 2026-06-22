@@ -30,11 +30,9 @@ class PermohonanDokumenController extends Controller
             }
         }
 
-        // Cek batas permohonan/verifikasi dokumen
-        if ($permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
-            if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
-                return redirect()->back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
-            }
+        // Cek batas waktu upload (perpanjangan > jadwal)
+        if ($permohonan->isUploadDeadlinePassed()) {
+            return redirect()->back()->with('error', $permohonan->getUploadDeadlineMessage());
         }
 
         $filePath = null;
@@ -71,12 +69,10 @@ class PermohonanDokumenController extends Controller
             }
         }
 
-        // Cek batas permohonan/verifikasi dokumen
+        // Cek batas waktu upload (perpanjangan > jadwal)
         $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
-        if ($permohonan && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
-            if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
-                return redirect()->back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
-            }
+        if ($permohonan && $permohonan->isUploadDeadlinePassed()) {
+            return redirect()->back()->with('error', $permohonan->getUploadDeadlineMessage());
         }
 
         $oldFilePath = $permohonanDokumen->file_path;
@@ -151,15 +147,13 @@ class PermohonanDokumenController extends Controller
             return back()->with('error', 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.');
         }
 
-        // Cek batas permohonan - hanya berlaku untuk upload awal, bukan revisi
-        if ($permohonan->status_akhir !== 'revisi' && $permohonan->jadwalFasilitasi && $permohonan->jadwalFasilitasi->batas_permohonan) {
-            if (now()->isAfter($permohonan->jadwalFasilitasi->batas_permohonan)) {
-                Log::warning('[Upload Dokumen] Batas waktu terlewat', [
-                    'dokumen_id' => $permohonanDokumen->id,
-                    'batas' => $permohonan->jadwalFasilitasi->batas_permohonan,
-                ]);
-                return back()->with('error', 'Batas waktu upload dokumen telah berakhir pada ' . $permohonan->jadwalFasilitasi->batas_permohonan->format('d M Y'));
-            }
+        // Cek batas waktu - hanya berlaku untuk upload awal, bukan revisi
+        if ($permohonan->status_akhir !== 'revisi' && $permohonan->isUploadDeadlinePassed()) {
+            Log::warning('[Upload Dokumen] Batas waktu terlewat', [
+                'dokumen_id' => $permohonanDokumen->id,
+                'batas' => $permohonan->getEffectiveDeadline(),
+            ]);
+            return back()->with('error', $permohonan->getUploadDeadlineMessage());
         }
 
         try {

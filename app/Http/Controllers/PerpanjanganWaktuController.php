@@ -15,7 +15,7 @@ class PerpanjanganWaktuController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('viewAny', PerpanjanganWaktu::class);
 
@@ -23,10 +23,34 @@ class PerpanjanganWaktuController extends Controller
             ->when(auth()->user()->hasRole('pemohon'), function ($query) {
                 $query->where('user_id', auth()->id());
             })
+            ->when($request->filled('status'), function ($query) use ($request) {
+                if ($request->status === 'menunggu') {
+                    $query->whereNull('diproses_at');
+                } elseif ($request->status === 'diproses') {
+                    $query->whereNotNull('diproses_at');
+                }
+            })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->whereHas('permohonan.kabupatenKota', function ($q) use ($request) {
+                    $q->where('nama', 'like', '%' . $request->search . '%');
+                });
+            })
             ->latest()
             ->paginate(15);
 
-        return view('pages.perpanjangan-waktu.index', compact('perpanjanganList'));
+        $permohonanLewatBatas = collect();
+
+        if (auth()->user()->hasRole('pemohon')) {
+            $permohonanLewatBatas = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'jadwalFasilitasi'])
+                ->where('user_id', auth()->id())
+                ->where('status_akhir', 'belum')
+                ->get()
+                ->filter(function ($p) {
+                    return $p->isUploadDeadlinePassed();
+                });
+        }
+
+        return view('pages.perpanjangan-waktu.index', compact('perpanjanganList', 'permohonanLewatBatas'));
     }
 
     /**
@@ -157,19 +181,13 @@ class PerpanjanganWaktuController extends Controller
             'catatan_admin.min' => 'Catatan minimal 10 karakter',
         ]);
 
-        // Update perpanjangan waktu
+        // Update perpanjangan waktu (batas_waktu disimpan per-permohonan, jadwal tidak diubah)
         $perpanjanganWaktu->update([
+            'batas_waktu' => $validated['batas_permohonan_baru'],
             'catatan_admin' => $validated['catatan_admin'],
             'diproses_oleh' => auth()->id(),
             'diproses_at' => now(),
         ]);
-
-        // Update jadwal fasilitasi
-        if ($perpanjanganWaktu->permohonan->jadwalFasilitasi) {
-            $perpanjanganWaktu->permohonan->jadwalFasilitasi->update([
-                'batas_permohonan' => $validated['batas_permohonan_baru'],
-            ]);
-        }
 
         return redirect()->route('perpanjangan-waktu.index')
             ->with('success', 'Perpanjangan waktu berhasil diproses. Batas waktu upload telah diperbarui.');

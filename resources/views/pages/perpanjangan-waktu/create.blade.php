@@ -22,7 +22,7 @@
         </div>
 
         <div class="row">
-            <div class="col-lg-8">
+            <div class="col-lg-7">
                 <!-- Form -->
                 <div class="card mb-4">
                     <div class="card-header">
@@ -41,21 +41,6 @@
                                 @error('alasan')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Jumlah Hari Perpanjangan <span
-                                        class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="number" name="perpanjangan_hari"
-                                        class="form-control @error('perpanjangan_hari') is-invalid @enderror"
-                                        value="{{ old('perpanjangan_hari', 7) }}" min="1" max="30" required>
-                                    <span class="input-group-text">Hari</span>
-                                    @error('perpanjangan_hari')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <small class="text-muted">Minimal 1 hari, maksimal 30 hari</small>
                             </div>
 
                             <div class="mb-3">
@@ -92,7 +77,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-5">
                 <!-- Info Permohonan -->
                 <div class="card mb-4">
                     <div class="card-header">
@@ -101,26 +86,22 @@
                     <div class="card-body">
                         <table class="table table-sm table-borderless">
                             <tr>
-                                <th width="45%">Kabupaten/Kota:</th>
+                                <th width="30%">Permohonan :</th>
+                                <td>{{ $permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $permohonan->tahun }}</td>
+                            </tr>
+                            <tr>
+                                <th>Kab / Kota :</th>
                                 <td>{{ $permohonan->kabupatenKota->nama ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <th>Tahun:</th>
-                                <td>{{ $permohonan->tahun }}</td>
-                            </tr>
-                            <tr>
-                                <th>Batas Upload Saat Ini:</th>
+                                <th>Batas Upload :</th>
                                 <td>
                                     @if ($permohonan->jadwalFasilitasi)
                                         <strong class="text-danger">
                                             {{ \Carbon\Carbon::parse($permohonan->jadwalFasilitasi->batas_permohonan)->format('d M Y, H:i') }}
-                                            WIB
+                                            WIT
                                         </strong>
                                         <br>
-                                        <small class="text-muted">
-                                            Tersisa
-                                            {{ now()->diffInDays($permohonan->jadwalFasilitasi->batas_permohonan) }} hari
-                                        </small>
                                     @else
                                         -
                                     @endif
@@ -140,14 +121,13 @@
                         <ol class="small mb-3">
                             <li>Alasan yang jelas dan dapat dipertanggungjawabkan</li>
                             <li>Surat permohonan resmi dari Kabupaten/Kota</li>
-                            <li>Jumlah hari perpanjangan yang wajar (max 30 hari)</li>
                         </ol>
 
                         <h6>Proses Persetujuan:</h6>
                         <ol class="small mb-0">
                             <li>Permohonan akan direview oleh admin</li>
-                            <li>Keputusan akan diinformasikan via email dan notifikasi sistem</li>
-                            <li>Jika disetujui, batas waktu akan otomatis diupdate</li>
+                            <li>Admin menentukan batas waktu baru</li>
+                            <li>Jika disetujui, batas waktu akan berlaku untuk permohonan ini</li>
                         </ol>
                     </div>
                 </div>

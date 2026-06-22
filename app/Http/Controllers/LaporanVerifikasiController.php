@@ -22,7 +22,16 @@ class LaporanVerifikasiController extends Controller
     public function index(Request $request)
     {
         $query = Permohonan::with(['kabupatenKota', 'laporanVerifikasi'])
-            ->where('status_akhir', 'selesai'); // Hanya yang sudah selesai verifikasi
+            ->where(function ($q) {
+                $q->where('status_akhir', 'selesai')
+                    ->orWhere(function ($qq) {
+                        $qq->where('status_akhir', 'proses')
+                            ->whereDoesntHave('permohonanDokumen', function ($sub) {
+                                $sub->where('status_verifikasi', '!=', 'verified');
+                            })
+                            ->has('permohonanDokumen');
+                    });
+            });
 
         // Filter pencarian
         if ($request->filled('search')) {
@@ -121,6 +130,9 @@ class LaporanVerifikasiController extends Controller
                     'tanggal_laporan' => now(),
                 ]);
             }
+
+            // Update status permohonan menjadi selesai (verifikasi tuntas)
+            $permohonan->update(['status_akhir' => 'selesai']);
 
             // Update tahapan Verifikasi menjadi selesai dan aktifkan tahapan berikutnya
             $this->updateTahapanVerifikasi($permohonan);

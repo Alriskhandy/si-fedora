@@ -382,13 +382,34 @@ class Permohonan extends Model
     // UPLOAD DOCUMENT HELPER METHODS
     // ============================================================
 
+    /**
+     * Mendapatkan batas waktu efektif untuk permohonan ini.
+     * Prioritas: perpanjangan waktu yang sudah diproses > jadwal fasilitasi.
+     */
+    public function getEffectiveDeadline()
+    {
+        $perpanjangan = $this->perpanjanganWaktu()
+            ->whereNotNull('diproses_at')
+            ->whereNotNull('batas_waktu')
+            ->latest('diproses_at')
+            ->first();
+
+        if ($perpanjangan) {
+            return $perpanjangan->batas_waktu;
+        }
+
+        return $this->jadwalFasilitasi?->batas_permohonan;
+    }
+
     public function isUploadDeadlinePassed()
     {
-        if (!$this->jadwalFasilitasi || !$this->jadwalFasilitasi->batas_permohonan) {
+        $deadline = $this->getEffectiveDeadline();
+
+        if (!$deadline) {
             return false;
         }
 
-        return now()->isAfter($this->jadwalFasilitasi->batas_permohonan);
+        return now()->isAfter($deadline);
     }
 
     public function canUploadDocuments()
@@ -406,16 +427,16 @@ class Permohonan extends Model
 
     public function getUploadDeadlineMessage()
     {
-        if (!$this->jadwalFasilitasi || !$this->jadwalFasilitasi->batas_permohonan) {
+        $deadline = $this->getEffectiveDeadline();
+
+        if (!$deadline) {
             return null;
         }
 
-        $deadline = $this->jadwalFasilitasi->batas_permohonan;
-
         if ($this->isUploadDeadlinePassed()) {
-            return 'Batas waktu upload dokumen telah berakhir pada ' . $deadline->format('d M Y');
+            return 'Batas waktu upload dokumen telah berakhir pada ' . $deadline->format('d M Y, H:i');
         }
 
-        return 'Batas waktu upload dokumen: ' . $deadline->format('d M Y');
+        return 'Batas waktu upload dokumen: ' . $deadline->format('d M Y, H:i');
     }
 }

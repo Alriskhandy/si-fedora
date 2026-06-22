@@ -305,8 +305,8 @@ class VerifikasiController extends Controller
                     'tahapan_id' => $masterTahapan->id,
                 ],
                 [
-                    'status' => 'selesai',
-                    'catatan' => "Verifikasi selesai - semua {$totalVerified} dokumen terverifikasi pada " . now()->format('d M Y H:i'),
+                    'status' => 'proses',
+                    'catatan' => "Semua {$totalVerified} dokumen terverifikasi pada " . now()->format('d M Y H:i') . ". Menunggu admin membuat laporan verifikasi.",
                     'updated_by' => auth()->id(),
                 ]
             );

@@ -16,206 +16,182 @@
                     </ol>
                 </nav>
             </div>
-            <div class="d-flex gap-2">
-                <span class="badge bg-{{ $perpanjanganWaktu->statusBadgeClass }} fs-6">
-                    {{ $perpanjanganWaktu->statusText }}
-                </span>
-                <a href="{{ route('perpanjangan-waktu.index') }}" class="btn btn-secondary">
-                    <i class='bx bx-arrow-back me-1'></i> Kembali
-                </a>
-            </div>
+            <a href="{{ route('perpanjangan-waktu.index') }}" class="btn btn-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Kembali
+            </a>
         </div>
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <div class="row">
-            <div class="col-lg-8">
-                <!-- Informasi Permohonan Perpanjangan -->
+            <div class="col-lg-7">
+                <!-- Informasi Pengajuan -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class='bx bx-file me-2'></i>Informasi Permohonan</h5>
+                        <h5 class="mb-0"><i class='bx bx-file me-2'></i>Informasi Pengajuan</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Tanggal Pengajuan:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                {{ $perpanjanganWaktu->created_at->format('d F Y, H:i') }} WIB
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Diajukan Oleh:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                {{ $perpanjanganWaktu->user->name ?? '-' }}
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Perpanjangan:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <strong class="text-primary fs-5">{{ $perpanjanganWaktu->perpanjangan_hari }} Hari</strong>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <strong>Alasan:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <div class="alert alert-light">
-                                    {{ $perpanjanganWaktu->alasan }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Surat Permohonan:</strong>
-                            </div>
-                            <div class="col-md-8">
-                                <a href="{{ route('perpanjangan-waktu.download', $perpanjanganWaktu) }}"
-                                    class="btn btn-outline-primary" target="_blank">
-                                    <i class='bx bx-download'></i> Download Surat
-                                </a>
-                            </div>
-                        </div>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <th width="30%">Tanggal :</th>
+                                <td>{{ $perpanjanganWaktu->created_at->format('d F Y, H:i') }} WIT</td>
+                            </tr>
+                            <tr>
+                                <th>Diajukan Oleh :</th>
+                                <td>{{ $perpanjanganWaktu->user->name ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Alasan :</th>
+                                <td>{{ $perpanjanganWaktu->alasan }}</td>
+                            </tr>
+                            <tr>
+                                <th>Surat :</th>
+                                <td>
+                                    @if ($perpanjanganWaktu->surat_permohonan)
+                                        <a href="{{ route('perpanjangan-waktu.download', $perpanjanganWaktu) }}"
+                                            class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class='bx bx-download me-1'></i>Download Surat
+                                        </a>
+                                    @else
+                                        <span class="text-muted">Belum diupload</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
 
                 <!-- Status Pemrosesan -->
-                @if ($perpanjanganWaktu->status !== 'pending')
-                    <div class="card">
+                @if ($perpanjanganWaktu->diproses_at)
+                    <div class="card mb-4">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class='bx bx-check-shield me-2'></i>Status Pemrosesan</h5>
+                            <h5 class="mb-0"><i class='bx bx-check-shield me-2'></i>Hasil Pemrosesan</h5>
                         </div>
                         <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <strong>Status:</strong>
-                                </div>
-                                <div class="col-md-8">
-                                    <span class="badge bg-{{ $perpanjanganWaktu->statusBadgeClass }} fs-6">
-                                        {{ $perpanjanganWaktu->statusText }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <strong>Diproses Oleh:</strong>
-                                </div>
-                                <div class="col-md-8">
-                                    {{ $perpanjanganWaktu->admin->name ?? '-' }}
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <strong>Tanggal Diproses:</strong>
-                                </div>
-                                <div class="col-md-8">
-                                    {{ $perpanjanganWaktu->diproses_at ? $perpanjanganWaktu->diproses_at->format('d F Y, H:i') : '-' }}
-                                    WIB
-                                </div>
-                            </div>
-                            @if ($perpanjanganWaktu->catatan_admin)
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <strong>Catatan Admin:</strong>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <div
-                                            class="alert alert-{{ $perpanjanganWaktu->status === 'approved' ? 'success' : 'danger' }}">
-                                            {{ $perpanjanganWaktu->catatan_admin }}
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-
-                            @if ($perpanjanganWaktu->status === 'approved')
-                                <div class="alert alert-success mt-3">
-                                    <i class='bx bx-check-circle me-2'></i>
-                                    <strong>Batas waktu upload telah diperpanjang!</strong><br>
-                                    Batas waktu baru:
-                                    <strong>{{ \Carbon\Carbon::parse($perpanjanganWaktu->permohonan->jadwalFasilitasi->batas_permohonan)->format('d F Y, H:i') }}
-                                        WIB</strong>
-                                </div>
-                            @endif
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="30%">Status :</th>
+                                    <td><span class="badge bg-success">Telah Diproses</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Diproses Oleh :</th>
+                                    <td>{{ $perpanjanganWaktu->admin->name ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tanggal Proses :</th>
+                                    <td>{{ $perpanjanganWaktu->diproses_at->format('d F Y, H:i') }} WIT</td>
+                                </tr>
+                                @if ($perpanjanganWaktu->batas_waktu)
+                                    <tr>
+                                        <th>Batas Waktu Baru :</th>
+                                        <td>
+                                            <strong class="text-primary">
+                                                <i class='bx bx-calendar me-1'></i>{{ $perpanjanganWaktu->batas_waktu->format('d F Y, H:i') }} WIT
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                @endif
+                                @if ($perpanjanganWaktu->catatan_admin)
+                                    <tr>
+                                        <th>Catatan Admin :</th>
+                                        <td>{{ $perpanjanganWaktu->catatan_admin }}</td>
+                                    </tr>
+                                @endif
+                            </table>
                         </div>
                     </div>
                 @else
                     <div class="alert alert-warning">
                         <i class='bx bx-time-five me-2'></i>
-                        Permohonan perpanjangan sedang menunggu persetujuan admin. Anda akan mendapat notifikasi setelah
-                        permohonan diproses.
+                        Permohonan perpanjangan sedang menunggu diproses oleh admin.
                     </div>
 
                     @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']))
-                        <div class="card">
+                        <div class="card mb-4">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class='bx bx-cog me-2'></i>Aksi Admin</h5>
+                                <h5 class="mb-0"><i class='bx bx-cog me-2'></i>Proses Perpanjangan</h5>
                             </div>
                             <div class="card-body">
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                        data-bs-target="#approveModal">
-                                        <i class='bx bx-check-circle'></i> Setujui Permohonan
+                                <form action="{{ route('perpanjangan-waktu.process', $perpanjanganWaktu) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+
+                                    @if ($perpanjanganWaktu->permohonan->jadwalFasilitasi)
+                                        <div class="alert alert-info">
+                                            <i class='bx bx-calendar me-2'></i>
+                                            <strong>Batas Waktu Jadwal Saat Ini:</strong>
+                                            {{ \Carbon\Carbon::parse($perpanjanganWaktu->permohonan->jadwalFasilitasi->batas_permohonan)->format('d F Y, H:i') }} WIT
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Batas Waktu Baru <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" name="batas_permohonan_baru" class="form-control" required>
+                                        <small class="text-muted">Batas waktu ini hanya berlaku untuk permohonan ini</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Catatan Admin <span class="text-danger">*</span></label>
+                                        <textarea name="catatan_admin" class="form-control" rows="3" required
+                                            placeholder="Berikan catatan terkait perpanjangan waktu ini..."></textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success">
+                                        <i class='bx bx-check-circle me-1'></i> Proses Perpanjangan
                                     </button>
-                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                                        data-bs-target="#rejectModal">
-                                        <i class='bx bx-x-circle'></i> Tolak Permohonan
-                                    </button>
-                                </div>
+                                </form>
                             </div>
                         </div>
                     @endif
                 @endif
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-5">
                 <!-- Info Permohonan Terkait -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h6 class="mb-0">Permohonan Terkait</h6>
+                        <h6 class="mb-0">Informasi Permohonan</h6>
                     </div>
                     <div class="card-body">
                         <table class="table table-sm table-borderless">
                             <tr>
-                                <th width="45%">Kabupaten/Kota:</th>
-                                <td><strong>{{ $perpanjanganWaktu->permohonan->kabupatenKota->nama ?? '-' }}</strong></td>
+                                <th width="30%">Permohonan :</th>
+                                <td>{{ $perpanjanganWaktu->permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $perpanjanganWaktu->permohonan->tahun }}</td>
                             </tr>
                             <tr>
-                                <th>Tahun:</th>
-                                <td>{{ $perpanjanganWaktu->permohonan->tahun }}</td>
+                                <th>Kab / Kota :</th>
+                                <td>{{ $perpanjanganWaktu->permohonan->kabupatenKota->nama ?? '-' }}</td>
                             </tr>
                             <tr>
-                                <th>Status Permohonan:</th>
-                                <td>
-                                    <span class="badge bg-{{ $perpanjanganWaktu->permohonan->statusBadgeClass }}">
-                                        {{ $perpanjanganWaktu->permohonan->status_akhir }}
-                                    </span>
-                                </td>
+                                <th>Status :</th>
+                                <td><span class="badge bg-secondary">{{ $perpanjanganWaktu->permohonan->status_akhir }}</span></td>
                             </tr>
                         </table>
                         <a href="{{ route('permohonan.show', $perpanjanganWaktu->permohonan) }}"
-                            class="btn btn-outline-primary btn-sm w-100">
-                            <i class='bx bx-show'></i> Lihat Detail Permohonan
+                            class="btn btn-outline-primary btn-sm w-100 mt-2">
+                            <i class='bx bx-show me-1'></i>Lihat Detail Permohonan
                         </a>
                     </div>
                 </div>
 
-                <!-- Actions -->
-                @if (auth()->user()->id === $perpanjanganWaktu->user_id && $perpanjanganWaktu->status === 'pending')
+                <!-- Aksi Pemohon -->
+                @if (auth()->user()->id === $perpanjanganWaktu->user_id && !$perpanjanganWaktu->diproses_at)
                     <div class="card">
-                        <div class="card-header bg-danger text-white">
-                            <h6 class="mb-0">Aksi</h6>
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class='bx bx-cog me-1'></i>Aksi</h6>
                         </div>
                         <div class="card-body">
-                            <p class="mb-3">Batalkan permohonan perpanjangan ini?</p>
                             <form action="{{ route('perpanjangan-waktu.destroy', $perpanjanganWaktu) }}" method="POST"
                                 onsubmit="return confirm('Apakah Anda yakin ingin membatalkan permohonan ini?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger w-100">
-                                    <i class='bx bx-trash'></i> Batalkan Permohonan
+                                    <i class='bx bx-trash me-1'></i>Batalkan Permohonan
                                 </button>
                             </form>
                         </div>
@@ -224,72 +200,4 @@
             </div>
         </div>
     </div>
-
-    <!-- Approve Modal -->
-    @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']) && $perpanjanganWaktu->status === 'pending')
-        <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Setujui Perpanjangan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <form action="{{ route('perpanjangan-waktu.update-status', $perpanjanganWaktu) }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="status" value="approved">
-                        <div class="modal-body">
-                            <div class="alert alert-success">
-                                <i class='bx bx-check-circle me-2'></i>
-                                Anda akan menyetujui perpanjangan <strong>{{ $perpanjanganWaktu->perpanjangan_hari }}
-                                    hari</strong>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Catatan (Opsional)</label>
-                                <textarea name="catatan_admin" class="form-control" rows="3" placeholder="Tambahkan catatan jika diperlukan"></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-success">
-                                <i class='bx bx-check'></i> Setujui
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Reject Modal -->
-        <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Tolak Perpanjangan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <form action="{{ route('perpanjangan-waktu.update-status', $perpanjanganWaktu) }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="status" value="rejected">
-                        <div class="modal-body">
-                            <div class="alert alert-danger">
-                                <i class='bx bx-error me-2'></i>
-                                Anda akan menolak permohonan perpanjangan ini
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
-                                <textarea name="catatan_admin" class="form-control" rows="3" required placeholder="Jelaskan alasan penolakan"></textarea>
-                                <small class="text-muted">Alasan ini akan disampaikan kepada pemohon</small>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-danger">
-                                <i class='bx bx-x'></i> Tolak
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
 @endsection

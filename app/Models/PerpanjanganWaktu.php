@@ -17,12 +17,14 @@ class PerpanjanganWaktu extends Model
         'user_id',
         'alasan',
         'surat_permohonan',
+        'batas_waktu',
         'catatan_admin',
         'diproses_oleh',
         'diproses_at',
     ];
 
     protected $casts = [
+        'batas_waktu' => 'datetime',
         'diproses_at' => 'datetime',
     ];
 

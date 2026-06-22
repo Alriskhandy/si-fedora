@@ -435,6 +435,21 @@
                                 <strong>Status:</strong> Permohonan telah selesai diproses.
                             </div>
                         @endif
+
+                        {{-- Tombol Perpanjangan Waktu untuk Pemohon --}}
+                        @if (auth()->user()->hasRole('pemohon') && $permohonan->isUploadDeadlinePassed() && $permohonan->status_akhir == 'belum')
+                            <div class="alert alert-danger mt-3 mb-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class='bx bx-error-circle me-2'></i>
+                                    <strong>Batas Waktu Upload Terlewat!</strong><br>
+                                    <small>{{ $permohonan->getUploadDeadlineMessage() }}</small>
+                                </div>
+                                <a href="{{ route('perpanjangan-waktu.create', ['permohonan_id' => $permohonan->id]) }}"
+                                    class="btn btn-warning">
+                                    <i class='bx bx-time-five me-1'></i>Ajukan Perpanjangan Waktu
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

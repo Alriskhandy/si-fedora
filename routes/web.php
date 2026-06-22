@@ -412,20 +412,25 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // PERPANJANGAN & TINDAK LANJUT
     // ============================================================
     
-    // PerpanjanganWaktuController (Pemohon: Create, Admin: Process)
+    // PerpanjanganWaktuController
+    // Pemohon only (static routes first to avoid wildcard conflict)
     Route::middleware(['role:pemohon'])->prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
         Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::delete('/{perpanjanganWaktu}', 'destroy')->name('destroy');
         Route::put('/{perpanjanganWaktu}/upload-surat', 'uploadSurat')->name('upload-surat');
     });
-    
+
+    // Admin only
     Route::middleware(['role:admin_peran|superadmin'])->prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
+        Route::put('/{perpanjanganWaktu}/process', 'process')->name('process');
+    });
+
+    // Shared routes (Pemohon & Admin) - wildcard routes last
+    Route::middleware(['role:pemohon|admin_peran|superadmin'])->prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{perpanjanganWaktu}', 'show')->name('show');
         Route::get('/{perpanjanganWaktu}/download', 'download')->name('download');
-        Route::post('/', 'store')->name('store'); // Admin bisa perpanjang waktu dari halaman hasil
-        Route::put('/{perpanjanganWaktu}/process', 'process')->name('process');
     });
 
     // TindakLanjutController (Pemohon only)

@@ -78,6 +78,15 @@
                     </a>
                 </li>
             @endif
+
+            @if (auth()->user()?->hasRole('pemohon'))
+                <li class="menu-item {{ request()->routeIs('perpanjangan-waktu.*') ? 'active' : '' }}">
+                    <a href="{{ route('perpanjangan-waktu.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-time-five"></i>
+                        <div data-i18n="Perpanjangan Waktu">Perpanjangan Waktu</div>
+                    </a>
+                </li>
+            @endif
         @endif
 
         <!-- ============================================= -->
