@@ -360,7 +360,7 @@
                     <i
                         class='bx bx-list-check me-2'></i>{{ ($isVerifikator || $isAdmin) ? 'Verifikasi Dokumen' : 'Status Verifikasi Dokumen' }}
                 </h5>
-                @if (($isVerifikator || $isAdmin) && $permohonan->status_akhir == 'proses')
+                @if (($isVerifikator) && $permohonan->status_akhir == 'proses')
                     <button type="button" class="btn btn-success" id="submitVerificationBtn">
                         <i class='bx bx-check-circle me-1'></i>Submit Verifikasi
                     </button>
