@@ -119,15 +119,14 @@
                     <div class="card-body">
                         <h6>Syarat Permohonan:</h6>
                         <ol class="small mb-3">
-                            <li>Alasan yang jelas dan dapat dipertanggungjawabkan</li>
-                            <li>Surat permohonan resmi dari Kabupaten/Kota</li>
+                            <li>Alasan perpanjangan waktu yang jelas dan dapat dipertanggungjawabkan.</li>
+                            <li>Surat permohonan resmi.</li>
                         </ol>
 
                         <h6>Proses Persetujuan:</h6>
                         <ol class="small mb-0">
-                            <li>Permohonan akan direview oleh admin</li>
-                            <li>Admin menentukan batas waktu baru</li>
-                            <li>Jika disetujui, batas waktu akan berlaku untuk permohonan ini</li>
+                            <li>Permohonan akan direview oleh admin.</li>
+                            <li>Batas waktu baru akan di update dan hanya berlaku untuk permohonan ini.</li>
                         </ol>
                     </div>
                 </div>
