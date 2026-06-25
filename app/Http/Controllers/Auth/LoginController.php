@@ -51,7 +51,8 @@ class LoginController extends Controller
                 ->withProperties(['ip_address' => $request->ip()])
                 ->log('login');
 
-            return redirect()->intended(route('dashboard'));
+            $request->session()->forget('url.intended');
+            return redirect()->route('dashboard');
         }
 
         return back()->withErrors([
