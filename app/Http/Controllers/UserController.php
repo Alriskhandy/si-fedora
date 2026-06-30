@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 
 class UserController extends Controller
@@ -40,7 +43,70 @@ class UserController extends Controller
 
         return view('pages.users.index', compact('users', 'roles'));
     }
-    /** 
+    /**
+     * Export users to .xlsx (Number, Group, Name, Variables).
+     */
+    public function export(Request $request)
+    {
+        $query = User::query();
+
+        // Exclude superadmin users
+        $query->whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'superadmin');
+        });
+
+        // Only users with a phone number
+        $query->whereNotNull('no_hp')->where('no_hp', '!=', '');
+
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->role($request->role);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%')
+                ->orWhere('email', 'like', '%' . $request->search . '%');
+        }
+
+        $users = $query->with('roles')->latest()->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['Number', 'Group', 'Name', 'Variables'];
+        foreach ($headers as $i => $header) {
+            $col = chr(65 + $i);
+            $sheet->setCellValue("{$col}1", $header);
+        }
+        $sheet->getStyle('A1:D1')->getFont()->setBold(true);
+
+        $row = 2;
+        foreach ($users as $user) {
+            $sheet->setCellValueExplicit("A{$row}", $user->no_hp ?? '', DataType::TYPE_STRING);
+            $sheet->setCellValue("B{$row}", '');
+            $sheet->setCellValue("C{$row}", $user->name);
+            $sheet->setCellValue("D{$row}", $user->roles->first()->name ?? '');
+            $row++;
+        }
+
+        foreach (range('A', 'D') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Data User ' . now()->format('Y-m-d') . '.xlsx';
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

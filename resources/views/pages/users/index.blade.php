@@ -45,9 +45,16 @@
                             <h5 class="card-title mb-1">Daftar User</h5>
                             <p class="text-muted small mb-0">Kelola pengguna sistem</p>
                         </div>
-                        <a href="{{ route('users.create') }}" class="btn btn-primary">
-                            <i class="bx bx-plus me-1"></i> Tambah Data
-                        </a>
+                        <div>
+                            @if(auth()->user()->isSuperadmin())
+                                <a href="{{ route('users.export', request()->query()) }}" class="btn btn-success me-2">
+                                    <i class="bx bx-export me-1"></i> Export Excel
+                                </a>
+                            @endif
+                            <a href="{{ route('users.create') }}" class="btn btn-primary">
+                                <i class="bx bx-plus me-1"></i> Tambah Data
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">

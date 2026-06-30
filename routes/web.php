@@ -113,6 +113,11 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::get('/', [ActivityLogController::class, 'index'])->name('index');
     });
 
+    // Export Users (Superadmin only)
+    Route::middleware(['role:superadmin'])->group(function () {
+        Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
+    });
+
     // UserController (Superadmin & Admin)
     Route::middleware(['role:superadmin|admin_peran'])->group(function () {
         Route::resource('users', UserController::class);
