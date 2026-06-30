@@ -8,9 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 
 class UserController extends Controller
@@ -44,7 +41,7 @@ class UserController extends Controller
         return view('pages.users.index', compact('users', 'roles'));
     }
     /**
-     * Export users to .xlsx (Number, Group, Name, Variables).
+     * Export users to .csv (Whatsapp, Name, Variable).
      */
     public function export(Request $request)
     {
@@ -71,37 +68,23 @@ class UserController extends Controller
 
         $users = $query->with('roles')->latest()->get();
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        $fileName = 'Data User SI-FEDORA ' . now()->format('Y-m-d') . '.csv';
 
-        $headers = ['Number', 'Group', 'Name', 'Variables'];
-        foreach ($headers as $i => $header) {
-            $col = chr(65 + $i);
-            $sheet->setCellValue("{$col}1", $header);
-        }
-        $sheet->getStyle('A1:D1')->getFont()->setBold(true);
+        return response()->streamDownload(function () use ($users) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Whatsapp', 'Name', 'Variable']);
 
-        $row = 2;
-        foreach ($users as $user) {
-            $sheet->setCellValueExplicit("A{$row}", $user->no_hp ?? '', DataType::TYPE_STRING);
-            $sheet->setCellValue("B{$row}", '');
-            $sheet->setCellValue("C{$row}", $user->name);
-            $sheet->setCellValue("D{$row}", $user->roles->first()->name ?? '');
-            $row++;
-        }
+            foreach ($users as $user) {
+                fputcsv($handle, [
+                    $user->no_hp . "'",
+                    $user->name,
+                    $user->roles->first()->name ?? '',
+                ]);
+            }
 
-        foreach (range('A', 'D') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        $fileName = 'Data User ' . now()->format('Y-m-d') . '.xlsx';
-
-        $writer = new Xlsx($spreadsheet);
-
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
+            fclose($handle);
         }, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'text/csv',
             'Cache-Control' => 'max-age=0',
         ]);
     }

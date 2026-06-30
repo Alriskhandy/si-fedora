@@ -48,7 +48,7 @@
                         <div>
                             @if(auth()->user()->isSuperadmin())
                                 <a href="{{ route('users.export', request()->query()) }}" class="btn btn-success me-2">
-                                    <i class="bx bx-export me-1"></i> Export Excel
+                                    <i class="bx bx-export me-1"></i> Export Kontak
                                 </a>
                             @endif
                             <a href="{{ route('users.create') }}" class="btn btn-primary">
