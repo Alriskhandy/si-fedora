@@ -105,12 +105,18 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">File Undangan</h5>
-                        @if ($undangan->file_undangan)
-                            <a href="{{ route('undangan-pelaksanaan.download', $permohonan) }}"
-                                class="btn btn-sm btn-success">
-                                <i class="bx bx-download"></i> Download PDF
-                            </a>
-                        @endif
+                        <div>
+                            @if ($undangan->file_undangan)
+                                <a href="{{ route('undangan-pelaksanaan.download', $permohonan) }}"
+                                    class="btn btn-sm btn-success">
+                                    <i class="bx bx-download"></i> Download PDF
+                                </a>
+                            @endif
+                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                                data-bs-target="#uploadUlangModal">
+                                <i class="bx bx-upload"></i> Upload Ulang
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         @if ($undangan->file_undangan)
@@ -190,6 +196,39 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Upload Ulang File Undangan -->
+        <div class="modal fade" id="uploadUlangModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ route('undangan-pelaksanaan.update-file', $permohonan) }}" method="POST"
+                        enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title">Upload Ulang File Undangan</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="file_undangan" class="form-label">File Undangan (PDF)</label>
+                                <input type="file" class="form-control @error('file_undangan') is-invalid @enderror"
+                                    id="file_undangan" name="file_undangan" accept="application/pdf" required>
+                                @error('file_undangan')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                @if ($undangan->file_undangan)
+                                    <div class="form-text">File yang sudah ada akan digantikan dengan file baru.</div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-warning">Simpan</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

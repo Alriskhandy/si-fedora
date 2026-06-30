@@ -374,6 +374,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::post('/{permohonan}', 'store')->name('store');
         Route::get('/{permohonan}', 'show')->name('show');
         Route::post('/{permohonan}/send', 'send')->name('send');
+        Route::post('/{permohonan}/update-file', 'updateFile')->name('update-file');
     });
     
     Route::middleware(['role:pemohon'])->prefix('pemohon/undangan')->name('pemohon.undangan.')->controller(UndanganPelaksanaanController::class)->group(function () {

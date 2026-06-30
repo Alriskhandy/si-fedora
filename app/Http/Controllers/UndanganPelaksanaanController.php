@@ -138,6 +138,44 @@ class UndanganPelaksanaanController extends Controller
     }
 
     /**
+     * Upload ulang file undangan (admin peran)
+     */
+    public function updateFile(Request $request, Permohonan $permohonan)
+    {
+        $request->validate([
+            'file_undangan' => 'required|file|mimes:pdf|max:2048',
+        ]);
+
+        $undangan = $permohonan->undanganPelaksanaan;
+
+        if (!$undangan) {
+            return back()->with('error', 'Undangan pelaksanaan belum dibuat.');
+        }
+
+        $oldFile = $undangan->file_undangan;
+
+        $filePath = $request->file('file_undangan')->store('undangan', 'public');
+
+        $undangan->update(['file_undangan' => $filePath]);
+
+        if ($oldFile) {
+            Storage::disk('public')->delete($oldFile);
+        }
+
+        activity()
+            ->performedOn($undangan)
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'permohonan_id' => $permohonan->id,
+                'kabupaten_kota' => $permohonan->kabupatenKota->nama,
+                'file' => $filePath,
+            ])
+            ->log('Upload ulang file undangan pelaksanaan');
+
+        return back()->with('success', 'File undangan berhasil diperbarui.');
+    }
+
+    /**
      * Download file undangan
      */
     public function download(Permohonan $permohonan)
