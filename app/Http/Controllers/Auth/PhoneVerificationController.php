@@ -73,7 +73,7 @@ class PhoneVerificationController extends Controller
                 return back()->with('error', 'Gagal mengirim kode OTP. Silakan coba lagi.');
             }
             
-            Log::info("OTP sent successfully to {$phone}");
+            Log::info("OTP sent successfully to {$phone} for user {$user->name} ({$user->email})");
         } catch (\Exception $e) {
             Log::error("Failed to send OTP: " . $e->getMessage());
             return back()->with('error', 'Gagal mengirim kode OTP. Silakan coba lagi.');
@@ -172,7 +172,7 @@ class PhoneVerificationController extends Controller
         Session::forget('otp_phone');
 
         // Log successful verification
-        Log::info("User {$user->id} successfully verified phone: {$phone}");
+        Log::info("User {$user->name} ({$user->email}) successfully verified phone: {$phone}");
 
         if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
             return response()->json([
@@ -218,7 +218,7 @@ class PhoneVerificationController extends Controller
                 ], 500);
             }
             
-            Log::info("OTP resent successfully to {$phone}");
+            Log::info("OTP resent successfully to {$phone} for user {$user->name} ({$user->email})");
             
             return response()->json([
                 'success' => true,
