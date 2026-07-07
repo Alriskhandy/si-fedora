@@ -131,9 +131,6 @@ class LaporanVerifikasiController extends Controller
                 ]);
             }
 
-            // Update status permohonan menjadi selesai (verifikasi tuntas)
-            $permohonan->update(['status_akhir' => 'selesai']);
-
             // Update tahapan Verifikasi menjadi selesai dan aktifkan tahapan berikutnya
             $this->updateTahapanVerifikasi($permohonan);
 
