@@ -519,7 +519,15 @@ class HasilFasilitasiController extends Controller
                 ->with('info', 'Hasil fasilitasi belum dibuat.');
         }
 
-        $hasilFasilitasi->load('hasilUrusan.masterUrusan', 'hasilUrusan.user', 'hasilSistematika.masterBab', 'hasilSistematika.user', 'pembuat');
+        $hasilFasilitasi->load(
+            'hasilUrusan.masterUrusan',
+            'hasilUrusan.user',
+            'hasilSistematika.masterBab',
+            'hasilSistematika.user',
+            'hasilForm.user',
+            'hasilRekomendasi.user',
+            'pembuat'
+        );
 
         // Sort sistematika by bab urutan
         $sortedSistematika = $hasilFasilitasi->hasilSistematika->sortBy(function ($item) {
@@ -532,6 +540,9 @@ class HasilFasilitasiController extends Controller
             return $item->masterUrusan->urutan ?? 999;
         });
         $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
+
+        $hasilFasilitasi->setRelation('hasilForm', $hasilFasilitasi->hasilForm->sortBy('created_at'));
+        $hasilFasilitasi->setRelation('hasilRekomendasi', $hasilFasilitasi->hasilRekomendasi->sortBy('created_at'));
 
          // Get tim info untuk ditampilkan
         $kabkotaId = $permohonan->kab_kota_id;

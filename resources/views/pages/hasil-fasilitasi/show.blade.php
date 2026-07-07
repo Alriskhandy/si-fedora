@@ -357,6 +357,9 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        @php
+                            $showExtendedTabs = (bool) ($isAdmin ?? false);
+                        @endphp
                         <ul class="nav nav-tabs" role="tablist">
                             <li class="nav-item">
                                 <button class="nav-link active" id="sistematika-tab" data-bs-toggle="tab"
@@ -364,12 +367,28 @@
                                     <i class="bx bx-book-content"></i> Sistematika & Rancangan Akhir
                                 </button>
                             </li>
+                            @if ($showExtendedTabs)
+                                <li class="nav-item">
+                                    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#form"
+                                        type="button" role="tab">
+                                        <i class="bx bx-link"></i> Konsistensi & Keselarasan
+                                    </button>
+                                </li>
+                            @endif
                             <li class="nav-item">
                                 <button class="nav-link" id="urusan-tab" data-bs-toggle="tab" data-bs-target="#urusan"
                                     type="button" role="tab">
                                     <i class="bx bx-list-ul"></i> Urusan Pemerintahan
                                 </button>
                             </li>
+                            @if ($showExtendedTabs)
+                                <li class="nav-item">
+                                    <button class="nav-link" id="rekomendasi-tab" data-bs-toggle="tab"
+                                        data-bs-target="#rekomendasi" type="button" role="tab">
+                                        <i class="bx bx-check-shield"></i> Rekomendasi
+                                    </button>
+                                </li>
+                            @endif
                         </ul>
 
                         <div class="tab-content pt-4">
@@ -418,7 +437,44 @@
                                 @endif
                             </div>
 
-                            <!-- Tab 2: Urusan Pemerintahan -->
+                            @if ($showExtendedTabs)
+                                <!-- Tab 2: Konsistensi & Keselarasan -->
+                                <div class="tab-pane fade" id="form" role="tabpanel">
+                                    @if ($hasilFasilitasi->hasilForm->count() > 0)
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th width="5%">No</th>
+                                                        <th>Catatan</th>
+                                                        <th width="20%">Oleh</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($hasilFasilitasi->hasilForm as $item)
+                                                        <tr>
+                                                            <td class="text-center">{{ $loop->iteration }}</td>
+                                                            <td>{!! $item->catatan !!}</td>
+                                                            <td>
+                                                                <small class="text-muted">
+                                                                    {{ $item->user->name ?? '-' }}<br>
+                                                                    <span class="text-secondary">{{ $item->created_at->format('d/m/Y H:i') }}</span>
+                                                                </small>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <div class="alert alert-info">
+                                            <i class="bx bx-info-circle"></i> Belum ada item konsistensi & keselarasan.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            <!-- Tab 3: Urusan Pemerintahan -->
                             <div class="tab-pane fade" id="urusan" role="tabpanel">
                                 @if ($hasilFasilitasi->hasilUrusan->count() > 0)
                                     <div class="table-responsive">
@@ -460,6 +516,43 @@
                                     </div>
                                 @endif
                             </div>
+
+                            @if ($showExtendedTabs)
+                                <!-- Tab 4: Rekomendasi -->
+                                <div class="tab-pane fade" id="rekomendasi" role="tabpanel">
+                                    @if ($hasilFasilitasi->hasilRekomendasi->count() > 0)
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th width="5%">No</th>
+                                                        <th>Catatan</th>
+                                                        <th width="20%">Oleh</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($hasilFasilitasi->hasilRekomendasi as $item)
+                                                        <tr>
+                                                            <td class="text-center">{{ $loop->iteration }}</td>
+                                                            <td>{!! $item->catatan !!}</td>
+                                                            <td>
+                                                                <small class="text-muted">
+                                                                    {{ $item->user->name ?? '-' }}<br>
+                                                                    <span class="text-secondary">{{ $item->created_at->format('d/m/Y H:i') }}</span>
+                                                                </small>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <div class="alert alert-info">
+                                            <i class="bx bx-info-circle"></i> Belum ada item rekomendasi.
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
