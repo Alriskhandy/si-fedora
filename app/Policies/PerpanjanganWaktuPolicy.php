@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\JadwalFasilitasi;
 use App\Models\PerpanjanganWaktu;
 use App\Models\Permohonan;
 use App\Models\User;
@@ -35,15 +36,30 @@ class PerpanjanganWaktuPolicy
 
     /**
      * Determine whether the user can create models.
+     *
+     * $target berupa Permohonan (perpanjangan batas upload dokumen) atau
+     * JadwalFasilitasi (perpanjangan batas pembuatan permohonan, untuk
+     * pemohon yang belum sempat membuat permohonan sebelum batas lewat).
      */
-    public function create(User $user, Permohonan $permohonan): bool
+    public function create(User $user, Permohonan|JadwalFasilitasi $target): bool
     {
-        // Hanya pemohon yang membuat permohonan yang bisa mengajukan perpanjangan
         if (!$user->hasRole('pemohon')) {
             return false;
         }
 
-        return $permohonan->user_id === $user->id;
+        if ($target instanceof Permohonan) {
+            if ($target->user_id !== $user->id) {
+                return false;
+            }
+
+            // Hanya boleh mengajukan 1 kali per permohonan agar tidak
+            // menimbulkan request ganda/redundan di sisi admin.
+            return !$target->perpanjanganWaktu()->exists();
+        }
+
+        return JadwalFasilitasi::availableForExtensionRequest($user->id)
+            ->whereKey($target->id)
+            ->exists();
     }
 
     /**
@@ -62,8 +78,8 @@ class PerpanjanganWaktuPolicy
     {
         // Pemohon hanya bisa delete miliknya sendiri yang masih pending
         if ($user->hasRole('pemohon')) {
-            return $perpanjanganWaktu->user_id === $user->id 
-                && $perpanjanganWaktu->status === 'pending';
+            return $perpanjanganWaktu->user_id === $user->id
+                && is_null($perpanjanganWaktu->diproses_at);
         }
 
         // Admin bisa delete semua

@@ -46,7 +46,9 @@ class JadwalFasilitasiController extends Controller
             'jenisDokumenList' => MasterJenisDokumen::all()
         ];
 
-        return view('pages.jadwal-fasilitasi.index', compact('jadwalFasilitasi', 'filterOptions'));
+        [$jadwalExtendedIds, $jadwalEligibleForExtensionIds] = $this->extensionEligibilityIds($jadwalFasilitasi->pluck('id'));
+
+        return view('pages.jadwal-fasilitasi.index', compact('jadwalFasilitasi', 'filterOptions', 'jadwalExtendedIds', 'jadwalEligibleForExtensionIds'));
     }
 
     public function create()
@@ -149,7 +151,44 @@ class JadwalFasilitasiController extends Controller
             $jadwal->load(['permohonan.kabupatenKota', 'jenisDokumen']);
         }
         
-        return view('pages.jadwal-fasilitasi.show', compact('jadwal'));
+        $jadwalExtendedIds = collect();
+        $jadwalEligibleForExtensionIds = collect();
+        if ($user->hasRole('pemohon')) {
+            [$jadwalExtendedIds, $jadwalEligibleForExtensionIds] = $this->extensionEligibilityIds(collect([$jadwal->id]));
+        }
+
+        return view('pages.jadwal-fasilitasi.show', compact('jadwal', 'jadwalExtendedIds', 'jadwalEligibleForExtensionIds'));
+    }
+
+    /**
+     * Hitung sekali (bukan per-baris) set ID jadwal yang: (1) sudah punya
+     * perpanjangan waktu yang disetujui & masih berlaku, dan (2) eligible
+     * untuk diajukan perpanjangan waktu baru. Hanya relevan untuk pemohon.
+     *
+     * @return array{0: \Illuminate\Support\Collection, 1: \Illuminate\Support\Collection}
+     */
+    private function extensionEligibilityIds($jadwalIds)
+    {
+        $user = Auth::user();
+
+        if (!$user->hasRole('pemohon') || $jadwalIds->isEmpty()) {
+            return [collect(), collect()];
+        }
+
+        $extendedIds = JadwalFasilitasi::whereIn('id', $jadwalIds)
+            ->whereHas('perpanjanganWaktu', function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->whereNotNull('diproses_at')
+                    ->whereNotNull('batas_waktu')
+                    ->where('batas_waktu', '>=', now());
+            })
+            ->pluck('id');
+
+        $eligibleIds = JadwalFasilitasi::availableForExtensionRequest($user->id)
+            ->whereIn('id', $jadwalIds)
+            ->pluck('id');
+
+        return [$extendedIds, $eligibleIds];
     }
 
     public function edit(JadwalFasilitasi $jadwal)

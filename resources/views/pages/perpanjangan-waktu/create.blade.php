@@ -11,12 +11,16 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('permohonan.show', $permohonan) }}">Detail Permohonan</a></li>
+                        @if ($permohonan)
+                            <li class="breadcrumb-item"><a href="{{ route('permohonan.show', $permohonan) }}">Detail Permohonan</a></li>
+                        @else
+                            <li class="breadcrumb-item"><a href="{{ route('perpanjangan-waktu.index') }}">Perpanjangan Waktu</a></li>
+                        @endif
                         <li class="breadcrumb-item active">Ajukan Perpanjangan</li>
                     </ol>
                 </nav>
             </div>
-            <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-secondary">
+            <a href="{{ $permohonan ? route('permohonan.show', $permohonan) : route('perpanjangan-waktu.index') }}" class="btn btn-secondary">
                 <i class='bx bx-arrow-back me-1'></i> Kembali
             </a>
         </div>
@@ -31,7 +35,11 @@
                     <div class="card-body">
                         <form action="{{ route('perpanjangan-waktu.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            <input type="hidden" name="permohonan_id" value="{{ $permohonan->id }}">
+                            @if ($permohonan)
+                                <input type="hidden" name="permohonan_id" value="{{ $permohonan->id }}">
+                            @else
+                                <input type="hidden" name="jadwal_fasilitasi_id" value="{{ $jadwal->id }}">
+                            @endif
 
                             <div class="mb-3">
                                 <label class="form-label">Alasan Perpanjangan <span class="text-danger">*</span></label>
@@ -60,7 +68,11 @@
                                 <ul class="mb-0 mt-2">
                                     <li>Permohonan akan diproses maksimal 2 hari kerja</li>
                                     <li>Surat permohonan harus resmi dan ditandatangani</li>
-                                    <li>Jika disetujui, batas waktu upload akan otomatis diperpanjang</li>
+                                    @if ($permohonan)
+                                        <li>Jika disetujui, batas waktu upload akan otomatis diperpanjang</li>
+                                    @else
+                                        <li>Jika disetujui, Anda dapat membuat permohonan untuk jadwal ini meski batas waktu semula sudah lewat</li>
+                                    @endif
                                 </ul>
                             </div>
 
@@ -68,7 +80,7 @@
                                 <button type="submit" class="btn btn-success">
                                     <i class='bx bx-send me-1'></i> Ajukan Permohonan
                                 </button>
-                                <a href="{{ route('permohonan.show', $permohonan) }}" class="btn btn-outline-secondary">
+                                <a href="{{ $permohonan ? route('permohonan.show', $permohonan) : route('perpanjangan-waktu.index') }}" class="btn btn-outline-secondary">
                                     <i class='bx bx-x'></i> Batal
                                 </a>
                             </div>
@@ -81,33 +93,52 @@
                 <!-- Info Permohonan -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h6 class="mb-0">Informasi Permohonan</h6>
+                        <h6 class="mb-0">{{ $permohonan ? 'Informasi Permohonan' : 'Informasi Jadwal Fasilitasi' }}</h6>
                     </div>
                     <div class="card-body">
-                        <table class="table table-sm table-borderless">
-                            <tr>
-                                <th width="30%">Permohonan :</th>
-                                <td>{{ $permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $permohonan->tahun }}</td>
-                            </tr>
-                            <tr>
-                                <th>Kab / Kota :</th>
-                                <td>{{ $permohonan->kabupatenKota->nama ?? '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Batas Upload :</th>
-                                <td>
-                                    @if ($permohonan->jadwalFasilitasi)
+                        @if ($permohonan)
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="30%">Permohonan :</th>
+                                    <td>{{ $permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $permohonan->tahun }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Kab / Kota :</th>
+                                    <td>{{ $permohonan->kabupatenKota->nama ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Batas Upload :</th>
+                                    <td>
+                                        @if ($permohonan->jadwalFasilitasi)
+                                            <strong class="text-danger">
+                                                {{ \Carbon\Carbon::parse($permohonan->jadwalFasilitasi->batas_permohonan)->format('d M Y, H:i') }}
+                                                WIT
+                                            </strong>
+                                            <br>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        @else
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="30%">Jenis Dokumen :</th>
+                                    <td>{{ $jadwal->jenisDokumen->nama ?? '-' }} Tahun {{ $jadwal->tahun_anggaran }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Batas Permohonan :</th>
+                                    <td>
                                         <strong class="text-danger">
-                                            {{ \Carbon\Carbon::parse($permohonan->jadwalFasilitasi->batas_permohonan)->format('d M Y, H:i') }}
-                                            WIT
+                                            {{ \Carbon\Carbon::parse($jadwal->batas_permohonan)->format('d M Y, H:i') }} WIT
                                         </strong>
                                         <br>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                            </tr>
-                        </table>
+                                        <small class="text-muted">Anda belum membuat permohonan untuk jadwal ini</small>
+                                    </td>
+                                </tr>
+                            </table>
+                        @endif
                     </div>
                 </div>
 
@@ -126,7 +157,11 @@
                         <h6>Proses Persetujuan:</h6>
                         <ol class="small mb-0">
                             <li>Permohonan akan direview oleh admin.</li>
-                            <li>Batas waktu baru akan di update dan hanya berlaku untuk permohonan ini.</li>
+                            @if ($permohonan)
+                                <li>Batas waktu baru akan di update dan hanya berlaku untuk permohonan ini.</li>
+                            @else
+                                <li>Batas waktu baru akan menjadi batas Anda untuk membuat permohonan pada jadwal ini.</li>
+                            @endif
                         </ol>
                     </div>
                 </div>

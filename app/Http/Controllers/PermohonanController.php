@@ -139,10 +139,26 @@ class PermohonanController extends Controller
 
     public function create(Request $request)
     {
-        // Hanya jadwal yang published yang bisa dipilih
+        $userId = Auth::id();
+
+        // Jadwal yang published dan (masih terbuka ATAU pemohon punya perpanjangan waktu yang disetujui & masih berlaku)
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')
-            ->where('batas_permohonan', '>=', now())->with(['jenisDokumen'])
-            ->get();
+            ->where(function ($q) use ($userId) {
+                $q->where('batas_permohonan', '>=', now())
+                    ->orWhereHas('perpanjanganWaktu', function ($qq) use ($userId) {
+                        $qq->where('user_id', $userId)
+                            ->whereNotNull('diproses_at')
+                            ->whereNotNull('batas_waktu')
+                            ->where('batas_waktu', '>=', now());
+                    });
+            })
+            ->with(['jenisDokumen'])
+            ->get()
+            ->each(function ($jadwal) use ($userId) {
+                $jadwal->extension_deadline = $jadwal->batas_permohonan && $jadwal->batas_permohonan->isPast()
+                    ? $jadwal->validExtensionFor($userId)?->batas_waktu
+                    : null;
+            });
 
         // Pre-select jadwal if jadwal_id provided
         $selectedJadwal = null;
@@ -159,9 +175,10 @@ class PermohonanController extends Controller
             'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
         ]);
 
-        // Cek apakah jadwal masih aktif
+        // Cek apakah jadwal masih aktif (atau pemohon punya perpanjangan waktu yang masih berlaku)
         $jadwal = JadwalFasilitasi::find($request->jadwal_fasilitasi_id);
-        if ($jadwal->batas_permohonan && $jadwal->batas_permohonan->lt(now())) {
+        $deadlineLewat = $jadwal->batas_permohonan && $jadwal->batas_permohonan->lt(now());
+        if ($deadlineLewat && !$jadwal->hasValidExtensionFor(Auth::id())) {
             return redirect()->back()->withErrors(['jadwal_fasilitasi_id' => 'Jadwal permohonan sudah ditutup.']);
         }
 

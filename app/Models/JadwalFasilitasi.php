@@ -62,6 +62,11 @@ class JadwalFasilitasi extends Model
         return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen');
     }
 
+    public function perpanjanganWaktu()
+    {
+        return $this->hasMany(PerpanjanganWaktu::class);
+    }
+
     // Accessor
     public function getStatusLabelAttribute()
     {
@@ -93,5 +98,39 @@ class JadwalFasilitasi extends Model
     {
         return $query->where('status', self::STATUS_PUBLISHED)
                     ->where('batas_permohonan', '>=', now());
+    }
+
+    /**
+     * Jadwal yang batas permohonannya sudah lewat, belum punya Permohonan milik
+     * user ini, dan belum pernah diajukan perpanjangan waktu oleh user ini
+     * (hanya boleh mengajukan 1 kali per jadwal untuk menghindari request ganda).
+     */
+    public function scopeAvailableForExtensionRequest($query, int $userId)
+    {
+        return $query->where('status', self::STATUS_PUBLISHED)
+            ->where('batas_permohonan', '<', now())
+            ->whereDoesntHave('permohonan', fn ($q) => $q->where('user_id', $userId))
+            ->whereDoesntHave('perpanjanganWaktu', fn ($q) => $q->where('user_id', $userId));
+    }
+
+    /**
+     * Request perpanjangan waktu milik user yang sudah disetujui admin dan
+     * batas waktu barunya masih berlaku (dipakai untuk membolehkan pembuatan
+     * Permohonan meski batas_permohonan asli sudah lewat).
+     */
+    public function validExtensionFor(?int $userId = null)
+    {
+        return $this->perpanjanganWaktu()
+            ->where('user_id', $userId ?? auth()->id())
+            ->whereNotNull('diproses_at')
+            ->whereNotNull('batas_waktu')
+            ->where('batas_waktu', '>=', now())
+            ->latest('diproses_at')
+            ->first();
+    }
+
+    public function hasValidExtensionFor(?int $userId = null): bool
+    {
+        return $this->validExtensionFor($userId) !== null;
     }
 }

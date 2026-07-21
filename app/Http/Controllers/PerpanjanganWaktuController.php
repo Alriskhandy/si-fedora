@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JadwalFasilitasi;
 use App\Models\PerpanjanganWaktu;
 use App\Models\Permohonan;
 use Illuminate\Http\Request;
@@ -39,18 +40,26 @@ class PerpanjanganWaktuController extends Controller
             ->paginate(15);
 
         $permohonanLewatBatas = collect();
+        $jadwalLewatBatas = collect();
 
         if (auth()->user()->hasRole('pemohon')) {
             $permohonanLewatBatas = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'jadwalFasilitasi'])
                 ->where('user_id', auth()->id())
                 ->where('status_akhir', 'belum')
+                // Hanya tampilkan yang belum pernah diajukan perpanjangan (hindari request ganda)
+                ->whereDoesntHave('perpanjanganWaktu')
                 ->get()
                 ->filter(function ($p) {
                     return $p->isUploadDeadlinePassed();
                 });
+
+            $jadwalLewatBatas = JadwalFasilitasi::availableForExtensionRequest(auth()->id())
+                ->with('jenisDokumen')
+                ->orderBy('batas_permohonan')
+                ->get();
         }
 
-        return view('pages.perpanjangan-waktu.index', compact('perpanjanganList', 'permohonanLewatBatas'));
+        return view('pages.perpanjangan-waktu.index', compact('perpanjanganList', 'permohonanLewatBatas', 'jadwalLewatBatas'));
     }
 
     /**
@@ -58,18 +67,20 @@ class PerpanjanganWaktuController extends Controller
      */
     public function create(Request $request)
     {
-        $permohonanId = $request->query('permohonan_id');
+        $permohonan = null;
+        $jadwal = null;
 
-        if (!$permohonanId) {
-            return redirect()->back()->with('error', 'Permohonan ID tidak ditemukan');
+        if ($request->filled('permohonan_id')) {
+            $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($request->query('permohonan_id'));
+            $this->authorize('create', [PerpanjanganWaktu::class, $permohonan]);
+        } elseif ($request->filled('jadwal_fasilitasi_id')) {
+            $jadwal = JadwalFasilitasi::with('jenisDokumen')->findOrFail($request->query('jadwal_fasilitasi_id'));
+            $this->authorize('create', [PerpanjanganWaktu::class, $jadwal]);
+        } else {
+            return redirect()->back()->with('error', 'Permohonan atau Jadwal Fasilitasi tidak ditemukan');
         }
 
-        $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($permohonanId);
-
-        // Cek authorization
-        $this->authorize('create', [PerpanjanganWaktu::class, $permohonan]);
-
-        return view('pages.perpanjangan-waktu.create', compact('permohonan'));
+        return view('pages.perpanjangan-waktu.create', compact('permohonan', 'jadwal'));
     }
 
     /**
@@ -77,12 +88,22 @@ class PerpanjanganWaktuController extends Controller
      */
     public function store(Request $request)
     {
-        $permohonan = Permohonan::findOrFail($request->permohonan_id);
+        $permohonan = null;
+        $jadwal = null;
 
-        $this->authorize('create', [PerpanjanganWaktu::class, $permohonan]);
+        if ($request->filled('permohonan_id')) {
+            $permohonan = Permohonan::findOrFail($request->permohonan_id);
+            $this->authorize('create', [PerpanjanganWaktu::class, $permohonan]);
+        } elseif ($request->filled('jadwal_fasilitasi_id')) {
+            $jadwal = JadwalFasilitasi::findOrFail($request->jadwal_fasilitasi_id);
+            $this->authorize('create', [PerpanjanganWaktu::class, $jadwal]);
+        } else {
+            abort(422, 'Permohonan atau Jadwal Fasilitasi wajib diisi.');
+        }
 
         $validated = $request->validate([
-            'permohonan_id' => 'required|exists:permohonan,id',
+            'permohonan_id' => 'nullable|required_without:jadwal_fasilitasi_id|exists:permohonan,id',
+            'jadwal_fasilitasi_id' => 'nullable|required_without:permohonan_id|exists:jadwal_fasilitasi,id',
             'alasan' => 'required|string|min:20',
             'surat_permohonan' => 'required|file|mimes:pdf|max:2048',
         ], [
@@ -94,14 +115,15 @@ class PerpanjanganWaktuController extends Controller
         ]);
 
         // Upload file
-        $filePath = $request->file('surat_permohonan')->store(
-            'perpanjangan_waktu/' . $permohonan->id,
-            'public'
-        );
+        $folder = $permohonan
+            ? 'perpanjangan_waktu/permohonan_' . $permohonan->id
+            : 'perpanjangan_waktu/jadwal_' . $jadwal->id;
+        $filePath = $request->file('surat_permohonan')->store($folder, 'public');
 
         // Create perpanjangan
         $perpanjangan = PerpanjanganWaktu::create([
-            'permohonan_id' => $validated['permohonan_id'],
+            'permohonan_id' => $permohonan?->id,
+            'jadwal_fasilitasi_id' => $jadwal?->id,
             'user_id' => auth()->id(),
             'alasan' => $validated['alasan'],
             'surat_permohonan' => $filePath,
@@ -110,8 +132,11 @@ class PerpanjanganWaktuController extends Controller
         // TODO: Send notification to admin
         // event(new PerpanjanganWaktuCreated($perpanjangan));
 
-        return redirect()->route('permohonan.show', $permohonan)
-            ->with('success', 'Permohonan perpanjangan waktu berhasil diajukan. Mohon menunggu persetujuan admin.');
+        return $permohonan
+            ? redirect()->route('permohonan.show', $permohonan)
+                ->with('success', 'Permohonan perpanjangan waktu berhasil diajukan. Mohon menunggu persetujuan admin.')
+            : redirect()->route('perpanjangan-waktu.index')
+                ->with('success', 'Permohonan perpanjangan waktu untuk jadwal fasilitasi berhasil diajukan. Mohon menunggu persetujuan admin.');
     }
 
     /**
@@ -121,7 +146,7 @@ class PerpanjanganWaktuController extends Controller
     {
         $this->authorize('view', $perpanjanganWaktu);
 
-        $perpanjanganWaktu->load(['permohonan.kabupatenKota', 'user', 'admin']);
+        $perpanjanganWaktu->load(['permohonan.kabupatenKota', 'jadwalFasilitasi.jenisDokumen', 'user', 'admin']);
 
         return view('pages.perpanjangan-waktu.show', compact('perpanjanganWaktu'));
     }
@@ -147,17 +172,20 @@ class PerpanjanganWaktuController extends Controller
         }
 
         // Upload new file
-        $filePath = $request->file('file_surat')->store(
-            'perpanjangan_waktu/' . $perpanjanganWaktu->permohonan_id,
-            'public'
-        );
+        $folder = $perpanjanganWaktu->permohonan_id
+            ? 'perpanjangan_waktu/permohonan_' . $perpanjanganWaktu->permohonan_id
+            : 'perpanjangan_waktu/jadwal_' . $perpanjanganWaktu->jadwal_fasilitasi_id;
+        $filePath = $request->file('file_surat')->store($folder, 'public');
 
         $perpanjanganWaktu->update([
             'surat_permohonan' => $filePath,
         ]);
 
-        return redirect()->route('permohonan.show', $perpanjanganWaktu->permohonan_id)
-            ->with('success', 'Surat permohonan berhasil diupload.');
+        return $perpanjanganWaktu->permohonan_id
+            ? redirect()->route('permohonan.show', $perpanjanganWaktu->permohonan_id)
+                ->with('success', 'Surat permohonan berhasil diupload.')
+            : redirect()->route('perpanjangan-waktu.index')
+                ->with('success', 'Surat permohonan berhasil diupload.');
     }
 
     /**
@@ -189,8 +217,12 @@ class PerpanjanganWaktuController extends Controller
             'diproses_at' => now(),
         ]);
 
+        $message = $perpanjanganWaktu->permohonan_id
+            ? 'Perpanjangan waktu berhasil diproses. Batas waktu upload telah diperbarui.'
+            : 'Perpanjangan waktu berhasil diproses. Pemohon kini dapat membuat permohonan untuk jadwal ini.';
+
         return redirect()->route('perpanjangan-waktu.index')
-            ->with('success', 'Perpanjangan waktu berhasil diproses. Batas waktu upload telah diperbarui.');
+            ->with('success', $message);
     }
 
     /**
@@ -222,7 +254,10 @@ class PerpanjanganWaktuController extends Controller
         $permohonanId = $perpanjanganWaktu->permohonan_id;
         $perpanjanganWaktu->delete();
 
-        return redirect()->route('permohonan.show', $permohonanId)
-            ->with('success', 'Permohonan perpanjangan waktu berhasil dihapus.');
+        return $permohonanId
+            ? redirect()->route('permohonan.show', $permohonanId)
+                ->with('success', 'Permohonan perpanjangan waktu berhasil dihapus.')
+            : redirect()->route('perpanjangan-waktu.index')
+                ->with('success', 'Permohonan perpanjangan waktu berhasil dihapus.');
     }
 }

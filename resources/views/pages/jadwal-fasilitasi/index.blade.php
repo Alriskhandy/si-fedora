@@ -153,11 +153,23 @@
                                                             </a>
                                                         @endif
 
-                                                        @if (auth()->user()->hasRole('pemohon') && $item->batas_permohonan >= now())
-                                                            <a class="dropdown-item"
-                                                                href="{{ route('permohonan.create', ['jadwal_id' => $item->id]) }}">
-                                                                <i class="bx bx-plus-circle me-1"></i> Buat Permohonan
-                                                            </a>
+                                                        @if (auth()->user()->hasRole('pemohon'))
+                                                            @if ($item->batas_permohonan >= now())
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('permohonan.create', ['jadwal_id' => $item->id]) }}">
+                                                                    <i class="bx bx-plus-circle me-1"></i> Buat Permohonan
+                                                                </a>
+                                                            @elseif ($jadwalExtendedIds->contains($item->id))
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('permohonan.create', ['jadwal_id' => $item->id]) }}">
+                                                                    <i class="bx bx-plus-circle me-1"></i> Buat Permohonan (Diperpanjang)
+                                                                </a>
+                                                            @elseif ($jadwalEligibleForExtensionIds->contains($item->id))
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('perpanjangan-waktu.create', ['jadwal_fasilitasi_id' => $item->id]) }}">
+                                                                    <i class="bx bx-time-five me-1"></i> Ajukan Perpanjangan Waktu
+                                                                </a>
+                                                            @endif
                                                         @endif
 
                                                         @if (auth()->user()->hasRole('admin_peran'))

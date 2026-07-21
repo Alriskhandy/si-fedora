@@ -121,18 +121,20 @@
                                     @csrf
                                     @method('PUT')
 
-                                    @if ($perpanjanganWaktu->permohonan->jadwalFasilitasi)
+                                    @if ($perpanjanganWaktu->relatedJadwal)
                                         <div class="alert alert-info">
                                             <i class='bx bx-calendar me-2'></i>
-                                            <strong>Batas Waktu Jadwal Saat Ini:</strong>
-                                            {{ \Carbon\Carbon::parse($perpanjanganWaktu->permohonan->jadwalFasilitasi->batas_permohonan)->format('d F Y, H:i') }} WIT
+                                            <strong>Batas {{ $perpanjanganWaktu->permohonan ? 'Waktu Jadwal' : 'Permohonan' }} Saat Ini:</strong>
+                                            {{ \Carbon\Carbon::parse($perpanjanganWaktu->relatedJadwal->batas_permohonan)->format('d F Y, H:i') }} WIT
                                         </div>
                                     @endif
 
                                     <div class="mb-3">
                                         <label class="form-label">Batas Waktu Baru <span class="text-danger">*</span></label>
                                         <input type="datetime-local" name="batas_permohonan_baru" class="form-control" required>
-                                        <small class="text-muted">Batas waktu ini hanya berlaku untuk permohonan ini</small>
+                                        <small class="text-muted">
+                                            {{ $perpanjanganWaktu->permohonan ? 'Batas waktu ini hanya berlaku untuk permohonan ini' : 'Batas waktu ini menjadi batas baru pemohon untuk membuat permohonan pada jadwal ini' }}
+                                        </small>
                                     </div>
 
                                     <div class="mb-3">
@@ -152,30 +154,49 @@
             </div>
 
             <div class="col-lg-5">
-                <!-- Info Permohonan Terkait -->
+                <!-- Info Permohonan / Jadwal Terkait -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h6 class="mb-0">Informasi Permohonan</h6>
+                        <h6 class="mb-0">{{ $perpanjanganWaktu->permohonan ? 'Informasi Permohonan' : 'Informasi Jadwal Fasilitasi' }}</h6>
                     </div>
                     <div class="card-body">
-                        <table class="table table-sm table-borderless">
-                            <tr>
-                                <th width="30%">Permohonan :</th>
-                                <td>{{ $perpanjanganWaktu->permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $perpanjanganWaktu->permohonan->tahun }}</td>
-                            </tr>
-                            <tr>
-                                <th>Kab / Kota :</th>
-                                <td>{{ $perpanjanganWaktu->permohonan->kabupatenKota->nama ?? '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Status :</th>
-                                <td><span class="badge bg-secondary">{{ $perpanjanganWaktu->permohonan->status_akhir }}</span></td>
-                            </tr>
-                        </table>
-                        <a href="{{ route('permohonan.show', $perpanjanganWaktu->permohonan) }}"
-                            class="btn btn-outline-primary btn-sm w-100 mt-2">
-                            <i class='bx bx-show me-1'></i>Lihat Detail Permohonan
-                        </a>
+                        @if ($perpanjanganWaktu->permohonan)
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="30%">Permohonan :</th>
+                                    <td>{{ $perpanjanganWaktu->permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $perpanjanganWaktu->permohonan->tahun }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Kab / Kota :</th>
+                                    <td>{{ $perpanjanganWaktu->permohonan->kabupatenKota->nama ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status :</th>
+                                    <td><span class="badge bg-secondary">{{ $perpanjanganWaktu->permohonan->status_akhir }}</span></td>
+                                </tr>
+                            </table>
+                            <a href="{{ route('permohonan.show', $perpanjanganWaktu->permohonan) }}"
+                                class="btn btn-outline-primary btn-sm w-100 mt-2">
+                                <i class='bx bx-show me-1'></i>Lihat Detail Permohonan
+                            </a>
+                        @else
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="30%">Jenis Dokumen :</th>
+                                    <td>{{ $perpanjanganWaktu->relatedJadwal->jenisDokumen->nama ?? '-' }} Tahun {{ $perpanjanganWaktu->relatedJadwal->tahun_anggaran ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status :</th>
+                                    <td><span class="badge bg-secondary">Belum ada permohonan</span></td>
+                                </tr>
+                            </table>
+                            @if ($perpanjanganWaktu->diproses_at && $perpanjanganWaktu->batas_waktu && $perpanjanganWaktu->batas_waktu->isFuture())
+                                <a href="{{ route('permohonan.create', ['jadwal_id' => $perpanjanganWaktu->jadwal_fasilitasi_id]) }}"
+                                    class="btn btn-outline-success btn-sm w-100 mt-2">
+                                    <i class='bx bx-plus me-1'></i>Buat Permohonan Sekarang
+                                </a>
+                            @endif
+                        @endif
                     </div>
                 </div>
 

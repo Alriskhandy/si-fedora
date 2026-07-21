@@ -26,6 +26,9 @@
                                             {{ strtoupper($jadwal->jenisDokumen->nama) }} {{ $jadwal->tahun_anggaran }} -
                                             Batas:
                                             {{ $jadwal->batas_permohonan ? $jadwal->batas_permohonan->format('d M Y') : '-' }}
+                                            @if ($jadwal->extension_deadline)
+                                                (Diperpanjang s/d {{ $jadwal->extension_deadline->format('d M Y') }})
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>

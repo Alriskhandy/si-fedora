@@ -90,6 +90,49 @@
             </div>
         @endif
 
+        <!-- Jadwal Fasilitasi Lewat Batas Permohonan (Pemohon only) -->
+        @if ($isPemohon && $jadwalLewatBatas->count() > 0)
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0 text-white"><i class='bx bx-error-circle me-2'></i>Jadwal Fasilitasi Melewati Batas Permohonan</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Anda belum membuat permohonan untuk jadwal berikut dan batas waktu permohonan sudah lewat. Ajukan perpanjangan waktu agar dapat membuat permohonan.</p>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">No</th>
+                                    <th>Jenis Dokumen</th>
+                                    <th>Batas Permohonan</th>
+                                    <th width="20%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($jadwalLewatBatas as $index => $jadwal)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $jadwal->jenisDokumen->nama ?? '-' }} Tahun {{ $jadwal->tahun_anggaran }}</td>
+                                        <td>
+                                            <strong class="text-danger">
+                                                {{ \Carbon\Carbon::parse($jadwal->batas_permohonan)->format('d M Y, H:i') }} WIT
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('perpanjangan-waktu.create', ['jadwal_fasilitasi_id' => $jadwal->id]) }}"
+                                                class="btn btn-sm btn-warning">
+                                                <i class='bx bx-time-five me-1'></i>Ajukan Perpanjangan
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Filters -->
         <div class="card mb-4" style="background-color: #f8f9fa;">
             <div class="card-body">
@@ -147,11 +190,19 @@
                                     <tr>
                                         <td>{{ $perpanjanganList->firstItem() + $index }}</td>
                                         <td>
-                                            <strong>{{ $perpanjangan->permohonan->jenisDokumen->nama ?? 'N/A' }}</strong><br>
-                                            <small class="text-muted">
-                                                {{ $perpanjangan->permohonan->kabupatenKota->nama ?? '-' }}
-                                                &bull; Tahun {{ $perpanjangan->permohonan->tahun }}
-                                            </small>
+                                            @if ($perpanjangan->permohonan)
+                                                <strong>{{ $perpanjangan->permohonan->jenisDokumen->nama ?? 'N/A' }}</strong><br>
+                                                <small class="text-muted">
+                                                    {{ $perpanjangan->permohonan->kabupatenKota->nama ?? '-' }}
+                                                    &bull; Tahun {{ $perpanjangan->permohonan->tahun }}
+                                                </small>
+                                            @else
+                                                <strong>{{ $perpanjangan->relatedJadwal->jenisDokumen->nama ?? 'N/A' }} (belum ada permohonan)</strong><br>
+                                                <small class="text-muted">
+                                                    {{ $perpanjangan->user->name ?? '-' }}
+                                                    &bull; Tahun {{ $perpanjangan->relatedJadwal->tahun_anggaran ?? '-' }}
+                                                </small>
+                                            @endif
                                         </td>
                                         <td>
                                             {{ $perpanjangan->created_at->format('d M Y') }}<br>
@@ -250,8 +301,8 @@
                                 <div class="modal-body">
                                     <table class="table table-sm table-borderless mb-3">
                                         <tr>
-                                            <th width="30%">Permohonan :</th>
-                                            <td>{{ $perpanjangan->permohonan->jenisDokumen->nama ?? '-' }} Tahun {{ $perpanjangan->permohonan->tahun }}</td>
+                                            <th width="30%">{{ $perpanjangan->permohonan ? 'Permohonan' : 'Jadwal Fasilitasi' }} :</th>
+                                            <td>{{ $perpanjangan->relatedJadwal->jenisDokumen->nama ?? '-' }} Tahun {{ $perpanjangan->permohonan->tahun ?? $perpanjangan->relatedJadwal->tahun_anggaran ?? '-' }}</td>
                                         </tr>
                                         <tr>
                                             <th>Kab / Kota :</th>
@@ -267,18 +318,20 @@
                                         </tr>
                                     </table>
 
-                                    @if ($perpanjangan->permohonan->jadwalFasilitasi)
+                                    @if ($perpanjangan->relatedJadwal)
                                         <div class="alert alert-info">
                                             <i class='bx bx-calendar me-2'></i>
-                                            <strong>Batas Waktu Jadwal Saat Ini:</strong>
-                                            {{ \Carbon\Carbon::parse($perpanjangan->permohonan->jadwalFasilitasi->batas_permohonan)->format('d F Y, H:i') }} WIT
+                                            <strong>Batas {{ $perpanjangan->permohonan ? 'Waktu Jadwal' : 'Permohonan' }} Saat Ini:</strong>
+                                            {{ \Carbon\Carbon::parse($perpanjangan->relatedJadwal->batas_permohonan)->format('d F Y, H:i') }} WIT
                                         </div>
                                     @endif
 
                                     <div class="mb-3">
                                         <label class="form-label">Batas Waktu Baru <span class="text-danger">*</span></label>
                                         <input type="datetime-local" name="batas_permohonan_baru" class="form-control" required>
-                                        <small class="text-muted">Batas waktu ini hanya berlaku untuk permohonan ini</small>
+                                        <small class="text-muted">
+                                            {{ $perpanjangan->permohonan ? 'Batas waktu ini hanya berlaku untuk permohonan ini' : 'Batas waktu ini menjadi batas baru pemohon untuk membuat permohonan pada jadwal ini' }}
+                                        </small>
                                     </div>
 
                                     <div class="mb-3">

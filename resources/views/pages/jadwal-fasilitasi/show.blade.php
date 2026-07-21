@@ -9,11 +9,18 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Detail Jadwal Fasilitasi</h5>
-                        @if (auth()->user()->hasRole('pemohon') && $jadwal->batas_permohonan >= now())
-                            <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}" 
-                               class="btn btn-sm btn-primary">
-                                <i class="bx bx-plus-circle me-1"></i> Buat Permohonan
-                            </a>
+                        @if (auth()->user()->hasRole('pemohon'))
+                            @if ($jadwal->batas_permohonan >= now() || $jadwalExtendedIds->contains($jadwal->id))
+                                <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bx bx-plus-circle me-1"></i> Buat Permohonan
+                                </a>
+                            @elseif ($jadwalEligibleForExtensionIds->contains($jadwal->id))
+                                <a href="{{ route('perpanjangan-waktu.create', ['jadwal_fasilitasi_id' => $jadwal->id]) }}"
+                                   class="btn btn-sm btn-warning">
+                                    <i class="bx bx-time-five me-1"></i> Ajukan Perpanjangan Waktu
+                                </a>
+                            @endif
                         @endif
                     </div>
                     <div class="card-body">
@@ -148,13 +155,20 @@
                                 </a>
                             @endif
                             
-                            @if (auth()->user()->hasRole('pemohon') && $jadwal->batas_permohonan >= now())
-                                <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}" 
-                                   class="btn btn-success me-2">
-                                    <i class="bx bx-plus-circle me-1"></i> Buat Permohonan
-                                </a>
+                            @if (auth()->user()->hasRole('pemohon'))
+                                @if ($jadwal->batas_permohonan >= now() || $jadwalExtendedIds->contains($jadwal->id))
+                                    <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
+                                       class="btn btn-success me-2">
+                                        <i class="bx bx-plus-circle me-1"></i> Buat Permohonan
+                                    </a>
+                                @elseif ($jadwalEligibleForExtensionIds->contains($jadwal->id))
+                                    <a href="{{ route('perpanjangan-waktu.create', ['jadwal_fasilitasi_id' => $jadwal->id]) }}"
+                                       class="btn btn-warning me-2">
+                                        <i class="bx bx-time-five me-1"></i> Ajukan Perpanjangan Waktu
+                                    </a>
+                                @endif
                             @endif
-                            
+
                             <a href="{{ route('jadwal.index') }}" class="btn btn-secondary">
                                 <i class="bx bx-arrow-back me-1"></i> Kembali
                             </a>
