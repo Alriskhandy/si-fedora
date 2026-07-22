@@ -398,6 +398,24 @@ class Permohonan extends Model
             return $perpanjangan->batas_waktu;
         }
 
+        // Jika permohonan ini dibuat berkat perpanjangan waktu berbasis jadwal
+        // (pemohon melewati batas_permohonan lalu mengajukan perpanjangan
+        // sebelum sempat membuat permohonan), batas waktu yang sudah disetujui
+        // itu turut berlaku sebagai batas upload dokumen di tahapan ini, agar
+        // pemohon tidak perlu mengajukan perpanjangan kedua untuk upload.
+        $perpanjanganJadwal = $this->jadwal_fasilitasi_id
+            ? PerpanjanganWaktu::where('jadwal_fasilitasi_id', $this->jadwal_fasilitasi_id)
+                ->where('user_id', $this->user_id)
+                ->whereNotNull('diproses_at')
+                ->whereNotNull('batas_waktu')
+                ->latest('diproses_at')
+                ->first()
+            : null;
+
+        if ($perpanjanganJadwal) {
+            return $perpanjanganJadwal->batas_waktu;
+        }
+
         return $this->jadwalFasilitasi?->batas_permohonan;
     }
 

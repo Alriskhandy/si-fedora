@@ -104,6 +104,7 @@
                                 <tr>
                                     <th width="5%">No</th>
                                     <th>Jenis Dokumen</th>
+                                    <th>Kab / Kota</th>
                                     <th>Batas Permohonan</th>
                                     <th width="20%">Aksi</th>
                                 </tr>
@@ -113,6 +114,7 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $jadwal->jenisDokumen->nama ?? '-' }} Tahun {{ $jadwal->tahun_anggaran }}</td>
+                                        <td>{{ auth()->user()->kabupatenKota->nama ?? '-' }}</td>
                                         <td>
                                             <strong class="text-danger">
                                                 {{ \Carbon\Carbon::parse($jadwal->batas_permohonan)->format('d M Y, H:i') }} WIT
@@ -199,7 +201,7 @@
                                             @else
                                                 <strong>{{ $perpanjangan->relatedJadwal->jenisDokumen->nama ?? 'N/A' }} (belum ada permohonan)</strong><br>
                                                 <small class="text-muted">
-                                                    {{ $perpanjangan->user->name ?? '-' }}
+                                                    {{ $perpanjangan->user->kabupatenKota->nama ?? '-' }}
                                                     &bull; Tahun {{ $perpanjangan->relatedJadwal->tahun_anggaran ?? '-' }}
                                                 </small>
                                             @endif
@@ -306,7 +308,10 @@
                                         </tr>
                                         <tr>
                                             <th>Kab / Kota :</th>
-                                            <td>{{ $perpanjangan->user->name ?? '-' }} ({{ $perpanjangan->permohonan->kabupatenKota->nama ?? '-' }})</td>
+                                            <td>
+                                                {{ $perpanjangan->user->name ?? '-' }}
+                                                ({{ ($perpanjangan->permohonan->kabupatenKota->nama ?? $perpanjangan->user->kabupatenKota->nama) ?? '-' }})
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th>Tanggal Pengajuan :</th>
