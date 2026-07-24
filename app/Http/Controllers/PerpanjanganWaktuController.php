@@ -72,7 +72,16 @@ class PerpanjanganWaktuController extends Controller
 
         if ($request->filled('permohonan_id')) {
             $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($request->query('permohonan_id'));
-            $this->authorize('create', [PerpanjanganWaktu::class, $permohonan]);
+
+            if (!auth()->user()->hasRole('pemohon') || $permohonan->user_id !== auth()->id()) {
+                abort(403);
+            }
+
+            $existing = $permohonan->perpanjanganWaktu()->latest()->first();
+            if ($existing) {
+                return redirect()->route('perpanjangan-waktu.show', $existing)
+                    ->with('info', 'Anda sudah mengajukan perpanjangan waktu untuk permohonan ini. Mohon menunggu diproses oleh admin.');
+            }
         } elseif ($request->filled('jadwal_fasilitasi_id')) {
             $jadwal = JadwalFasilitasi::with('jenisDokumen')->findOrFail($request->query('jadwal_fasilitasi_id'));
             $this->authorize('create', [PerpanjanganWaktu::class, $jadwal]);

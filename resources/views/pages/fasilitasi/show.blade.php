@@ -438,16 +438,26 @@
 
                         {{-- Tombol Perpanjangan Waktu untuk Pemohon --}}
                         @if (auth()->user()->hasRole('pemohon') && $permohonan->isUploadDeadlinePassed() && $permohonan->status_akhir == 'belum')
+                            @php
+                                $existingPerpanjangan = $permohonan->perpanjanganWaktu()->latest()->first();
+                            @endphp
                             <div class="alert alert-danger mt-3 mb-0 d-flex justify-content-between align-items-center">
                                 <div>
                                     <i class='bx bx-error-circle me-2'></i>
                                     <strong>Batas Waktu Upload Terlewat!</strong><br>
                                     <small>{{ $permohonan->getUploadDeadlineMessage() }}</small>
                                 </div>
-                                <a href="{{ route('perpanjangan-waktu.create', ['permohonan_id' => $permohonan->id]) }}"
-                                    class="btn btn-warning">
-                                    <i class='bx bx-time-five me-1'></i>Ajukan Perpanjangan Waktu
-                                </a>
+                                @if ($existingPerpanjangan)
+                                    <a href="{{ route('perpanjangan-waktu.show', $existingPerpanjangan) }}"
+                                        class="btn btn-warning">
+                                        <i class='bx bx-time-five me-1'></i>Lihat Status Perpanjangan Waktu
+                                    </a>
+                                @else
+                                    <a href="{{ route('perpanjangan-waktu.create', ['permohonan_id' => $permohonan->id]) }}"
+                                        class="btn btn-warning">
+                                        <i class='bx bx-time-five me-1'></i>Ajukan Perpanjangan Waktu
+                                    </a>
+                                @endif
                             </div>
                         @endif
                     </div>

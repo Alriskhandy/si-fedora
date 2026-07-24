@@ -114,6 +114,9 @@
                 @endphp
 
                 @if ($dokumenBelumLengkap && $batasWaktuTerlewat)
+                    @php
+                        $existingPerpanjangan = $permohonan->perpanjanganWaktu()->latest()->first();
+                    @endphp
                     <div class="alert alert-danger d-flex justify-content-between align-items-center">
                         <div>
                             <i class='bx bx-error-circle me-2'></i>
@@ -123,10 +126,17 @@
                             <small class="text-muted">Dokumen yang belum lengkap:
                                 <strong>{{ $permohonan->permohonanDokumen->where('is_ada', false)->count() }}</strong></small>
                         </div>
-                        <a href="{{ route('perpanjangan-waktu.create', ['permohonan_id' => $permohonan->id]) }}"
-                            class="btn btn-warning">
-                            <i class='bx bx-time-five me-1'></i>Ajukan Perpanjangan Waktu
-                        </a>
+                        @if ($existingPerpanjangan)
+                            <a href="{{ route('perpanjangan-waktu.show', $existingPerpanjangan) }}"
+                                class="btn btn-warning">
+                                <i class='bx bx-time-five me-1'></i>Lihat Status Perpanjangan Waktu
+                            </a>
+                        @else
+                            <a href="{{ route('perpanjangan-waktu.create', ['permohonan_id' => $permohonan->id]) }}"
+                                class="btn btn-warning">
+                                <i class='bx bx-time-five me-1'></i>Ajukan Perpanjangan Waktu
+                            </a>
+                        @endif
                     </div>
                 @endif
             @endif
