@@ -9,7 +9,7 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "intervention/image": "^3.11",
-        "laravel/framework": "^11.31",
+        "laravel/framework": "^12.0",
         "laravel/tinker": "^2.9",
         "novay/laravel-word-template": "^2.0",
         "opcodesio/log-viewer": "^3.24",
@@ -30,7 +30,7 @@
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
-        "phpunit/phpunit": "^11.0.1"
+        "phpunit/phpunit": "^11.5"
     },
     "autoload": {
         "psr-4": {
