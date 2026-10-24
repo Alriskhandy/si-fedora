@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @method bool hasRole($roles, $guard = null)
@@ -16,7 +16,31 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+
+    /**
+     * Role yang tidak boleh diberikan lewat form tambah pengguna.
+     *
+     * @var list<string>
+     */
+    public const NON_CREATABLE_ROLES = ['superadmin', 'kaban', 'admin_peran'];
+
+    /**
+     * Role yang tidak boleh diberikan lewat form ubah pengguna.
+     *
+     * @var list<string>
+     */
+    public const NON_EDITABLE_ROLES = ['superadmin'];
+
+    /**
+     * Role yang tidak boleh diberikan oleh pengguna tertentu lewat form ubah pengguna.
+     *
+     * @return list<string>
+     */
+    public static function nonEditableRolesFor(User $actor): array
+    {
+        return $actor->hasRole('superadmin') ? [] : self::NON_EDITABLE_ROLES;
+    }
 
     protected $fillable = [
         'name',
@@ -48,7 +72,6 @@ class User extends Authenticatable
     {
         return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
     }
-
 
     public function permohonanCreated()
     {
@@ -120,7 +143,7 @@ class User extends Authenticatable
     }
 
     // Helper Methods untuk Assignment
-    public function isAssignedToKabkota(int $kabkotaId, string $roleType = null): bool
+    public function isAssignedToKabkota(int $kabkotaId, ?string $roleType = null): bool
     {
         $query = $this->kabkotaAssignments()
             ->active()
@@ -142,7 +165,7 @@ class User extends Authenticatable
             ->exists();
     }
 
-    public function getAssignedKabkotaIds(string $roleType = null): array
+    public function getAssignedKabkotaIds(?string $roleType = null): array
     {
         $query = $this->kabkotaAssignments()->active();
 
@@ -153,7 +176,7 @@ class User extends Authenticatable
         return $query->pluck('kabupaten_kota_id')->toArray();
     }
 
-    public function getAssignmentForKabkota(int $kabkotaId, string $roleType = null)
+    public function getAssignmentForKabkota(int $kabkotaId, ?string $roleType = null)
     {
         $query = $this->kabkotaAssignments()
             ->active()

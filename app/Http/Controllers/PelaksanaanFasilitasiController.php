@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Permohonan;
 use App\Models\DokumenTahapan;
 use App\Models\MasterTahapan;
 use App\Models\Notifikasi;
-use App\Models\User;
+use App\Models\Permohonan;
+use App\Models\PermohonanTahapan;
 use App\Models\UserKabkotaAssignment;
+use App\Services\PermohonanNotificationService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,7 @@ class PelaksanaanFasilitasiController extends Controller
     public function uploadDokumen(Request $request, Permohonan $permohonan)
     {
         // Cek akses - hanya fasilitator, koordinator, verifikator, admin yang bisa upload
-        if (!Auth::user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin'])) {
+        if (! Auth::user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin'])) {
             abort(403, 'Anda tidak memiliki akses untuk upload dokumen.');
         }
 
@@ -47,16 +48,10 @@ class PelaksanaanFasilitasiController extends Controller
                 // Get original filename and remove extension for document name
                 $originalName = $file->getClientOriginalName();
                 $namaDokumen = pathinfo($originalName, PATHINFO_FILENAME);
-                
-                // Create unique filename with timestamp
-                $fileName = time() . '_' . uniqid() . '_' . $originalName;
-                
-                // Upload file
-                $filePath = $file->storeAs(
-                    'dokumen-tahapan/pelaksanaan/' . $permohonan->id,
-                    $fileName,
-                    'public'
-                );
+
+                $fileName = $originalName;
+
+                $filePath = $file->store('dokumen-tahapan/pelaksanaan/'.$permohonan->id, 'public');
 
                 // Create dokumen record
                 $dokumen = DokumenTahapan::create([
@@ -84,19 +79,20 @@ class PelaksanaanFasilitasiController extends Controller
                     'jumlah_file' => $uploadedCount,
                     'files' => $uploadedFiles,
                 ])
-                ->log('Upload ' . $uploadedCount . ' dokumen pelaksanaan');
+                ->log('Upload '.$uploadedCount.' dokumen pelaksanaan');
 
-            $message = $uploadedCount > 1 
-                ? $uploadedCount . ' dokumen berhasil diupload.' 
+            $message = $uploadedCount > 1
+                ? $uploadedCount.' dokumen berhasil diupload.'
                 : 'Dokumen berhasil diupload.';
 
             return redirect()->route('permohonan.tahapan.pelaksanaan', $permohonan)
                 ->with('success', $message);
 
         } catch (\Exception $e) {
-            Log::error('Error upload dokumen pelaksanaan: ' . $e->getMessage());
+            Log::error('Error upload dokumen pelaksanaan: '.$e->getMessage());
+
             return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat upload dokumen: ' . $e->getMessage());
+                ->with('error', 'Terjadi kesalahan saat upload dokumen: '.$e->getMessage());
         }
     }
 
@@ -115,7 +111,7 @@ class PelaksanaanFasilitasiController extends Controller
         // Cek akses menggunakan helper
         $this->authorizeView($permohonan);
 
-        if (!$dokumenTahapan->file_path || !Storage::disk('public')->exists($dokumenTahapan->file_path)) {
+        if (! $dokumenTahapan->file_path || ! Storage::disk('public')->exists($dokumenTahapan->file_path)) {
             abort(404, 'File tidak ditemukan.');
         }
 
@@ -127,7 +123,7 @@ class PelaksanaanFasilitasiController extends Controller
                 'permohonan_id' => $permohonan->id,
                 'file_name' => $dokumenTahapan->file_name,
             ])
-            ->log('Download dokumen: ' . $dokumenTahapan->nama_dokumen);
+            ->log('Download dokumen: '.$dokumenTahapan->nama_dokumen);
 
         return Storage::disk('public')->download(
             $dokumenTahapan->file_path,
@@ -141,7 +137,7 @@ class PelaksanaanFasilitasiController extends Controller
     public function deleteDokumen(Permohonan $permohonan, $dokumen)
     {
         // Cek akses - hanya fasilitator, koordinator, verifikator, admin yang bisa delete
-        if (!Auth::user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin'])) {
+        if (! Auth::user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin'])) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus dokumen.');
         }
 
@@ -167,7 +163,7 @@ class PelaksanaanFasilitasiController extends Controller
                     'file_name' => $dokumenTahapan->file_name,
                     'jenis_dokumen' => $dokumenTahapan->nama_dokumen,
                 ])
-                ->log('Hapus dokumen: ' . $dokumenTahapan->nama_dokumen);
+                ->log('Hapus dokumen: '.$dokumenTahapan->nama_dokumen);
 
             // Delete record
             $dokumenTahapan->delete();
@@ -175,7 +171,8 @@ class PelaksanaanFasilitasiController extends Controller
             return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
 
         } catch (\Exception $e) {
-            Log::error('Error delete dokumen: ' . $e->getMessage());
+            Log::error('Error delete dokumen: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus dokumen.');
         }
     }
@@ -186,7 +183,7 @@ class PelaksanaanFasilitasiController extends Controller
     public function completeTahapan(Permohonan $permohonan)
     {
         // Cek akses - hanya admin yang bisa complete tahapan
-        if (!Auth::user()->hasAnyRole(['admin_peran', 'superadmin'])) {
+        if (! Auth::user()->hasAnyRole(['admin_peran', 'superadmin'])) {
             abort(403, 'Anda tidak memiliki akses untuk menyelesaikan tahapan.');
         }
 
@@ -194,7 +191,7 @@ class PelaksanaanFasilitasiController extends Controller
             // Update tahapan Pelaksanaan menjadi selesai
             $masterTahapanPelaksanaan = MasterTahapan::where('nama_tahapan', 'Pelaksanaan')->first();
             if ($masterTahapanPelaksanaan) {
-                \App\Models\PermohonanTahapan::updateOrCreate(
+                PermohonanTahapan::updateOrCreate(
                     [
                         'permohonan_id' => $permohonan->id,
                         'tahapan_id' => $masterTahapanPelaksanaan->id,
@@ -219,8 +216,8 @@ class PelaksanaanFasilitasiController extends Controller
             if ($masterTahapanHasil) {
                 // Set deadline 3 hari setelah pelaksanaan selesai sampai jam 24:00
                 $deadline = Carbon::now()->addDays(3)->endOfDay();
-                
-                \App\Models\PermohonanTahapan::updateOrCreate(
+
+                PermohonanTahapan::updateOrCreate(
                     [
                         'permohonan_id' => $permohonan->id,
                         'tahapan_id' => $masterTahapanHasil->id,
@@ -253,13 +250,14 @@ class PelaksanaanFasilitasiController extends Controller
                 ->log('Tahapan Pelaksanaan diselesaikan, lanjut ke tahapan Hasil');
 
             // Kirim notifikasi melalui notification service (database + WhatsApp)
-            $notificationService = app(\App\Services\PermohonanNotificationService::class);
+            $notificationService = app(PermohonanNotificationService::class);
             $notificationService->notifyPelaksanaanSelesai($permohonan);
 
             return redirect()->back()->with('success', 'Tahapan Pelaksanaan berhasil diselesaikan. Tahapan Hasil sudah dimulai.');
 
         } catch (\Exception $e) {
-            Log::error('Error complete tahapan pelaksanaan: ' . $e->getMessage());
+            Log::error('Error complete tahapan pelaksanaan: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyelesaikan tahapan.');
         }
     }
@@ -279,7 +277,7 @@ class PelaksanaanFasilitasiController extends Controller
         }
         // Verifikator bisa lihat permohonan yang di-assign
         elseif ($user->hasRole('verifikator')) {
-            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+            $hasAccess = UserKabkotaAssignment::where('user_id', $user->id)
                 ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
                 ->where('tahun', $permohonan->tahun)
                 ->where('is_active', true)
@@ -288,13 +286,13 @@ class PelaksanaanFasilitasiController extends Controller
                         ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
                 })
                 ->exists();
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
         // Fasilitator bisa lihat permohonan yang di-assign
         elseif ($user->hasRole('fasilitator')) {
-            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+            $hasAccess = UserKabkotaAssignment::where('user_id', $user->id)
                 ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
                 ->where('tahun', $permohonan->tahun)
                 ->where('is_active', true)
@@ -303,13 +301,13 @@ class PelaksanaanFasilitasiController extends Controller
                         ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
                 })
                 ->exists();
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }
         // Koordinator bisa lihat permohonan yang di-assign
         elseif ($user->hasRole('koordinator')) {
-            $hasAccess = \App\Models\UserKabkotaAssignment::where('user_id', $user->id)
+            $hasAccess = UserKabkotaAssignment::where('user_id', $user->id)
                 ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
                 ->where('tahun', $permohonan->tahun)
                 ->where('is_active', true)
@@ -318,7 +316,7 @@ class PelaksanaanFasilitasiController extends Controller
                         ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
                 })
                 ->exists();
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
             }
         }

@@ -1,43 +1,40 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-
-
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\AdminPeranController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\ArsipController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HasilFasilitasiController;
+use App\Http\Controllers\JadwalFasilitasiController;
 use App\Http\Controllers\KabupatenKotaController;
-use App\Http\Controllers\MasterTahapanController;
-use App\Http\Controllers\MasterUrusanController;
-use App\Http\Controllers\MasterKelengkapanController;
+use App\Http\Controllers\LaporanVerifikasiController;
 use App\Http\Controllers\MasterBabController;
 use App\Http\Controllers\MasterJenisDokumenController;
+use App\Http\Controllers\MasterKelengkapanController;
+use App\Http\Controllers\MasterTahapanController;
+use App\Http\Controllers\MasterUrusanController;
+use App\Http\Controllers\ModulController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\PelaksanaanFasilitasiController;
+use App\Http\Controllers\PenetapanJadwalController;
+use App\Http\Controllers\PenetapanPerdaController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PermohonanController;
 use App\Http\Controllers\PermohonanDokumenController;
-use App\Http\Controllers\VerifikasiController;
-use App\Http\Controllers\LaporanVerifikasiController;
-use App\Http\Controllers\ValidasiHasilController;
-use App\Http\Controllers\JadwalFasilitasiController;
-use App\Http\Controllers\PenetapanJadwalController;
-use App\Http\Controllers\UndanganPelaksanaanController;
-use App\Http\Controllers\HasilFasilitasiController;
-use App\Http\Controllers\PelaksanaanFasilitasiController;
-use App\Http\Controllers\TimAssignmentController;
-use App\Http\Controllers\AdminPeranController;
+use App\Http\Controllers\PerpanjanganWaktuController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SuratPemberitahuanController;
 use App\Http\Controllers\SuratPenyampaianHasilController;
-use App\Http\Controllers\ApprovalController;
-use App\Http\Controllers\PerpanjanganWaktuController;
+use App\Http\Controllers\TimAssignmentController;
 use App\Http\Controllers\TindakLanjutController;
-use App\Http\Controllers\PenetapanPerdaController;
-use App\Http\Controllers\ArsipController;
-use App\Http\Controllers\ModulController;
+use App\Http\Controllers\UndanganPelaksanaanController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ValidasiHasilController;
+use App\Http\Controllers\VerifikasiController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,24 +55,17 @@ Route::get('/', function () {
 })->name('home');
 
 // ========================================
-// AUTHENTICATION ROUTES
-// ========================================
-Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [LoginController::class, 'login']);
-Route::post('logout', [LoginController::class, 'logout'])->name('logout');
-
-// ========================================
 // PROTECTED ROUTES - ALL AUTHENTICATED USERS
 // ========================================
 Route::middleware(['auth', 'verified.phone'])->group(function () {
-    
+
     // ============================================================
     // CORE SYSTEM - All Authenticated Users
     // ============================================================
-    
+
     // DashboardController
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // ProfileController
     Route::prefix('profile')->name('profile.')->controller(ProfileController::class)->group(function () {
         Route::get('/', 'edit')->name('edit');
@@ -101,7 +91,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // SYSTEM ADMINISTRATION
     // ============================================================
-    
+
     // RoleController & PermissionController (Superadmin only)
     Route::middleware(['role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('roles', RoleController::class);
@@ -127,9 +117,9 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // MASTER DATA MANAGEMENT
     // ============================================================
-    
+
     Route::middleware(['role:superadmin|admin_peran'])->group(function () {
-        
+
         // KabupatenKotaController
         Route::resource('kabupaten-kota', KabupatenKotaController::class)->parameters(['kabupaten-kota' => 'kabupatenKota']);
 
@@ -168,11 +158,11 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // JADWAL & PENJADWALAN
     // ============================================================
-    
+
     // JadwalFasilitasiController (All can view, Admin can manage)
     Route::prefix('jadwal')->name('jadwal.')->controller(JadwalFasilitasiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        
+
         Route::middleware(['role:admin_peran'])->group(function () {
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
@@ -180,7 +170,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
             Route::put('/{jadwal}', 'update')->name('update');
             Route::delete('/{jadwal}', 'destroy')->name('destroy');
         });
-        
+
         Route::get('/{jadwal}', 'show')->name('show');
         Route::get('/{jadwal}/download', 'download')->name('download');
     });
@@ -197,22 +187,22 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // PERMOHONAN MANAGEMENT
     // ============================================================
-    
+
     // PermohonanController (All authenticated users can view, Pemohon can manage)
     Route::prefix('permohonan')->name('permohonan.')->controller(PermohonanController::class)->group(function () {
         // List view - accessible by all authenticated users
         Route::get('/', 'index')->name('index');
-        
+
         // Management routes - only pemohon (must be before routes with {permohonan} parameter)
         Route::middleware(['role:pemohon'])->group(function () {
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
         });
-        
+
         // View routes with parameter - accessible by all authenticated users
         Route::get('/{permohonan}', 'show')->name('show');
         Route::get('/{permohonan}/tab', 'showWithTabs')->name('show-tabs');
-        
+
         // Tahapan routes - accessible by all authenticated users
         Route::prefix('{permohonan}/tahapan')->name('tahapan.')->group(function () {
             Route::get('/permohonan', 'tahapanPermohonan')->name('permohonan');
@@ -222,11 +212,11 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
             Route::get('/hasil', 'tahapanHasil')->name('hasil');
             Route::get('/tindak-lanjut', 'tahapanTindakLanjut')->name('tindak-lanjut');
             Route::get('/penetapan', 'tahapanPenetapan')->name('penetapan');
-            
+
             // Update deadline - only admin & superadmin
             Route::put('/update-deadline', 'updateDeadline')->name('update-deadline')->middleware('role:admin_peran|superadmin');
         });
-        
+
         // More management routes - only pemohon
         Route::middleware(['role:pemohon'])->group(function () {
             Route::delete('/{permohonan}', 'destroy')->name('destroy');
@@ -263,7 +253,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // VERIFIKASI & VALIDASI
     // ============================================================
-    
+
     // VerifikasiController (Verifikator only)
     Route::middleware(['role:verifikator'])->prefix('verifikasi')->name('verifikasi.')->controller(VerifikasiController::class)->group(function () {
         Route::post('/{permohonan}/verifikasi', 'verifikasi')->name('verifikasi');
@@ -301,7 +291,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // FASILITASI & HASIL
     // ============================================================
-    
+
     // HasilFasilitasiController (Fasilitator: Create/Edit, Verifikator: Read, Admin: Read All)
     Route::middleware(['role:fasilitator'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
         Route::get('/{permohonan}/create', 'create')->name('create');
@@ -321,7 +311,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::put('/{permohonan}/rekomendasi/{id}', 'updateRekomendasi')->name('rekomendasi.update');
         Route::delete('/{permohonan}/rekomendasi/{id}', 'deleteRekomendasi')->name('rekomendasi.delete');
     });
-    
+
     Route::middleware(['role:fasilitator|verifikator|admin_peran|superadmin|kaban'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}', 'show')->name('show');
@@ -345,7 +335,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // TIM & UNDANGAN
     // ============================================================
-    
+
     // TimAssignmentController (Superadmin & Admin)
     Route::middleware(['role:superadmin|admin_peran'])->prefix('tim-assignment')->name('tim-assignment.')->controller(TimAssignmentController::class)->group(function () {
         Route::get('/', 'index')->name('index');
@@ -367,7 +357,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::get('/', 'myUndangan')->name('index');
         Route::get('/{id}', 'view')->name('view');
     });
-    
+
     Route::middleware(['role:admin_peran'])->prefix('undangan-pelaksanaan')->name('undangan-pelaksanaan.')->controller(UndanganPelaksanaanController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{permohonan}/create', 'create')->name('create');
@@ -376,7 +366,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::post('/{permohonan}/send', 'send')->name('send');
         Route::post('/{permohonan}/update-file', 'updateFile')->name('update-file');
     });
-    
+
     Route::middleware(['role:pemohon'])->prefix('pemohon/undangan')->name('pemohon.undangan.')->controller(UndanganPelaksanaanController::class)->group(function () {
         Route::get('/', 'myUndangan')->name('index');
         Route::get('/{id}', 'view')->name('view');
@@ -387,7 +377,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // SURAT-SURAT
     // ============================================================
-    
+
     // SuratPemberitahuanController (Admin only)
     Route::middleware(['role:admin_peran'])->prefix('surat-pemberitahuan')->name('surat-pemberitahuan.')->controller(SuratPemberitahuanController::class)->group(function () {
         Route::get('/', 'index')->name('index');
@@ -408,7 +398,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::post('/{permohonan}', 'store')->name('store');
         Route::get('/{permohonan}', 'show')->name('show');
     });
-    
+
     Route::prefix('public')->name('public.')->group(function () {
         Route::get('/surat-penyampaian-hasil', [SuratPenyampaianHasilController::class, 'publicList'])->name('surat-penyampaian-hasil');
         Route::get('/surat-penyampaian-hasil/{permohonan}/download', [SuratPenyampaianHasilController::class, 'download'])->name('surat-penyampaian-hasil.download');
@@ -417,7 +407,7 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // PERPANJANGAN & TINDAK LANJUT
     // ============================================================
-    
+
     // PerpanjanganWaktuController
     // Pemohon only (static routes first to avoid wildcard conflict)
     Route::middleware(['role:pemohon'])->prefix('perpanjangan-waktu')->name('perpanjangan-waktu.')->controller(PerpanjanganWaktuController::class)->group(function () {
@@ -452,12 +442,12 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
     // ============================================================
     // PENETAPAN PERDA
     // ============================================================
-    
+
     // PenetapanPerdaController (Pemohon: Manage, All: View)
     Route::middleware(['role:pemohon'])->prefix('penetapan-perda')->name('penetapan-perda.')->controller(PenetapanPerdaController::class)->group(function () {
         Route::post('/{permohonan}/upload', 'upload')->name('upload');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
     });
-    
+
     Route::get('/penetapan-perda/{permohonan}/download', [PenetapanPerdaController::class, 'download'])->name('penetapan-perda.download');
 });

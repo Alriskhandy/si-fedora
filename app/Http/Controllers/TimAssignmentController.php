@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\KabupatenKota;
 use App\Models\MasterJenisDokumen;
+use App\Models\User;
 use App\Models\UserKabkotaAssignment;
 use App\Services\FonteService;
 use Illuminate\Http\Request;
@@ -42,7 +42,7 @@ class TimAssignmentController extends Controller
             if ($request->filled('status')) {
                 if ($request->status === 'active') {
                     $query->where('is_active', true);
-                } else if ($request->status === 'inactive') {
+                } elseif ($request->status === 'inactive') {
                     $query->where('is_active', false);
                 }
             }
@@ -86,7 +86,7 @@ class TimAssignmentController extends Controller
         $validated = $request->validate([
             'kabupaten_kota_id' => 'required|exists:kabupaten_kota,id',
             'jenis_dokumen_id' => 'nullable|exists:master_jenis_dokumen,id',
-            'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 5),
+            'tahun' => 'required|integer|min:2000|max:'.(date('Y') + 5),
             'nomor_surat' => 'nullable|string|max:255',
             'file_sk' => 'nullable|file|mimes:pdf|max:5120',
             'verifikator_id' => 'required|exists:users,id',
@@ -120,24 +120,24 @@ class TimAssignmentController extends Controller
             $fileSk = null;
             if ($request->hasFile('file_sk')) {
                 $file = $request->file('file_sk');
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $filename = $file->hashName();
 
-                Log::info('Uploading SK file: ' . $filename);
-                Log::info('File size: ' . $file->getSize() . ' bytes');
-                Log::info('File mime: ' . $file->getMimeType());
+                Log::info('Uploading SK file: '.$filename);
+                Log::info('File size: '.$file->getSize().' bytes');
+                Log::info('File mime: '.$file->getMimeType());
 
                 // Simpan ke public/sk-tim directory
                 $directory = public_path('sk-tim');
-                if (!file_exists($directory)) {
+                if (! file_exists($directory)) {
                     mkdir($directory, 0755, true);
-                    Log::info('Created directory: ' . $directory);
+                    Log::info('Created directory: '.$directory);
                 }
 
                 $file->move($directory, $filename);
-                Log::info('File stored at: ' . $directory . '/' . $filename);
+                Log::info('File stored at: '.$directory.'/'.$filename);
 
-                $fileSk = 'sk-tim/' . $filename;
-                Log::info('File SK path saved to database: ' . $fileSk);
+                $fileSk = 'sk-tim/'.$filename;
+                Log::info('File SK path saved to database: '.$fileSk);
             }
 
             // Check if tim already exists for this kabkota, jenis dokumen, and tahun
@@ -197,7 +197,7 @@ class TimAssignmentController extends Controller
             }
 
             // Create koordinator fasilitator if not in evaluator list
-            if (!in_array($validated['koordinator_fasilitator_id'], $validated['evaluator_ids'])) {
+            if (! in_array($validated['koordinator_fasilitator_id'], $validated['evaluator_ids'])) {
                 UserKabkotaAssignment::create([
                     'user_id' => $validated['koordinator_fasilitator_id'],
                     'kabupaten_kota_id' => $kabkotaId,
@@ -229,11 +229,11 @@ class TimAssignmentController extends Controller
                 ->with('success', 'Tim assignment berhasil ditambahkan dan notifikasi telah dikirim.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating assignment: ' . $e->getMessage());
+            Log::error('Error creating assignment: '.$e->getMessage());
 
             return back()
                 ->withInput()
-                ->withErrors(['error' => 'Gagal menambahkan assignment: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Gagal menambahkan assignment: '.$e->getMessage()]);
         }
     }
 
@@ -281,11 +281,11 @@ class TimAssignmentController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Error in edit assignment: ' . $e->getMessage());
+            Log::error('Error in edit assignment: '.$e->getMessage());
             Log::error($e->getTraceAsString());
 
             return response()->json([
-                'error' => 'Gagal memuat data: ' . $e->getMessage()
+                'error' => 'Gagal memuat data: '.$e->getMessage(),
             ], 500);
         }
 
@@ -306,7 +306,7 @@ class TimAssignmentController extends Controller
         $validated = $request->validate([
             'kabupaten_kota_id' => 'required|exists:kabupaten_kota,id',
             'jenis_dokumen_id' => 'nullable|exists:master_jenis_dokumen,id',
-            'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 5),
+            'tahun' => 'required|integer|min:2000|max:'.(date('Y') + 5),
             'nomor_surat' => 'nullable|string|max:255',
             'file_sk' => 'nullable|file|mimes:pdf|max:10240',
             'verifikator_id' => 'required|exists:users,id',
@@ -341,23 +341,23 @@ class TimAssignmentController extends Controller
             $fileSk = $timAssignment->file_sk; // Keep old file by default
             if ($request->hasFile('file_sk')) {
                 $file = $request->file('file_sk');
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $filename = $file->hashName();
 
-                Log::info('Updating SK file: ' . $filename);
-                Log::info('File size: ' . $file->getSize() . ' bytes');
+                Log::info('Updating SK file: '.$filename);
+                Log::info('File size: '.$file->getSize().' bytes');
 
                 // Simpan ke public/sk-tim directory
                 $directory = public_path('sk-tim');
-                if (!file_exists($directory)) {
+                if (! file_exists($directory)) {
                     mkdir($directory, 0755, true);
-                    Log::info('Created directory: ' . $directory);
+                    Log::info('Created directory: '.$directory);
                 }
 
                 $file->move($directory, $filename);
-                Log::info('File updated at: ' . $directory . '/' . $filename);
+                Log::info('File updated at: '.$directory.'/'.$filename);
 
-                $fileSk = 'sk-tim/' . $filename;
-                Log::info('New file SK path: ' . $fileSk);
+                $fileSk = 'sk-tim/'.$filename;
+                Log::info('New file SK path: '.$fileSk);
             }
 
             // Delete all current assignments
@@ -402,7 +402,7 @@ class TimAssignmentController extends Controller
             }
 
             // Create koordinator fasilitator if not in evaluator list
-            if (!in_array($validated['koordinator_fasilitator_id'], $validated['evaluator_ids'])) {
+            if (! in_array($validated['koordinator_fasilitator_id'], $validated['evaluator_ids'])) {
                 UserKabkotaAssignment::create([
                     'user_id' => $validated['koordinator_fasilitator_id'],
                     'kabupaten_kota_id' => $validated['kabupaten_kota_id'],
@@ -434,11 +434,11 @@ class TimAssignmentController extends Controller
                 ->with('success', 'Tim assignment berhasil diupdate dan notifikasi telah dikirim.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating assignment: ' . $e->getMessage());
+            Log::error('Error updating assignment: '.$e->getMessage());
 
             return back()
                 ->withInput()
-                ->withErrors(['error' => 'Gagal mengupdate assignment: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Gagal mengupdate assignment: '.$e->getMessage()]);
         }
     }
 
@@ -462,7 +462,7 @@ class TimAssignmentController extends Controller
                 'is_active' => $timAssignment->is_active,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error toggling status: ' . $e->getMessage());
+            Log::error('Error toggling status: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -505,7 +505,7 @@ class TimAssignmentController extends Controller
                 'updated' => $updated,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error toggling tim status: ' . $e->getMessage());
+            Log::error('Error toggling tim status: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -516,13 +516,13 @@ class TimAssignmentController extends Controller
 
     /**
      * Kirim notifikasi WhatsApp ke anggota tim yang baru ditambahkan
-     * 
-     * @param int $kabupatenKotaId
-     * @param int|null $jenisDokumenId
-     * @param int $tahun
-     * @param int $verifikatorId
-     * @param int $koordinatorId
-     * @param array $evaluatorIds
+     *
+     * @param  int  $kabupatenKotaId
+     * @param  int|null  $jenisDokumenId
+     * @param  int  $tahun
+     * @param  int  $verifikatorId
+     * @param  int  $koordinatorId
+     * @param  array  $evaluatorIds
      * @return void
      */
     private function sendTimAssignmentNotification(
@@ -532,32 +532,32 @@ class TimAssignmentController extends Controller
         $verifikatorId,
         $koordinatorId,
         $evaluatorIds
-    ) 
-    {
+    ) {
         try {
             $fonteService = app(FonteService::class);
-            
+
             // Get data
             $kabkota = KabupatenKota::find($kabupatenKotaId);
             $jenisDokumen = $jenisDokumenId ? MasterJenisDokumen::find($jenisDokumenId) : null;
-            
+
             // Collect all unique user IDs
             $allUserIds = array_unique(array_merge(
                 [$verifikatorId],
                 [$koordinatorId],
                 $evaluatorIds
             ));
-            
+
             // Get users with phone numbers
             $users = User::whereIn('id', $allUserIds)
                 ->whereNotNull('no_hp')
                 ->get();
-            
+
             if ($users->isEmpty()) {
                 Log::info('No users with phone numbers found for tim assignment notification');
+
                 return;
             }
-            
+
             // Prepare bulk messages
             $recipients = [];
             foreach ($users as $user) {
@@ -570,7 +570,7 @@ class TimAssignmentController extends Controller
                 } else {
                     $role = 'Anggota Fasilitator';
                 }
-                
+
                 // Build message
                 $message = "📢 *Penugasan Tim Baru*\n\n";
                 $message .= "Halo *{$user->name}*,\n\n";
@@ -582,32 +582,32 @@ class TimAssignmentController extends Controller
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
                 $message .= "Silakan login ke sistem untuk melihat detail penugasan Anda.\n\n";
                 $message .= "_*SI-FEDORA*_\n";
-                $message .= "_si-fedora.malutprov.go.id_";
-                
+                $message .= '_si-fedora.malutprov.go.id_';
+
                 $recipients[] = [
                     'target' => $user->no_hp,
                     'message' => $message,
-                    'delay' => '1-3'
+                    'delay' => '1-3',
                 ];
             }
-            
+
             // Send bulk messages
-            if (!empty($recipients)) {
+            if (! empty($recipients)) {
                 $result = $fonteService->sendBulkMessage($recipients);
-                
+
                 if ($result['success']) {
                     Log::info('Tim assignment notifications sent successfully', [
                         'kabkota_id' => $kabupatenKotaId,
                         'tahun' => $tahun,
-                        'total_sent' => count($recipients)
+                        'total_sent' => count($recipients),
                     ]);
                 } else {
                     Log::error('Failed to send tim assignment notifications', $result);
                 }
             }
         } catch (\Exception $e) {
-            Log::error('Error sending tim assignment notifications: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            Log::error('Error sending tim assignment notifications: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
             // Don't throw exception to prevent blocking the main process
         }
@@ -618,24 +618,26 @@ class TimAssignmentController extends Controller
      */
     public function downloadSk(UserKabkotaAssignment $timAssignment)
     {
-        if (!$timAssignment->file_sk) {
-            Log::warning('File SK tidak ada di database untuk assignment ID: ' . $timAssignment->id);
+        if (! $timAssignment->file_sk) {
+            Log::warning('File SK tidak ada di database untuk assignment ID: '.$timAssignment->id);
+
             return response()->json(['error' => 'File SK tidak ditemukan'], 404);
         }
 
         $filePath = public_path($timAssignment->file_sk);
 
-        Log::info('Mencoba akses file SK: ' . $filePath);
+        Log::info('Mencoba akses file SK: '.$filePath);
 
-        if (!file_exists($filePath)) {
-            Log::error('File SK tidak ditemukan di public: ' . $filePath);
-            Log::error('File SK dari database: ' . $timAssignment->file_sk);
+        if (! file_exists($filePath)) {
+            Log::error('File SK tidak ditemukan di public: '.$filePath);
+            Log::error('File SK dari database: '.$timAssignment->file_sk);
+
             return response()->json(['error' => 'File SK tidak ditemukan di server'], 404);
         }
 
         return response()->file($filePath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"'
+            'Content-Disposition' => 'inline; filename="'.basename($filePath).'"',
         ]);
     }
 }

@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\KabupatenKota;
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Auth;
-
 
 class UserController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
@@ -31,8 +35,8 @@ class UserController extends Controller
 
         // Search
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('email', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('email', 'like', '%'.$request->search.'%');
         }
 
         $users = $query->with('roles')->latest()->paginate(10);
@@ -40,6 +44,7 @@ class UserController extends Controller
 
         return view('pages.users.index', compact('users', 'roles'));
     }
+
     /**
      * Export users to .csv (Whatsapp, Name, Variable).
      */
@@ -62,13 +67,13 @@ class UserController extends Controller
 
         // Search
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('email', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('email', 'like', '%'.$request->search.'%');
         }
 
         $users = $query->with('roles')->latest()->get();
 
-        $fileName = 'Data User SI-FEDORA ' . now()->format('Y-m-d') . '.csv';
+        $fileName = 'Data User SI-FEDORA '.now()->format('Y-m-d').'.csv';
 
         return response()->streamDownload(function () use ($users) {
             $handle = fopen('php://output', 'w');
@@ -76,7 +81,7 @@ class UserController extends Controller
 
             foreach ($users as $user) {
                 fputcsv($handle, [
-                    $user->no_hp . "'",
+                    $user->no_hp."'",
                     $user->name,
                     $user->roles->first()->name ?? '',
                 ]);
@@ -94,35 +99,18 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles = Role::whereNotIn('name', ['superadmin', 'kaban', 'admin_peran'])->get();
+        $roles = Role::whereNotIn('name', User::NON_CREATABLE_ROLES)->get();
         $kab_kota = KabupatenKota::all();
 
         // dd($roles);
         return view('pages.users.create', compact('roles', 'kab_kota'));
     }
+
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
-            'role' => 'required|exists:roles,name',
-            'kabupaten_kota_id' => 'nullable|exists:kabupaten_kota,id',
-        ], [
-            'name.required' => 'Nama wajib diisi.',
-            'email.required' => 'Email wajib diisi.',
-            'email.unique' => 'Email sudah terdaftar.',
-            'password.required' => 'Kata sandi wajib diisi.',
-            'password.min' => 'Kata sandi minimal 8 karakter.',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
-            'role.required' => 'Role wajib dipilih.',
-            'role.exists' => 'Role yang dipilih tidak valid.',
-            'kabupaten_kota_id.exists' => 'Kabupaten/Kota yang dipilih tidak valid.',
-        ]);
-
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -132,6 +120,12 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
+        activity()
+            ->causedBy(Auth::user())
+            ->performedOn($user)
+            ->withProperties(['role_baru' => $request->role])
+            ->log('Menambahkan pengguna');
+
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
@@ -140,6 +134,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $this->authorize('manage', $user);
+
         return view('pages.users.show', compact('user'));
     }
 
@@ -148,37 +144,34 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $roles = Role::whereNotIn('name', ['superadmin'])->get();
+        $this->authorize('manage', $user);
+
+        $roles = Role::whereNotIn('name', User::nonEditableRolesFor(Auth::user()))->get();
         $currentRole = $user->roles->first()?->name;
+
         return view('pages.users.edit', compact('user', 'roles', 'currentRole'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|exists:roles,name',
-            'is_active' => 'boolean',
-        ], [
-            'name.required' => 'Nama wajib diisi.',
-            'email.required' => 'Email wajib diisi.',
-            'email.unique' => 'Email sudah terdaftar.',
-            'role.required' => 'Role wajib dipilih.',
-            'role.exists' => 'Role yang dipilih tidak valid.',
-        ]);
-
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
-            'is_active' => $request->is_active ?? false,
         ]);
 
-        // Update role
+        $previousRoles = $user->getRoleNames()->all();
         $user->syncRoles([$request->role]);
+
+        if ($previousRoles !== [$request->role]) {
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($user)
+                ->withProperties(['role_lama' => $previousRoles, 'role_baru' => $request->role])
+                ->log('Mengubah role pengguna');
+        }
 
         return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
     }
@@ -188,6 +181,8 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        $this->authorize('manage', $user);
+
         if ($user->id === Auth::id()) {
             return redirect()->route('users.index')->with('error', 'Tidak bisa menghapus akun sendiri.');
         }
@@ -202,6 +197,8 @@ class UserController extends Controller
      */
     public function resetPassword(Request $request, User $user)
     {
+        $this->authorize('manage', $user);
+
         $request->validate([
             'password' => 'required|min:8|confirmed',
         ]);

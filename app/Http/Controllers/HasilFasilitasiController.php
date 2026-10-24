@@ -2,30 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Permohonan;
 use App\Models\HasilFasilitasi;
-use App\Models\HasilFasilitasiUrusan;
-use App\Models\HasilFasilitasiSistematika;
 use App\Models\HasilFasilitasiForm;
 use App\Models\HasilFasilitasiRekomendasi;
-use App\Models\MasterUrusan;
+use App\Models\HasilFasilitasiSistematika;
+use App\Models\HasilFasilitasiUrusan;
 use App\Models\MasterBab;
-use App\Models\MasterJenisDokumen;
-use App\Models\UserKabkotaAssignment;
+use App\Models\MasterUrusan;
 use App\Models\Notifikasi;
+use App\Models\Permohonan;
 use App\Models\User;
+use App\Models\UserKabkotaAssignment;
 use App\Services\HasilFasilitasiDocumentService;
 use App\Services\PermohonanNotificationService;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Controller untuk mengelola hasil fasilitasi/evaluasi
- * 
+ *
  * Fitur utama:
  * - CRUD hasil fasilitasi (index, create, store, show, submit)
  * - Manajemen sistematika (storeSistematika, deleteSistematika)
@@ -38,6 +42,7 @@ use Barryvdh\DomPDF\Facade\Pdf as PDF;
 class HasilFasilitasiController extends Controller
 {
     protected $documentService;
+
     protected $notificationService;
 
     public function __construct(
@@ -54,9 +59,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Check if user is koordinator for this permohonan
-     * 
-     * @param Permohonan $permohonan
-     * @return bool
      */
     private function isKoordinator(Permohonan $permohonan): bool
     {
@@ -78,8 +80,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Check if user is admin or superadmin
-     * 
-     * @return bool
      */
     private function isAdmin(): bool
     {
@@ -88,8 +88,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Check if user is Kepala Badan
-     * 
-     * @return bool
      */
     private function isKepalaBadan(): bool
     {
@@ -98,9 +96,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Check if user is member of this permohonan's tim (fasilitator or verifikator)
-     * 
-     * @param Permohonan $permohonan
-     * @return bool
      */
     private function isTimMember(Permohonan $permohonan): bool
     {
@@ -126,10 +121,8 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Check if user can edit/delete an item (owner or koordinator)
-     * 
-     * @param mixed $item
-     * @param Permohonan $permohonan
-     * @return bool
+     *
+     * @param  mixed  $item
      */
     private function canManageItem($item, Permohonan $permohonan): bool
     {
@@ -138,9 +131,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Check if user is verifikator for this permohonan
-     * 
-     * @param Permohonan $permohonan
-     * @return bool
      */
     private function isVerifikator(Permohonan $permohonan): bool
     {
@@ -163,12 +153,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Kirim notifikasi ke semua anggota tim
-     * 
-     * @param Permohonan $permohonan
-     * @param string $title
-     * @param string $message
-     * @param string $type
-     * @return void
      */
     private function notifyTeamMembers(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
@@ -202,12 +186,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Kirim notifikasi ke koordinator
-     * 
-     * @param Permohonan $permohonan
-     * @param string $title
-     * @param string $message
-     * @param string $type
-     * @return void
      */
     private function notifyKoordinator(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
@@ -239,12 +217,6 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Kirim notifikasi ke admin dan kepala badan
-     * 
-     * @param Permohonan $permohonan
-     * @param string $title
-     * @param string $message
-     * @param string $type
-     * @return void
      */
     private function notifyAdminAndKaban(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
@@ -274,16 +246,15 @@ class HasilFasilitasiController extends Controller
     /**
      * Tampilkan daftar permohonan untuk input hasil fasilitasi
      * Menampilkan permohonan yang dapat diakses oleh user (fasilitator, verifikator, admin)
-     * 
-     * @param Request $request
-     * @return \Illuminate\View\View
+     *
+     * @return View
      */
     public function index(Request $request)
     {
         $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi']);
 
         // Admin can see all permohonan
-        if (!$this->isAdmin()) {
+        if (! $this->isAdmin()) {
             // Get user's tim assignments (fasilitator or verifikator)
             $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
                 ->whereIn('role_type', ['fasilitator', 'verifikator'])
@@ -305,7 +276,7 @@ class HasilFasilitasiController extends Controller
         // Filter pencarian
         if ($request->filled('search')) {
             $query->whereHas('kabupatenKota', function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
+                $q->where('nama', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -328,9 +299,8 @@ class HasilFasilitasiController extends Controller
     /**
      * Tampilkan form untuk membuat/edit hasil fasilitasi
      * Hanya dapat diakses oleh fasilitator/koordinator dan admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     *
+     * @return View|RedirectResponse
      */
     public function create(Permohonan $permohonan)
     {
@@ -347,12 +317,12 @@ class HasilFasilitasiController extends Controller
         }
 
         // Check if user is member of this tim (fasilitator)
-        if (!$this->isTimMember($permohonan)) {
+        if (! $this->isTimMember($permohonan)) {
             abort(403, 'Anda bukan anggota tim untuk permohonan ini.');
         }
 
         // Jika belum ada hasil fasilitasi, buat otomatis
-        if (!$permohonan->hasilFasilitasi) {
+        if (! $permohonan->hasilFasilitasi) {
             HasilFasilitasi::create([
                 'permohonan_id' => $permohonan->id,
                 'dibuat_oleh' => Auth::id(),
@@ -419,7 +389,7 @@ class HasilFasilitasiController extends Controller
             $timInfo = [
                 'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
                 'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
-                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values()
+                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
             ];
         }
 
@@ -429,10 +399,8 @@ class HasilFasilitasiController extends Controller
     /**
      * Simpan hasil fasilitasi baru atau update yang sudah ada
      * Hanya dapat diakses oleh fasilitator/koordinator
-     * 
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function store(Request $request, Permohonan $permohonan)
     {
@@ -478,17 +446,17 @@ class HasilFasilitasiController extends Controller
                 ->with('success', 'Hasil fasilitasi berhasil disimpan sebagai draft. Silakan tambahkan item sistematika atau urusan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error menyimpan hasil fasilitasi: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menyimpan hasil fasilitasi: ' . $e->getMessage());
+            Log::error('Error menyimpan hasil fasilitasi: '.$e->getMessage());
+
+            return back()->withInput()->with('error', 'Gagal menyimpan hasil fasilitasi: '.$e->getMessage());
         }
     }
-    
+
     /**
      * Tampilkan detail hasil fasilitasi dengan semua sistematikas dan urusans
      * Dapat diakses oleh tim member, verifikator, dan admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\View\View
+     *
+     * @return View
      */
     public function show(Permohonan $permohonan)
     {
@@ -500,20 +468,20 @@ class HasilFasilitasiController extends Controller
         $isKaban = $this->isKepalaBadan();
 
         // Check access - allow admin, tim member, verifikator, pemohon, and kaban
-        if (!$isAdmin && !$isTimMember && !$isVerifikator && !$isPemohon && !$isKaban) {
+        if (! $isAdmin && ! $isTimMember && ! $isVerifikator && ! $isPemohon && ! $isKaban) {
             abort(403, 'Anda tidak memiliki akses untuk melihat hasil fasilitasi ini.');
         }
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi) {
+        if (! $hasilFasilitasi) {
             // Jika belum ada hasil, redirect verifikator dan pemohon ke halaman tahapan hasil
             // Mereka akan melihat info "sedang dalam proses"
-            if (($isVerifikator || $isPemohon) && !$isTimMember) {
+            if (($isVerifikator || $isPemohon) && ! $isTimMember) {
                 return redirect()->route('permohonan.tahapan.hasil', $permohonan)
                     ->with('info', 'Hasil fasilitasi sedang dalam proses penyusunan oleh tim fasilitator.');
             }
-            
+
             // Fasilitator dan admin bisa create
             return redirect()->route('hasil-fasilitasi.create', $permohonan)
                 ->with('info', 'Hasil fasilitasi belum dibuat.');
@@ -544,7 +512,7 @@ class HasilFasilitasiController extends Controller
         $hasilFasilitasi->setRelation('hasilForm', $hasilFasilitasi->hasilForm->sortBy('created_at'));
         $hasilFasilitasi->setRelation('hasilRekomendasi', $hasilFasilitasi->hasilRekomendasi->sortBy('created_at'));
 
-         // Get tim info untuk ditampilkan
+        // Get tim info untuk ditampilkan
         $kabkotaId = $permohonan->kab_kota_id;
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
         $timInfo = null;
@@ -559,32 +527,31 @@ class HasilFasilitasiController extends Controller
             $timInfo = [
                 'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
                 'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
-                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values()
+                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
             ];
         }
 
         // Pass isVerifikator to view
         $isKoordinator = $this->isKoordinator($permohonan);
-        
+
         return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo', 'isPemohon'));
     }
 
     /**
      * Ajukan hasil fasilitasi ke admin untuk review
      * Hanya dapat dilakukan oleh koordinator
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function submit(Permohonan $permohonan)
     {
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi) {
+        if (! $hasilFasilitasi) {
             return back()->with('error', 'Hasil fasilitasi tidak ditemukan.');
         }
 
-        if (!$hasilFasilitasi->canEdit()) {
+        if (! $hasilFasilitasi->canEdit()) {
             return back()->with('info', 'Hasil fasilitasi sudah diajukan/disetujui.');
         }
 
@@ -596,7 +563,7 @@ class HasilFasilitasiController extends Controller
 
             return back()->with('success', 'Hasil fasilitasi berhasil diajukan untuk validasi.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengajukan hasil fasilitasi: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengajukan hasil fasilitasi: '.$e->getMessage());
         }
     }
 
@@ -606,15 +573,13 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Simpan item sistematika baru
-     * 
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function storeSistematika(Request $request, Permohonan $permohonan)
     {
         // Check if user is member of this tim
-        if (!$this->isTimMember($permohonan)) {
+        if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
         }
 
@@ -627,7 +592,7 @@ class HasilFasilitasiController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
             }
 
@@ -651,13 +616,13 @@ class HasilFasilitasiController extends Controller
                     'bab' => $sistematika->masterBab->nama_bab,
                     'sub_bab' => $sistematika->sub_bab,
                 ])
-                ->log('Menambahkan item sistematika: ' . $sistematika->masterBab->nama_bab);
+                ->log('Menambahkan item sistematika: '.$sistematika->masterBab->nama_bab);
 
             // Notifikasi ke koordinator
             $this->notifyKoordinator(
                 $permohonan,
                 'Item Sistematika Ditambahkan',
-                Auth::user()->name . ' menambahkan item sistematika "' . $sistematika->masterBab->nama_bab . '" ke hasil fasilitasi ' . $permohonan->kabupatenKota->nama,
+                Auth::user()->name.' menambahkan item sistematika "'.$sistematika->masterBab->nama_bab.'" ke hasil fasilitasi '.$permohonan->kabupatenKota->nama,
                 'info'
             );
 
@@ -680,7 +645,7 @@ class HasilFasilitasiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item sistematika berhasil ditambahkan',
-                'data' => $data
+                'data' => $data,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -691,10 +656,8 @@ class HasilFasilitasiController extends Controller
      * Update item sistematika
      * Hanya dapat dilakukan oleh pemilik item atau koordinator
      *
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @param int $id ID dari HasilFasilitasiSistematika
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id  ID dari HasilFasilitasiSistematika
+     * @return JsonResponse
      */
     public function updateSistematika(Request $request, Permohonan $permohonan, $id)
     {
@@ -706,7 +669,7 @@ class HasilFasilitasiController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
@@ -714,11 +677,11 @@ class HasilFasilitasiController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if (!$sistematika) {
+            if (! $sistematika) {
                 return response()->json(['error' => 'Item tidak ditemukan'], 404);
             }
 
-            if (!$this->canManageItem($sistematika, $permohonan)) {
+            if (! $this->canManageItem($sistematika, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
             }
 
@@ -744,16 +707,15 @@ class HasilFasilitasiController extends Controller
      * Hapus item sistematika
      * Hanya dapat dilakukan oleh pemilik item atau koordinator
      *
-     * @param Permohonan $permohonan
-     * @param int $id ID dari HasilFasilitasiSistematika
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id  ID dari HasilFasilitasiSistematika
+     * @return JsonResponse
      */
     public function deleteSistematika(Permohonan $permohonan, $id)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
@@ -761,12 +723,12 @@ class HasilFasilitasiController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if (!$sistematika) {
+            if (! $sistematika) {
                 return response()->json(['error' => 'Item tidak ditemukan'], 404);
             }
 
             // Check authorization: owner or koordinator
-            if (!$this->canManageItem($sistematika, $permohonan)) {
+            if (! $this->canManageItem($sistematika, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
             }
 
@@ -785,11 +747,11 @@ class HasilFasilitasiController extends Controller
                     'bab' => $babNama,
                     'sub_bab' => $subBab,
                 ])
-                ->log('Menghapus item sistematika: ' . $babNama);
+                ->log('Menghapus item sistematika: '.$babNama);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Item sistematika berhasil dihapus'
+                'message' => 'Item sistematika berhasil dihapus',
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -802,15 +764,13 @@ class HasilFasilitasiController extends Controller
 
     /**
      * Simpan item urusan baru
-     * 
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function storeUrusan(Request $request, Permohonan $permohonan)
     {
         // Check if user is member of this tim
-        if (!$this->isTimMember($permohonan)) {
+        if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
         }
 
@@ -822,7 +782,7 @@ class HasilFasilitasiController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
             }
 
@@ -843,13 +803,13 @@ class HasilFasilitasiController extends Controller
                 ->withProperties([
                     'urusan' => $urusan->masterUrusan->nama_urusan,
                 ])
-                ->log('Menambahkan item urusan: ' . $urusan->masterUrusan->nama_urusan);
+                ->log('Menambahkan item urusan: '.$urusan->masterUrusan->nama_urusan);
 
             // Notifikasi ke koordinator
             $this->notifyKoordinator(
                 $permohonan,
                 'Item Urusan Ditambahkan',
-                Auth::user()->name . ' menambahkan item urusan "' . $urusan->masterUrusan->nama_urusan . '" ke hasil fasilitasi ' . $permohonan->kabupatenKota->nama,
+                Auth::user()->name.' menambahkan item urusan "'.$urusan->masterUrusan->nama_urusan.'" ke hasil fasilitasi '.$permohonan->kabupatenKota->nama,
                 'info'
             );
 
@@ -871,7 +831,7 @@ class HasilFasilitasiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item urusan berhasil ditambahkan',
-                'data' => $data
+                'data' => $data,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -882,10 +842,8 @@ class HasilFasilitasiController extends Controller
      * Update item urusan
      * Hanya dapat dilakukan oleh pemilik item atau koordinator
      *
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @param int $id ID dari HasilFasilitasiUrusan
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id  ID dari HasilFasilitasiUrusan
+     * @return JsonResponse
      */
     public function updateUrusan(Request $request, Permohonan $permohonan, $id)
     {
@@ -896,7 +854,7 @@ class HasilFasilitasiController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
@@ -904,11 +862,11 @@ class HasilFasilitasiController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if (!$urusan) {
+            if (! $urusan) {
                 return response()->json(['error' => 'Item tidak ditemukan'], 404);
             }
 
-            if (!$this->canManageItem($urusan, $permohonan)) {
+            if (! $this->canManageItem($urusan, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
             }
 
@@ -932,16 +890,15 @@ class HasilFasilitasiController extends Controller
      * Hapus item urusan
      * Hanya dapat dilakukan oleh pemilik item atau koordinator
      *
-     * @param Permohonan $permohonan
-     * @param int $id ID dari HasilFasilitasiUrusan
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id  ID dari HasilFasilitasiUrusan
+     * @return JsonResponse
      */
     public function deleteUrusan(Permohonan $permohonan, $id)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
@@ -949,12 +906,12 @@ class HasilFasilitasiController extends Controller
                 ->where('id', $id)
                 ->first();
 
-            if (!$urusan) {
+            if (! $urusan) {
                 return response()->json(['error' => 'Item tidak ditemukan'], 404);
             }
 
             // Check authorization: owner or koordinator
-            if (!$this->canManageItem($urusan, $permohonan)) {
+            if (! $this->canManageItem($urusan, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
             }
 
@@ -971,11 +928,11 @@ class HasilFasilitasiController extends Controller
                 ->withProperties([
                     'urusan' => $urusanNama,
                 ])
-                ->log('Menghapus item urusan: ' . $urusanNama);
+                ->log('Menghapus item urusan: '.$urusanNama);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Item urusan berhasil dihapus'
+                'message' => 'Item urusan berhasil dihapus',
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -988,7 +945,7 @@ class HasilFasilitasiController extends Controller
 
     public function storeForm(Request $request, Permohonan $permohonan)
     {
-        if (!$this->isTimMember($permohonan)) {
+        if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
         }
 
@@ -996,14 +953,14 @@ class HasilFasilitasiController extends Controller
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
             }
 
             $item = HasilFasilitasiForm::create([
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
-                'catatan'             => $request->catatan,
-                'user_id'             => Auth::id(),
+                'catatan' => $request->catatan,
+                'user_id' => Auth::id(),
             ]);
 
             $item->load('user');
@@ -1011,12 +968,12 @@ class HasilFasilitasiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item konsistensi & keselarasan berhasil ditambahkan',
-                'data'    => [
-                    'id'            => $item->id,
-                    'catatan'       => $item->catatan,
-                    'user_id'       => $item->user_id,
-                    'user'          => $item->user,
-                    'created_at'    => $item->created_at->format('d/m/Y H:i'),
+                'data' => [
+                    'id' => $item->id,
+                    'catatan' => $item->catatan,
+                    'user_id' => $item->user_id,
+                    'user' => $item->user,
+                    'created_at' => $item->created_at->format('d/m/Y H:i'),
                     'created_at_ts' => $item->created_at->timestamp,
                 ],
             ]);
@@ -1031,13 +988,13 @@ class HasilFasilitasiController extends Controller
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
             $item = HasilFasilitasiForm::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
 
-            if (!$this->canManageItem($item, $permohonan)) {
+            if (! $this->canManageItem($item, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
             }
 
@@ -1046,7 +1003,7 @@ class HasilFasilitasiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item berhasil diperbarui',
-                'data'    => ['catatan' => $item->catatan],
+                'data' => ['catatan' => $item->catatan],
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -1057,13 +1014,13 @@ class HasilFasilitasiController extends Controller
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
             $item = HasilFasilitasiForm::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
 
-            if (!$this->canManageItem($item, $permohonan)) {
+            if (! $this->canManageItem($item, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
             }
 
@@ -1081,7 +1038,7 @@ class HasilFasilitasiController extends Controller
 
     public function storeRekomendasi(Request $request, Permohonan $permohonan)
     {
-        if (!$this->isTimMember($permohonan)) {
+        if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
         }
 
@@ -1089,14 +1046,14 @@ class HasilFasilitasiController extends Controller
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
             }
 
             $item = HasilFasilitasiRekomendasi::create([
                 'hasil_fasilitasi_id' => $hasilFasilitasi->id,
-                'catatan'             => $request->catatan,
-                'user_id'             => Auth::id(),
+                'catatan' => $request->catatan,
+                'user_id' => Auth::id(),
             ]);
 
             $item->load('user');
@@ -1104,12 +1061,12 @@ class HasilFasilitasiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item rekomendasi berhasil ditambahkan',
-                'data'    => [
-                    'id'            => $item->id,
-                    'catatan'       => $item->catatan,
-                    'user_id'       => $item->user_id,
-                    'user'          => $item->user,
-                    'created_at'    => $item->created_at->format('d/m/Y H:i'),
+                'data' => [
+                    'id' => $item->id,
+                    'catatan' => $item->catatan,
+                    'user_id' => $item->user_id,
+                    'user' => $item->user,
+                    'created_at' => $item->created_at->format('d/m/Y H:i'),
                     'created_at_ts' => $item->created_at->timestamp,
                 ],
             ]);
@@ -1124,13 +1081,13 @@ class HasilFasilitasiController extends Controller
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
             $item = HasilFasilitasiRekomendasi::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
 
-            if (!$this->canManageItem($item, $permohonan)) {
+            if (! $this->canManageItem($item, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
             }
 
@@ -1139,7 +1096,7 @@ class HasilFasilitasiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item rekomendasi berhasil diperbarui',
-                'data'    => ['catatan' => $item->catatan],
+                'data' => ['catatan' => $item->catatan],
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -1150,13 +1107,13 @@ class HasilFasilitasiController extends Controller
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
             }
 
             $item = HasilFasilitasiRekomendasi::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
 
-            if (!$this->canManageItem($item, $permohonan)) {
+            if (! $this->canManageItem($item, $permohonan)) {
                 return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
             }
 
@@ -1175,21 +1132,20 @@ class HasilFasilitasiController extends Controller
     /**
      * Generate dokumen hasil fasilitasi dalam format Word & PDF (koordinator only)
      * Membuat draft document dan menyimpannya ke storage
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function generate(Permohonan $permohonan)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
             // Only koordinator can generate draft
-            if (!$this->isKoordinator($permohonan)) {
+            if (! $this->isKoordinator($permohonan)) {
                 return redirect()->back()->with('error', 'Hanya koordinator yang dapat membuat draft dokumen.');
             }
 
@@ -1207,32 +1163,32 @@ class HasilFasilitasiController extends Controller
                 ->select('hasil_fasilitasi_urusan.*')
                 ->get();
 
-            $form        = $hasilFasilitasi->hasilForm()->orderBy('id')->get();
+            $form = $hasilFasilitasi->hasilForm()->orderBy('id')->get();
             $rekomendasi = $hasilFasilitasi->hasilRekomendasi()->orderBy('id')->get();
             $kelengkapan = $permohonan->permohonanDokumen()->with('masterKelengkapan')->orderBy('id')->get();
 
             // Tanggal generate dalam format Indonesia
             $bulanId = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            $tanggalGenerate = date('j') . ' ' . $bulanId[(int)date('n')] . ' ' . date('Y');
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $tanggalGenerate = date('j').' '.$bulanId[(int) date('n')].' '.date('Y');
 
             // Generate dokumen DOCX menggunakan PhpWord (format native, format TinyMCE terjaga)
             $filepath = $this->documentService->generateDocx($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
 
             // Generate PDF dari Blade template (DomPDF) — kertas F4 (21×33 cm)
-            $kabkota      = $permohonan->kabupatenKota->nama;
-            $tahun        = $permohonan->tahun ?? date('Y');
+            $kabkota = $permohonan->kabupatenKota->nama;
+            $tahun = $permohonan->tahun ?? date('Y');
             $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
             $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
-            $ranperkada   = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
-            $jabatanTtd   = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
+            $ranperkada = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
+            $jabatanTtd = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
             $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact(
                 'sistematika', 'urusan', 'form', 'rekomendasi', 'kelengkapan',
                 'kabkota', 'tahun', 'jenisDokumen', 'jenisWilayah',
                 'ranperkada', 'jabatanTtd', 'tanggalGenerate'
             ))->setPaper([0, 0, 595.28, 935.43], 'portrait');
 
-            $pdfPath    = str_replace('.docx', '.pdf', $filepath);
+            $pdfPath = str_replace('.docx', '.pdf', $filepath);
             Storage::disk('public')->put($pdfPath, $pdf->output());
 
             // Update draft_file di hasil_fasilitasi (simpan path .docx)
@@ -1255,142 +1211,146 @@ class HasilFasilitasiController extends Controller
             $this->notifyTeamMembers(
                 $permohonan,
                 'Draft Dokumen Tersedia',
-                'Draft dokumen hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah dibuat dan siap untuk diunduh.',
+                'Draft dokumen hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah dibuat dan siap untuk diunduh.',
                 'success'
             );
 
             return redirect()->back()->with('success', 'Draft dokumen hasil fasilitasi berhasil dibuat. Tim dapat mengunduh dokumen dalam format Word atau PDF.');
         } catch (\Exception $e) {
-            Log::error('Error generating hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal membuat draft dokumen: ' . $e->getMessage());
+            Log::error('Error generating hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal membuat draft dokumen: '.$e->getMessage());
         }
     }
 
     /**
      * Download dokumen Word hasil fasilitasi
      * Dapat diakses oleh semua tim member dan admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     *
+     * @return BinaryFileResponse|RedirectResponse
      */
     public function downloadWord(Permohonan $permohonan)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
+            if (! $this->isTimMember($permohonan) && ! $this->isAdmin() && ! $this->isKepalaBadan()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
-            if (!$hasilFasilitasi->draft_file || !Storage::disk('public')->exists($hasilFasilitasi->draft_file)) {
+            if (! $hasilFasilitasi->draft_file || ! Storage::disk('public')->exists($hasilFasilitasi->draft_file)) {
                 return redirect()->back()->with('error', 'File draft belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
             }
 
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.docx';
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.docx';
+
             return response()->download(
                 $this->documentService->getStoragePath($hasilFasilitasi->draft_file),
                 $filename,
                 ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
             );
         } catch (\Exception $e) {
-            Log::error('Error downloading Word hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengunduh dokumen: ' . $e->getMessage());
+            Log::error('Error downloading Word hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh dokumen: '.$e->getMessage());
         }
     }
 
     /**
      * Download dokumen PDF hasil fasilitasi
      * Dapat diakses oleh semua tim member dan admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     *
+     * @return BinaryFileResponse|RedirectResponse
      */
     public function downloadPdf(Permohonan $permohonan)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
             // Check access: must be team member, admin, or kepala badan
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
+            if (! $this->isTimMember($permohonan) && ! $this->isAdmin() && ! $this->isKepalaBadan()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
             // Check if draft exists
-            if (!$hasilFasilitasi->draft_file) {
+            if (! $hasilFasilitasi->draft_file) {
                 return redirect()->back()->with('error', 'Draft dokumen belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
             }
 
             // Get PDF path (same as Word but with .pdf extension)
             $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
-            
+
             // Check if PDF file exists
-            if (!Storage::disk('public')->exists($pdfPath)) {
+            if (! Storage::disk('public')->exists($pdfPath)) {
                 return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
             }
 
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
             return response()->download(
                 Storage::disk('public')->path($pdfPath),
                 $filename,
                 ['Content-Type' => 'application/pdf']
             );
         } catch (\Exception $e) {
-            Log::error('Error downloading PDF hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengunduh PDF: ' . $e->getMessage());
+            Log::error('Error downloading PDF hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh PDF: '.$e->getMessage());
         }
     }
 
     /**
      * Preview dokumen PDF hasil fasilitasi di browser
      * Dapat diakses oleh semua tim member dan admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     *
+     * @return Response|RedirectResponse
      */
     public function previewPdf(Permohonan $permohonan)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
             // Check access: must be team member, admin, or kepala badan
-            if (!$this->isTimMember($permohonan) && !$this->isAdmin() && !$this->isKepalaBadan()) {
+            if (! $this->isTimMember($permohonan) && ! $this->isAdmin() && ! $this->isKepalaBadan()) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
             // Check if draft exists
-            if (!$hasilFasilitasi->draft_file) {
+            if (! $hasilFasilitasi->draft_file) {
                 return redirect()->back()->with('error', 'Draft dokumen belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
             }
 
             // Get PDF path (same as Word but with .pdf extension)
             $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
-            
+
             // Check if PDF file exists
-            if (!Storage::disk('public')->exists($pdfPath)) {
+            if (! Storage::disk('public')->exists($pdfPath)) {
                 return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
             }
 
             // Stream PDF file to browser (inline preview)
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
             return response()->file(
                 Storage::disk('public')->path($pdfPath),
-                ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="' . $filename . '"']
+                ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="'.$filename.'"']
             );
         } catch (\Exception $e) {
-            Log::error('Error previewing PDF hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal menampilkan preview PDF: ' . $e->getMessage());
+            Log::error('Error previewing PDF hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menampilkan preview PDF: '.$e->getMessage());
         }
     }
 
@@ -1401,22 +1361,20 @@ class HasilFasilitasiController extends Controller
     /**
      * Upload draft final PDF (admin/koordinator only)
      * Draft final adalah file yang sudah dilengkapi kop surat secara manual
-     * 
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function uploadDraftFinal(Request $request, Permohonan $permohonan)
     {
         try {
             // Only admin or koordinator can upload draft final
-            if (!$this->isAdmin() && !$this->isKoordinator($permohonan)) {
+            if (! $this->isAdmin() && ! $this->isKoordinator($permohonan)) {
                 return redirect()->back()->with('error', 'Hanya admin atau koordinator yang dapat mengupload draft final.');
             }
 
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
@@ -1436,8 +1394,8 @@ class HasilFasilitasiController extends Controller
 
             // Store new draft final
             $file = $request->file('draft_final_file');
-            $filename = 'Hasil_Fasilitasi_Final_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '_' . time() . '.pdf';
-            $filepath = $file->storeAs('hasil-fasilitasi/final', $filename, 'public');
+            $filename = 'Hasil_Fasilitasi_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'_'.time().'.pdf';
+            $filepath = $file->store('hasil-fasilitasi/final', 'public');
 
             // Update hasil fasilitasi
             $hasilFasilitasi->update([
@@ -1459,73 +1417,74 @@ class HasilFasilitasiController extends Controller
             $this->notifyTeamMembers(
                 $permohonan,
                 'Draft Final PDF Diupload',
-                'Draft final PDF hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah diupload dan siap untuk diajukan ke Kepala Badan.',
+                'Draft final PDF hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah diupload dan siap untuk diajukan ke Kepala Badan.',
                 'success'
             );
 
             return redirect()->back()->with('success', 'Draft final PDF berhasil diupload. Dokumen siap untuk diajukan ke Kepala Badan.');
         } catch (\Exception $e) {
-            Log::error('Error uploading draft final: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengupload draft final: ' . $e->getMessage());
+            Log::error('Error uploading draft final: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengupload draft final: '.$e->getMessage());
         }
     }
 
     /**
      * Download draft final PDF yang telah dilengkapi kop surat
      * Dapat diakses oleh semua yang berwenang
-     * 
-     * @param Permohonan $permohonan
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     *
+     * @return BinaryFileResponse|RedirectResponse
      */
     public function downloadDraftFinal(Permohonan $permohonan)
     {
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
             // Check if draft final exists
-            if (!$hasilFasilitasi->draft_final_file || !Storage::disk('public')->exists($hasilFasilitasi->draft_final_file)) {
+            if (! $hasilFasilitasi->draft_final_file || ! Storage::disk('public')->exists($hasilFasilitasi->draft_final_file)) {
                 return redirect()->back()->with('error', 'Draft final PDF belum tersedia.');
             }
 
-            $filename = 'Hasil_Fasilitasi_Final_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
+            $filename = 'Hasil_Fasilitasi_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
             return response()->download(
                 Storage::disk('public')->path($hasilFasilitasi->draft_final_file),
                 $filename,
                 ['Content-Type' => 'application/pdf']
             );
         } catch (\Exception $e) {
-            Log::error('Error downloading draft final PDF: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengunduh draft final PDF: ' . $e->getMessage());
+            Log::error('Error downloading draft final PDF: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh draft final PDF: '.$e->getMessage());
         }
     }
 
     /**
      * Submit hasil fasilitasi ke Kepala Badan untuk persetujuan
      * Hanya dapat dilakukan oleh admin setelah draft final diupload
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function submitToKaban(Permohonan $permohonan)
     {
         try {
             // Only admin can submit to kaban
-            if (!$this->isAdmin()) {
+            if (! $this->isAdmin()) {
                 return redirect()->back()->with('error', 'Hanya admin yang dapat mengajukan dokumen ke Kepala Badan.');
             }
 
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
             // Check if draft final exists
-            if (!$hasilFasilitasi->draft_final_file) {
+            if (! $hasilFasilitasi->draft_final_file) {
                 return redirect()->back()->with('error', 'Draft final PDF belum diupload. Silakan upload terlebih dahulu.');
             }
 
@@ -1558,7 +1517,7 @@ class HasilFasilitasiController extends Controller
             $this->notifyAdminAndKaban(
                 $permohonan,
                 'Dokumen Menunggu Persetujuan',
-                'Dokumen hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah diajukan dan menunggu persetujuan Kepala Badan.',
+                'Dokumen hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah diajukan dan menunggu persetujuan Kepala Badan.',
                 'warning'
             );
 
@@ -1566,14 +1525,15 @@ class HasilFasilitasiController extends Controller
             $this->notifyTeamMembers(
                 $permohonan,
                 'Dokumen Diajukan ke Kepala Badan',
-                'Dokumen hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah diajukan ke Kepala Badan untuk persetujuan.',
+                'Dokumen hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah diajukan ke Kepala Badan untuk persetujuan.',
                 'info'
             );
 
             return redirect()->back()->with('success', 'Dokumen hasil fasilitasi berhasil diajukan ke Kepala Badan untuk persetujuan.');
         } catch (\Exception $e) {
-            Log::error('Error submitting to kaban: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengajukan dokumen: ' . $e->getMessage());
+            Log::error('Error submitting to kaban: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengajukan dokumen: '.$e->getMessage());
         }
     }
 }

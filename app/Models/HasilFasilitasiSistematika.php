@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SanitizedHtml;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +20,16 @@ class HasilFasilitasiSistematika extends Model
         'catatan_penyempurnaan',
         'user_id',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'catatan_penyempurnaan' => SanitizedHtml::class,
+        ];
+    }
 
     // Relasi
     public function hasilFasilitasi()

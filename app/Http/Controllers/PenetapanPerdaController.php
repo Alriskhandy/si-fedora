@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class PenetapanPerdaController extends Controller
 {
@@ -48,15 +47,15 @@ class PenetapanPerdaController extends Controller
 
             // Get tahapan Penetapan Perda (ID 7)
             $masterTahapan = MasterTahapan::where('id', 7)->first();
-            
-            if (!$masterTahapan) {
+
+            if (! $masterTahapan) {
                 return back()->with('error', 'Tahapan penetapan perda tidak ditemukan.');
             }
 
             // Upload file
             $file = $request->file('file');
-            $fileName = 'penetapan_perda_' . $permohonan->id . '_' . time() . '.pdf';
-            $filePath = $file->storeAs('dokumen-tahapan/penetapan-perda', $fileName, 'public');
+            $fileName = 'penetapan_perda_'.$permohonan->id.'_'.time().'.pdf';
+            $filePath = $file->store('dokumen-tahapan/penetapan-perda', 'public');
 
             // Simpan ke DokumenTahapan
             $dokumen = DokumenTahapan::create([
@@ -79,16 +78,17 @@ class PenetapanPerdaController extends Controller
                     'dokumen' => $fileName,
                     'ukuran' => $file->getSize(),
                 ])
-                ->log('Dokumen penetapan perda diupload oleh ' . Auth::user()->name);
+                ->log('Dokumen penetapan perda diupload oleh '.Auth::user()->name);
 
             DB::commit();
 
             return redirect()->back()->with('success', 'Dokumen penetapan perda berhasil diupload. Silakan preview dan submit dokumen.');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error uploading penetapan perda: ' . $e->getMessage());
-            return back()->with('error', 'Gagal mengupload dokumen: ' . $e->getMessage());
+            Log::error('Error uploading penetapan perda: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal mengupload dokumen: '.$e->getMessage());
         }
     }
 
@@ -104,8 +104,8 @@ class PenetapanPerdaController extends Controller
 
         // Pastikan sudah ada dokumen yang diupload
         $masterTahapan = MasterTahapan::where('id', 7)->first();
-        
-        if (!$masterTahapan) {
+
+        if (! $masterTahapan) {
             return back()->with('error', 'Master tahapan penetapan perda tidak ditemukan.');
         }
 
@@ -114,7 +114,7 @@ class PenetapanPerdaController extends Controller
             ->latest()
             ->first();
 
-        if (!$dokumen) {
+        if (! $dokumen) {
             return back()->with('error', 'Belum ada dokumen yang diupload. Silakan upload dokumen terlebih dahulu.');
         }
 
@@ -149,20 +149,20 @@ class PenetapanPerdaController extends Controller
             // Catatan: Status Permohonan hanya berubah menjadi 'selesai' di tahapan terakhir (penetapan perda)
             // Pada tahapan sebelumnya (seperti tahapan permohonan), status tetap 'proses'
             $permohonan->update([
-                'status_akhir' => 'selesai'
+                'status_akhir' => 'selesai',
             ]);
 
             // Log activity
             activity()
                 ->performedOn($permohonan)
                 ->causedBy(Auth::user())
-                ->log('Dokumen penetapan perda disubmit oleh ' . Auth::user()->name);
+                ->log('Dokumen penetapan perda disubmit oleh '.Auth::user()->name);
 
             // Kirim notifikasi via PermohonanNotificationService (database + WhatsApp)
             try {
                 $this->notificationService->notifyPenetapanPerdaSubmitted($permohonan);
             } catch (\Exception $e) {
-                Log::error('Failed to send penetapan perda submitted notifications via service: ' . $e->getMessage());
+                Log::error('Failed to send penetapan perda submitted notifications via service: '.$e->getMessage());
                 // Continue execution - legacy notification below will still work
             }
 
@@ -190,7 +190,7 @@ class PenetapanPerdaController extends Controller
                 Notifikasi::create([
                     'user_id' => $user->id,
                     'title' => 'Dokumen Penetapan PERDA Disubmit',
-                    'message' => 'Pemohon ' . Auth::user()->name . ' dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' telah submit dokumen penetapan perda untuk permohonan ' . $permohonan->nomor_permohonan,
+                    'message' => 'Pemohon '.Auth::user()->name.' dari '.($permohonan->kabupatenKota->nama ?? '-').' telah submit dokumen penetapan perda untuk permohonan '.$permohonan->nomor_permohonan,
                     'type' => 'penetapan_perda_submitted',
                     'model_type' => Permohonan::class,
                     'model_id' => $permohonan->id,
@@ -202,11 +202,12 @@ class PenetapanPerdaController extends Controller
             DB::commit();
 
             return redirect()->back()->with('success', 'Dokumen penetapan perda berhasil disubmit dan dapat dilihat oleh tim.');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error submitting penetapan perda: ' . $e->getMessage());
-            return back()->with('error', 'Gagal submit dokumen: ' . $e->getMessage());
+            Log::error('Error submitting penetapan perda: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal submit dokumen: '.$e->getMessage());
         }
     }
 
@@ -217,8 +218,8 @@ class PenetapanPerdaController extends Controller
     {
         // Get dokumen from DokumenTahapan
         $masterTahapan = MasterTahapan::where('id', 7)->first();
-        
-        if (!$masterTahapan) {
+
+        if (! $masterTahapan) {
             return back()->with('error', 'Tahapan penetapan perda tidak ditemukan.');
         }
 
@@ -227,19 +228,19 @@ class PenetapanPerdaController extends Controller
             ->latest()
             ->first();
 
-        if (!$dokumen) {
+        if (! $dokumen) {
             return back()->with('error', 'Dokumen penetapan tidak ditemukan.');
         }
 
         $filePath = $dokumen->file_path;
 
-        if (!$filePath) {
+        if (! $filePath) {
             return back()->with('error', 'File penetapan tidak ditemukan.');
         }
 
-        $filepath = storage_path('app/public/' . $filePath);
+        $filepath = storage_path('app/public/'.$filePath);
 
-        if (!file_exists($filepath)) {
+        if (! file_exists($filepath)) {
             return back()->with('error', 'File tidak ditemukan di storage.');
         }
 

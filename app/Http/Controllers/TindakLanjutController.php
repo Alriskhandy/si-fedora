@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class TindakLanjutController extends Controller
 {
@@ -32,13 +31,13 @@ class TindakLanjutController extends Controller
     {
         $tindakLanjut = $permohonan->tindakLanjut;
 
-        if (!$tindakLanjut || !$tindakLanjut->file_laporan) {
+        if (! $tindakLanjut || ! $tindakLanjut->file_laporan) {
             return back()->with('error', 'File laporan tidak ditemukan.');
         }
 
-        $filepath = storage_path('app/public/' . $tindakLanjut->file_laporan);
+        $filepath = storage_path('app/public/'.$tindakLanjut->file_laporan);
 
-        if (!file_exists($filepath)) {
+        if (! file_exists($filepath)) {
             return back()->with('error', 'File tidak ditemukan di storage.');
         }
 
@@ -67,16 +66,16 @@ class TindakLanjutController extends Controller
             DB::beginTransaction();
 
             // Get tahapan Tindak Lanjut
-            $masterTahapan = \App\Models\MasterTahapan::where('nama_tahapan', 'LIKE', '%Tindak Lanjut%')->first();
-            
-            if (!$masterTahapan) {
+            $masterTahapan = MasterTahapan::where('nama_tahapan', 'LIKE', '%Tindak Lanjut%')->first();
+
+            if (! $masterTahapan) {
                 return back()->with('error', 'Tahapan tindak lanjut tidak ditemukan.');
             }
 
             // Upload file
             $file = $request->file('file');
-            $fileName = 'tindak_lanjut_' . $permohonan->id . '_' . time() . '.pdf';
-            $filePath = $file->storeAs('dokumen-tahapan/tindak-lanjut', $fileName, 'public');
+            $fileName = 'tindak_lanjut_'.$permohonan->id.'_'.time().'.pdf';
+            $filePath = $file->store('dokumen-tahapan/tindak-lanjut', 'public');
 
             // Simpan ke DokumenTahapan
             $dokumen = DokumenTahapan::create([
@@ -99,16 +98,17 @@ class TindakLanjutController extends Controller
                     'dokumen' => $fileName,
                     'ukuran' => $file->getSize(),
                 ])
-                ->log('Dokumen tindak lanjut diupload oleh ' . Auth::user()->name);
+                ->log('Dokumen tindak lanjut diupload oleh '.Auth::user()->name);
 
             DB::commit();
 
             return redirect()->back()->with('success', 'Dokumen tindak lanjut berhasil diupload. Silakan preview dan submit dokumen.');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error uploading tindak lanjut: ' . $e->getMessage());
-            return back()->with('error', 'Gagal mengupload dokumen: ' . $e->getMessage());
+            Log::error('Error uploading tindak lanjut: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal mengupload dokumen: '.$e->getMessage());
         }
     }
 
@@ -124,8 +124,8 @@ class TindakLanjutController extends Controller
 
         // Pastikan sudah ada dokumen yang diupload
         $masterTahapan = MasterTahapan::where('id', 6)->first();
-        
-        if (!$masterTahapan) {
+
+        if (! $masterTahapan) {
             return back()->with('error', 'Master tahapan tindak lanjut tidak ditemukan.');
         }
 
@@ -134,7 +134,7 @@ class TindakLanjutController extends Controller
             ->latest()
             ->first();
 
-        if (!$dokumen) {
+        if (! $dokumen) {
             return back()->with('error', 'Belum ada dokumen yang diupload. Silakan upload dokumen terlebih dahulu.');
         }
 
@@ -168,7 +168,7 @@ class TindakLanjutController extends Controller
             // CATATAN: Status Permohonan TIDAK diubah pada tahapan tindak lanjut ini
             // Status Permohonan hanya akan diubah menjadi 'selesai' ketika submit di tahapan terakhir (penetapan perda)
             // Sekarang setup tahapan Penetapan Perda untuk dimulai
-            $tahapanPenetapan = \App\Models\MasterTahapan::where('id', 7)
+            $tahapanPenetapan = MasterTahapan::where('id', 7)
                 ->first();
 
             if ($tahapanPenetapan) {
@@ -189,13 +189,13 @@ class TindakLanjutController extends Controller
             activity()
                 ->performedOn($permohonan)
                 ->causedBy(Auth::user())
-                ->log('Dokumen tindak lanjut disubmit oleh ' . Auth::user()->name);
+                ->log('Dokumen tindak lanjut disubmit oleh '.Auth::user()->name);
 
             // Kirim notifikasi ke Admin Peran dan Tim Fedora (database + WhatsApp)
             try {
                 $this->notificationService->notifyTindakLanjutSubmitted($permohonan);
             } catch (\Exception $e) {
-                Log::error('Failed to send notifications via notification service: ' . $e->getMessage());
+                Log::error('Failed to send notifications via notification service: '.$e->getMessage());
             }
 
             // Kirim notifikasi legacy (database only) - backup
@@ -222,7 +222,7 @@ class TindakLanjutController extends Controller
                 Notifikasi::create([
                     'user_id' => $user->id,
                     'title' => 'Dokumen Tindak Lanjut Disubmit',
-                    'message' => 'Pemohon ' . Auth::user()->name . ' dari ' . ($permohonan->kabupatenKota->nama ?? '-') . ' telah submit dokumen tindak lanjut untuk permohonan ' . $permohonan->nomor_permohonan,
+                    'message' => 'Pemohon '.Auth::user()->name.' dari '.($permohonan->kabupatenKota->nama ?? '-').' telah submit dokumen tindak lanjut untuk permohonan '.$permohonan->nomor_permohonan,
                     'type' => 'tindak_lanjut_submitted',
                     'model_type' => Permohonan::class,
                     'model_id' => $permohonan->id,
@@ -234,11 +234,12 @@ class TindakLanjutController extends Controller
             DB::commit();
 
             return redirect()->back()->with('success', 'Dokumen tindak lanjut berhasil disubmit dan dapat dilihat oleh tim.');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error submitting tindak lanjut: ' . $e->getMessage());
-            return back()->with('error', 'Gagal submit dokumen: ' . $e->getMessage());
+            Log::error('Error submitting tindak lanjut: '.$e->getMessage());
+
+            return back()->with('error', 'Gagal submit dokumen: '.$e->getMessage());
         }
     }
 }
