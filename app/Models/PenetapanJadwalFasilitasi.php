@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Penetapan jadwal pelaksanaan fasilitasi oleh Kaban untuk suatu permohonan.
+ */
 class PenetapanJadwalFasilitasi extends Model
 {
     use HasFactory;
@@ -24,26 +28,32 @@ class PenetapanJadwalFasilitasi extends Model
         'tanggal_penetapan',
     ];
 
-    protected $casts = [
-        'tanggal_mulai' => 'date',
-        'tanggal_selesai' => 'date',
-        'tanggal_penetapan' => 'datetime',
-        'latitude' => 'decimal:8',
-        'longitude' => 'decimal:8',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tanggal_mulai' => 'date',
+            'tanggal_selesai' => 'date',
+            'tanggal_penetapan' => 'datetime',
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
+        ];
+    }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function jadwalFasilitasi()
+    public function jadwalFasilitasi(): BelongsTo
     {
         return $this->belongsTo(JadwalFasilitasi::class);
     }
 
-    public function penetap()
+    public function penetap(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ditetapkan_oleh');
     }

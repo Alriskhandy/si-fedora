@@ -4,8 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Master kabupaten/kota se-Provinsi Maluku Utara.
+ */
 class KabupatenKota extends Model
 {
     use HasFactory, SoftDeletes;
@@ -24,32 +29,38 @@ class KabupatenKota extends Model
         'is_active',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
-    public function users()
+    public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }
 
-    public function permohonan()
+    public function permohonan(): HasMany
     {
-        return $this->hasMany(Permohonan::class);
+        return $this->hasMany(Permohonan::class, 'kab_kota_id');
     }
 
-    public function suratPemberitahuan()
+    public function suratPemberitahuan(): HasMany
     {
         return $this->hasMany(SuratPemberitahuan::class);
     }
 
     // Assignment Relations
-    public function userAssignments()
+    public function userAssignments(): HasMany
     {
         return $this->hasMany(UserKabkotaAssignment::class);
     }
 
-    public function assignedUsers()
+    public function assignedUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_kabkota_assignments')
             ->withPivot(['role_type', 'is_pic', 'is_active', 'assigned_from', 'assigned_until', 'notes'])
@@ -100,6 +111,6 @@ class KabupatenKota extends Model
 
     public function getFullNameAttribute(): string
     {
-        return ucfirst($this->jenis) . ' ' . $this->nama;
+        return ucfirst($this->jenis).' '.$this->nama;
     }
 }

@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Rincian hasil verifikasi per dokumen tahapan.
+ */
 class DokumenVerifikasiDetail extends Model
 {
     use HasFactory;
@@ -22,21 +26,27 @@ class DokumenVerifikasiDetail extends Model
         'updated_at',
     ];
 
-    protected $casts = [
-        'updated_at' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'updated_at' => 'datetime',
+        ];
+    }
 
-    public function dokumenTahapan()
+    public function dokumenTahapan(): BelongsTo
     {
         return $this->belongsTo(DokumenTahapan::class);
     }
 
-    public function masterKelengkapan()
+    public function masterKelengkapan(): BelongsTo
     {
         return $this->belongsTo(MasterKelengkapanVerifikasi::class, 'master_kelengkapan_id');
     }
 
-    public function updatedBy()
+    public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
     }

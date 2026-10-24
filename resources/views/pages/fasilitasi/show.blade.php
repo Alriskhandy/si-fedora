@@ -437,7 +437,7 @@
                         @endif
 
                         {{-- Tombol Perpanjangan Waktu untuk Pemohon --}}
-                        @if (auth()->user()->hasRole('pemohon') && $permohonan->isUploadDeadlinePassed() && $permohonan->status_akhir == 'belum')
+                        @if (auth()->user()->can('perpanjangan-waktu.submit') && $permohonan->isUploadDeadlinePassed() && $permohonan->status_akhir == 'belum')
                             @php
                                 $existingPerpanjangan = $permohonan->perpanjanganWaktu()->latest()->first();
                             @endphp

@@ -65,7 +65,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="mb-0"><i class='bx bx-file me-1'></i>Dokumentasi Pelaksanaan</h6>
                         <div class="d-flex gap-2">
-                            @if (auth()->user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin']))
+                            @if (auth()->user()->can('pelaksanaan.upload-dokumen'))
                                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                     data-bs-target="#uploadDokumenPelaksanaanModal">
                                     <i class='bx bx-plus-circle me-1'></i>Upload Dokumen
@@ -91,7 +91,7 @@
                                 }
                             @endphp
 
-                            @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']) && !$isCompleted)
+                            @if (auth()->user()->can('pelaksanaan.complete') && !$isCompleted)
                                 @php
                                     // Hitung dokumen untuk validasi tombol
                                     $dokumenCount = $permohonan
@@ -132,7 +132,7 @@
                         }
                     @endphp
 
-                    @if (isset($isCompleted) && $isCompleted && $currentTahapan && auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'fasilitator', 'verifikator']))
+                    @if (isset($isCompleted) && $isCompleted && $currentTahapan && auth()->user()->can('pelaksanaan.upload-dokumen'))
                         <div class="alert alert-success mb-3">
                             <i class='bx bx-check-circle me-2'></i>
                             <strong>Tahapan Pelaksanaan telah diselesaikan</strong> pada
@@ -187,10 +187,10 @@
                                                     <!-- Preview Thumbnail -->
                                                     <div class="preview-thumbnail"
                                                         style="width: 50px; height: 50px; cursor: pointer; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8f9fa;"
-                                                        ondblclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ asset('storage/' . $dokumen->file_path) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
+                                                        ondblclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ route('berkas.show', ['dokumen-tahapan', $dokumen->id]) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
                                                         title="Klik dua kali untuk melihat preview">
                                                         @if ($isImage)
-                                                            <img src="{{ asset('storage/' . $dokumen->file_path) }}"
+                                                            <img src="{{ route('berkas.show', ['dokumen-tahapan', $dokumen->id]) }}"
                                                                 alt="Preview"
                                                                 style="width: 100%; height: 100%; object-fit: cover;">
                                                         @else
@@ -209,7 +209,7 @@
                                             </td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-info"
-                                                    onclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ asset('storage/' . $dokumen->file_path) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
+                                                    onclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ route('berkas.show', ['dokumen-tahapan', $dokumen->id]) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
                                                     title="Lihat">
                                                     <i class='bx bx-show'></i>
                                                 </button>
@@ -217,7 +217,7 @@
                                                     class="btn btn-sm btn-outline-primary" target="_blank" title="Download">
                                                     <i class='bx bx-download'></i>
                                                 </a>
-                                                @if (auth()->user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin']))
+                                                @if (auth()->user()->can('pelaksanaan.upload-dokumen'))
                                                     <form
                                                         action="{{ route('permohonan.dokumen.delete', [$permohonan, $dokumen->id]) }}"
                                                         method="POST" class="d-inline"
@@ -240,7 +240,7 @@
                         <div class="text-center py-5">
                             <i class='bx bx-file bx-lg text-muted mb-3 d-block'></i>
                             <p class="text-muted mb-0">Belum ada dokumen pelaksanaan yang diupload.</p>
-                            @if (auth()->user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin']))
+                            @if (auth()->user()->can('pelaksanaan.upload-dokumen'))
                                 <small class="text-muted">Klik tombol "Upload Dokumen" untuk menambahkan. Anda bisa upload beberapa file sekaligus.</small>
                             @endif
                         </div>
@@ -266,7 +266,7 @@
             </div>
 
             <!-- Modal Upload Dokumen Pelaksanaan -->
-            @if (auth()->user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin']))
+            @if (auth()->user()->can('pelaksanaan.upload-dokumen'))
                 <div class="modal fade" id="uploadDokumenPelaksanaanModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">

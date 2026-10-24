@@ -24,3 +24,5 @@ yarn-error.log
 /.zed
 /file-rancangan
 /docs
+/role-skill
+.DS_Store

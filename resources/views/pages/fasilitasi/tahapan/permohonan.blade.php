@@ -97,7 +97,7 @@
             $totalDokumen = $permohonan->permohonanDokumen->count();
             $dokumenLengkap = $permohonan->permohonanDokumen->where('is_ada', true)->count();
             $progress = $totalDokumen > 0 ? ($dokumenLengkap / $totalDokumen) * 100 : 0;
-            $isPemohon = auth()->user()->hasRole('pemohon');
+            $isPemohon = auth()->user()->can('permohonan.upload-dokumen');
         @endphp
 
         <!-- Dokumen Kelengkapan -->
@@ -185,13 +185,13 @@
                                                 $isPdf = strtolower($fileExtension) === 'pdf';
                                             @endphp
                                             @if ($isPdf)
-                                                <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank"
+                                                <a href="{{ route('berkas.show', ['permohonan-dokumen', $dokumen->id]) }}" target="_blank"
                                                     class="btn btn-icon btn-primary" title="Lihat Dokumen PDF">
                                                     <i class="bx bx-show"></i>
                                                 </a>
                                             @else
                                                 <button type="button" class="btn btn-icon btn-primary btn-preview-excel"
-                                                    data-file-url="{{ asset('storage/' . $dokumen->file_path) }}"
+                                                    data-file-url="{{ route('berkas.show', ['permohonan-dokumen', $dokumen->id]) }}"
                                                     data-file-name="{{ $dokumen->file_name }}" title="Lihat Excel">
                                                     <i class="bx bx-show"></i>
                                                 </button>

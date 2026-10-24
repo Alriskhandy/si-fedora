@@ -4,7 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Hasil fasilitasi/evaluasi per permohonan: draft, draft final, persetujuan Kaban, dan surat penyampaian.
+ */
 class HasilFasilitasi extends Model
 {
     use HasFactory;
@@ -28,50 +33,57 @@ class HasilFasilitasi extends Model
         'updated_by',
     ];
 
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'surat_tanggal' => 'datetime',
-        'tanggal_diajukan_kaban' => 'datetime',
-        'tanggal_disetujui_kaban' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'surat_tanggal' => 'datetime',
+            'tanggal_diajukan_kaban' => 'datetime',
+            'tanggal_disetujui_kaban' => 'datetime',
+        ];
+    }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class, 'permohonan_id');
     }
 
-    public function pembuat()
+    public function pembuat(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }
-    public function updater()
+
+    public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function pembuatSurat()
+    public function pembuatSurat(): BelongsTo
     {
         return $this->belongsTo(User::class, 'surat_dibuat_oleh');
     }
 
-    public function hasilUrusan()
+    public function hasilUrusan(): HasMany
     {
         return $this->hasMany(HasilFasilitasiUrusan::class, 'hasil_fasilitasi_id');
     }
 
-    public function hasilSistematika()
+    public function hasilSistematika(): HasMany
     {
         return $this->hasMany(HasilFasilitasiSistematika::class, 'hasil_fasilitasi_id');
     }
 
-    public function hasilForm()
+    public function hasilForm(): HasMany
     {
         return $this->hasMany(HasilFasilitasiForm::class, 'hasil_fasilitasi_id');
     }
 
-    public function hasilRekomendasi()
+    public function hasilRekomendasi(): HasMany
     {
         return $this->hasMany(HasilFasilitasiRekomendasi::class, 'hasil_fasilitasi_id');
     }

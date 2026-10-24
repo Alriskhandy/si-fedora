@@ -118,7 +118,7 @@
                         Permohonan perpanjangan sedang menunggu diproses oleh admin.
                     </div>
 
-                    @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']))
+                    @if (auth()->user()->can('perpanjangan-waktu.process'))
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h5 class="mb-0"><i class='bx bx-cog me-2'></i>Proses Perpanjangan</h5>

@@ -17,7 +17,7 @@
                 </nav>
             </div>
             <div>
-                @if (auth()->user()->hasRole('kaban'))
+                @if (auth()->user()->can('penetapan-jadwal.manage'))
                     <button type="button" class="btn btn-primary me-2" id="btnEdit">
                         <i class='bx bx-edit'></i> Edit Jadwal
                     </button>

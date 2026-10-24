@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Jadwal fasilitasi per tahun anggaran dan jenis dokumen, termasuk batas pengajuan permohonan.
+ */
 class JadwalFasilitasi extends Model
 {
     use HasFactory, SoftDeletes;
@@ -14,7 +20,9 @@ class JadwalFasilitasi extends Model
 
     // Status constants
     const STATUS_DRAFT = 'draft';
+
     const STATUS_PUBLISHED = 'published';
+
     const STATUS_CLOSED = 'closed';
 
     protected $fillable = [
@@ -29,40 +37,46 @@ class JadwalFasilitasi extends Model
         'updated_by',
     ];
 
-    protected $casts = [
-        'tahun_anggaran' => 'integer',
-        'tanggal_mulai' => 'datetime',
-        'tanggal_selesai' => 'datetime',
-        'batas_permohonan' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tahun_anggaran' => 'integer',
+            'tanggal_mulai' => 'datetime',
+            'tanggal_selesai' => 'datetime',
+            'batas_permohonan' => 'datetime',
+        ];
+    }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): HasMany
     {
         return $this->hasMany(Permohonan::class);
     }
 
-    public function suratPemberitahuan()
+    public function suratPemberitahuan(): HasMany
     {
         return $this->hasMany(SuratPemberitahuan::class);
     }
 
-    public function dibuatOleh()
+    public function dibuatOleh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }
 
-    public function diupdateOleh()
+    public function diupdateOleh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function jenisDokumen()
+    public function jenisDokumen(): BelongsTo
     {
         return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen');
     }
 
-    public function perpanjanganWaktu()
+    public function perpanjanganWaktu(): HasMany
     {
         return $this->hasMany(PerpanjanganWaktu::class);
     }
@@ -70,7 +84,7 @@ class JadwalFasilitasi extends Model
     // Accessor
     public function getStatusLabelAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_DRAFT => 'Draft',
             self::STATUS_PUBLISHED => 'Published',
             self::STATUS_CLOSED => 'Closed',
@@ -80,7 +94,7 @@ class JadwalFasilitasi extends Model
 
     public function getJenisDokumenLabelAttribute()
     {
-        return match($this->jenis_dokumen) {
+        return match ($this->jenis_dokumen) {
             'rkpd' => 'RKPD',
             'rpd' => 'RPD',
             'rpjmd' => 'RPJMD',
@@ -89,15 +103,15 @@ class JadwalFasilitasi extends Model
     }
 
     // Scope
-    public function scopePublished($query)
+    public function scopePublished(Builder $query)
     {
         return $query->where('status', self::STATUS_PUBLISHED);
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query)
     {
         return $query->where('status', self::STATUS_PUBLISHED)
-                    ->where('batas_permohonan', '>=', now());
+            ->where('batas_permohonan', '>=', now());
     }
 
     /**
@@ -105,7 +119,7 @@ class JadwalFasilitasi extends Model
      * user ini, dan belum pernah diajukan perpanjangan waktu oleh user ini
      * (hanya boleh mengajukan 1 kali per jadwal untuk menghindari request ganda).
      */
-    public function scopeAvailableForExtensionRequest($query, int $userId)
+    public function scopeAvailableForExtensionRequest(Builder $query, int $userId)
     {
         return $query->where('status', self::STATUS_PUBLISHED)
             ->where('batas_permohonan', '<', now())

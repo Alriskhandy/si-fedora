@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
+/**
+ * Kode OTP verifikasi nomor WhatsApp.
+ */
 class OtpCode extends Model
 {
     protected $fillable = [
@@ -17,10 +21,16 @@ class OtpCode extends Model
         'used_at',
     ];
 
-    protected $casts = [
-        'expired_at' => 'datetime',
-        'used_at' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'expired_at' => 'datetime',
+            'used_at' => 'datetime',
+        ];
+    }
 
     /**
      * Relasi ke User
@@ -33,10 +43,6 @@ class OtpCode extends Model
     /**
      * Generate OTP baru
      *
-     * @param string $phone
-     * @param int|null $userId
-     * @param int $length
-     * @param int $expiryMinutes
      * @return array ['record' => OtpCode, 'code' => string]
      */
     public static function generate(string $phone, ?int $userId = null, int $length = 6, int $expiryMinutes = 5): array
@@ -65,10 +71,6 @@ class OtpCode extends Model
 
     /**
      * Verifikasi OTP
-     *
-     * @param string $phone
-     * @param string $code
-     * @return bool
      */
     public static function verify(string $phone, string $code): bool
     {
@@ -78,11 +80,11 @@ class OtpCode extends Model
             ->latest()
             ->first();
 
-        if (!$otpRecord) {
+        if (! $otpRecord) {
             return false;
         }
 
-        if (!Hash::check($code, $otpRecord->code)) {
+        if (! Hash::check($code, $otpRecord->code)) {
             return false;
         }
 
@@ -94,8 +96,6 @@ class OtpCode extends Model
 
     /**
      * Cek apakah OTP sudah expired
-     *
-     * @return bool
      */
     public function isExpired(): bool
     {
@@ -104,18 +104,16 @@ class OtpCode extends Model
 
     /**
      * Cek apakah OTP sudah digunakan
-     *
-     * @return bool
      */
     public function isUsed(): bool
     {
-        return !is_null($this->used_at);
+        return ! is_null($this->used_at);
     }
 
     /**
      * Scope untuk OTP yang masih valid
      */
-    public function scopeValid($query)
+    public function scopeValid(Builder $query)
     {
         return $query->whereNull('used_at')
             ->where('expired_at', '>', Carbon::now());

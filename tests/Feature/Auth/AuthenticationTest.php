@@ -30,6 +30,33 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
+    public function test_successful_login_is_recorded_in_activity_log(): void
+    {
+        $user = User::factory()->create();
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'login',
+            'causer_id' => $user->id,
+        ]);
+    }
+
+    public function test_logout_is_recorded_in_activity_log(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/logout');
+
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'logout',
+            'causer_id' => $user->id,
+        ]);
+    }
+
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();

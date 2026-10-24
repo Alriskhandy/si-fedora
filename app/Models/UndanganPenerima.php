@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Penerima undangan pelaksanaan beserta konfirmasi kehadirannya.
+ */
 class UndanganPenerima extends Model
 {
     use HasFactory;
@@ -19,18 +23,24 @@ class UndanganPenerima extends Model
         'tanggal_dibaca',
     ];
 
-    protected $casts = [
-        'dibaca' => 'boolean',
-        'tanggal_dibaca' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'dibaca' => 'boolean',
+            'tanggal_dibaca' => 'datetime',
+        ];
+    }
 
     // Relasi
-    public function undangan()
+    public function undangan(): BelongsTo
     {
         return $this->belongsTo(UndanganPelaksanaan::class, 'undangan_id');
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

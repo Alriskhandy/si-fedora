@@ -4,9 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
+/**
+ * Undangan pelaksanaan fasilitasi untuk satu permohonan.
+ */
 class UndanganPelaksanaan extends Model
 {
     use HasFactory, LogsActivity;
@@ -22,9 +27,15 @@ class UndanganPelaksanaan extends Model
         'tanggal_dikirim',
     ];
 
-    protected $casts = [
-        'tanggal_dikirim' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tanggal_dikirim' => 'datetime',
+        ];
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -35,22 +46,22 @@ class UndanganPelaksanaan extends Model
     }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function penetapanJadwal()
+    public function penetapanJadwal(): BelongsTo
     {
         return $this->belongsTo(PenetapanJadwalFasilitasi::class, 'penetapan_jadwal_id');
     }
 
-    public function pembuat()
+    public function pembuat(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }
 
-    public function penerima()
+    public function penerima(): HasMany
     {
         return $this->hasMany(UndanganPenerima::class, 'undangan_id');
     }

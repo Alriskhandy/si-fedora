@@ -2,15 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Traits\LogsActivity;
 
+/**
+ * Permohonan fasilitasi/evaluasi dari kabupaten/kota. Inti alur bisnis; relasi ke seluruh tahapan.
+ */
 class Permohonan extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     // ============================================================
     // PROPERTIES
@@ -28,10 +37,16 @@ class Permohonan extends Model
         'submitted_at',
     ];
 
-    protected $casts = [
-        'tahun' => 'integer',
-        'submitted_at' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tahun' => 'integer',
+            'submitted_at' => 'datetime',
+        ];
+    }
 
     // ============================================================
     // ACCESSORS & MUTATORS
@@ -78,9 +93,9 @@ class Permohonan extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function activityLogs()
+    public function activityLogs(): MorphMany
     {
-        return $this->morphMany(\Spatie\Activitylog\Models\Activity::class, 'subject')
+        return $this->morphMany(Activity::class, 'subject')
             ->orderBy('created_at', 'desc');
     }
 
@@ -89,49 +104,34 @@ class Permohonan extends Model
     // ============================================================
 
     // User & Admin Relations
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updatedBy()
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function pemohon()
+    public function pemohon(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function verifikator()
-    {
-        return $this->belongsTo(User::class, 'verifikator_id');
-    }
-
     // Master Data Relations
-    public function kabupatenKota()
+    public function kabupatenKota(): BelongsTo
     {
         return $this->belongsTo(KabupatenKota::class, 'kab_kota_id');
     }
 
-    public function jenisDokumen()
+    public function jenisDokumen(): BelongsTo
     {
         return $this->belongsTo(MasterJenisDokumen::class, 'jenis_dokumen_id');
     }
 
-    public function jadwalFasilitasi()
+    public function jadwalFasilitasi(): BelongsTo
     {
         return $this->belongsTo(JadwalFasilitasi::class);
     }
 
     // Tahapan Relations
-    public function tahapan()
+    public function tahapan(): HasMany
     {
         return $this->hasMany(PermohonanTahapan::class);
     }
 
-    public function tahapanAktif()
+    public function tahapanAktif(): HasOne
     {
         return $this->hasOne(PermohonanTahapan::class)
             ->where('status', 'proses')
@@ -139,61 +139,61 @@ class Permohonan extends Model
     }
 
     // Tim Relations
-    public function timFasilitasi()
+    public function timFasilitasi(): HasMany
     {
         return $this->hasMany(TimFasilitasiAssignment::class);
     }
 
     // Dokumen Relations
-    public function permohonanDokumen()
+    public function permohonanDokumen(): HasMany
     {
         return $this->hasMany(PermohonanDokumen::class, 'permohonan_id');
     }
 
-    public function dokumenTahapan()
+    public function dokumenTahapan(): HasMany
     {
         return $this->hasMany(DokumenTahapan::class);
     }
 
     // Proses Relations
-    public function laporanVerifikasi()
+    public function laporanVerifikasi(): HasOne
     {
         return $this->hasOne(LaporanVerifikasi::class, 'permohonan_id');
     }
 
-    public function penetapanJadwal()
+    public function penetapanJadwal(): HasOne
     {
         return $this->hasOne(PenetapanJadwalFasilitasi::class, 'permohonan_id');
     }
 
-    public function undanganPelaksanaan()
+    public function undanganPelaksanaan(): HasOne
     {
         return $this->hasOne(UndanganPelaksanaan::class, 'permohonan_id');
     }
 
-    public function pelaksanaanCatatan()
+    public function pelaksanaanCatatan(): HasOne
     {
         return $this->hasOne(PelaksanaanCatatan::class);
     }
 
-    public function hasilFasilitasi()
+    public function hasilFasilitasi(): HasOne
     {
         return $this->hasOne(HasilFasilitasi::class);
     }
 
-    public function penetapanPerda()
+    public function penetapanPerda(): HasOne
     {
         return $this->hasOne(PenetapanPerda::class);
     }
 
     // Tindak Lanjut Relations
-    public function tindakLanjut()
+    public function tindakLanjut(): HasOne
     {
         return $this->hasOne(TindakLanjut::class);
     }
 
     // Other Relations
-    public function perpanjanganWaktu()
+    public function perpanjanganWaktu(): HasMany
     {
         return $this->hasMany(PerpanjanganWaktu::class);
     }
@@ -202,29 +202,111 @@ class Permohonan extends Model
     // SCOPES
     // ============================================================
 
-    public function scopeByJenisDokumen($query, $jenis)
+    public function scopeByJenisDokumen(Builder $query, $jenis)
     {
         if (is_numeric($jenis)) {
             return $query->where('jenis_dokumen_id', $jenis);
         }
 
-        $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
+        $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
+
         return $query->where('jenis_dokumen_id', $jenisDokumen ? $jenisDokumen->id : null);
     }
 
-    public function scopeByTahun($query, $tahun)
+    public function scopeByTahun(Builder $query, $tahun)
     {
         return $query->where('tahun', $tahun);
     }
 
-    public function scopeByKabKota($query, $kabKotaId)
+    public function scopeByKabKota(Builder $query, $kabKotaId)
     {
         return $query->where('kab_kota_id', $kabKotaId);
     }
 
-    public function scopeByStatus($query, $status)
+    public function scopeByStatus(Builder $query, $status)
     {
         return $query->where('status_akhir', $status);
+    }
+
+    /**
+     * Batasi ke permohonan yang boleh dilihat pengguna di daftar.
+     *
+     * Aturan detail per record ada di PermohonanPolicy::view().
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->can('permohonan.view-all')) {
+            return $query;
+        }
+
+        if ($user->can('permohonan.view-own')) {
+            return $query->where(function (Builder $q) use ($user) {
+                $q->where('user_id', $user->id);
+
+                if ($user->kabupaten_kota_id) {
+                    $q->orWhere('kab_kota_id', $user->kabupaten_kota_id);
+                }
+            });
+        }
+
+        // Verifikator (pemegang permohonan.verify): assignment + permohonan selesai yang pernah diverifikasi
+        if ($user->can('permohonan.view-assigned') && $user->can('permohonan.verify')) {
+            $assignments = UserKabkotaAssignment::where('user_id', $user->id)->where('is_active', true)->get();
+
+            return $query->where(function (Builder $q) use ($assignments, $user) {
+                if ($assignments->isNotEmpty()) {
+                    $q->orWhere(function (Builder $qq) use ($assignments) {
+                        $qq->where(function (Builder $sub) use ($assignments) {
+                            foreach ($assignments as $assignment) {
+                                $sub->orWhere(function (Builder $s) use ($assignment) {
+                                    $s->where('kab_kota_id', $assignment->kabupaten_kota_id);
+
+                                    if ($assignment->tahun) {
+                                        $s->where('tahun', $assignment->tahun);
+                                    }
+
+                                    if ($assignment->jenis_dokumen_id) {
+                                        $s->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                                    }
+                                });
+                            }
+                        })->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+                    });
+                }
+
+                // Permohonan selesai yang pernah diverifikasi langsung (pergantian PIC)
+                $q->orWhere(function (Builder $qq) use ($user) {
+                    $qq->where('status_akhir', 'selesai')
+                        ->whereHas('permohonanDokumen', function (Builder $sub) use ($user) {
+                            $sub->where('verified_by', $user->id)->whereNotNull('verified_at');
+                        });
+                });
+            });
+        }
+
+        // Fasilitator: assignment aktif per kab/kota dan tahun
+        if ($user->can('permohonan.view-assigned')) {
+            $assignments = UserKabkotaAssignment::where('user_id', $user->id)->where('is_active', true)->get();
+
+            if ($assignments->isEmpty()) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->where(function (Builder $q) use ($assignments) {
+                foreach ($assignments as $assignment) {
+                    $q->orWhere(function (Builder $qq) use ($assignment) {
+                        $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                            ->where('tahun', $assignment->tahun);
+
+                        if ($assignment->jenis_dokumen_id) {
+                            $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                        }
+                    });
+                }
+            })->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     // ============================================================
@@ -233,7 +315,7 @@ class Permohonan extends Model
 
     public function getProgressSteps()
     {
-        $masterTahapan = \App\Models\MasterTahapan::orderBy('urutan')->get();
+        $masterTahapan = MasterTahapan::orderBy('urutan')->get();
 
         $iconMap = [
             'Permohonan' => 'bx-send',
@@ -423,7 +505,7 @@ class Permohonan extends Model
     {
         $deadline = $this->getEffectiveDeadline();
 
-        if (!$deadline) {
+        if (! $deadline) {
             return false;
         }
 
@@ -432,7 +514,7 @@ class Permohonan extends Model
 
     public function canUploadDocuments()
     {
-        if (!in_array($this->status_akhir, ['belum', 'revisi'])) {
+        if (! in_array($this->status_akhir, ['belum', 'revisi'])) {
             return false;
         }
 
@@ -447,14 +529,14 @@ class Permohonan extends Model
     {
         $deadline = $this->getEffectiveDeadline();
 
-        if (!$deadline) {
+        if (! $deadline) {
             return null;
         }
 
         if ($this->isUploadDeadlinePassed()) {
-            return 'Batas waktu upload dokumen telah berakhir pada ' . $deadline->format('d M Y, H:i');
+            return 'Batas waktu upload dokumen telah berakhir pada '.$deadline->format('d M Y, H:i');
         }
 
-        return 'Batas waktu upload dokumen: ' . $deadline->format('d M Y, H:i');
+        return 'Batas waktu upload dokumen: '.$deadline->format('d M Y, H:i');
     }
 }

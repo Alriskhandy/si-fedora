@@ -80,7 +80,7 @@
             $isFasilitator =
                 auth()
                     ->user()
-                    ->hasAnyRole(['fasilitator', 'koordinator']) &&
+                    ->can('hasil-fasilitasi.input') &&
                 \App\Models\UserKabkotaAssignment::where('user_id', auth()->id())
                     ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
                     ->where('tahun', $permohonan->tahun)
@@ -91,7 +91,7 @@
             $isVerifikator =
                 auth()
                     ->user()
-                    ->hasRole('verifikator') &&
+                    ->can('permohonan.verify') &&
                 \App\Models\UserKabkotaAssignment::where('user_id', auth()->id())
                     ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
                     ->where('tahun', $permohonan->tahun)
@@ -99,7 +99,7 @@
                     ->exists();
 
             // Cek apakah user adalah pemohon
-            $isPemohon = auth()->user()->hasRole('pemohon') && $permohonan->user_id === auth()->id();
+            $isPemohon = auth()->user()->can('permohonan.view-own') && $permohonan->user_id === auth()->id();
             
             // Cek apakah user adalah kaban atau auditor
             $isKabanOrAuditor = auth()->user()->hasAnyRole(['kaban', 'auditor']);
@@ -109,7 +109,7 @@
         @if (
             $tahapanHasil &&
                 $batasWaktu &&
-                (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']) ||
+                (auth()->user()->can('hasil-fasilitasi.manage-all') ||
                     $isFasilitator ||
                     $isVerifikator))
             <div class="card border-0 shadow-sm mb-4 {{ $isOverdue ? 'border-danger' : 'border-warning' }}"
@@ -173,7 +173,7 @@
                                             Lihat Detail
                                         </a>
                                     @endif
-                                @elseif(auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']))
+                                @elseif(auth()->user()->canAny(['hasil-fasilitasi.manage-all', 'approval.approve']))
                                     @if ($permohonan->hasilFasilitasi)
                                         <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}"
                                             class="btn btn-primary shadow-sm">
@@ -189,7 +189,7 @@
                                         Lihat Detail
                                     </a>
                                 @endif
-                                @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']))
+                                @if (auth()->user()->can('tahapan.update-deadline'))
                                     <button type="button" class="btn btn-warning shadow-sm" data-bs-toggle="modal"
                                         data-bs-target="#perpanjanganWaktuModal">
                                         <i class='bx bx-calendar-plus me-2'></i>Perpanjang Waktu
@@ -237,7 +237,7 @@
             $permohonan->hasilFasilitasi &&
                 $permohonan->hasilFasilitasi->draft_final_file &&
                 $permohonan->hasilFasilitasi->status_draft === 'disetujui_kaban' &&
-                (auth()->user()->hasAnyRole(['admin_peran', 'superadmin', 'kaban']) ||
+                (auth()->user()->canAny(['hasil-fasilitasi.manage-all', 'approval.approve']) ||
                     $isFasilitator ||
                     $isVerifikator ||
                     $isPemohon))
@@ -305,7 +305,7 @@
 
                                 <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
                                     <iframe
-                                        src="{{ asset('storage/' . $permohonan->hasilFasilitasi->draft_final_file) }}#toolbar=1&view=FitH"
+                                        src="{{ route('berkas.show', ['hasil-fasilitasi-final', $permohonan->hasilFasilitasi->id]) }}#toolbar=1&view=FitH"
                                         type="application/pdf" width="100%" height="600px" style="border: none;">
                                         <p class="text-center py-5">
                                             Browser Anda tidak mendukung preview PDF.
@@ -324,7 +324,7 @@
         @endif
 
         <!-- Modal Perpanjangan Waktu -->
-        @if (auth()->user()->hasAnyRole(['admin_peran', 'superadmin']))
+        @if (auth()->user()->can('tahapan.update-deadline'))
             <div class="modal fade" id="perpanjanganWaktuModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow">

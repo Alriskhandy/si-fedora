@@ -8,10 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
+/**
+ * Ganti kata sandi dari halaman profil (bawaan Breeze).
+ *
+ * Akses: pengguna login.
+ */
 class PasswordController extends Controller
 {
     /**
-     * Update the user's password.
+     * Ganti kata sandi pengguna (wajib kata sandi lama).
      */
     public function update(Request $request): RedirectResponse
     {

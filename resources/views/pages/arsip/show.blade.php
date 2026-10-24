@@ -139,8 +139,9 @@
                                     {{-- Hasil Fasilitasi --}}
                                     @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->draft_final_file)
                                         <tr class="document-row"
-                                            data-file-url="{{ Storage::url($permohonan->hasilFasilitasi->draft_final_file) }}"
-                                            data-file-name="Dokumen Hasil Fasilitasi">
+                                            data-file-url="{{ route('berkas.show', ['hasil-fasilitasi-final', $permohonan->hasilFasilitasi->id]) }}"
+                                            data-file-name="Dokumen Hasil Fasilitasi"
+                                            data-file-ext="{{ strtolower(pathinfo($permohonan->hasilFasilitasi->draft_final_file ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">Dokumen Hasil Fasilitasi</div>
@@ -152,7 +153,7 @@
                                             <td class="text-center">
                                                 @php
                                                     $filePath = storage_path(
-                                                        'app/public/' . $permohonan->hasilFasilitasi->draft_final_file,
+                                                        'app/private/' . $permohonan->hasilFasilitasi->draft_final_file,
                                                     );
                                                     $fileSize = file_exists($filePath)
                                                         ? number_format(filesize($filePath) / (1024 * 1024), 2)
@@ -162,10 +163,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                    data-file-url="{{ Storage::url($permohonan->hasilFasilitasi->draft_final_file) }}">
+                                                    data-file-url="{{ route('berkas.show', ['hasil-fasilitasi-final', $permohonan->hasilFasilitasi->id]) }}">
                                                     <i class="bx bx-show"></i>
                                                 </button>
-                                                <a href="{{ Storage::url($permohonan->hasilFasilitasi->draft_final_file) }}"
+                                                <a href="{{ route('berkas.show', ['hasil-fasilitasi-final', $permohonan->hasilFasilitasi->id]) }}"
                                                     target="_blank" class="btn btn-sm btn-outline-success">
                                                     <i class="bx bx-download"></i>
                                                 </a>
@@ -182,8 +183,9 @@
                                             });
                                     @endphp
                                     @foreach ($dokumenTindakLanjut as $dok)
-                                        <tr class="document-row" data-file-url="{{ Storage::url($dok->file_path) }}"
-                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Tindak Lanjut' }}">
+                                        <tr class="document-row" data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Tindak Lanjut' }}"
+                                            data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">
@@ -195,7 +197,7 @@
                                             </td>
                                             <td class="text-center">
                                                 @php
-                                                    $filePath = storage_path('app/public/' . $dok->file_path);
+                                                    $filePath = storage_path('app/private/' . $dok->file_path);
                                                     $fileSize = file_exists($filePath)
                                                         ? number_format(filesize($filePath) / (1024 * 1024), 2)
                                                         : '0';
@@ -204,10 +206,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                    data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                    data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}">
                                                     <i class="bx bx-show"></i>
                                                 </button>
-                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                <a href="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}" target="_blank"
                                                     class="btn btn-sm btn-outline-success">
                                                     <i class="bx bx-download"></i>
                                                 </a>
@@ -224,8 +226,9 @@
                                             });
                                     @endphp
                                     @foreach ($dokumenPenetapan as $dok)
-                                        <tr class="document-row" data-file-url="{{ Storage::url($dok->file_path) }}"
-                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Penetapan Perda' }}">
+                                        <tr class="document-row" data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Penetapan Perda' }}"
+                                            data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">
@@ -237,7 +240,7 @@
                                             </td>
                                             <td class="text-center">
                                                 @php
-                                                    $filePath = storage_path('app/public/' . $dok->file_path);
+                                                    $filePath = storage_path('app/private/' . $dok->file_path);
                                                     $fileSize = file_exists($filePath)
                                                         ? number_format(filesize($filePath) / (1024 * 1024), 2)
                                                         : '0';
@@ -246,10 +249,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                    data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                    data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}">
                                                     <i class="bx bx-show"></i>
                                                 </button>
-                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                <a href="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}" target="_blank"
                                                     class="btn btn-sm btn-outline-success">
                                                     <i class="bx bx-download"></i>
                                                 </a>
@@ -310,8 +313,9 @@
                                                     };
                                                 @endphp
                                                 <tr class="document-row"
-                                                    data-file-url="{{ Storage::url($dok->file_path) }}"
-                                                    data-file-name="{{ $dok->masterKelengkapan->nama_dokumen ?? 'Dokumen Permohonan' }}">
+                                                    data-file-url="{{ route('berkas.show', ['permohonan-dokumen', $dok->id]) }}"
+                                                    data-file-name="{{ $dok->masterKelengkapan->nama_dokumen ?? 'Dokumen Permohonan' }}"
+                                                    data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                                     <td class="px-4">{{ $rowNum++ }}</td>
                                                     <td>
                                                         <div class="fw-semibold">
@@ -324,7 +328,7 @@
                                                     </td>
                                                     <td class="text-center">
                                                         @php
-                                                            $filePath = storage_path('app/public/' . $dok->file_path);
+                                                            $filePath = storage_path('app/private/' . $dok->file_path);
                                                             $fileSize = file_exists($filePath)
                                                                 ? number_format(filesize($filePath) / (1024 * 1024), 2)
                                                                 : '0';
@@ -333,10 +337,10 @@
                                                     </td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                            data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                            data-file-url="{{ route('berkas.show', ['permohonan-dokumen', $dok->id]) }}">
                                                             <i class="bx bx-show"></i>
                                                         </button>
-                                                        <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                        <a href="{{ route('berkas.show', ['permohonan-dokumen', $dok->id]) }}" target="_blank"
                                                             class="btn btn-sm btn-outline-success">
                                                             <i class="bx bx-download"></i>
                                                         </a>
@@ -359,8 +363,9 @@
                                                     };
                                                 @endphp
                                                 <tr class="document-row"
-                                                    data-file-url="{{ Storage::url($dok->file_path) }}"
-                                                    data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Kelengkapan' }}">
+                                                    data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
+                                                    data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Kelengkapan' }}"
+                                                    data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                                     <td class="px-4">{{ $rowNum++ }}</td>
                                                     <td>
                                                         <div class="fw-semibold">
@@ -372,7 +377,7 @@
                                                     </td>
                                                     <td class="text-center">
                                                         @php
-                                                            $filePath = storage_path('app/public/' . $dok->file_path);
+                                                            $filePath = storage_path('app/private/' . $dok->file_path);
                                                             $fileSize = file_exists($filePath)
                                                                 ? number_format(filesize($filePath) / (1024 * 1024), 2)
                                                                 : '0';
@@ -381,10 +386,10 @@
                                                     </td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                            data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                            data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}">
                                                             <i class="bx bx-show"></i>
                                                         </button>
-                                                        <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                        <a href="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}" target="_blank"
                                                             class="btn btn-sm btn-outline-success">
                                                             <i class="bx bx-download"></i>
                                                         </a>
@@ -397,8 +402,9 @@
                                     {{-- Laporan Verifikasi --}}
                                     @if ($permohonan->laporanVerifikasi && $permohonan->laporanVerifikasi->file_laporan)
                                         <tr class="document-row"
-                                            data-file-url="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}"
-                                            data-file-name="Laporan Verifikasi">
+                                            data-file-url="{{ route('berkas.show', ['laporan-verifikasi', $permohonan->laporanVerifikasi->id]) }}"
+                                            data-file-name="Laporan Verifikasi"
+                                            data-file-ext="{{ strtolower(pathinfo($permohonan->laporanVerifikasi->file_laporan ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
@@ -414,7 +420,7 @@
                                             </td>
                                             <td class="text-center">
                                                 @php
-                                                    $filePath = storage_path('app/public/' . $permohonan->laporanVerifikasi->file_laporan);
+                                                    $filePath = storage_path('app/private/' . $permohonan->laporanVerifikasi->file_laporan);
                                                     $fileSize = file_exists($filePath)
                                                         ? number_format(filesize($filePath) / (1024 * 1024), 2)
                                                         : '0';
@@ -423,10 +429,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                    data-file-url="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}">
+                                                    data-file-url="{{ route('berkas.show', ['laporan-verifikasi', $permohonan->laporanVerifikasi->id]) }}">
                                                     <i class="bx bx-show"></i>
                                                 </button>
-                                                <a href="{{ Storage::url($permohonan->laporanVerifikasi->file_laporan) }}"
+                                                <a href="{{ route('berkas.show', ['laporan-verifikasi', $permohonan->laporanVerifikasi->id]) }}"
                                                     target="_blank" class="btn btn-sm btn-outline-success">
                                                     <i class="bx bx-download"></i>
                                                 </a>
@@ -487,8 +493,9 @@
                                         @php
                                             $hasDocuments = true;
                                         @endphp
-                                        <tr class="document-row" data-file-url="{{ Storage::url($dok->file_path) }}"
-                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumentasi Pelaksanaan' }}">
+                                        <tr class="document-row" data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumentasi Pelaksanaan' }}"
+                                            data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">
@@ -500,7 +507,7 @@
                                             </td>
                                             <td class="text-center">
                                                 @php
-                                                    $filePath = storage_path('app/public/' . $dok->file_path);
+                                                    $filePath = storage_path('app/private/' . $dok->file_path);
                                                     $fileSize = file_exists($filePath)
                                                         ? number_format(filesize($filePath) / (1024 * 1024), 2)
                                                         : '0';
@@ -509,10 +516,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                    data-file-url="{{ Storage::url($dok->file_path) }}">
+                                                    data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}">
                                                     <i class="bx bx-show"></i>
                                                 </button>
-                                                <a href="{{ Storage::url($dok->file_path) }}" target="_blank"
+                                                <a href="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}" target="_blank"
                                                     class="btn btn-sm btn-outline-success">
                                                     <i class="bx bx-download"></i>
                                                 </a>
@@ -528,8 +535,9 @@
                                                     $hasDocuments = true;
                                                 @endphp
                                                 <tr class="document-row"
-                                                    data-file-url="{{ Storage::url($undangan->file_undangan) }}"
-                                                    data-file-name="Undangan Pelaksanaan">
+                                                    data-file-url="{{ route('berkas.show', ['undangan-pelaksanaan', $undangan->id]) }}"
+                                                    data-file-name="Undangan Pelaksanaan"
+                                                    data-file-ext="{{ strtolower(pathinfo($undangan->file_undangan ?? '', PATHINFO_EXTENSION)) }}">
                                                     <td class="px-4">{{ $rowNum++ }}</td>
                                                     <td>
                                                         <div class="fw-semibold">Undangan Pelaksanaan</div>
@@ -542,7 +550,7 @@
                                                     <td class="text-center">
                                                         @php
                                                             $filePath = storage_path(
-                                                                'app/public/' . $undangan->file_undangan,
+                                                                'app/private/' . $undangan->file_undangan,
                                                             );
                                                             $fileSize = file_exists($filePath)
                                                                 ? number_format(filesize($filePath) / (1024 * 1024), 2)
@@ -552,10 +560,10 @@
                                                     </td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-outline-primary preview-btn me-1"
-                                                            data-file-url="{{ Storage::url($undangan->file_undangan) }}">
+                                                            data-file-url="{{ route('berkas.show', ['undangan-pelaksanaan', $undangan->id]) }}">
                                                             <i class="bx bx-show"></i>
                                                         </button>
-                                                        <a href="{{ Storage::url($undangan->file_undangan) }}"
+                                                        <a href="{{ route('berkas.show', ['undangan-pelaksanaan', $undangan->id]) }}"
                                                             target="_blank" class="btn btn-sm btn-outline-success">
                                                             <i class="bx bx-download"></i>
                                                         </a>
@@ -656,8 +664,9 @@
             const documentRows = document.querySelectorAll('.document-row');
             const previewContainer = document.getElementById('preview-container');
 
-            function showPreview(fileUrl, fileName) {
-                const extension = fileUrl.split('.').pop().toLowerCase();
+            // URL berkas (/berkas/{jenis}/{id}) tidak berekstensi; jenis file diambil dari data-file-ext
+            function showPreview(fileUrl, fileName, extension) {
+                extension = (extension || '').toLowerCase();
 
                 let previewHtml = '';
 
@@ -705,15 +714,16 @@
                 button.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const fileUrl = this.getAttribute('data-file-url');
-                    const fileName = this.closest('tr').getAttribute('data-file-name') || 'Dokumen';
+                    const row = this.closest('tr');
+                    const fileName = row.getAttribute('data-file-name') || 'Dokumen';
 
                     // Remove active class from all rows
-                    documentRows.forEach(row => row.classList.remove('active'));
+                    documentRows.forEach(r => r.classList.remove('active'));
 
                     // Add active class to clicked row
-                    this.closest('tr').classList.add('active');
+                    row.classList.add('active');
 
-                    showPreview(fileUrl, fileName);
+                    showPreview(fileUrl, fileName, row.getAttribute('data-file-ext'));
                 });
             });
 
@@ -730,7 +740,7 @@
                         // Add active class to clicked row
                         this.classList.add('active');
 
-                        showPreview(fileUrl, fileName);
+                        showPreview(fileUrl, fileName, this.getAttribute('data-file-ext'));
                     }
                 });
             });

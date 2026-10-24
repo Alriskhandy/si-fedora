@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Laporan hasil verifikasi kelengkapan dokumen yang dibuat Admin PERAN.
+ */
 class LaporanVerifikasi extends Model
 {
     use HasFactory;
@@ -23,17 +27,23 @@ class LaporanVerifikasi extends Model
         'tanggal_laporan',
     ];
 
-    protected $casts = [
-        'tanggal_laporan' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tanggal_laporan' => 'datetime',
+        ];
+    }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function pembuatLaporan()
+    public function pembuatLaporan(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }
@@ -41,7 +51,10 @@ class LaporanVerifikasi extends Model
     // Helper methods
     public function getPersentaseVerifiedAttribute()
     {
-        if ($this->total_dokumen == 0) return 0;
+        if ($this->total_dokumen == 0) {
+            return 0;
+        }
+
         return round(($this->jumlah_dokumen_verified / $this->total_dokumen) * 100, 2);
     }
 

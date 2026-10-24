@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\JadwalFasilitasi;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
+use App\Models\PerpanjanganWaktu;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,6 +19,9 @@ class PermohonanNotificationService
 {
     protected $fonteService;
 
+    /**
+     * Inject layanan WhatsApp Fonnte.
+     */
     public function __construct(FonteService $fonteService)
     {
         $this->fonteService = $fonteService;
@@ -42,9 +47,9 @@ class PermohonanNotificationService
                 'kabupaten_kota' => $permohonan->kabupatenKota->nama ?? '-',
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending permohonan submitted notifications: ' . $e->getMessage(), [
+            Log::error('Error sending permohonan submitted notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -65,8 +70,8 @@ class PermohonanNotificationService
             } else {
                 // Jika semua lengkap: kirim ke admin_peran saja (database + WA)
                 $admins = User::role('admin_peran')->get();
-                
-                if (!$admins->isEmpty()) {
+
+                if (! $admins->isEmpty()) {
                     $notifData = $this->getNotificationData($permohonan, 'verifikasi_selesai', $status);
 
                     // Kirim notifikasi database
@@ -93,9 +98,9 @@ class PermohonanNotificationService
                 'status' => $status,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending verifikasi notifications: ' . $e->getMessage(), [
+            Log::error('Error sending verifikasi notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -116,8 +121,8 @@ class PermohonanNotificationService
 
             // Kirim ke Admin Peran untuk membuat undangan (database + WA)
             $admins = User::role('admin_peran')->get();
-            
-            if (!$admins->isEmpty()) {
+
+            if (! $admins->isEmpty()) {
                 $notifData = $this->getNotificationData($permohonan, 'jadwal_ditetapkan', 'admin');
 
                 // Kirim notifikasi database
@@ -142,9 +147,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending jadwal notifications: ' . $e->getMessage(), [
+            Log::error('Error sending jadwal notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -161,8 +166,8 @@ class PermohonanNotificationService
 
             // Kirim ke Admin Peran untuk update undangan (database + WA)
             $admins = User::role('admin_peran')->get();
-            
-            if (!$admins->isEmpty()) {
+
+            if (! $admins->isEmpty()) {
                 $notifData = $this->getNotificationData($permohonan, 'jadwal_diubah');
 
                 // Kirim notifikasi database
@@ -187,9 +192,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending jadwal diubah notifications: ' . $e->getMessage(), [
+            Log::error('Error sending jadwal diubah notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -211,9 +216,9 @@ class PermohonanNotificationService
                 'dokumen' => $namaDokumen,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending dokumen revisi uploaded notifications: ' . $e->getMessage(), [
+            Log::error('Error sending dokumen revisi uploaded notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -241,9 +246,9 @@ class PermohonanNotificationService
                 'status_kelengkapan' => $statusKelengkapan,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending laporan verifikasi notifications: ' . $e->getMessage(), [
+            Log::error('Error sending laporan verifikasi notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -264,9 +269,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending pelaksanaan selesai notifications: ' . $e->getMessage(), [
+            Log::error('Error sending pelaksanaan selesai notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -287,9 +292,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending draft submitted to kaban notifications: ' . $e->getMessage(), [
+            Log::error('Error sending draft submitted to kaban notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -305,7 +310,7 @@ class PermohonanNotificationService
 
             // 1. Kirim ke Admin Peran (database + WA)
             $admins = User::role('admin_peran')->get();
-            if (!$admins->isEmpty()) {
+            if (! $admins->isEmpty()) {
                 $notifData = $this->getNotificationData($permohonan, 'draft_approved', $keterangan);
 
                 foreach ($admins as $admin) {
@@ -333,9 +338,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending draft approved notifications: ' . $e->getMessage(), [
+            Log::error('Error sending draft approved notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -351,7 +356,7 @@ class PermohonanNotificationService
 
             // Kirim ke Admin Peran (database + WA)
             $admins = User::role('admin_peran')->get();
-            if (!$admins->isEmpty()) {
+            if (! $admins->isEmpty()) {
                 $notifData = $this->getNotificationData($permohonan, 'draft_rejected', $catatanPenolakan);
 
                 foreach ($admins as $admin) {
@@ -373,9 +378,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending draft rejected notifications: ' . $e->getMessage(), [
+            Log::error('Error sending draft rejected notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -391,7 +396,7 @@ class PermohonanNotificationService
 
             // 1. Kirim ke Admin Peran (database + WA)
             $admins = User::role('admin_peran')->get();
-            if (!$admins->isEmpty()) {
+            if (! $admins->isEmpty()) {
                 $notifData = $this->getNotificationData($permohonan, 'tindak_lanjut_submitted');
 
                 foreach ($admins as $admin) {
@@ -416,9 +421,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending tindak lanjut submitted notifications: ' . $e->getMessage(), [
+            Log::error('Error sending tindak lanjut submitted notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -434,7 +439,7 @@ class PermohonanNotificationService
 
             // 1. Kirim ke Admin Peran (database + WA)
             $admins = User::role('admin_peran')->get();
-            if (!$admins->isEmpty()) {
+            if (! $admins->isEmpty()) {
                 $notifData = $this->getNotificationData($permohonan, 'penetapan_perda_submitted');
 
                 foreach ($admins as $admin) {
@@ -459,9 +464,9 @@ class PermohonanNotificationService
                 'permohonan_id' => $permohonan->id,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending penetapan perda submitted notifications: ' . $e->getMessage(), [
+            Log::error('Error sending penetapan perda submitted notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -478,7 +483,9 @@ class PermohonanNotificationService
             $recipients = [];
             foreach ($penerimaUserIds as $userId) {
                 $user = User::find($userId);
-                if (!$user) continue;
+                if (! $user) {
+                    continue;
+                }
 
                 // Kirim notifikasi database (sudah di-handle di controller)
                 // Hanya kirim WhatsApp di sini
@@ -487,19 +494,19 @@ class PermohonanNotificationService
                     $recipients[] = [
                         'target' => $user->no_hp,
                         'message' => $message,
-                        'delay' => '2-4'
+                        'delay' => '2-4',
                     ];
                 }
             }
 
             // Kirim WhatsApp bulk
-            if (!empty($recipients)) {
+            if (! empty($recipients)) {
                 $result = $this->fonteService->sendBulkMessage($recipients);
 
                 if ($result['success']) {
                     Log::info('Undangan pelaksanaan WhatsApp sent', [
                         'permohonan_id' => $permohonan->id,
-                        'total_sent' => count($recipients)
+                        'total_sent' => count($recipients),
                     ]);
                 }
             }
@@ -509,9 +516,9 @@ class PermohonanNotificationService
                 'total_penerima' => count($penerimaUserIds),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending undangan pelaksanaan notifications: ' . $e->getMessage(), [
+            Log::error('Error sending undangan pelaksanaan notifications: '.$e->getMessage(), [
                 'permohonan_id' => $permohonan->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -521,9 +528,7 @@ class PermohonanNotificationService
      * belum membuat permohonan untuk jadwal fasilitasi tertentu
      * Target: Pemohon (database + WA)
      *
-     * @param JadwalFasilitasi $jadwal
-     * @param User $pemohon
-     * @param int $sisaHari Jumlah hari tersisa sampai batas_permohonan
+     * @param  int  $sisaHari  Jumlah hari tersisa sampai batas_permohonan
      */
     public function notifyPermohonanDeadlineReminder(JadwalFasilitasi $jadwal, User $pemohon, int $sisaHari)
     {
@@ -532,7 +537,7 @@ class PermohonanNotificationService
 
             $jenisDokumen = $jadwal->jenisDokumen->nama ?? '-';
             $tahun = $jadwal->tahun_anggaran;
-            $batasTanggal = \Carbon\Carbon::parse($jadwal->batas_permohonan)->format('d F Y');
+            $batasTanggal = Carbon::parse($jadwal->batas_permohonan)->format('d F Y');
             $hariText = $sisaHari == 1 ? '1 hari lagi' : "{$sisaHari} hari lagi";
             $actionUrl = route('permohonan.create', ['jadwal_id' => $jadwal->id]);
 
@@ -558,7 +563,7 @@ class PermohonanNotificationService
                 $message .= "⏳ Batas Waktu: *{$batasTanggal}* ({$hariText})\n\n";
                 $message .= "Segera login ke sistem dan ajukan permohonan sebelum batas waktu berakhir.\n\n";
                 $message .= "_*SI-FEDORA*_\n";
-                $message .= "_si-fedora.malutprov.go.id_";
+                $message .= '_si-fedora.malutprov.go.id_';
 
                 $this->fonteService->sendNotification($pemohon->no_hp, $message);
             }
@@ -569,10 +574,56 @@ class PermohonanNotificationService
                 'sisa_hari' => $sisaHari,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error sending permohonan deadline reminder: ' . $e->getMessage(), [
+            Log::error('Error sending permohonan deadline reminder: '.$e->getMessage(), [
                 'jadwal_fasilitasi_id' => $jadwal->id,
                 'user_id' => $pemohon->id,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi saat pemohon mengajukan perpanjangan waktu
+     * Target: Admin Peran
+     */
+    public function notifyPerpanjanganWaktuDiajukan(PerpanjanganWaktu $perpanjangan): void
+    {
+        try {
+            $perpanjangan->loadMissing(['user.kabupatenKota', 'permohonan.jenisDokumen', 'jadwalFasilitasi.jenisDokumen']);
+
+            $pengaju = $perpanjangan->user->kabupatenKota->nama ?? $perpanjangan->user->name ?? '-';
+            $objek = $perpanjangan->permohonan
+                ? 'batas unggah dokumen permohonan '.($perpanjangan->permohonan->jenisDokumen->nama ?? '-').' tahun '.$perpanjangan->permohonan->tahun
+                : 'batas pengajuan permohonan '.($perpanjangan->jadwalFasilitasi->jenisDokumen->nama ?? '-').' tahun '.($perpanjangan->jadwalFasilitasi->tahun_anggaran ?? '-');
+            $actionUrl = route('perpanjangan-waktu.show', $perpanjangan);
+
+            foreach (User::role('admin_peran')->get() as $admin) {
+                Notifikasi::create([
+                    'user_id' => $admin->id,
+                    'title' => 'Pengajuan Perpanjangan Waktu',
+                    'message' => "{$pengaju} mengajukan perpanjangan {$objek}. Mohon ditinjau.",
+                    'type' => 'warning',
+                    'model_type' => PerpanjanganWaktu::class,
+                    'model_id' => $perpanjangan->id,
+                    'action_url' => $actionUrl,
+                    'is_read' => false,
+                ]);
+
+                if ($admin->no_hp) {
+                    $message = "⏳ *Pengajuan Perpanjangan Waktu*\n\n";
+                    $message .= "Halo *{$admin->name}*,\n\n";
+                    $message .= "*{$pengaju}* mengajukan perpanjangan {$objek}.\n\n";
+                    $message .= "Alasan: {$perpanjangan->alasan}\n\n";
+                    $message .= "Silakan login ke sistem untuk meninjau pengajuan ini.\n\n";
+                    $message .= "_*SI-FEDORA*_\n";
+                    $message .= '_si-fedora.malutprov.go.id_';
+
+                    $this->fonteService->sendNotification($admin->no_hp, $message);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending perpanjangan waktu notification: '.$e->getMessage(), [
+                'perpanjangan_waktu_id' => $perpanjangan->id,
             ]);
         }
     }
@@ -631,6 +682,7 @@ class PermohonanNotificationService
                 'kab_kota_id' => $permohonan->kab_kota_id,
                 'tahun' => $permohonan->tahun,
             ]);
+
             return;
         }
 
@@ -674,7 +726,7 @@ class PermohonanNotificationService
             ->get();
 
         // Filter hanya yang punya user dan user adalah fasilitator/koordinator
-        $fasilitators = $assignments->filter(function($assignment) {
+        $fasilitators = $assignments->filter(function ($assignment) {
             return $assignment->user && $assignment->user->hasAnyRole(['fasilitator', 'koordinator']);
         });
 
@@ -684,6 +736,7 @@ class PermohonanNotificationService
                 'kab_kota_id' => $permohonan->kab_kota_id,
                 'tahun' => $permohonan->tahun,
             ]);
+
             return;
         }
 
@@ -727,7 +780,7 @@ class PermohonanNotificationService
             ->get();
 
         // Filter hanya yang punya user dan user adalah verifikator
-        $verifikators = $assignments->filter(function($assignment) {
+        $verifikators = $assignments->filter(function ($assignment) {
             return $assignment->user && $assignment->user->hasRole('verifikator');
         });
 
@@ -737,6 +790,7 @@ class PermohonanNotificationService
                 'kab_kota_id' => $permohonan->kab_kota_id,
                 'tahun' => $permohonan->tahun,
             ]);
+
             return;
         }
 
@@ -802,11 +856,12 @@ class PermohonanNotificationService
         // Gunakan relasi pemohon atau query langsung by user_id
         $pemohon = $permohonan->pemohon ?? User::find($permohonan->user_id);
 
-        if (!$pemohon) {
+        if (! $pemohon) {
             Log::warning('Pemohon not found for permohonan', [
                 'permohonan_id' => $permohonan->id,
                 'user_id' => $permohonan->user_id,
             ]);
+
             return;
         }
 
@@ -844,19 +899,19 @@ class PermohonanNotificationService
                 $recipients[] = [
                     'target' => $user->no_hp,
                     'message' => $message,
-                    'delay' => '2-4'
+                    'delay' => '2-4',
                 ];
             }
         }
 
-        if (!empty($recipients)) {
+        if (! empty($recipients)) {
             $result = $this->fonteService->sendBulkMessage($recipients);
 
             if ($result['success']) {
                 Log::info('Bulk WhatsApp notifications sent', [
                     'event' => $event,
                     'permohonan_id' => $permohonan->id,
-                    'total_sent' => count($recipients)
+                    'total_sent' => count($recipients),
                 ]);
             }
         }
@@ -901,10 +956,10 @@ class PermohonanNotificationService
             case 'jadwal_ditetapkan':
                 if ($additionalData === 'admin') {
                     // Untuk admin: instruksi buat undangan
-                    $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
-                    $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
+                    $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
+                    $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
                     $lokasi = $permohonan->penetapanJadwal->lokasi ?? '';
-                    
+
                     $data['title'] = 'Jadwal Ditetapkan - Buat Undangan Pelaksanaan';
                     $data['message'] = sprintf(
                         'Jadwal fasilitasi untuk %s - %s tahun %s telah ditetapkan oleh Kaban. Pelaksanaan: %s s/d %s%s. Silakan buat undangan pelaksanaan.',
@@ -913,7 +968,7 @@ class PermohonanNotificationService
                         $tahun,
                         $tanggalMulai,
                         $tanggalSelesai,
-                        $lokasi ? ' di ' . $lokasi : ''
+                        $lokasi ? ' di '.$lokasi : ''
                     );
                     $data['type'] = 'info';
                     $data['action_url'] = route('permohonan.show', $permohonan);
@@ -926,10 +981,10 @@ class PermohonanNotificationService
                 break;
 
             case 'jadwal_diubah':
-                $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
-                $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
+                $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
+                $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
                 $lokasi = $permohonan->penetapanJadwal->lokasi ?? '';
-                
+
                 $data['title'] = 'Jadwal Fasilitasi Diperbarui';
                 $data['message'] = sprintf(
                     'Jadwal pelaksanaan fasilitasi untuk %s - %s tahun %s telah diperbarui. Jadwal baru: %s s/d %s%s. Harap catat perubahan ini.',
@@ -938,7 +993,7 @@ class PermohonanNotificationService
                     $tahun,
                     $tanggalMulai,
                     $tanggalSelesai,
-                    $lokasi ? ' di ' . $lokasi : ''
+                    $lokasi ? ' di '.$lokasi : ''
                 );
                 $data['type'] = 'warning';
                 $data['action_url'] = route('permohonan.tahapan.jadwal', $permohonan);
@@ -966,10 +1021,10 @@ class PermohonanNotificationService
                 break;
 
             case 'undangan_dikirim':
-                $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
-                $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
+                $tanggalMulai = $permohonan->penetapanJadwal->tanggal_mulai ? Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d M Y') : '-';
+                $tanggalSelesai = $permohonan->penetapanJadwal->tanggal_selesai ? Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d M Y') : '-';
                 $lokasi = $permohonan->penetapanJadwal->lokasi ?? '';
-                
+
                 $data['title'] = 'Undangan Pelaksanaan Fasilitasi';
                 $data['message'] = sprintf(
                     'Anda diundang untuk mengikuti kegiatan fasilitasi untuk %s - %s tahun %s. Pelaksanaan: %s s/d %s%s. Silakan download file undangan lengkap.',
@@ -978,7 +1033,7 @@ class PermohonanNotificationService
                     $tahun,
                     $tanggalMulai,
                     $tanggalSelesai,
-                    $lokasi ? ' di ' . $lokasi : ''
+                    $lokasi ? ' di '.$lokasi : ''
                 );
                 $data['type'] = 'info';
                 break;
@@ -1016,7 +1071,7 @@ class PermohonanNotificationService
                     $tahun
                 );
                 if ($additionalData) {
-                    $data['message'] .= ' Keterangan: ' . $additionalData;
+                    $data['message'] .= ' Keterangan: '.$additionalData;
                 }
                 $data['type'] = 'success';
                 $data['action_url'] = route('hasil-fasilitasi.show', $permohonan);
@@ -1031,7 +1086,7 @@ class PermohonanNotificationService
                     $tahun
                 );
                 if ($additionalData) {
-                    $data['message'] .= ' Catatan: ' . $additionalData;
+                    $data['message'] .= ' Catatan: '.$additionalData;
                 }
                 $data['type'] = 'warning';
                 $data['action_url'] = route('hasil-fasilitasi.show', $permohonan);
@@ -1089,7 +1144,7 @@ class PermohonanNotificationService
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
                 $message .= "Status: *Menunggu Verifikasi*\n\n";
-                
+
                 // Pesan berbeda berdasarkan role
                 if ($user->hasRole('verifikator')) {
                     $message .= "Silakan login ke sistem untuk melakukan verifikasi kelengkapan dokumen.\n\n";
@@ -1103,7 +1158,7 @@ class PermohonanNotificationService
                 $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
-                
+
                 // Status berbeda berdasarkan kondisi
                 if ($additionalData === 'lengkap') {
                     // Untuk admin: instruksi buat laporan
@@ -1134,11 +1189,11 @@ class PermohonanNotificationService
                 $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
-                
+
                 // Detail jadwal
                 if ($permohonan->penetapanJadwal) {
-                    $tanggalMulai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
-                    $tanggalSelesai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
+                    $tanggalMulai = Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
+                    $tanggalSelesai = Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
                     $message .= "📆 Tanggal Pelaksanaan: *{$tanggalMulai}*\n";
                     if ($tanggalMulai != $tanggalSelesai) {
                         $message .= "📆 Sampai: *{$tanggalSelesai}*\n";
@@ -1148,7 +1203,7 @@ class PermohonanNotificationService
                     }
                     $message .= "\n";
                 }
-                
+
                 if ($additionalData === 'admin' && $user->hasRole('admin_peran')) {
                     $message .= "🎯 *Aksi Diperlukan*\n";
                     $message .= "Silakan buat undangan pelaksanaan untuk permohonan ini.\n\n";
@@ -1163,11 +1218,11 @@ class PermohonanNotificationService
                 $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
-                
+
                 // Detail jadwal baru
                 if ($permohonan->penetapanJadwal) {
-                    $tanggalMulai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
-                    $tanggalSelesai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
+                    $tanggalMulai = Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
+                    $tanggalSelesai = Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
                     $message .= "📆 *Jadwal Baru:*\n";
                     $message .= "   Tanggal: *{$tanggalMulai}*\n";
                     if ($tanggalMulai != $tanggalSelesai) {
@@ -1178,7 +1233,7 @@ class PermohonanNotificationService
                     }
                     $message .= "\n";
                 }
-                
+
                 $message .= "⚠️ *Harap catat perubahan jadwal ini.*\n";
                 $message .= "Silakan login ke sistem untuk melihat detail lengkap jadwal yang telah diperbarui.\n\n";
                 break;
@@ -1209,7 +1264,7 @@ class PermohonanNotificationService
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n";
                 $message .= "📋 Status Kelengkapan: *{$statusText}*\n\n";
-                
+
                 if ($user->hasRole('kaban')) {
                     $message .= "🎯 *Aksi Diperlukan*\n";
                     $message .= "Silakan tetapkan jadwal pelaksanaan fasilitasi untuk permohonan ini.\n\n";
@@ -1218,7 +1273,7 @@ class PermohonanNotificationService
                 } else {
                     $message .= "Dokumen persyaratan fasilitasi Anda telah berhasil diverifikasi. Proses akan dilanjutkan ke tahap penetapan jadwal pelaksanaan fasilitasi.\n\n";
                 }
-                
+
                 $message .= "Silakan login ke sistem untuk melihat detail laporan verifikasi.\n\n";
                 break;
 
@@ -1228,11 +1283,11 @@ class PermohonanNotificationService
                 $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
-                
+
                 // Detail jadwal pelaksanaan
                 if ($permohonan->penetapanJadwal) {
-                    $tanggalMulai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
-                    $tanggalSelesai = \Carbon\Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
+                    $tanggalMulai = Carbon::parse($permohonan->penetapanJadwal->tanggal_mulai)->format('d F Y');
+                    $tanggalSelesai = Carbon::parse($permohonan->penetapanJadwal->tanggal_selesai)->format('d F Y');
                     $message .= "📆 *Jadwal Pelaksanaan:*\n";
                     $message .= "   Tanggal: *{$tanggalMulai}*\n";
                     if ($tanggalMulai != $tanggalSelesai) {
@@ -1243,7 +1298,7 @@ class PermohonanNotificationService
                     }
                     $message .= "\n";
                 }
-                
+
                 $message .= "📎 *File undangan lengkap telah tersedia.*\n";
                 $message .= "Silakan login ke sistem untuk download file undangan dan melihat detail lengkap kegiatan.\n\n";
                 $message .= "⚠️ Harap konfirmasi kehadiran Anda melalui sistem.\n\n";
@@ -1255,8 +1310,8 @@ class PermohonanNotificationService
                 $message .= "🏛️ Kabupaten/Kota: *{$kabkota}*\n";
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
-                
-                    $message .= "Silakan segera melakukan input hasil fasilitasi/evaluasi pada sistem.\n\n";
+
+                $message .= "Silakan segera melakukan input hasil fasilitasi/evaluasi pada sistem.\n\n";
                 break;
 
             case 'draft_submitted_to_kaban':
@@ -1276,11 +1331,11 @@ class PermohonanNotificationService
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
                 $message .= "✅ Status: *Disetujui oleh Kepala Badan*\n\n";
-                
+
                 if ($additionalData) {
                     $message .= "📝 *Keterangan:*\n{$additionalData}\n\n";
                 }
-                
+
                 $message .= "Dokumen dapat dilanjutkan ke tahapan berikutnya. Silakan login ke sistem untuk melihat detail lebih lanjut.\n\n";
                 break;
 
@@ -1291,11 +1346,11 @@ class PermohonanNotificationService
                 $message .= "📄 Jenis Dokumen: *{$jenisDokumen}*\n";
                 $message .= "📅 Tahun: *{$tahun}*\n\n";
                 $message .= "⚠️ Status: *Memerlukan Revisi*\n\n";
-                
+
                 if ($additionalData) {
                     $message .= "📝 *Catatan Revisi dari Kepala Badan:*\n{$additionalData}\n\n";
                 }
-                
+
                 $message .= "Silakan perbaiki dokumen sesuai catatan, kemudian upload ulang dan ajukan kembali untuk persetujuan.\n\n";
                 break;
 
@@ -1328,7 +1383,7 @@ class PermohonanNotificationService
         }
 
         $message .= "_*SI-FEDORA*_\n";
-        $message .= "_si-fedora.malutprov.go.id_";
+        $message .= '_si-fedora.malutprov.go.id_';
 
         return $message;
     }

@@ -203,7 +203,7 @@
                                                         @endif
                                                     </td>
                                                     <td class="text-center">
-                                                        @if ($firstAssignment->file_sk && file_exists(public_path($firstAssignment->file_sk)))
+                                                        @if ($firstAssignment->file_sk && Storage::disk('dokumen')->exists($firstAssignment->file_sk))
                                                             <a href="{{ route('tim-assignment.download-sk', $firstAssignment->id) }}"
                                                                 target="_blank" class="btn btn-sm btn-outline-info"
                                                                 title="Lihat SK Tim">

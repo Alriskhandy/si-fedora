@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\KabupatenKota;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\KabupatenKota>
+ * @extends Factory<KabupatenKota>
  */
 class KabupatenKotaFactory extends Factory
 {
@@ -17,7 +18,10 @@ class KabupatenKotaFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'kode' => fake()->unique()->numerify('82##'),
+            'nama' => fake()->unique()->city(),
+            'jenis' => fake()->randomElement(['kabupaten', 'kota']),
+            'is_active' => true,
         ];
     }
 }

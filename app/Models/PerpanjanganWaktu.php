@@ -4,8 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Pengajuan perpanjangan batas waktu (unggah dokumen atau pengajuan permohonan) dan hasil prosesnya.
+ */
 class PerpanjanganWaktu extends Model
 {
     use HasFactory, SoftDeletes;
@@ -24,10 +28,16 @@ class PerpanjanganWaktu extends Model
         'diproses_at',
     ];
 
-    protected $casts = [
-        'batas_waktu' => 'datetime',
-        'diproses_at' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'batas_waktu' => 'datetime',
+            'diproses_at' => 'datetime',
+        ];
+    }
 
     protected static function booted()
     {
@@ -41,22 +51,22 @@ class PerpanjanganWaktu extends Model
     }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function jadwalFasilitasi()
+    public function jadwalFasilitasi(): BelongsTo
     {
         return $this->belongsTo(JadwalFasilitasi::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function admin()
+    public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'diproses_oleh');
     }

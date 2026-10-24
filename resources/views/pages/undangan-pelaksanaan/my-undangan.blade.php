@@ -44,7 +44,7 @@
                             <button type="submit" class="btn btn-success me-2">
                                 <i class="bx bx-search"></i> Filter
                             </button>
-                            <a href="{{ auth()->user()->hasRole('pemohon') ? route('pemohon.undangan.index') : route('my-undangan.index') }}"
+                            <a href="{{ auth()->user()->can('undangan-pelaksanaan.view-own') ? route('pemohon.undangan.index') : route('my-undangan.index') }}"
                                 class="btn btn-outline-secondary">
                                 <i class="bx bx-reset"></i> Reset
                             </a>
@@ -81,7 +81,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ auth()->user()->hasRole('pemohon') ? route('pemohon.undangan.view', $item->id) : route('my-undangan.view', $item->id) }}"
+                                        <a href="{{ auth()->user()->can('undangan-pelaksanaan.view-own') ? route('pemohon.undangan.view', $item->id) : route('my-undangan.view', $item->id) }}"
                                             class="btn btn-sm btn-info">
                                             <i class="bx bx-show"></i> Lihat
                                         </a>

@@ -9,19 +9,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+/**
+ * Login dan logout. Login dibatasi 5 percobaan per email+IP (LoginRequest); login/logout dicatat di activity log.
+ *
+ * Akses: tamu (login), pengguna login (logout).
+ * View: resources/views/auth
+ */
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Halaman login.
      */
     public function create(): View
     {
-        return view('/');
-        
+        return view('auth.login');
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Proses login, lalu arahkan ke halaman tujuan sebelumnya atau dashboard.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -29,20 +34,34 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        activity()
+            ->causedBy(Auth::user())
+            ->withProperties(['ip_address' => $request->ip()])
+            ->log('login');
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
-     * Destroy an authenticated session.
+     * Logout dan akhiri sesi.
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/dashboard');
+        if ($user) {
+            activity()
+                ->causedBy($user)
+                ->withProperties(['ip_address' => $request->ip()])
+                ->log('logout');
+        }
+
+        return redirect('/');
     }
 }

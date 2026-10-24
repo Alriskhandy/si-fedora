@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
 
 // ==================== PERMOHONAN DOKUMEN ====================
+/**
+ * Dokumen kelengkapan yang diunggah pemohon untuk satu permohonan, beserta status verifikasinya.
+ */
 class PermohonanDokumen extends Model
 {
     use HasFactory, SoftDeletes;
@@ -16,7 +19,6 @@ class PermohonanDokumen extends Model
 
     protected $fillable = [
         'permohonan_id',
-        'persyaratan_dokumen_id', // deprecated - untuk backward compatibility
         'master_kelengkapan_id', // kolom baru
         'is_ada',
         'file_path',
@@ -29,100 +31,34 @@ class PermohonanDokumen extends Model
         'verified_at',
     ];
 
-    protected $casts = [
-        'is_ada' => 'boolean',
-        'verified_at' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_ada' => 'boolean',
+            'verified_at' => 'datetime',
+        ];
+    }
 
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class, 'permohonan_id');
     }
 
-    public function masterKelengkapan()
+    public function masterKelengkapan(): BelongsTo
     {
         return $this->belongsTo(MasterKelengkapanVerifikasi::class, 'master_kelengkapan_id');
     }
 
-    // Alias untuk backward compatibility di view
-    public function persyaratanDokumen()
-    {
-        return $this->masterKelengkapan();
-    }
-
-    public function verifiedBy()
+    public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
-    }
-
-    public function getFileUrlAttribute(): ?string
-    {
-        return $this->file_path ? asset('storage/' . $this->file_path) : null;
     }
 
     public function isVerified(): bool
     {
         return $this->status_verifikasi === 'verified';
-    }
-}
-
-// ==================== EVALUASI ====================
-class Evaluasi extends Model
-{
-    use HasFactory, SoftDeletes;
-
-    protected $table = 'evaluasi';
-
-    protected $fillable = [
-        'permohonan_id',
-        'pokja_id',
-        'evaluator_id',
-        'draft_rekomendasi',
-        'file_draft',
-        'catatan_evaluasi',
-        'status',
-        'started_at',
-        'submitted_at',
-        'approved_at',
-        'feedback_kaban',
-        'approved_by',
-    ];
-
-    protected $casts = [
-        'started_at' => 'datetime',
-        'submitted_at' => 'datetime',
-        'approved_at' => 'datetime',
-    ];
-
-    const STATUS_ASSIGNED = 'assigned';
-    const STATUS_IN_PROGRESS = 'in_progress';
-    const STATUS_SUBMITTED = 'submitted';
-    const STATUS_REVISION = 'revision';
-    const STATUS_APPROVED = 'approved';
-
-    public function permohonan()
-    {
-        return $this->belongsTo(Permohonan::class);
-    }
-
-    public function evaluator()
-    {
-        return $this->belongsTo(User::class, 'evaluator_id');
-    }
-
-    public function approvedBy()
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    public function canEdit(): bool
-    {
-        return in_array($this->status, [self::STATUS_ASSIGNED, self::STATUS_IN_PROGRESS, self::STATUS_REVISION]);
-    }
-
-    public function canSubmit(): bool
-    {
-        return $this->status === self::STATUS_IN_PROGRESS &&
-            !empty($this->draft_rekomendasi);
     }
 }

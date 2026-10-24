@@ -20,12 +20,8 @@
 
 @section('main')
     @php
-        $isKaban = auth()->user()->hasRole('kaban');
-        $isAdmin = auth()->user()->hasRole('admin_peran');
-        $isPemohon = auth()->user()->hasRole('pemohon');
-        $isTimFedora = auth()
-            ->user()
-            ->hasAnyRole(['verifikator', 'fasilitator']);
+        $isKaban = auth()->user()->can('penetapan-jadwal.manage');
+        $isAdmin = auth()->user()->can('undangan-pelaksanaan.manage');
     @endphp
 
     <div class="container-xxl flex-grow-1 container-p-y">
@@ -268,7 +264,7 @@
                                         <td class="text-muted"><i class='bx bx-envelope me-1'></i> Undangan:</td>
                                         <td>
                                             @if ($permohonan->undanganPelaksanaan->file_undangan)
-                                                <a href="{{ asset('storage/' . $permohonan->undanganPelaksanaan->file_undangan) }}"
+                                                <a href="{{ route('berkas.show', ['undangan-pelaksanaan', $permohonan->undanganPelaksanaan->id]) }}"
                                                     target="_blank" class="btn btn-sm btn-primary">
                                                     <i class='bx bx-download'></i> Download
                                                 </a>
@@ -349,7 +345,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4 text-end">
-                                <a href="{{ asset('storage/' . $permohonan->undanganPelaksanaan->file_undangan) }}"
+                                <a href="{{ route('berkas.show', ['undangan-pelaksanaan', $permohonan->undanganPelaksanaan->id]) }}"
                                     target="_blank" class="btn btn-primary">
                                     <i class='bx bx-download'></i> Download Undangan
                                 </a>
@@ -357,7 +353,7 @@
                         </div>
 
                         <!-- Konfirmasi Kehadiran -->
-                        @if (auth()->user()->hasRole('pemohon'))
+                        @if (auth()->user()->can('undangan-pelaksanaan.view-own'))
                             @if ($permohonan->undanganPelaksanaan->konfirmasi_kehadiran === null)
                                 <div class="alert alert-warning border-0 mb-3"
                                     style="background-color: rgba(255, 193, 7, 0.1);">

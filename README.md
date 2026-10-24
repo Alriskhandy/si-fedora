@@ -63,13 +63,43 @@ Berdasarkan _Alur Pelaksanaan Fasilitasi/Evaluasi Dokren Kab/Kota_, tahapan utam
 
 ## ⚙️ Teknologi yang Digunakan
 
-| Komponen       | Teknologi                                  |
-| -------------- | ------------------------------------------ |
-| Framework      | [Laravel 11](https://laravel.com)          |
-| Database       | PostgreSQL                                 |
-| Frontend       | Blade + TailwindCSS                        |
-| Authentication | Laravel Breeze / Sanctum                   |
-| Notifikasi     | Laravel Notification (Email & WhatsApp)    |
-| Storage        | Laravel Filesystem (Local/Private Storage) |
+| Komponen       | Teknologi                                                        |
+| -------------- | ---------------------------------------------------------------- |
+| Framework      | [Laravel 12](https://laravel.com), PHP 8.3                       |
+| Database       | PostgreSQL                                                       |
+| Frontend       | Blade + template admin Bootstrap (Sneat)                         |
+| Authentication | Laravel Breeze + verifikasi nomor WhatsApp (OTP)                 |
+| Otorisasi      | spatie/laravel-permission (katalog di `config/permissions.php`)  |
+| Notifikasi     | Notifikasi database + WhatsApp (Fonnte)                          |
+| Storage        | Disk privat `dokumen` (`storage/app/private`), diakses via route |
+
+---
+
+## 🛠️ Pengembangan Lokal
+
+```bash
+composer install
+npm install && npm run build
+cp .env.example .env          # isi DB_*, FONNTE_TOKEN
+php artisan key:generate
+php artisan migrate --seed
+```
+
+**Test** berjalan di database terpisah `sifedora_testing` (ditetapkan di `phpunit.xml`; test menolak berjalan di database lain):
+
+```bash
+createdb -O <db_user> sifedora_testing
+php artisan test
+```
+
+**Permission:** setelah mengubah `config/permissions.php`, jalankan `php artisan permission:sync`.
+
+## 📚 Dokumentasi
+
+Mulai dari [`docs/README.md`](docs/README.md). Dokumen terpenting untuk developer:
+
+- [Panduan Pengembang](docs/pengembang/PANDUAN-PENGEMBANG.md): otorisasi, penyimpanan dokumen, sanitasi rich text, notifikasi, test.
+- [Runbook](docs/operasional/RUNBOOK.md): deploy, rollback, backup, command per rilis.
+- [Jenis Pengguna](docs/produk/JENIS-PENGGUNA.md): hak akses per role.
 
 ---

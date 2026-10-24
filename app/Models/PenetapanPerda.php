@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Data penetapan PERDA/PERKADA (tahapan terakhir).
+ */
 class PenetapanPerda extends Model
 {
     use HasFactory;
@@ -20,16 +24,22 @@ class PenetapanPerda extends Model
         'dibuat_oleh',
     ];
 
-    protected $casts = [
-        'tanggal_penetapan' => 'date',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tanggal_penetapan' => 'date',
+        ];
+    }
 
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function pembuat()
+    public function pembuat(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }

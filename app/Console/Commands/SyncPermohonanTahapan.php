@@ -2,29 +2,34 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+use App\Models\MasterTahapan;
 use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
-use App\Models\MasterTahapan;
+use Illuminate\Console\Command;
 
+/**
+ * Melengkapi record tahapan pertama (PermohonanTahapan) untuk permohonan lama yang belum memilikinya.
+ *
+ * Perbaikan data sekali jalan; aman diulang (permohonan yang sudah punya tahapan dilewati).
+ */
 class SyncPermohonanTahapan extends Command
 {
     /**
-     * The name and signature of the console command.
+     * Nama dan argumen command.
      *
      * @var string
      */
     protected $signature = 'permohonan:sync-tahapan';
 
     /**
-     * The console command description.
+     * Deskripsi yang tampil di `php artisan list`.
      *
      * @var string
      */
     protected $description = 'Sync permohonan tahapan untuk permohonan yang belum memiliki record tahapan';
 
     /**
-     * Execute the console command.
+     * Buat tahapan pertama berstatus "proses" untuk permohonan yang belum punya record tahapan.
      */
     public function handle()
     {
@@ -34,8 +39,9 @@ class SyncPermohonanTahapan extends Command
         $permohonanList = Permohonan::all();
         $tahapanPermohonan = MasterTahapan::where('urutan', 1)->first();
 
-        if (!$tahapanPermohonan) {
+        if (! $tahapanPermohonan) {
             $this->error('Master tahapan pertama tidak ditemukan!');
+
             return 1;
         }
 
@@ -46,7 +52,7 @@ class SyncPermohonanTahapan extends Command
             // Cek apakah sudah ada tahapan
             $existingTahapan = PermohonanTahapan::where('permohonan_id', $permohonan->id)->exists();
 
-            if (!$existingTahapan) {
+            if (! $existingTahapan) {
                 // Buat record tahapan pertama
                 PermohonanTahapan::create([
                     'permohonan_id' => $permohonan->id,
@@ -64,8 +70,8 @@ class SyncPermohonanTahapan extends Command
         }
 
         $this->newLine();
-        $this->info("Sync selesai!");
-        $this->info("Total diproses: " . $permohonanList->count());
+        $this->info('Sync selesai!');
+        $this->info('Total diproses: '.$permohonanList->count());
         $this->info("Berhasil dibuat: {$synced}");
         $this->info("Dilewati (sudah ada): {$skipped}");
 

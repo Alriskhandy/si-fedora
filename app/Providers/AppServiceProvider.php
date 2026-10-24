@@ -2,48 +2,38 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use App\Models\PerpanjanganWaktu;
-use App\Policies\PerpanjanganWaktuPolicy;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Notification;
-use App\Notifications\Channels\WhatsAppChannel;
-use Illuminate\Support\Facades\View;
 use App\View\Composers\NavbarComposer;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
+/**
+ * Konfigurasi umum aplikasi: Gate tambahan, paginasi Bootstrap, dan view composer.
+ *
+ * Policy tidak didaftarkan di sini: Laravel menemukannya otomatis berdasarkan nama
+ * (App\Models\X → App\Policies\XPolicy).
+ */
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Daftarkan layanan aplikasi.
      */
     public function register(): void
     {
-        // Register WhatsApp Service as singleton
-        $this->app->singleton(\App\Services\WhatsAppService::class);
+        //
     }
 
     /**
-     * Bootstrap any application services.
+     * Inisialisasi layanan aplikasi.
      */
-    public function boot()
+    public function boot(): void
     {
-        // Register policies
-        Gate::policy(PerpanjanganWaktu::class, PerpanjanganWaktuPolicy::class);
-
-        // Batasi akses Log Viewer hanya untuk superadmin
-        Gate::define('viewLogViewer', function ($user) {
-            return $user->hasRole('superadmin');
-        });
-
-        // Register custom WhatsApp notification channel
-        Notification::extend('whatsapp', function ($app) {
-            return $app->make(WhatsAppChannel::class);
-        });
+        // Log Viewer (opcodesio/log-viewer) hanya untuk pemegang permission log-viewer.view
+        Gate::define('viewLogViewer', fn ($user) => $user->can('log-viewer.view'));
 
         Paginator::useBootstrapFive();
 
-        // Register view composer for navbar
         View::composer('partials.navbar', NavbarComposer::class);
     }
 }

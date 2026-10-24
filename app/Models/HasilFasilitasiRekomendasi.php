@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Casts\SanitizedHtml;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Butir rekomendasi pada hasil fasilitasi (rich text, disanitasi saat disimpan).
+ */
 class HasilFasilitasiRekomendasi extends Model
 {
     use HasFactory;
@@ -17,12 +22,22 @@ class HasilFasilitasiRekomendasi extends Model
         'user_id',
     ];
 
-    public function hasilFasilitasi()
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'catatan' => SanitizedHtml::class,
+        ];
+    }
+
+    public function hasilFasilitasi(): BelongsTo
     {
         return $this->belongsTo(HasilFasilitasi::class, 'hasil_fasilitasi_id');
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }

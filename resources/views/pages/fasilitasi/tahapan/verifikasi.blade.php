@@ -31,9 +31,9 @@
 
 @section('main')
     @php
-        $isPemohon = auth()->user()->hasRole('pemohon');
-        $isVerifikator = auth()->user()->hasRole('verifikator');
-        $isAdmin = auth()->user()->hasRole('admin_peran');
+        $isPemohon = auth()->user()->can('permohonan.upload-dokumen');
+        $isVerifikator = auth()->user()->can('permohonan.verify');
+        $isAdmin = auth()->user()->can('laporan-verifikasi.manage');
         $allDocsVerified = $permohonan->permohonanDokumen->count() > 0
             && $permohonan->permohonanDokumen->every(fn($d) => $d->status_verifikasi === 'verified');
     @endphp
@@ -318,7 +318,7 @@
 
                                 @if ($permohonan->laporanVerifikasi->file_laporan)
                                     <div class="mt-3">
-                                        <a href="{{ asset('storage/' . $permohonan->laporanVerifikasi->file_laporan) }}"
+                                        <a href="{{ route('berkas.show', ['laporan-verifikasi', $permohonan->laporanVerifikasi->id]) }}"
                                             target="_blank" class="btn btn-success">
                                             <i class='bx bx-download'></i> Download Laporan PDF
                                         </a>
@@ -425,14 +425,14 @@
                                                     $isPdf = strtolower($fileExtension) === 'pdf';
                                                 @endphp
                                                 @if ($isPdf)
-                                                    <a href="{{ asset('storage/' . $dokumen->file_path) }}"
+                                                    <a href="{{ route('berkas.show', ['permohonan-dokumen', $dokumen->id]) }}"
                                                         target="_blank" class="btn btn-sm btn-primary" title="Lihat PDF">
                                                         <i class="bx bx-show"></i>
                                                     </a>
                                                 @else
                                                     <button type="button"
                                                         class="btn btn-sm btn-primary btn-preview-excel"
-                                                        data-file-url="{{ asset('storage/' . $dokumen->file_path) }}"
+                                                        data-file-url="{{ route('berkas.show', ['permohonan-dokumen', $dokumen->id]) }}"
                                                         data-file-name="{{ $dokumen->file_name }}" title="Lihat Excel">
                                                         <i class="bx bx-show"></i>
                                                     </button>

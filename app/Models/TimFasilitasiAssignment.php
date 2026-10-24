@@ -4,53 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Anggota tim fasilitasi per permohonan (tabel lama; penugasan aktif ada di UserKabkotaAssignment).
+ */
 class TimFasilitasiAssignment extends Model
 {
     use HasFactory;
+
+    /**
+     * Tabel hanya memiliki kolom created_at.
+     */
+    public const UPDATED_AT = null;
 
     protected $table = 'tim_fasilitasi_assignment';
 
     protected $fillable = [
         'permohonan_id',
         'user_id',
-        'peran',
-        'ditugaskan_oleh',
     ];
 
-    protected $casts = [
-        'ditugaskan_pada' => 'datetime',
-    ];
-
-    // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function ditugaskanOleh()
-    {
-        return $this->belongsTo(User::class, 'ditugaskan_oleh');
-    }
-
-    // Scope
-    public function scopeByPeran($query, $peran)
-    {
-        return $query->where('peran', $peran);
-    }
-
-    public function scopeKetuaTim($query)
-    {
-        return $query->where('peran', 'ketua_tim');
-    }
-
-    public function scopeAnggotaTim($query)
-    {
-        return $query->where('peran', 'anggota_tim');
     }
 }

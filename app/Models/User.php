@@ -3,12 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * Pengguna aplikasi. Hak akses diatur lewat role & permission (spatie/laravel-permission, katalog di config/permissions.php).
+ *
  * @method bool hasRole($roles, $guard = null)
  * @method bool hasAnyRole($roles, $guard = null)
  * @method bool hasAllRoles($roles, $guard = null)
@@ -16,7 +21,31 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+
+    /**
+     * Role yang tidak boleh diberikan lewat form tambah pengguna.
+     *
+     * @var list<string>
+     */
+    public const NON_CREATABLE_ROLES = ['superadmin', 'kaban', 'admin_peran'];
+
+    /**
+     * Role yang tidak boleh diberikan lewat form ubah pengguna.
+     *
+     * @var list<string>
+     */
+    public const NON_EDITABLE_ROLES = ['superadmin'];
+
+    /**
+     * Role yang tidak boleh diberikan oleh pengguna tertentu lewat form ubah pengguna.
+     *
+     * @return list<string>
+     */
+    public static function nonEditableRolesFor(User $actor): array
+    {
+        return $actor->can('user.manage-superadmin') ? [] : self::NON_EDITABLE_ROLES;
+    }
 
     protected $fillable = [
         'name',
@@ -44,61 +73,19 @@ class User extends Authenticatable
     }
 
     // Relationships
-    public function kabupatenKota()
+    public function kabupatenKota(): BelongsTo
     {
         return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
     }
 
-
-    public function permohonanCreated()
-    {
-        return $this->hasMany(Permohonan::class, 'created_by');
-    }
-
-    public function permohonanAsVerifikator()
-    {
-        return $this->hasMany(Permohonan::class, 'verifikator_id');
-    }
-
-    public function evaluasi()
-    {
-        return $this->hasMany(Evaluasi::class, 'evaluator_id');
-    }
-
-    public function notifikasi()
+    public function notifikasi(): HasMany
     {
         return $this->hasMany(Notifikasi::class)->orderBy('created_at', 'desc');
     }
 
-    public function unreadNotifikasi()
+    public function unreadNotifikasi(): HasMany
     {
         return $this->hasMany(Notifikasi::class)->where('is_read', false);
-    }
-
-    // Helper Methods
-    public function isKabKota(): bool
-    {
-        return $this->hasRole('kabkota');
-    }
-
-    public function isVerifikator(): bool
-    {
-        return $this->hasRole('verifikator');
-    }
-
-    public function isAdminPeran(): bool
-    {
-        return $this->hasRole('admin_peran');
-    }
-
-    public function isKaban(): bool
-    {
-        return $this->hasRole('kaban');
-    }
-
-    public function isSuperadmin(): bool
-    {
-        return $this->hasRole('superadmin');
     }
 
     public function updateLastLogin(): void
@@ -107,12 +94,12 @@ class User extends Authenticatable
     }
 
     // Assignment Kabupaten/Kota Relations
-    public function kabkotaAssignments()
+    public function kabkotaAssignments(): HasMany
     {
         return $this->hasMany(UserKabkotaAssignment::class);
     }
 
-    public function assignedKabkota()
+    public function assignedKabkota(): BelongsToMany
     {
         return $this->belongsToMany(KabupatenKota::class, 'user_kabkota_assignments')
             ->withPivot(['role_type', 'is_pic', 'is_active', 'assigned_from', 'assigned_until', 'notes'])
@@ -120,7 +107,7 @@ class User extends Authenticatable
     }
 
     // Helper Methods untuk Assignment
-    public function isAssignedToKabkota(int $kabkotaId, string $roleType = null): bool
+    public function isAssignedToKabkota(int $kabkotaId, ?string $roleType = null): bool
     {
         $query = $this->kabkotaAssignments()
             ->active()
@@ -142,7 +129,7 @@ class User extends Authenticatable
             ->exists();
     }
 
-    public function getAssignedKabkotaIds(string $roleType = null): array
+    public function getAssignedKabkotaIds(?string $roleType = null): array
     {
         $query = $this->kabkotaAssignments()->active();
 
@@ -153,7 +140,7 @@ class User extends Authenticatable
         return $query->pluck('kabupaten_kota_id')->toArray();
     }
 
-    public function getAssignmentForKabkota(int $kabkotaId, string $roleType = null)
+    public function getAssignmentForKabkota(int $kabkotaId, ?string $roleType = null)
     {
         $query = $this->kabkotaAssignments()
             ->active()

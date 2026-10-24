@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Kirim ulang email verifikasi (bawaan Breeze).
+ *
+ * Akses: pengguna login.
+ */
 class EmailVerificationNotificationController extends Controller
 {
     /**
-     * Send a new email verification notification.
+     * Kirim ulang email verifikasi.
      */
     public function store(Request $request): RedirectResponse
     {

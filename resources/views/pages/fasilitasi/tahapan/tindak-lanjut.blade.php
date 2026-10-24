@@ -62,7 +62,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                @if ($dokumenTindakLanjut && !$dokumenTindakLanjut->verified_by && auth()->user()->hasRole('pemohon'))
+                @if ($dokumenTindakLanjut && !$dokumenTindakLanjut->verified_by && auth()->user()->can('tindak-lanjut.submit'))
                     <!-- Sudah Upload tapi Belum Submit (Pemohon) -->
                     <div class="alert alert-warning mb-4">
                         <div class="d-flex align-items-center">
@@ -153,7 +153,7 @@
                                     <h6 class="mb-0 fw-bold">
                                         <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
                                     </h6>
-                                    <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                    <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                         class="btn btn-primary btn-sm shadow-sm" target="_blank">
                                         <i class='bx bx-download me-1'></i>Download PDF
                                     </a>
@@ -161,11 +161,11 @@
 
                                 <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
                                     <iframe
-                                        src="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}#toolbar=1&view=FitH"
+                                        src="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}#toolbar=1&view=FitH"
                                         type="application/pdf" width="100%" height="600px" style="border: none;">
                                         <p class="text-center py-5">
                                             Browser Anda tidak mendukung preview PDF.
-                                            <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                            <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                                 class="btn btn-primary" target="_blank">
                                                 <i class='bx bx-download me-1'></i>Download PDF
                                             </a>
@@ -245,7 +245,7 @@
                                     <h6 class="mb-0 fw-bold">
                                         <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
                                     </h6>
-                                    <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                    <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                         class="btn btn-primary btn-sm shadow-sm" target="_blank">
                                         <i class='bx bx-download me-1'></i>Download PDF
                                     </a>
@@ -253,11 +253,11 @@
 
                                 <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
                                     <iframe
-                                        src="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}#toolbar=1&view=FitH"
+                                        src="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}#toolbar=1&view=FitH"
                                         type="application/pdf" width="100%" height="600px" style="border: none;">
                                         <p class="text-center py-5">
                                             Browser Anda tidak mendukung preview PDF.
-                                            <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                            <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                                 class="btn btn-primary" target="_blank">
                                                 <i class='bx bx-download me-1'></i>Download PDF
                                             </a>
@@ -275,7 +275,7 @@
                         </div>
                         <h5 class="mb-3">Dokumen Belum Tersedia</h5>
 
-                        @if (auth()->user()->hasRole('pemohon'))
+                        @if (auth()->user()->can('tindak-lanjut.submit'))
                             <p class="text-muted mb-4">
                                 Silakan upload dokumen tindak lanjut hasil fasilitasi / evaluasi
                             </p>
@@ -298,7 +298,7 @@
         </div>
 
         <!-- Modal Upload Dokumen Pertama Kali (untuk Pemohon) -->
-        @if (auth()->user()->hasRole('pemohon') && !$dokumenTindakLanjut)
+        @if (auth()->user()->can('tindak-lanjut.submit') && !$dokumenTindakLanjut)
             <div class="modal fade" id="uploadDokumenModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content border-0 shadow">
@@ -374,7 +374,7 @@
         @endif
 
         <!-- Modal Upload Ulang (untuk Pemohon) -->
-        @if ($dokumenTindakLanjut && !$dokumenTindakLanjut->verified_by && auth()->user()->hasRole('pemohon'))
+        @if ($dokumenTindakLanjut && !$dokumenTindakLanjut->verified_by && auth()->user()->can('tindak-lanjut.submit'))
             <div class="modal fade" id="uploadUlangModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content border-0 shadow">

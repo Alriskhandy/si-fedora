@@ -4,8 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Surat pemberitahuan jadwal fasilitasi kepada kabupaten/kota.
+ */
 class SuratPemberitahuan extends Model
 {
     use HasFactory, SoftDeletes;
@@ -26,23 +30,29 @@ class SuratPemberitahuan extends Model
         'created_by',
     ];
 
-    protected $casts = [
-        'tanggal_surat' => 'date',
-        'sent_at' => 'datetime',
-        'received_at' => 'datetime',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tanggal_surat' => 'date',
+            'sent_at' => 'datetime',
+            'received_at' => 'datetime',
+        ];
+    }
 
-    public function jadwalFasilitasi()
+    public function jadwalFasilitasi(): BelongsTo
     {
         return $this->belongsTo(JadwalFasilitasi::class);
     }
 
-    public function kabupatenKota()
+    public function kabupatenKota(): BelongsTo
     {
         return $this->belongsTo(KabupatenKota::class);
     }
 
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

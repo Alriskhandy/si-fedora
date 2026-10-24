@@ -51,16 +51,16 @@
                 <a href="{{ route('permohonan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-folder-open"></i>
                     <div data-i18n="Permohonan">
-                        @if (auth()->user()?->hasRole('pemohon'))
+                        @can('permohonan.view-own')
                             Permohonan Saya
                         @else
                             Daftar Permohonan
-                        @endif
+                        @endcan
                     </div>
                 </a>
             </li>
 
-            @if (auth()->user()?->hasAnyRole(['pemohon', 'verifikator', 'fasilitator']))
+            @canany(['permohonan.view-own', 'permohonan.view-assigned'])
                 <li
                     class="menu-item {{ request()->routeIs('my-undangan.*', 'undangan-pelaksanaan.*') ? 'active' : '' }}">
                     <a href="{{ route('my-undangan.index') }}" class="menu-link">
@@ -68,9 +68,9 @@
                         <div data-i18n="Undangan">Undangan Saya</div>
                     </a>
                 </li>
-            @endif
+            @endcanany
 
-            @if (auth()->user()?->hasAnyRole(['fasilitator', 'verifikator']))
+            @if (auth()->user()?->can('hasil-fasilitasi.view') && auth()->user()?->can('permohonan.view-assigned'))
                 <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
                     <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-edit"></i>
@@ -79,14 +79,14 @@
                 </li>
             @endif
 
-            @if (auth()->user()?->hasRole('pemohon'))
+            @can('perpanjangan-waktu.submit')
                 <li class="menu-item {{ request()->routeIs('perpanjangan-waktu.*') ? 'active' : '' }}">
                     <a href="{{ route('perpanjangan-waktu.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-time-five"></i>
                         <div data-i18n="Perpanjangan Waktu">Perpanjangan Waktu</div>
                     </a>
                 </li>
-            @endif
+            @endcan
         @endif
 
         <!-- ============================================= -->
@@ -94,129 +94,141 @@
         <!-- ============================================= -->
 
         {{-- KABAN: Approval & Penetapan --}}
-        @if (auth()->user()?->hasRole('kaban'))
+        @canany(['approval.approve', 'penetapan-jadwal.manage'])
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Persetujuan</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('approval.*') ? 'active' : '' }}">
-                <a href="{{ route('approval.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-check-circle"></i>
-                    <div data-i18n="Approval">Hasil Fasilitasi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('penetapan-jadwal.*') ? 'active' : '' }}">
-                <a href="{{ route('penetapan-jadwal.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-calendar-check"></i>
-                    <div data-i18n="Penetapan Jadwal">Penetapan Jadwal</div>
-                </a>
-            </li>
-        @endif
+            @can('approval.approve')
+                <li class="menu-item {{ request()->routeIs('approval.*') ? 'active' : '' }}">
+                    <a href="{{ route('approval.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-check-circle"></i>
+                        <div data-i18n="Approval">Hasil Fasilitasi</div>
+                    </a>
+                </li>
+            @endcan
+            @can('penetapan-jadwal.manage')
+                <li class="menu-item {{ request()->routeIs('penetapan-jadwal.*') ? 'active' : '' }}">
+                    <a href="{{ route('penetapan-jadwal.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-calendar-check"></i>
+                        <div data-i18n="Penetapan Jadwal">Penetapan Jadwal</div>
+                    </a>
+                </li>
+            @endcan
+        @endcanany
 
         {{-- ADMIN PERAN: Penjadwalan & Validasi --}}
-        @if (auth()->user()?->hasRole('admin_peran'))
+        @canany(['undangan-pelaksanaan.manage', 'perpanjangan-waktu.process'])
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Validasi & Koordinasi</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('undangan-pelaksanaan.*') ? 'active' : '' }}">
-                <a href="{{ route('undangan-pelaksanaan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-mail-send"></i>
-                    <div data-i18n="Undangan Pelaksanaan">Undangan Pelaksanaan</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('perpanjangan-waktu.*') ? 'active' : '' }}">
-                <a href="{{ route('perpanjangan-waktu.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-time-five"></i>
-                    <div data-i18n="Perpanjangan Waktu">Perpanjangan Waktu</div>
-                </a>
-            </li>
-        @endif
-
-        {{-- POKJA: Evaluasi Dokumen --}}
-        @if (auth()->user()?->hasRole('pokja'))
-            <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Evaluasi</span>
-            </li>
-            <li class="menu-item {{ request()->routeIs('evaluasi.*') ? 'active' : '' }}">
-                <a href="{{ route('evaluasi.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-analyse"></i>
-                    <div data-i18n="Evaluasi">Evaluasi Dokumen</div>
-                </a>
-            </li>
-        @endif
+            @can('undangan-pelaksanaan.manage')
+                <li class="menu-item {{ request()->routeIs('undangan-pelaksanaan.*') ? 'active' : '' }}">
+                    <a href="{{ route('undangan-pelaksanaan.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-mail-send"></i>
+                        <div data-i18n="Undangan Pelaksanaan">Undangan Pelaksanaan</div>
+                    </a>
+                </li>
+            @endcan
+            @can('perpanjangan-waktu.process')
+                <li class="menu-item {{ request()->routeIs('perpanjangan-waktu.*') ? 'active' : '' }}">
+                    <a href="{{ route('perpanjangan-waktu.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-time-five"></i>
+                        <div data-i18n="Perpanjangan Waktu">Perpanjangan Waktu</div>
+                    </a>
+                </li>
+            @endcan
+        @endcanany
 
         <!-- ============================================= -->
         <!-- MANAJEMEN AKUN & TIM -->
         <!-- ============================================= -->
-        @if (auth()->user()?->hasAnyRole(['superadmin', 'admin_peran']))
+        @canany(['user.manage', 'tim-assignment.manage'])
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Manajemen</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <a href="{{ route('users.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-user"></i>
-                    <div data-i18n="Users">Akun Pengguna</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('tim-assignment.*') ? 'active' : '' }}">
-                <a href="{{ route('tim-assignment.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-group"></i>
-                    <div data-i18n="Tim Assignment">Tim FEDORA</div>
-                </a>
-            </li>
-        @endif
+            @can('user.manage')
+                <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <a href="{{ route('users.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-user"></i>
+                        <div data-i18n="Users">Akun Pengguna</div>
+                    </a>
+                </li>
+            @endcan
+            @can('tim-assignment.manage')
+                <li class="menu-item {{ request()->routeIs('tim-assignment.*') ? 'active' : '' }}">
+                    <a href="{{ route('tim-assignment.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-group"></i>
+                        <div data-i18n="Tim Assignment">Tim FEDORA</div>
+                    </a>
+                </li>
+            @endcan
+        @endcanany
 
         <!-- ============================================= -->
         <!-- MASTER DATA -->
         <!-- ============================================= -->
-        @if (auth()->user()?->hasAnyRole(['superadmin', 'admin_peran']))
+        @canany(['master.kabkota.manage', 'master.jenis-dokumen.manage', 'master.tahapan.manage', 'master.kelengkapan.manage', 'master.bab.manage', 'master.urusan.manage'])
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Master Data</span>
             </li>
-            <li class="menu-item {{ request()->routeIs('kabupaten-kota.*') ? 'active' : '' }}">
-                <a href="{{ route('kabupaten-kota.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-buildings"></i>
-                    <div data-i18n="Kabupaten/Kota">Kabupaten/Kota</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('master-jenis-dokumen.*') ? 'active' : '' }}">
-                <a href="{{ route('master-jenis-dokumen.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-file"></i>
-                    <div data-i18n="Jenis Dokumen">Jenis Dokumen</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('master-tahapan.*') ? 'active' : '' }}">
-                <a href="{{ route('master-tahapan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-list-ol"></i>
-                    <div data-i18n="Master Tahapan">Tahapan Fasilitasi</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('master-kelengkapan.*') ? 'active' : '' }}">
-                <a href="{{ route('master-kelengkapan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-check-square"></i>
-                    <div data-i18n="Kelengkapan Verifikasi">Kelengkapan Dokumen</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('master-bab.*') ? 'active' : '' }}">
-                <a href="{{ route('master-bab.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-book-content"></i>
-                    <div data-i18n="Master Bab">Sistematika Dokumen</div>
-                </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('master-urusan.*') ? 'active' : '' }}">
-                <a href="{{ route('master-urusan.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-briefcase"></i>
-                    <div data-i18n="Master Urusan">Urusan Pemerintahan</div>
-                </a>
-            </li>
-        @endif
+            @can('master.kabkota.manage')
+                <li class="menu-item {{ request()->routeIs('kabupaten-kota.*') ? 'active' : '' }}">
+                    <a href="{{ route('kabupaten-kota.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-buildings"></i>
+                        <div data-i18n="Kabupaten/Kota">Kabupaten/Kota</div>
+                    </a>
+                </li>
+            @endcan
+            @can('master.jenis-dokumen.manage')
+                <li class="menu-item {{ request()->routeIs('master-jenis-dokumen.*') ? 'active' : '' }}">
+                    <a href="{{ route('master-jenis-dokumen.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-file"></i>
+                        <div data-i18n="Jenis Dokumen">Jenis Dokumen</div>
+                    </a>
+                </li>
+            @endcan
+            @can('master.tahapan.manage')
+                <li class="menu-item {{ request()->routeIs('master-tahapan.*') ? 'active' : '' }}">
+                    <a href="{{ route('master-tahapan.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-list-ol"></i>
+                        <div data-i18n="Master Tahapan">Tahapan Fasilitasi</div>
+                    </a>
+                </li>
+            @endcan
+            @can('master.kelengkapan.manage')
+                <li class="menu-item {{ request()->routeIs('master-kelengkapan.*') ? 'active' : '' }}">
+                    <a href="{{ route('master-kelengkapan.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-check-square"></i>
+                        <div data-i18n="Kelengkapan Verifikasi">Kelengkapan Dokumen</div>
+                    </a>
+                </li>
+            @endcan
+            @can('master.bab.manage')
+                <li class="menu-item {{ request()->routeIs('master-bab.*') ? 'active' : '' }}">
+                    <a href="{{ route('master-bab.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-book-content"></i>
+                        <div data-i18n="Master Bab">Sistematika Dokumen</div>
+                    </a>
+                </li>
+            @endcan
+            @can('master.urusan.manage')
+                <li class="menu-item {{ request()->routeIs('master-urusan.*') ? 'active' : '' }}">
+                    <a href="{{ route('master-urusan.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-briefcase"></i>
+                        <div data-i18n="Master Urusan">Urusan Pemerintahan</div>
+                    </a>
+                </li>
+            @endcan
+        @endcanany
 
         <!-- ============================================= -->
-        <!-- SISTEM (Superadmin Only) -->
+        <!-- SISTEM -->
         <!-- ============================================= -->
-        @if (auth()->user()?->hasRole('superadmin'))
+        @canany(['role.manage', 'log-viewer.view'])
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Sistem</span>
             </li>
+            @can('role.manage')
             <li class="menu-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.roles.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-shield"></i>
@@ -235,18 +247,21 @@
                     <div data-i18n="Notifikasi">Notifikasi Sistem</div>
                 </a>
             </li>
+            @endcan
+            @can('log-viewer.view')
             <li class="menu-item {{ request()->is('log-viewer*') ? 'active' : '' }}">
                 <a href="{{ url('log-viewer') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bug-alt"></i>
                     <div data-i18n="Log Viewer">Monitoring Log</div>
                 </a>
             </li>
-        @endif
+            @endcan
+        @endcanany
 
         <!-- ============================================= -->
         <!-- MONITORING & AUDIT -->
         <!-- ============================================= -->
-        @if (auth()->user()?->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor']))
+        @can('activity-log.view')
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Monitoring</span>
             </li>
@@ -256,7 +271,7 @@
                     <div data-i18n="Activity Log">Log Aktivitas</div>
                 </a>
             </li>
-        @endif
+        @endcan
 
         <!-- ============================================= -->
         <!-- LOGOUT -->

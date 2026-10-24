@@ -46,11 +46,11 @@
                             <p class="text-muted small mb-0">Kelola pengguna sistem</p>
                         </div>
                         <div>
-                            @if(auth()->user()->isSuperadmin())
+                            @can('user.export')
                                 <a href="{{ route('users.export', request()->query()) }}" class="btn btn-success me-2">
                                     <i class="bx bx-export me-1"></i> Export Kontak
                                 </a>
-                            @endif
+                            @endcan
                             <a href="{{ route('users.create') }}" class="btn btn-primary">
                                 <i class="bx bx-plus me-1"></i> Tambah Data
                             </a>

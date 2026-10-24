@@ -3,15 +3,19 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validasi perubahan profil. Nomor WhatsApp wajib format internasional (diawali 62).
+ */
 class ProfileUpdateRequest extends FormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
+     * Aturan validasi profil.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -32,7 +36,7 @@ class ProfileUpdateRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages
+     * Pesan validasi kustom.
      */
     public function messages(): array
     {
