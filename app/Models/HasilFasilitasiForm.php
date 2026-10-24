@@ -5,7 +5,11 @@ namespace App\Models;
 use App\Casts\SanitizedHtml;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Catatan hasil fasilitasi bagian "Konsistensi & Keselarasan" (rich text, disanitasi saat disimpan).
+ */
 class HasilFasilitasiForm extends Model
 {
     use HasFactory;
@@ -28,12 +32,12 @@ class HasilFasilitasiForm extends Model
         ];
     }
 
-    public function hasilFasilitasi()
+    public function hasilFasilitasi(): BelongsTo
     {
         return $this->belongsTo(HasilFasilitasi::class, 'hasil_fasilitasi_id');
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }

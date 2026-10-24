@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Tindak lanjut hasil fasilitasi oleh pemohon.
+ */
 class TindakLanjut extends Model
 {
     use HasFactory;
@@ -25,21 +29,27 @@ class TindakLanjut extends Model
         'diupload_oleh',
     ];
 
-    protected $casts = [
-        'tanggal_upload' => 'datetime',
-        'submitted_at' => 'datetime',
-        'batas_waktu' => 'datetime',
-        'is_submitted' => 'boolean',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'tanggal_upload' => 'datetime',
+            'submitted_at' => 'datetime',
+            'batas_waktu' => 'datetime',
+            'is_submitted' => 'boolean',
+        ];
+    }
 
     // Relasi ke Permohonan
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
     // Relasi ke User (yang upload)
-    public function uploader()
+    public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'diupload_oleh');
     }

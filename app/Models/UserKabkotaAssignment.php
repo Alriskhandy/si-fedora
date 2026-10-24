@@ -2,9 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Penugasan verifikator/fasilitator ke kabupaten/kota per tahun (dan jenis dokumen).
+ */
 class UserKabkotaAssignment extends Model
 {
     protected $fillable = [
@@ -21,13 +25,19 @@ class UserKabkotaAssignment extends Model
         'is_active',
     ];
 
-    protected $casts = [
-        'is_pic' => 'boolean',
-        'is_active' => 'boolean',
-        'assigned_from' => 'date',
-        'assigned_until' => 'date',
-        'tahun' => 'integer',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_pic' => 'boolean',
+            'is_active' => 'boolean',
+            'assigned_from' => 'date',
+            'assigned_until' => 'date',
+            'tahun' => 'integer',
+        ];
+    }
 
     /**
      * Relasi ke User
@@ -56,7 +66,7 @@ class UserKabkotaAssignment extends Model
     /**
      * Scope: assignment yang masih aktif
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query)
     {
         return $query->where('is_active', true)
             ->where(function ($q) {
@@ -68,7 +78,7 @@ class UserKabkotaAssignment extends Model
     /**
      * Scope: filter berdasarkan role
      */
-    public function scopeByRole($query, string $role)
+    public function scopeByRole(Builder $query, string $role)
     {
         return $query->where('role_type', $role);
     }
@@ -76,7 +86,7 @@ class UserKabkotaAssignment extends Model
     /**
      * Scope: hanya PIC
      */
-    public function scopePicOnly($query)
+    public function scopePicOnly(Builder $query)
     {
         return $query->where('is_pic', true);
     }
@@ -84,7 +94,7 @@ class UserKabkotaAssignment extends Model
     /**
      * Scope: untuk kabupaten/kota tertentu
      */
-    public function scopeForKabkota($query, int $kabkotaId)
+    public function scopeForKabkota(Builder $query, int $kabkotaId)
     {
         return $query->where('kabupaten_kota_id', $kabkotaId);
     }
@@ -92,7 +102,7 @@ class UserKabkotaAssignment extends Model
     /**
      * Scope: untuk user tertentu
      */
-    public function scopeForUser($query, int $userId)
+    public function scopeForUser(Builder $query, int $userId)
     {
         return $query->where('user_id', $userId);
     }
@@ -102,7 +112,7 @@ class UserKabkotaAssignment extends Model
      */
     public function isValid(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 

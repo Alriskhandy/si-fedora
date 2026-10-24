@@ -361,7 +361,6 @@ class PermohonanController extends Controller
             'kabupatenKota',
             'jenisDokumen',
             'jadwalFasilitasi',
-            'createdBy',
             'permohonanDokumen.verifiedBy',
         ]);
 

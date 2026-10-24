@@ -36,10 +36,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "DELETE master-tahapan/{masterTahapan}": [
-        "superadmin",
-        "admin_peran"
-    ],
     "DELETE master-urusan/{masterUrusan}": [
         "superadmin",
         "admin_peran"
@@ -102,10 +98,6 @@
     "DELETE surat-pemberitahuan/{suratPemberitahuan}": [
         "admin_peran"
     ],
-    "DELETE tim-assignment/{timAssignment}": [
-        "superadmin",
-        "admin_peran"
-    ],
     "DELETE users/{user}": [
         "superadmin",
         "admin_peran"
@@ -125,19 +117,10 @@
     "GET admin/permissions/create": [
         "superadmin"
     ],
-    "GET admin/permissions/{permission}": [
-        "superadmin"
-    ],
-    "GET admin/permissions/{permission}/edit": [
-        "superadmin"
-    ],
     "GET admin/roles": [
         "superadmin"
     ],
     "GET admin/roles/create": [
-        "superadmin"
-    ],
-    "GET admin/roles/{role}": [
         "superadmin"
     ],
     "GET admin/roles/{role}/edit": [
@@ -227,13 +210,6 @@
         "fasilitator"
     ],
     "GET hasil-fasilitasi/{permohonan}/create": [
-        "fasilitator"
-    ],
-    "GET hasil-fasilitasi/{permohonan}/download": [
-        "superadmin",
-        "kaban",
-        "admin_peran",
-        "verifikator",
         "fasilitator"
     ],
     "GET hasil-fasilitasi/{permohonan}/download-draft-final": [
@@ -342,10 +318,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "GET master-bab/{masterBab}": [
-        "superadmin",
-        "admin_peran"
-    ],
     "GET master-bab/{masterBab}/edit": [
         "superadmin",
         "admin_peran"
@@ -355,10 +327,6 @@
         "admin_peran"
     ],
     "GET master-jenis-dokumen/create": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET master-jenis-dokumen/{masterJenisDokuman}": [
         "superadmin",
         "admin_peran"
     ],
@@ -374,23 +342,11 @@
         "superadmin",
         "admin_peran"
     ],
-    "GET master-kelengkapan/{masterKelengkapan}": [
-        "superadmin",
-        "admin_peran"
-    ],
     "GET master-kelengkapan/{masterKelengkapan}/edit": [
         "superadmin",
         "admin_peran"
     ],
     "GET master-tahapan": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET master-tahapan/create": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET master-tahapan/{masterTahapan}": [
         "superadmin",
         "admin_peran"
     ],
@@ -403,10 +359,6 @@
         "admin_peran"
     ],
     "GET master-urusan/create": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET master-urusan/{masterUrusan}": [
         "superadmin",
         "admin_peran"
     ],
@@ -498,18 +450,6 @@
         "fasilitator",
         "pemohon",
         "auditor"
-    ],
-    "GET permohonan-dokumen": [
-        "pemohon"
-    ],
-    "GET permohonan-dokumen/create": [
-        "pemohon"
-    ],
-    "GET permohonan-dokumen/{permohonanDokumen}": [
-        "pemohon"
-    ],
-    "GET permohonan-dokumen/{permohonanDokumen}/edit": [
-        "pemohon"
     ],
     "GET permohonan/create": [
         "pemohon"
@@ -700,18 +640,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "GET tim-assignment/api/tim-assignment/users": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET tim-assignment/create": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET tim-assignment/{timAssignment}": [
-        "superadmin",
-        "admin_peran"
-    ],
     "GET tim-assignment/{timAssignment}/download-sk": [
         "superadmin",
         "admin_peran"
@@ -719,12 +647,6 @@
     "GET tim-assignment/{timAssignment}/edit": [
         "superadmin",
         "admin_peran"
-    ],
-    "GET tindak-lanjut": [
-        "pemohon"
-    ],
-    "GET tindak-lanjut/{permohonan}/create": [
-        "pemohon"
     ],
     "GET tindak-lanjut/{permohonan}/download": [
         "pemohon"
@@ -899,10 +821,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "POST master-tahapan": [
-        "superadmin",
-        "admin_peran"
-    ],
     "POST master-urusan": [
         "superadmin",
         "admin_peran"
@@ -1002,16 +920,9 @@
         "superadmin",
         "admin_peran"
     ],
-    "POST tim-assignment/{timAssignment}/activate": [
-        "superadmin",
-        "admin_peran"
-    ],
     "POST tim-assignment/{timAssignment}/toggle-status": [
         "superadmin",
         "admin_peran"
-    ],
-    "POST tindak-lanjut/{permohonan}": [
-        "pemohon"
     ],
     "POST tindak-lanjut/{permohonan}/submit": [
         "pemohon"
@@ -1020,9 +931,6 @@
         "pemohon"
     ],
     "POST undangan-pelaksanaan/{permohonan}": [
-        "admin_peran"
-    ],
-    "POST undangan-pelaksanaan/{permohonan}/send": [
         "admin_peran"
     ],
     "POST undangan-pelaksanaan/{permohonan}/update-file": [
@@ -1050,9 +958,6 @@
     ],
     "POST verifikasi/{permohonan}/verifikasi-dokumen": [
         "verifikator"
-    ],
-    "PUT admin/permissions/{permission}": [
-        "superadmin"
     ],
     "PUT admin/roles/{role}": [
         "superadmin"

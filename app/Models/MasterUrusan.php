@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Master urusan pemerintahan (wajib dasar, wajib non-dasar, pilihan).
+ */
 class MasterUrusan extends Model
 {
     use HasFactory;
@@ -13,7 +16,9 @@ class MasterUrusan extends Model
 
     // Konstanta kategori urusan
     const KATEGORI_WAJIB_DASAR = 'wajib_dasar';
+
     const KATEGORI_WAJIB_NON_DASAR = 'wajib_non_dasar';
+
     const KATEGORI_PILIHAN = 'pilihan';
 
     protected $fillable = [

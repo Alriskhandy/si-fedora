@@ -140,7 +140,8 @@
                                     @if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->draft_final_file)
                                         <tr class="document-row"
                                             data-file-url="{{ route('berkas.show', ['hasil-fasilitasi-final', $permohonan->hasilFasilitasi->id]) }}"
-                                            data-file-name="Dokumen Hasil Fasilitasi">
+                                            data-file-name="Dokumen Hasil Fasilitasi"
+                                            data-file-ext="{{ strtolower(pathinfo($permohonan->hasilFasilitasi->draft_final_file ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">Dokumen Hasil Fasilitasi</div>
@@ -183,7 +184,8 @@
                                     @endphp
                                     @foreach ($dokumenTindakLanjut as $dok)
                                         <tr class="document-row" data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
-                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Tindak Lanjut' }}">
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Tindak Lanjut' }}"
+                                            data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">
@@ -225,7 +227,8 @@
                                     @endphp
                                     @foreach ($dokumenPenetapan as $dok)
                                         <tr class="document-row" data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
-                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Penetapan Perda' }}">
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Penetapan Perda' }}"
+                                            data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">
@@ -311,7 +314,8 @@
                                                 @endphp
                                                 <tr class="document-row"
                                                     data-file-url="{{ route('berkas.show', ['permohonan-dokumen', $dok->id]) }}"
-                                                    data-file-name="{{ $dok->masterKelengkapan->nama_dokumen ?? 'Dokumen Permohonan' }}">
+                                                    data-file-name="{{ $dok->masterKelengkapan->nama_dokumen ?? 'Dokumen Permohonan' }}"
+                                                    data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                                     <td class="px-4">{{ $rowNum++ }}</td>
                                                     <td>
                                                         <div class="fw-semibold">
@@ -360,7 +364,8 @@
                                                 @endphp
                                                 <tr class="document-row"
                                                     data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
-                                                    data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Kelengkapan' }}">
+                                                    data-file-name="{{ $dok->nama_dokumen ?? 'Dokumen Kelengkapan' }}"
+                                                    data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                                     <td class="px-4">{{ $rowNum++ }}</td>
                                                     <td>
                                                         <div class="fw-semibold">
@@ -398,7 +403,8 @@
                                     @if ($permohonan->laporanVerifikasi && $permohonan->laporanVerifikasi->file_laporan)
                                         <tr class="document-row"
                                             data-file-url="{{ route('berkas.show', ['laporan-verifikasi', $permohonan->laporanVerifikasi->id]) }}"
-                                            data-file-name="Laporan Verifikasi">
+                                            data-file-name="Laporan Verifikasi"
+                                            data-file-ext="{{ strtolower(pathinfo($permohonan->laporanVerifikasi->file_laporan ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
@@ -488,7 +494,8 @@
                                             $hasDocuments = true;
                                         @endphp
                                         <tr class="document-row" data-file-url="{{ route('berkas.show', ['dokumen-tahapan', $dok->id]) }}"
-                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumentasi Pelaksanaan' }}">
+                                            data-file-name="{{ $dok->nama_dokumen ?? 'Dokumentasi Pelaksanaan' }}"
+                                            data-file-ext="{{ strtolower(pathinfo($dok->file_path ?? '', PATHINFO_EXTENSION)) }}">
                                             <td class="px-4">{{ $rowNum++ }}</td>
                                             <td>
                                                 <div class="fw-semibold">
@@ -529,7 +536,8 @@
                                                 @endphp
                                                 <tr class="document-row"
                                                     data-file-url="{{ route('berkas.show', ['undangan-pelaksanaan', $undangan->id]) }}"
-                                                    data-file-name="Undangan Pelaksanaan">
+                                                    data-file-name="Undangan Pelaksanaan"
+                                                    data-file-ext="{{ strtolower(pathinfo($undangan->file_undangan ?? '', PATHINFO_EXTENSION)) }}">
                                                     <td class="px-4">{{ $rowNum++ }}</td>
                                                     <td>
                                                         <div class="fw-semibold">Undangan Pelaksanaan</div>
@@ -656,8 +664,9 @@
             const documentRows = document.querySelectorAll('.document-row');
             const previewContainer = document.getElementById('preview-container');
 
-            function showPreview(fileUrl, fileName) {
-                const extension = fileUrl.split('.').pop().toLowerCase();
+            // URL berkas (/berkas/{jenis}/{id}) tidak berekstensi; jenis file diambil dari data-file-ext
+            function showPreview(fileUrl, fileName, extension) {
+                extension = (extension || '').toLowerCase();
 
                 let previewHtml = '';
 
@@ -705,15 +714,16 @@
                 button.addEventListener('click', function(e) {
                     e.stopPropagation();
                     const fileUrl = this.getAttribute('data-file-url');
-                    const fileName = this.closest('tr').getAttribute('data-file-name') || 'Dokumen';
+                    const row = this.closest('tr');
+                    const fileName = row.getAttribute('data-file-name') || 'Dokumen';
 
                     // Remove active class from all rows
-                    documentRows.forEach(row => row.classList.remove('active'));
+                    documentRows.forEach(r => r.classList.remove('active'));
 
                     // Add active class to clicked row
-                    this.closest('tr').classList.add('active');
+                    row.classList.add('active');
 
-                    showPreview(fileUrl, fileName);
+                    showPreview(fileUrl, fileName, row.getAttribute('data-file-ext'));
                 });
             });
 
@@ -730,7 +740,7 @@
                         // Add active class to clicked row
                         this.classList.add('active');
 
-                        showPreview(fileUrl, fileName);
+                        showPreview(fileUrl, fileName, this.getAttribute('data-file-ext'));
                     }
                 });
             });

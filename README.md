@@ -92,6 +92,14 @@ createdb -O <db_user> sifedora_testing
 php artisan test
 ```
 
-**Permission:** setelah mengubah `config/permissions.php`, jalankan `php artisan permission:sync`. Operasional server ada di [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+**Permission:** setelah mengubah `config/permissions.php`, jalankan `php artisan permission:sync`.
+
+## 📚 Dokumentasi
+
+Mulai dari [`docs/README.md`](docs/README.md). Dokumen terpenting untuk developer:
+
+- [Panduan Pengembang](docs/pengembang/PANDUAN-PENGEMBANG.md): otorisasi, penyimpanan dokumen, sanitasi rich text, notifikasi, test.
+- [Runbook](docs/operasional/RUNBOOK.md): deploy, rollback, backup, command per rilis.
+- [Jenis Pengguna](docs/produk/JENIS-PENGGUNA.md): hak akses per role.
 
 ---

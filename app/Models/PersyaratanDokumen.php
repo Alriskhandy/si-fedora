@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Master persyaratan dokumen versi lama. Sudah digantikan MasterKelengkapanVerifikasi; dipertahankan karena tabelnya masih ada.
+ */
 class PersyaratanDokumen extends Model
 {
     use HasFactory, SoftDeletes;
@@ -22,15 +25,15 @@ class PersyaratanDokumen extends Model
         'is_active',
     ];
 
-    protected $casts = [
-        'is_required' => 'boolean',
-        'is_active' => 'boolean',
-        'urutan' => 'integer',
-    ];
-
-    // Relasi
-    public function permohonanDokumen()
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
     {
-        return $this->hasMany(PermohonanDokumen::class, 'persyaratan_dokumen_id');
+        return [
+            'is_required' => 'boolean',
+            'is_active' => 'boolean',
+            'urutan' => 'integer',
+        ];
     }
 }

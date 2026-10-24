@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Catatan pada tahapan pelaksanaan fasilitasi.
+ */
 class PelaksanaanCatatan extends Model
 {
     use HasFactory;
@@ -20,17 +24,23 @@ class PelaksanaanCatatan extends Model
         'dibuat_oleh',
     ];
 
-    protected $casts = [
-        'peserta' => 'array',
-    ];
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'peserta' => 'array',
+        ];
+    }
 
     // Relasi
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function dibuatOleh()
+    public function dibuatOleh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }

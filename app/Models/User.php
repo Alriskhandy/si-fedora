@@ -3,12 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
+ * Pengguna aplikasi. Hak akses diatur lewat role & permission (spatie/laravel-permission, katalog di config/permissions.php).
+ *
  * @method bool hasRole($roles, $guard = null)
  * @method bool hasAnyRole($roles, $guard = null)
  * @method bool hasAllRoles($roles, $guard = null)
@@ -68,32 +73,17 @@ class User extends Authenticatable
     }
 
     // Relationships
-    public function kabupatenKota()
+    public function kabupatenKota(): BelongsTo
     {
         return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
     }
 
-    public function permohonanCreated()
-    {
-        return $this->hasMany(Permohonan::class, 'created_by');
-    }
-
-    public function permohonanAsVerifikator()
-    {
-        return $this->hasMany(Permohonan::class, 'verifikator_id');
-    }
-
-    public function evaluasi()
-    {
-        return $this->hasMany(Evaluasi::class, 'evaluator_id');
-    }
-
-    public function notifikasi()
+    public function notifikasi(): HasMany
     {
         return $this->hasMany(Notifikasi::class)->orderBy('created_at', 'desc');
     }
 
-    public function unreadNotifikasi()
+    public function unreadNotifikasi(): HasMany
     {
         return $this->hasMany(Notifikasi::class)->where('is_read', false);
     }
@@ -104,12 +94,12 @@ class User extends Authenticatable
     }
 
     // Assignment Kabupaten/Kota Relations
-    public function kabkotaAssignments()
+    public function kabkotaAssignments(): HasMany
     {
         return $this->hasMany(UserKabkotaAssignment::class);
     }
 
-    public function assignedKabkota()
+    public function assignedKabkota(): BelongsToMany
     {
         return $this->belongsToMany(KabupatenKota::class, 'user_kabkota_assignments')
             ->withPivot(['role_type', 'is_pic', 'is_active', 'assigned_from', 'assigned_until', 'notes'])
