@@ -237,11 +237,11 @@ class Permohonan extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor'])) {
+        if ($user->can('permohonan.view-all')) {
             return $query;
         }
 
-        if ($user->hasRole('pemohon')) {
+        if ($user->can('permohonan.view-own')) {
             return $query->where(function (Builder $q) use ($user) {
                 $q->where('user_id', $user->id);
 
@@ -251,7 +251,8 @@ class Permohonan extends Model
             });
         }
 
-        if ($user->hasRole('verifikator')) {
+        // Verifikator (pemegang permohonan.verify): assignment + permohonan selesai yang pernah diverifikasi
+        if ($user->can('permohonan.view-assigned') && $user->can('permohonan.verify')) {
             $assignments = UserKabkotaAssignment::where('user_id', $user->id)->where('is_active', true)->get();
 
             return $query->where(function (Builder $q) use ($assignments, $user) {
@@ -285,7 +286,8 @@ class Permohonan extends Model
             });
         }
 
-        if ($user->hasRole('fasilitator')) {
+        // Fasilitator: assignment aktif per kab/kota dan tahun
+        if ($user->can('permohonan.view-assigned')) {
             $assignments = UserKabkotaAssignment::where('user_id', $user->id)->where('is_active', true)->get();
 
             if ($assignments->isEmpty()) {

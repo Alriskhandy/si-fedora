@@ -9,12 +9,12 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb breadcrumb-style1 mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ auth()->user()->hasRole('pemohon') ? route('pemohon.undangan.index') : route('my-undangan.index') }}">Undangan Saya</a></li>
+                        <li class="breadcrumb-item"><a href="{{ auth()->user()->can('undangan-pelaksanaan.view-own') ? route('pemohon.undangan.index') : route('my-undangan.index') }}">Undangan Saya</a></li>
                         <li class="breadcrumb-item active">Detail</li>
                     </ol>
                 </nav>
             </div>
-            <a href="{{ auth()->user()->hasRole('pemohon') ? route('pemohon.undangan.index') : route('my-undangan.index') }}"
+            <a href="{{ auth()->user()->can('undangan-pelaksanaan.view-own') ? route('pemohon.undangan.index') : route('my-undangan.index') }}"
                 class="btn btn-secondary">
                 <i class='bx bx-arrow-back me-1'></i> Kembali
             </a>

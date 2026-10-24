@@ -83,7 +83,7 @@ class HasilFasilitasiController extends Controller
      */
     private function isAdmin(): bool
     {
-        return Auth::user()->hasAnyRole(['admin_peran', 'superadmin']);
+        return Auth::user()->can('hasil-fasilitasi.manage-all');
     }
 
     /**
@@ -91,7 +91,7 @@ class HasilFasilitasiController extends Controller
      */
     private function isKepalaBadan(): bool
     {
-        return Auth::user()->hasRole('kaban');
+        return Auth::user()->can('approval.approve');
     }
 
     /**
@@ -464,7 +464,7 @@ class HasilFasilitasiController extends Controller
         $isAdmin = $this->isAdmin();
         $isVerifikator = $this->isVerifikator($permohonan);
         $isTimMember = $this->isTimMember($permohonan);
-        $isPemohon = Auth::user()->hasRole('pemohon') && $permohonan->user_id === Auth::id();
+        $isPemohon = Auth::user()->can('permohonan.view-own') && $permohonan->user_id === Auth::id();
         $isKaban = $this->isKepalaBadan();
 
         // Check access - allow admin, tim member, verifikator, pemohon, and kaban

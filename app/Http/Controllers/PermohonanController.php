@@ -208,34 +208,10 @@ class PermohonanController extends Controller
         return view('pages.fasilitasi.show', compact('permohonan'));
     }
 
-    /**
-     * Show permohonan with tab-based layout (alternate view for testing)
-     */
-    public function showWithTabs(Permohonan $permohonan)
-    {
-        // Cek hak akses
-        $this->authorizeView($permohonan);
-
-        // Load relasi untuk tampilan lengkap
-        $permohonan->load([
-            'kabupatenKota',
-            'jenisDokumen',
-            'jadwalFasilitasi',
-            'penetapanJadwal',
-            'permohonanDokumen.masterKelengkapan',
-            'perpanjanganWaktu',
-            'undanganPelaksanaan',
-            'hasilFasilitasi',
-            'tindakLanjut',
-            'penetapanPerda',
-            'activityLogs.causer',
-        ]);
-
-        return view('pages.fasilitasi.show', compact('permohonan'));
-    }
-
     public function submit(Request $request, Permohonan $permohonan)
     {
+        Gate::authorize('update', $permohonan);
+
         // Allow resubmit if status is 'proses' but submitted_at is null (failed submission)
         if ($permohonan->status_akhir !== 'belum' && ! ($permohonan->status_akhir === 'proses' && is_null($permohonan->submitted_at))) {
             if ($request->expectsJson()) {
@@ -361,6 +337,8 @@ class PermohonanController extends Controller
 
     public function destroy(Permohonan $permohonan)
     {
+        Gate::authorize('update', $permohonan);
+
         // Hanya bisa hapus kalo status belum
         if ($permohonan->status_akhir !== 'belum') {
             return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa dihapus.');

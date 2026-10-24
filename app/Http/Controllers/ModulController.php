@@ -25,8 +25,8 @@ class ModulController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->hasRole('superadmin')) {
-            // Superadmin lihat semua modul
+        if ($user->can('modul.manage')) {
+            // Pengelola modul lihat semua modul
             $modul = Modul::with('uploader')->latest()->get();
         } else {
             // Role lain hanya lihat modul yang sesuai rolenya
@@ -35,7 +35,7 @@ class ModulController extends Controller
         }
 
         $roles = self::ROLES;
-        $isSuperadmin = $user->hasRole('superadmin');
+        $isSuperadmin = $user->can('modul.manage');
 
         return view('pages.modul.index', compact('modul', 'roles', 'isSuperadmin'));
     }
@@ -76,8 +76,8 @@ class ModulController extends Controller
         $user = Auth::user();
         $roleName = $user->getRoleNames()->first() ?? '';
 
-        // Cek akses: superadmin bisa download semua, role lain sesuai modul
-        if (! $user->hasRole('superadmin') && $modul->role !== 'all' && $modul->role !== $roleName) {
+        // Cek akses: pengelola modul bisa download semua, role lain sesuai modul
+        if (! $user->can('modul.manage') && $modul->role !== 'all' && $modul->role !== $roleName) {
             abort(403, 'Anda tidak memiliki akses untuk mengunduh modul ini.');
         }
 

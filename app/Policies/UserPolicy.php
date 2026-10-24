@@ -7,11 +7,11 @@ use App\Models\User;
 class UserPolicy
 {
     /**
-     * Akun superadmin hanya boleh dilihat dan dikelola oleh superadmin.
+     * Akun superadmin hanya boleh dilihat dan dikelola oleh pemegang permission user.manage-superadmin.
      */
     public function manage(User $user, User $target): bool
     {
-        if ($user->hasRole('superadmin')) {
+        if ($user->can('user.manage-superadmin')) {
             return true;
         }
 

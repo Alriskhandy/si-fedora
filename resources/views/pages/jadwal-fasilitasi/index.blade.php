@@ -22,11 +22,11 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="card-title mb-0">Jadwal Fasilitasi</h5>
-                            @if (!auth()->user()->hasRole('admin_peran'))
+                            @if (!auth()->user()->can('jadwal.manage'))
                                 <small class="text-muted">Jadwal fasilitasi yang tersedia untuk permohonan</small>
                             @endif
                         </div>
-                        @if (auth()->user()->hasRole('admin_peran'))
+                        @if (auth()->user()->can('jadwal.manage'))
                             <a href="{{ route('jadwal.create') }}" class="btn btn-primary">
                                 <i class="bx bx-plus me-1"></i> Tambah Jadwal
                             </a>
@@ -36,7 +36,7 @@
                         <!-- Search & Filters -->
                         <form method="GET" action="{{ route('jadwal.index') }}">
                             <div class="row mb-3">
-                                @if (auth()->user()->hasRole('admin_peran'))
+                                @if (auth()->user()->can('jadwal.manage'))
                                     <div class="col-md-3">
                                         <select class="form-select" name="status">
                                             <option value="">Semua Status</option>
@@ -52,7 +52,7 @@
                                         </select>
                                     </div>
                                 @endif
-                                <div class="{{ auth()->user()->hasRole('admin_peran') ? 'col-md-3' : 'col-md-4' }}">
+                                <div class="{{ auth()->user()->can('jadwal.manage') ? 'col-md-3' : 'col-md-4' }}">
                                     <select class="form-select" name="tahun_anggaran">
                                         <option value="">Semua Tahun</option>
                                         @foreach ($filterOptions['tahunList'] as $tahun)
@@ -63,7 +63,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="{{ auth()->user()->hasRole('admin_peran') ? 'col-md-3' : 'col-md-4' }}">
+                                <div class="{{ auth()->user()->can('jadwal.manage') ? 'col-md-3' : 'col-md-4' }}">
                                     <select class="form-select" name="jenis_dokumen">
                                         <option value="">Semua Jenis</option>
                                         @foreach ($filterOptions['jenisDokumenList'] as $jenisDokumen)
@@ -74,7 +74,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="{{ auth()->user()->hasRole('admin_peran') ? 'col-md-3' : 'col-md-4' }}">
+                                <div class="{{ auth()->user()->can('jadwal.manage') ? 'col-md-3' : 'col-md-4' }}">
                                     <button class="btn btn-outline-secondary w-100" type="submit">
                                         <i class="bx bx-search"></i> Filter
                                     </button>
@@ -92,7 +92,7 @@
                                         <th>Jenis Dokumen</th>
                                         <th>Tanggal Fasilitasi</th>
                                         <th>Batas Permohonan</th>
-                                        @if (auth()->user()->hasRole('admin_peran'))
+                                        @if (auth()->user()->can('jadwal.manage'))
                                             <th>Status</th>
                                         @endif
                                         <th>Aksi</th>
@@ -123,7 +123,7 @@
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
-                                            @if (auth()->user()->hasRole('admin_peran'))
+                                            @if (auth()->user()->can('jadwal.manage'))
                                                 <td>
                                                     @if ($item->status == 'draft')
                                                         <span class="badge bg-label-secondary">Draft</span>
@@ -153,7 +153,7 @@
                                                             </a>
                                                         @endif
 
-                                                        @if (auth()->user()->hasRole('pemohon'))
+                                                        @if (auth()->user()->can('permohonan.create'))
                                                             @if ($item->batas_permohonan >= now())
                                                                 <a class="dropdown-item"
                                                                     href="{{ route('permohonan.create', ['jadwal_id' => $item->id]) }}">
@@ -172,7 +172,7 @@
                                                             @endif
                                                         @endif
 
-                                                        @if (auth()->user()->hasRole('admin_peran'))
+                                                        @if (auth()->user()->can('jadwal.manage'))
                                                             <div class="dropdown-divider"></div>
                                                             <a class="dropdown-item"
                                                                 href="{{ route('jadwal.edit', $item) }}">
@@ -194,9 +194,9 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="{{ auth()->user()->hasRole('admin_peran') ? '7' : '6' }}"
+                                            <td colspan="{{ auth()->user()->can('jadwal.manage') ? '7' : '6' }}"
                                                 class="text-center text-muted">
-                                                @if (auth()->user()->hasRole('admin_peran'))
+                                                @if (auth()->user()->can('jadwal.manage'))
                                                     Tidak ada jadwal fasilitasi
                                                 @else
                                                     Belum ada jadwal fasilitasi yang tersedia

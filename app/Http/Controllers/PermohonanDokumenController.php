@@ -27,10 +27,8 @@ class PermohonanDokumenController extends Controller
         $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($request->permohonan_id);
 
         // Cek akses
-        if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonan->user_id !== Auth::id()) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
+        if ($permohonan->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
         }
 
         // Cek batas waktu upload (perpanjangan > jadwal)
@@ -66,10 +64,8 @@ class PermohonanDokumenController extends Controller
         ]);
 
         // Cek akses
-        if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
-                abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
-            }
+        if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
         // Cek batas waktu upload (perpanjangan > jadwal)
@@ -128,17 +124,15 @@ class PermohonanDokumenController extends Controller
             'file.max' => 'Ukuran file maksimal 100MB',
         ]);
 
-        // Cek akses - hanya pemohon yang bisa upload
-        if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
-                Log::warning('[Upload Dokumen] Akses ditolak', [
-                    'dokumen_id' => $permohonanDokumen->id,
-                    'user_id' => Auth::id(),
-                    'owner_id' => $permohonanDokumen->permohonan->user_id,
-                ]);
+        // Cek akses - hanya pemohon pemilik permohonan yang bisa upload
+        if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
+            Log::warning('[Upload Dokumen] Akses ditolak', [
+                'dokumen_id' => $permohonanDokumen->id,
+                'user_id' => Auth::id(),
+                'owner_id' => $permohonanDokumen->permohonan->user_id,
+            ]);
 
-                return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
-            }
+            return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
         // Cek status permohonan - hanya bisa upload jika status belum atau revisi
@@ -269,10 +263,8 @@ class PermohonanDokumenController extends Controller
     public function removeFile(PermohonanDokumen $permohonanDokumen)
     {
         // Cek akses - hanya pemohon pemilik permohonan
-        if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
-                return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
-            }
+        if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
+            return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
         // Cek status permohonan - hanya bisa hapus jika status belum atau revisi
@@ -309,10 +301,8 @@ class PermohonanDokumenController extends Controller
     public function destroy(PermohonanDokumen $permohonanDokumen)
     {
         // Cek akses
-        if (Auth::user()->hasRole('pemohon')) {
-            if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
-                abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
-            }
+        if ($permohonanDokumen->permohonan->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
         }
 
         // Hapus file

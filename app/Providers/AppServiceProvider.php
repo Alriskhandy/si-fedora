@@ -28,9 +28,9 @@ class AppServiceProvider extends ServiceProvider
         // Register policies
         Gate::policy(PerpanjanganWaktu::class, PerpanjanganWaktuPolicy::class);
 
-        // Batasi akses Log Viewer hanya untuk superadmin
+        // Batasi akses Log Viewer untuk pemegang permission log-viewer.view
         Gate::define('viewLogViewer', function ($user) {
-            return $user->hasRole('superadmin');
+            return $user->can('log-viewer.view');
         });
 
         Paginator::useBootstrapFive();

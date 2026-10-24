@@ -20,12 +20,8 @@
 
 @section('main')
     @php
-        $isKaban = auth()->user()->hasRole('kaban');
-        $isAdmin = auth()->user()->hasRole('admin_peran');
-        $isPemohon = auth()->user()->hasRole('pemohon');
-        $isTimFedora = auth()
-            ->user()
-            ->hasAnyRole(['verifikator', 'fasilitator']);
+        $isKaban = auth()->user()->can('penetapan-jadwal.manage');
+        $isAdmin = auth()->user()->can('undangan-pelaksanaan.manage');
     @endphp
 
     <div class="container-xxl flex-grow-1 container-p-y">
@@ -357,7 +353,7 @@
                         </div>
 
                         <!-- Konfirmasi Kehadiran -->
-                        @if (auth()->user()->hasRole('pemohon'))
+                        @if (auth()->user()->can('undangan-pelaksanaan.view-own'))
                             @if ($permohonan->undanganPelaksanaan->konfirmasi_kehadiran === null)
                                 <div class="alert alert-warning border-0 mb-3"
                                     style="background-color: rgba(255, 193, 7, 0.1);">

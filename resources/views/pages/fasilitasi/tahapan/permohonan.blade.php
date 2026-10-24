@@ -97,7 +97,7 @@
             $totalDokumen = $permohonan->permohonanDokumen->count();
             $dokumenLengkap = $permohonan->permohonanDokumen->where('is_ada', true)->count();
             $progress = $totalDokumen > 0 ? ($dokumenLengkap / $totalDokumen) * 100 : 0;
-            $isPemohon = auth()->user()->hasRole('pemohon');
+            $isPemohon = auth()->user()->can('permohonan.upload-dokumen');
         @endphp
 
         <!-- Dokumen Kelengkapan -->

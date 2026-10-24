@@ -22,8 +22,8 @@ class JadwalFasilitasiController extends Controller
         $user = Auth::user();
         $query = JadwalFasilitasi::with(['dibuatOleh', 'jenisDokumen']);
 
-        // Untuk non-admin, hanya tampilkan jadwal yang sudah published
-        if (! $user->hasRole('admin_peran')) {
+        // Selain pengelola jadwal, hanya tampilkan jadwal yang sudah published
+        if (! $user->can('jadwal.manage')) {
             $query->where('status', 'published');
         }
 
@@ -157,7 +157,7 @@ class JadwalFasilitasiController extends Controller
 
         $jadwalExtendedIds = collect();
         $jadwalEligibleForExtensionIds = collect();
-        if ($user->hasRole('pemohon')) {
+        if ($user->can('perpanjangan-waktu.submit')) {
             [$jadwalExtendedIds, $jadwalEligibleForExtensionIds] = $this->extensionEligibilityIds(collect([$jadwal->id]));
         }
 
@@ -175,7 +175,7 @@ class JadwalFasilitasiController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user->hasRole('pemohon') || $jadwalIds->isEmpty()) {
+        if (! $user->can('perpanjangan-waktu.submit') || $jadwalIds->isEmpty()) {
             return [collect(), collect()];
         }
 

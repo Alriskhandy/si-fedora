@@ -3,8 +3,8 @@
 namespace App\Policies;
 
 use App\Models\JadwalFasilitasi;
-use App\Models\PerpanjanganWaktu;
 use App\Models\Permohonan;
+use App\Models\PerpanjanganWaktu;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -17,7 +17,7 @@ class PerpanjanganWaktuPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['pemohon', 'admin_peran', 'superadmin']);
+        return $user->can('perpanjangan-waktu.view');
     }
 
     /**
@@ -25,13 +25,13 @@ class PerpanjanganWaktuPolicy
      */
     public function view(User $user, PerpanjanganWaktu $perpanjanganWaktu): bool
     {
-        // Pemohon hanya bisa lihat miliknya sendiri
-        if ($user->hasRole('pemohon')) {
-            return $perpanjanganWaktu->user_id === $user->id;
+        // Pemroses (admin) bisa lihat semua
+        if ($user->can('perpanjangan-waktu.process')) {
+            return true;
         }
 
-        // Admin bisa lihat semua
-        return $user->hasAnyRole(['admin_peran', 'superadmin']);
+        // Pengaju (pemohon) hanya bisa lihat miliknya sendiri
+        return $user->can('perpanjangan-waktu.submit') && $perpanjanganWaktu->user_id === $user->id;
     }
 
     /**
@@ -43,7 +43,7 @@ class PerpanjanganWaktuPolicy
      */
     public function create(User $user, Permohonan|JadwalFasilitasi $target): bool
     {
-        if (!$user->hasRole('pemohon')) {
+        if (! $user->can('perpanjangan-waktu.submit')) {
             return false;
         }
 
@@ -54,7 +54,7 @@ class PerpanjanganWaktuPolicy
 
             // Hanya boleh mengajukan 1 kali per permohonan agar tidak
             // menimbulkan request ganda/redundan di sisi admin.
-            return !$target->perpanjanganWaktu()->exists();
+            return ! $target->perpanjanganWaktu()->exists();
         }
 
         return JadwalFasilitasi::availableForExtensionRequest($user->id)
@@ -67,8 +67,8 @@ class PerpanjanganWaktuPolicy
      */
     public function updateStatus(User $user, PerpanjanganWaktu $perpanjanganWaktu): bool
     {
-        // Hanya admin yang bisa approve/reject
-        return $user->hasAnyRole(['admin_peran', 'superadmin']);
+        // Hanya pemroses yang bisa approve/reject
+        return $user->can('perpanjangan-waktu.process');
     }
 
     /**
@@ -76,13 +76,14 @@ class PerpanjanganWaktuPolicy
      */
     public function delete(User $user, PerpanjanganWaktu $perpanjanganWaktu): bool
     {
-        // Pemohon hanya bisa delete miliknya sendiri yang masih pending
-        if ($user->hasRole('pemohon')) {
-            return $perpanjanganWaktu->user_id === $user->id
-                && is_null($perpanjanganWaktu->diproses_at);
+        // Pemroses (admin) bisa delete semua
+        if ($user->can('perpanjangan-waktu.process')) {
+            return true;
         }
 
-        // Admin bisa delete semua
-        return $user->hasAnyRole(['admin_peran', 'superadmin']);
+        // Pengaju hanya bisa delete miliknya sendiri yang masih pending
+        return $user->can('perpanjangan-waktu.submit')
+            && $perpanjanganWaktu->user_id === $user->id
+            && is_null($perpanjanganWaktu->diproses_at);
     }
 }

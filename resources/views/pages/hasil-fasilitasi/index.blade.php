@@ -89,7 +89,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if (auth()->user()->hasRole('fasilitator'))
+                                        @if (auth()->user()->can('hasil-fasilitasi.input'))
                                             <a href="{{ route('hasil-fasilitasi.create', $item) }}"
                                                 class="btn btn-sm btn-primary">
                                                 <i class="bx bx-edit"></i>

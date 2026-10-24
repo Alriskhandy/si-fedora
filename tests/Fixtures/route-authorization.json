@@ -1,0 +1,1140 @@
+{
+    "DELETE admin/permissions/{permission}": [
+        "superadmin"
+    ],
+    "DELETE admin/roles/{role}": [
+        "superadmin"
+    ],
+    "DELETE hasil-fasilitasi/{permohonan}/form/{id}": [
+        "fasilitator"
+    ],
+    "DELETE hasil-fasilitasi/{permohonan}/rekomendasi/{id}": [
+        "fasilitator"
+    ],
+    "DELETE hasil-fasilitasi/{permohonan}/sistematika/{id}": [
+        "fasilitator"
+    ],
+    "DELETE hasil-fasilitasi/{permohonan}/urusan/{id}": [
+        "fasilitator"
+    ],
+    "DELETE jadwal/{jadwal}": [
+        "admin_peran"
+    ],
+    "DELETE kabupaten-kota/{kabupatenKota}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE master-bab/{masterBab}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE master-jenis-dokumen/{masterJenisDokuman}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE master-kelengkapan/{masterKelengkapan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE master-tahapan/{masterTahapan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE master-urusan/{masterUrusan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE modul/{modul}": [
+        "superadmin"
+    ],
+    "DELETE notifikasi": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "DELETE notifikasi/{id}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "DELETE permohonan-dokumen/{permohonanDokumen}": [
+        "pemohon"
+    ],
+    "DELETE permohonan-dokumen/{permohonanDokumen}/file": [
+        "pemohon"
+    ],
+    "DELETE permohonan/{permohonan}": [
+        "pemohon"
+    ],
+    "DELETE permohonan/{permohonan}/dokumen/{dokumen}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "DELETE perpanjangan-waktu/{perpanjanganWaktu}": [
+        "pemohon"
+    ],
+    "DELETE profile": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "DELETE surat-pemberitahuan/{suratPemberitahuan}": [
+        "admin_peran"
+    ],
+    "DELETE tim-assignment/{timAssignment}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "DELETE users/{user}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET activity-log": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "auditor"
+    ],
+    "GET admin-peran": [
+        "admin_peran"
+    ],
+    "GET admin/permissions": [
+        "superadmin"
+    ],
+    "GET admin/permissions/create": [
+        "superadmin"
+    ],
+    "GET admin/permissions/{permission}": [
+        "superadmin"
+    ],
+    "GET admin/permissions/{permission}/edit": [
+        "superadmin"
+    ],
+    "GET admin/roles": [
+        "superadmin"
+    ],
+    "GET admin/roles/create": [
+        "superadmin"
+    ],
+    "GET admin/roles/{role}": [
+        "superadmin"
+    ],
+    "GET admin/roles/{role}/edit": [
+        "superadmin"
+    ],
+    "GET approval": [
+        "kaban"
+    ],
+    "GET approval/{permohonan}": [
+        "kaban"
+    ],
+    "GET approval/{permohonan}/download-draft-final": [
+        "kaban"
+    ],
+    "GET arsip": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET arsip/jenis/{jenisDokumenId}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET arsip/{permohonan}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET berkas/{jenis}/{id}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET confirm-password": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET dashboard": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET hasil-fasilitasi": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/create": [
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/download": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/download-draft-final": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/download-pdf": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/download-word": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/generate": [
+        "fasilitator"
+    ],
+    "GET hasil-fasilitasi/{permohonan}/preview-pdf": [
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator"
+    ],
+    "GET jadwal": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET jadwal/create": [
+        "admin_peran"
+    ],
+    "GET jadwal/{jadwal}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET jadwal/{jadwal}/download": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET jadwal/{jadwal}/edit": [
+        "admin_peran"
+    ],
+    "GET kabupaten-kota": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET kabupaten-kota/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET kabupaten-kota/{kabupatenKota}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET kabupaten-kota/{kabupatenKota}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET laporan-verifikasi": [
+        "admin_peran"
+    ],
+    "GET laporan-verifikasi/{permohonan}": [
+        "admin_peran"
+    ],
+    "GET laporan-verifikasi/{permohonan}/create": [
+        "admin_peran"
+    ],
+    "GET laporan-verifikasi/{permohonan}/download": [
+        "admin_peran"
+    ],
+    "GET master-bab": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-bab/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-bab/{masterBab}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-bab/{masterBab}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-jenis-dokumen": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-jenis-dokumen/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-jenis-dokumen/{masterJenisDokuman}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-jenis-dokumen/{masterJenisDokuman}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-kelengkapan": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-kelengkapan/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-kelengkapan/{masterKelengkapan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-kelengkapan/{masterKelengkapan}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-tahapan": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-tahapan/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-tahapan/{masterTahapan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-tahapan/{masterTahapan}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-urusan": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-urusan/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-urusan/{masterUrusan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET master-urusan/{masterUrusan}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET modul": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET modul/{modul}/download": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET my-undangan": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET my-undangan/{id}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET notifikasi": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET pemohon/undangan": [
+        "pemohon"
+    ],
+    "GET pemohon/undangan/{id}": [
+        "pemohon"
+    ],
+    "GET penetapan-jadwal": [
+        "kaban"
+    ],
+    "GET penetapan-jadwal/{permohonan}": [
+        "kaban"
+    ],
+    "GET penetapan-jadwal/{permohonan}/create": [
+        "kaban"
+    ],
+    "GET penetapan-perda/{permohonan}/download": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan-dokumen": [
+        "pemohon"
+    ],
+    "GET permohonan-dokumen/create": [
+        "pemohon"
+    ],
+    "GET permohonan-dokumen/{permohonanDokumen}": [
+        "pemohon"
+    ],
+    "GET permohonan-dokumen/{permohonanDokumen}/edit": [
+        "pemohon"
+    ],
+    "GET permohonan/create": [
+        "pemohon"
+    ],
+    "GET permohonan/{permohonan}": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/dokumen/{dokumen}/download": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/hasil": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/jadwal": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/pelaksanaan": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/penetapan": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/permohonan": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/tindak-lanjut": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET permohonan/{permohonan}/tahapan/verifikasi": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET perpanjangan-waktu": [
+        "superadmin",
+        "admin_peran",
+        "pemohon"
+    ],
+    "GET perpanjangan-waktu/create": [
+        "pemohon"
+    ],
+    "GET perpanjangan-waktu/{perpanjanganWaktu}": [
+        "superadmin",
+        "admin_peran",
+        "pemohon"
+    ],
+    "GET perpanjangan-waktu/{perpanjanganWaktu}/download": [
+        "superadmin",
+        "admin_peran",
+        "pemohon"
+    ],
+    "GET phone/verify": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET phone/verify/otp": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET profile": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET public/surat-penyampaian-hasil": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET public/surat-penyampaian-hasil/{permohonan}/download": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET surat-pemberitahuan": [
+        "admin_peran"
+    ],
+    "GET surat-pemberitahuan/create": [
+        "admin_peran"
+    ],
+    "GET surat-pemberitahuan/{suratPemberitahuan}": [
+        "admin_peran"
+    ],
+    "GET surat-pemberitahuan/{suratPemberitahuan}/download": [
+        "admin_peran"
+    ],
+    "GET surat-pemberitahuan/{suratPemberitahuan}/edit": [
+        "admin_peran"
+    ],
+    "GET surat-penyampaian-hasil": [
+        "kaban"
+    ],
+    "GET surat-penyampaian-hasil/{permohonan}": [
+        "kaban"
+    ],
+    "GET surat-penyampaian-hasil/{permohonan}/create": [
+        "kaban"
+    ],
+    "GET tim-assignment": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET tim-assignment/api/tim-assignment/users": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET tim-assignment/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET tim-assignment/{timAssignment}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET tim-assignment/{timAssignment}/download-sk": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET tim-assignment/{timAssignment}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET tindak-lanjut": [
+        "pemohon"
+    ],
+    "GET tindak-lanjut/{permohonan}/create": [
+        "pemohon"
+    ],
+    "GET tindak-lanjut/{permohonan}/download": [
+        "pemohon"
+    ],
+    "GET undangan-pelaksanaan": [
+        "admin_peran"
+    ],
+    "GET undangan-pelaksanaan/{permohonan}": [
+        "admin_peran"
+    ],
+    "GET undangan-pelaksanaan/{permohonan}/create": [
+        "admin_peran"
+    ],
+    "GET undangan-pelaksanaan/{permohonan}/download": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET users": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET users/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET users/export": [
+        "superadmin"
+    ],
+    "GET users/{user}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET users/{user}/edit": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET validasi-hasil/{permohonan}/generate": [
+        "admin_peran"
+    ],
+    "GET validasi-hasil/{permohonan}/generate-pdf": [
+        "admin_peran"
+    ],
+    "GET verifikasi/{permohonan}/lembar-verifikasi": [
+        "verifikator"
+    ],
+    "GET verify-email": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "GET verify-email/{id}/{hash}": [],
+    "PATCH profile": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST admin-peran/{permohonan}/assign": [
+        "admin_peran"
+    ],
+    "POST admin-peran/{permohonan}/unassign": [
+        "admin_peran"
+    ],
+    "POST admin/permissions": [
+        "superadmin"
+    ],
+    "POST admin/roles": [
+        "superadmin"
+    ],
+    "POST approval/{permohonan}/approve": [
+        "kaban"
+    ],
+    "POST approval/{permohonan}/reject": [
+        "kaban"
+    ],
+    "POST confirm-password": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST email/verification-notification": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST hasil-fasilitasi/{permohonan}": [
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/form": [
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/rekomendasi": [
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/sistematika": [
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/submit": [
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/submit-to-kaban": [
+        "superadmin",
+        "admin_peran",
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/upload-draft-final": [
+        "superadmin",
+        "admin_peran",
+        "fasilitator"
+    ],
+    "POST hasil-fasilitasi/{permohonan}/urusan": [
+        "fasilitator"
+    ],
+    "POST jadwal": [
+        "admin_peran"
+    ],
+    "POST kabupaten-kota": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST laporan-verifikasi/{permohonan}": [
+        "admin_peran"
+    ],
+    "POST logout": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST master-bab": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST master-jenis-dokumen": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST master-jenis-dokumen/{masterJenisDokuman}/toggle-status": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST master-kelengkapan": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST master-tahapan": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST master-urusan": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST modul": [
+        "superadmin"
+    ],
+    "POST notifikasi/mark-all-read": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST pelaksanaan-fasilitasi/{permohonan}/complete": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST penetapan-jadwal/{permohonan}": [
+        "kaban"
+    ],
+    "POST penetapan-perda/{permohonan}/submit": [
+        "pemohon"
+    ],
+    "POST penetapan-perda/{permohonan}/upload": [
+        "pemohon"
+    ],
+    "POST permohonan": [
+        "pemohon"
+    ],
+    "POST permohonan-dokumen": [
+        "pemohon"
+    ],
+    "POST permohonan/{permohonan}/dokumen/upload-pelaksanaan": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST permohonan/{permohonan}/submit": [
+        "pemohon"
+    ],
+    "POST perpanjangan-waktu": [
+        "pemohon"
+    ],
+    "POST phone/verify/otp": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST phone/verify/resend": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST phone/verify/send": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "POST surat-pemberitahuan": [
+        "admin_peran"
+    ],
+    "POST surat-pemberitahuan/{suratPemberitahuan}/send": [
+        "admin_peran"
+    ],
+    "POST surat-penyampaian-hasil/{permohonan}": [
+        "kaban"
+    ],
+    "POST tim-assignment": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST tim-assignment/toggle-tim-status": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST tim-assignment/{timAssignment}/activate": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST tim-assignment/{timAssignment}/toggle-status": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST tindak-lanjut/{permohonan}": [
+        "pemohon"
+    ],
+    "POST tindak-lanjut/{permohonan}/submit": [
+        "pemohon"
+    ],
+    "POST tindak-lanjut/{permohonan}/upload": [
+        "pemohon"
+    ],
+    "POST undangan-pelaksanaan/{permohonan}": [
+        "admin_peran"
+    ],
+    "POST undangan-pelaksanaan/{permohonan}/send": [
+        "admin_peran"
+    ],
+    "POST undangan-pelaksanaan/{permohonan}/update-file": [
+        "admin_peran"
+    ],
+    "POST users": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST users/{user}/reset-password": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST validasi-hasil/{permohonan}/approve": [
+        "admin_peran"
+    ],
+    "POST validasi-hasil/{permohonan}/revise": [
+        "admin_peran"
+    ],
+    "POST verifikasi/{permohonan}/submit": [
+        "verifikator"
+    ],
+    "POST verifikasi/{permohonan}/verifikasi": [
+        "verifikator"
+    ],
+    "POST verifikasi/{permohonan}/verifikasi-dokumen": [
+        "verifikator"
+    ],
+    "PUT admin/permissions/{permission}": [
+        "superadmin"
+    ],
+    "PUT admin/roles/{role}": [
+        "superadmin"
+    ],
+    "PUT hasil-fasilitasi/{permohonan}/form/{id}": [
+        "fasilitator"
+    ],
+    "PUT hasil-fasilitasi/{permohonan}/rekomendasi/{id}": [
+        "fasilitator"
+    ],
+    "PUT hasil-fasilitasi/{permohonan}/sistematika/{id}": [
+        "fasilitator"
+    ],
+    "PUT hasil-fasilitasi/{permohonan}/urusan/{id}": [
+        "fasilitator"
+    ],
+    "PUT jadwal/{jadwal}": [
+        "admin_peran"
+    ],
+    "PUT kabupaten-kota/{kabupatenKota}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT master-bab/{masterBab}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT master-jenis-dokumen/{masterJenisDokuman}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT master-kelengkapan/{masterKelengkapan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT master-tahapan/{masterTahapan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT master-urusan/{masterUrusan}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT password": [
+        "(tanpa role)",
+        "superadmin",
+        "kaban",
+        "admin_peran",
+        "verifikator",
+        "fasilitator",
+        "pemohon",
+        "auditor"
+    ],
+    "PUT penetapan-jadwal/{permohonan}": [
+        "kaban"
+    ],
+    "PUT permohonan-dokumen/{permohonanDokumen}": [
+        "pemohon"
+    ],
+    "PUT permohonan-dokumen/{permohonanDokumen}/upload": [
+        "pemohon"
+    ],
+    "PUT permohonan/{permohonan}/tahapan/update-deadline": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT perpanjangan-waktu/{perpanjanganWaktu}/process": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT perpanjangan-waktu/{perpanjanganWaktu}/upload-surat": [
+        "pemohon"
+    ],
+    "PUT surat-pemberitahuan/{suratPemberitahuan}": [
+        "admin_peran"
+    ],
+    "PUT tim-assignment/{timAssignment}": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT users/{user}": [
+        "superadmin",
+        "admin_peran"
+    ]
+}

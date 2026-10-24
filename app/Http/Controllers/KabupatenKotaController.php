@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\KabupatenKota;
 use Illuminate\Http\Request;
-use App\Models\Evaluasi; 
 
 class KabupatenKotaController extends Controller
 {
@@ -13,8 +12,8 @@ class KabupatenKotaController extends Controller
         $query = KabupatenKota::query();
 
         if ($request->filled('search')) {
-            $query->where('nama', 'like', '%' . $request->search . '%')
-                  ->orWhere('kode', 'like', '%' . $request->search . '%');
+            $query->where('nama', 'like', '%'.$request->search.'%')
+                ->orWhere('kode', 'like', '%'.$request->search.'%');
         }
 
         $kabupatenKota = $query->latest()->paginate(10);
@@ -25,60 +24,6 @@ class KabupatenKotaController extends Controller
     public function create()
     {
         return view('pages.master-kab-kota.create');
-    }
-
-    public function evaluasi(KabupatenKota $kabupatenKota)
-    {
-        $this->authorize('evaluasi.view');
-        
-        $evaluasi = $kabupatenKota->evaluasi()->latest()->get();
-        
-        return view('pages.master-kab-kota.evaluasi', [
-            'kabupatenKota' => $kabupatenKota,
-            'evaluasi' => $evaluasi
-        ]);
-    }
-
-    public function storeEvaluasi(Request $request, KabupatenKota $kabupatenKota)
-    {
-        $this->authorize('evaluasi.create');
-        
-        $validated = $request->validate([
-            'aspek' => 'required|string|max:255',
-            'nilai' => 'required|numeric|min:0|max:100',
-            'keterangan' => 'nullable|string'
-        ]);
-        
-        $kabupatenKota->evaluasi()->create($validated);
-        
-        return redirect()->back()
-            ->with('success', 'Evaluasi berhasil ditambahkan');
-    }
-
-    public function updateEvaluasi(Request $request, Evaluasi $evaluasi)
-    {
-        $this->authorize('evaluasi.edit');
-        
-        $validated = $request->validate([
-            'aspek' => 'required|string|max:255',
-            'nilai' => 'required|numeric|min:0|max:100',
-            'keterangan' => 'nullable|string'
-        ]);
-        
-        $evaluasi->update($validated);
-        
-        return redirect()->back()
-            ->with('success', 'Evaluasi berhasil diperbarui');
-    }
-
-    public function destroyEvaluasi(Evaluasi $evaluasi)
-    {
-        $this->authorize('evaluasi.delete');
-        
-        $evaluasi->delete();
-        
-        return redirect()->back()
-            ->with('success', 'Evaluasi berhasil dihapus');
     }
 
     public function store(Request $request)
@@ -121,7 +66,7 @@ class KabupatenKotaController extends Controller
     public function update(Request $request, KabupatenKota $kabupatenKota)
     {
         $request->validate([
-            'kode' => 'required|string|unique:kabupaten_kota,kode,' . $kabupatenKota->id,
+            'kode' => 'required|string|unique:kabupaten_kota,kode,'.$kabupatenKota->id,
             'nama' => 'required|string|max:100',
             'jenis' => 'required|in:kabupaten,kota',
             'kepala_daerah' => 'nullable|string|max:100',
@@ -148,6 +93,7 @@ class KabupatenKotaController extends Controller
     public function destroy(KabupatenKota $kabupatenKota)
     {
         $kabupatenKota->delete();
+
         return redirect()->route('kabupaten-kota.index')->with('success', 'Kabupaten/Kota berhasil dihapus.');
     }
 }

@@ -31,9 +31,9 @@
 
 @section('main')
     @php
-        $isPemohon = auth()->user()->hasRole('pemohon');
-        $isVerifikator = auth()->user()->hasRole('verifikator');
-        $isAdmin = auth()->user()->hasRole('admin_peran');
+        $isPemohon = auth()->user()->can('permohonan.upload-dokumen');
+        $isVerifikator = auth()->user()->can('permohonan.verify');
+        $isAdmin = auth()->user()->can('laporan-verifikasi.manage');
         $allDocsVerified = $permohonan->permohonanDokumen->count() > 0
             && $permohonan->permohonanDokumen->every(fn($d) => $d->status_verifikasi === 'verified');
     @endphp

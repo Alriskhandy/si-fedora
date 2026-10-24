@@ -22,7 +22,7 @@ class PerpanjanganWaktuController extends Controller
         $this->authorize('viewAny', PerpanjanganWaktu::class);
 
         $perpanjanganList = PerpanjanganWaktu::with(['permohonan.kabupatenKota', 'permohonan.jenisDokumen', 'user', 'admin'])
-            ->when(auth()->user()->hasRole('pemohon'), function ($query) {
+            ->when(! auth()->user()->can('perpanjangan-waktu.process'), function ($query) {
                 $query->where('user_id', auth()->id());
             })
             ->when($request->filled('status'), function ($query) use ($request) {
@@ -43,7 +43,7 @@ class PerpanjanganWaktuController extends Controller
         $permohonanLewatBatas = collect();
         $jadwalLewatBatas = collect();
 
-        if (auth()->user()->hasRole('pemohon')) {
+        if (auth()->user()->can('perpanjangan-waktu.submit')) {
             $permohonanLewatBatas = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'jadwalFasilitasi'])
                 ->where('user_id', auth()->id())
                 ->where('status_akhir', 'belum')
@@ -74,7 +74,7 @@ class PerpanjanganWaktuController extends Controller
         if ($request->filled('permohonan_id')) {
             $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($request->query('permohonan_id'));
 
-            if (! auth()->user()->hasRole('pemohon') || $permohonan->user_id !== auth()->id()) {
+            if (! auth()->user()->can('perpanjangan-waktu.submit') || $permohonan->user_id !== auth()->id()) {
                 abort(403);
             }
 
@@ -202,8 +202,7 @@ class PerpanjanganWaktuController extends Controller
      */
     public function process(Request $request, PerpanjanganWaktu $perpanjanganWaktu)
     {
-        // Only admin_peran and superadmin can process
-        if (! auth()->user()->hasAnyRole(['admin_peran', 'superadmin'])) {
+        if (! auth()->user()->can('perpanjangan-waktu.process')) {
             abort(403, 'Anda tidak memiliki akses untuk memproses perpanjangan waktu.');
         }
 

@@ -39,7 +39,7 @@ class User extends Authenticatable
      */
     public static function nonEditableRolesFor(User $actor): array
     {
-        return $actor->hasRole('superadmin') ? [] : self::NON_EDITABLE_ROLES;
+        return $actor->can('user.manage-superadmin') ? [] : self::NON_EDITABLE_ROLES;
     }
 
     protected $fillable = [
@@ -96,32 +96,6 @@ class User extends Authenticatable
     public function unreadNotifikasi()
     {
         return $this->hasMany(Notifikasi::class)->where('is_read', false);
-    }
-
-    // Helper Methods
-    public function isKabKota(): bool
-    {
-        return $this->hasRole('kabkota');
-    }
-
-    public function isVerifikator(): bool
-    {
-        return $this->hasRole('verifikator');
-    }
-
-    public function isAdminPeran(): bool
-    {
-        return $this->hasRole('admin_peran');
-    }
-
-    public function isKaban(): bool
-    {
-        return $this->hasRole('kaban');
-    }
-
-    public function isSuperadmin(): bool
-    {
-        return $this->hasRole('superadmin');
     }
 
     public function updateLastLogin(): void

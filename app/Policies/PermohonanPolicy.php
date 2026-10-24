@@ -9,27 +9,35 @@ use App\Models\UserKabkotaAssignment;
 class PermohonanPolicy
 {
     /**
-     * Pemohon: permohonan miliknya atau kab/kota-nya.
-     * Verifikator & fasilitator: kab/kota, tahun, dan jenis dokumen yang di-assign aktif.
-     * Superadmin, Admin PERAN, Kaban, Auditor: semua.
+     * permohonan.view-all: semua permohonan.
+     * permohonan.view-own: permohonan miliknya atau kab/kota-nya.
+     * permohonan.view-assigned: kab/kota, tahun, dan jenis dokumen yang di-assign aktif;
+     * pemegang permohonan.verify juga boleh melihat permohonan selesai yang pernah diverifikasinya.
      */
     public function view(User $user, Permohonan $permohonan): bool
     {
-        if ($user->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor'])) {
+        if ($user->can('permohonan.view-all')) {
             return true;
         }
 
-        if ($user->hasRole('pemohon')) {
-            return $permohonan->user_id === $user->id
-                || ($user->kabupaten_kota_id !== null && (int) $permohonan->kab_kota_id === (int) $user->kabupaten_kota_id);
+        if ($user->can('permohonan.view-own') && $this->isOwnedBy($user, $permohonan)) {
+            return true;
         }
 
-        if ($user->hasAnyRole(['verifikator', 'fasilitator'])) {
+        if ($user->can('permohonan.view-assigned')) {
             return $this->isAssigned($user, $permohonan)
-                || ($user->hasRole('verifikator') && $this->hasVerified($user, $permohonan));
+                || ($user->can('permohonan.verify') && $this->hasVerified($user, $permohonan));
         }
 
         return false;
+    }
+
+    /**
+     * Mengajukan atau menghapus permohonan: hanya akun pembuatnya.
+     */
+    public function update(User $user, Permohonan $permohonan): bool
+    {
+        return $user->can('permohonan.create') && $permohonan->user_id === $user->id;
     }
 
     /**
@@ -38,6 +46,12 @@ class PermohonanPolicy
     public function downloadDokumen(User $user, Permohonan $permohonan): bool
     {
         return $this->view($user, $permohonan);
+    }
+
+    private function isOwnedBy(User $user, Permohonan $permohonan): bool
+    {
+        return $permohonan->user_id === $user->id
+            || ($user->kabupaten_kota_id !== null && (int) $permohonan->kab_kota_id === (int) $user->kabupaten_kota_id);
     }
 
     private function isAssigned(User $user, Permohonan $permohonan): bool

@@ -7,11 +7,11 @@ use App\Models\MasterTahapan;
 use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
-use App\Models\UserKabkotaAssignment;
 use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,8 +22,7 @@ class PelaksanaanFasilitasiController extends Controller
      */
     public function uploadDokumen(Request $request, Permohonan $permohonan)
     {
-        // Cek akses - hanya fasilitator, koordinator, verifikator, admin yang bisa upload
-        if (! Auth::user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin'])) {
+        if (! Auth::user()->can('pelaksanaan.upload-dokumen')) {
             abort(403, 'Anda tidak memiliki akses untuk upload dokumen.');
         }
 
@@ -136,8 +135,7 @@ class PelaksanaanFasilitasiController extends Controller
      */
     public function deleteDokumen(Permohonan $permohonan, $dokumen)
     {
-        // Cek akses - hanya fasilitator, koordinator, verifikator, admin yang bisa delete
-        if (! Auth::user()->hasAnyRole(['fasilitator', 'koordinator', 'verifikator', 'admin_peran', 'superadmin'])) {
+        if (! Auth::user()->can('pelaksanaan.upload-dokumen')) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus dokumen.');
         }
 
@@ -182,8 +180,7 @@ class PelaksanaanFasilitasiController extends Controller
      */
     public function completeTahapan(Permohonan $permohonan)
     {
-        // Cek akses - hanya admin yang bisa complete tahapan
-        if (! Auth::user()->hasAnyRole(['admin_peran', 'superadmin'])) {
+        if (! Auth::user()->can('pelaksanaan.complete')) {
             abort(403, 'Anda tidak memiliki akses untuk menyelesaikan tahapan.');
         }
 
@@ -265,69 +262,8 @@ class PelaksanaanFasilitasiController extends Controller
     /**
      * Helper method untuk cek akses permohonan
      */
-    private function authorizeView(Permohonan $permohonan)
+    private function authorizeView(Permohonan $permohonan): void
     {
-        $user = Auth::user();
-
-        // Pemohon (Kabupaten/Kota) hanya bisa lihat permohonan miliknya sendiri
-        if ($user->hasRole('pemohon')) {
-            if ($permohonan->user_id !== $user->id) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
-        }
-        // Verifikator bisa lihat permohonan yang di-assign
-        elseif ($user->hasRole('verifikator')) {
-            $hasAccess = UserKabkotaAssignment::where('user_id', $user->id)
-                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->where(function ($q) use ($permohonan) {
-                    $q->whereNull('jenis_dokumen_id')
-                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
-                })
-                ->exists();
-            if (! $hasAccess) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
-        }
-        // Fasilitator bisa lihat permohonan yang di-assign
-        elseif ($user->hasRole('fasilitator')) {
-            $hasAccess = UserKabkotaAssignment::where('user_id', $user->id)
-                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->where(function ($q) use ($permohonan) {
-                    $q->whereNull('jenis_dokumen_id')
-                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
-                })
-                ->exists();
-            if (! $hasAccess) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
-        }
-        // Koordinator bisa lihat permohonan yang di-assign
-        elseif ($user->hasRole('koordinator')) {
-            $hasAccess = UserKabkotaAssignment::where('user_id', $user->id)
-                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->where(function ($q) use ($permohonan) {
-                    $q->whereNull('jenis_dokumen_id')
-                        ->orWhere('jenis_dokumen_id', $permohonan->jenis_dokumen_id);
-                })
-                ->exists();
-            if (! $hasAccess) {
-                abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-            }
-        }
-        // Admin, Kaban, Superadmin, dan Auditor bisa lihat semua permohonan
-        elseif ($user->hasAnyRole(['admin_peran', 'kaban', 'superadmin', 'auditor'])) {
-            // Full access - no restriction
-            return;
-        }
-        // Role lain tidak memiliki akses
-        else {
-            abort(403, 'Anda tidak memiliki akses ke permohonan ini.');
-        }
+        Gate::authorize('view', $permohonan);
     }
 }

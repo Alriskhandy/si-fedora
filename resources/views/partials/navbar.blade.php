@@ -23,8 +23,8 @@
                 $navModulList = \App\Models\Modul::forRole($navUserRole)->latest()->get();
             @endphp
 
-            @if (auth()->user()?->hasRole('superadmin'))
-                {{-- Superadmin: ke halaman kelola modul --}}
+            @if (auth()->user()?->can('modul.manage'))
+                {{-- Pengelola modul: ke halaman kelola modul --}}
                 <li class="nav-item me-2">
                     <a class="btn btn-sm btn-outline-primary {{ request()->routeIs('modul.*') ? 'active' : '' }}"
                         href="{{ route('modul.index') }}" title="Kelola Modul Pengguna">

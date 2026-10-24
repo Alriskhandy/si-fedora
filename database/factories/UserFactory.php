@@ -4,8 +4,10 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -57,11 +59,15 @@ class UserFactory extends Factory
     }
 
     /**
-     * Assign the given Spatie role, creating it when it does not exist yet.
+     * Assign the given Spatie role with its default permissions from config/permissions.php.
      */
     public function withRole(string $role): static
     {
         return $this->afterCreating(function (User $user) use ($role): void {
+            if (! Permission::query()->exists()) {
+                Artisan::call('permission:sync', ['--reset' => true]);
+            }
+
             $user->assignRole(Role::findOrCreate($role, 'web'));
         });
     }

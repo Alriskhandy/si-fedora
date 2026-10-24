@@ -61,7 +61,7 @@
         </div>
 
         <!-- Quick Actions -->
-        @if ($permohonan->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
+        @if ($permohonan->status_akhir == 'belum' && auth()->user()->can('permohonan.create'))
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0"><i class='bx bx-task me-2'></i>Aksi Cepat</h5>

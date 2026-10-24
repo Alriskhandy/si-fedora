@@ -20,7 +20,7 @@
             <div class="col-lg-12 mb-4">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        @if (auth()->user()->hasRole('pemohon'))
+                        @if (auth()->user()->can('permohonan.create'))
                             <h5 class="card-title mb-0">Daftar Permohonan Fasilitasi/Evaluasi</h5>
                             <a href="{{ route('permohonan.create') }}" class="btn btn-primary">
                                 <i class="bx bx-plus me-1"></i> Buat Permohonan Baru
@@ -114,7 +114,7 @@
                                                             href="{{ route('permohonan.show', $item) }}">
                                                             <i class="bx bx-show me-1"></i> Detail
                                                         </a>
-                                                        @if ($item->status_akhir == 'belum' && auth()->user()->hasRole('pemohon'))
+                                                        @if ($item->status_akhir == 'belum' && auth()->user()->can('permohonan.create'))
                                                             <form action="{{ route('permohonan.destroy', $item) }}"
                                                                 method="POST" class="d-inline">
                                                                 @csrf

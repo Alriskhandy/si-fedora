@@ -48,7 +48,7 @@ class ApprovalController extends Controller
      */
     private function isKepalaBadan(): bool
     {
-        return Auth::user()->hasRole('kaban');
+        return Auth::user()->can('approval.approve');
     }
 
     /**
@@ -56,7 +56,7 @@ class ApprovalController extends Controller
      */
     private function isAdmin(): bool
     {
-        return Auth::user()->hasAnyRole(['admin_peran', 'superadmin']);
+        return Auth::user()->can('hasil-fasilitasi.manage-all');
     }
 
     // ============================================================

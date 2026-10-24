@@ -4,8 +4,8 @@
 
 @section('main')
     @php
-        $isPemohon = auth()->user()->hasRole('pemohon');
-        $isAdmin = auth()->user()->hasAnyRole(['admin_peran', 'superadmin']);
+        $isPemohon = auth()->user()->can('perpanjangan-waktu.submit');
+        $isAdmin = auth()->user()->can('perpanjangan-waktu.process');
     @endphp
 
     <div class="container-xxl flex-grow-1 container-p-y">

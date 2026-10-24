@@ -88,7 +88,7 @@
             <!-- Kolom Kiri: Form Perpanjangan -->
             <div class="col-lg-6 mb-4">
 
-                @if (auth()->user()->hasRole('pemohon'))
+                @if (auth()->user()->can('perpanjangan-waktu.submit'))
                     <!-- Form Upload Surat Permohonan -->
 
                     <h6 class="mb-3">

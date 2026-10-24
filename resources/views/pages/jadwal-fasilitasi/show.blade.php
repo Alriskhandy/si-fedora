@@ -9,7 +9,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Detail Jadwal Fasilitasi</h5>
-                        @if (auth()->user()->hasRole('pemohon'))
+                        @if (auth()->user()->can('permohonan.create'))
                             @if ($jadwal->batas_permohonan >= now() || $jadwalExtendedIds->contains($jadwal->id))
                                 <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
                                    class="btn btn-sm btn-primary">
@@ -74,7 +74,7 @@
                                     @endif
                                 </td>
                             </tr>
-                            @if (auth()->user()->hasRole('admin_peran'))
+                            @if (auth()->user()->can('jadwal.manage'))
                                 <tr>
                                     <td><strong>Status</strong></td>
                                     <td>:</td>
@@ -149,13 +149,13 @@
                         @endif
 
                         <div class="mt-4">
-                            @if (auth()->user()->hasRole('admin_peran'))
+                            @if (auth()->user()->can('jadwal.manage'))
                                 <a href="{{ route('jadwal.edit', $jadwal) }}" class="btn btn-primary me-2">
                                     <i class="bx bx-edit-alt me-1"></i> Edit
                                 </a>
                             @endif
                             
-                            @if (auth()->user()->hasRole('pemohon'))
+                            @if (auth()->user()->can('permohonan.create'))
                                 @if ($jadwal->batas_permohonan >= now() || $jadwalExtendedIds->contains($jadwal->id))
                                     <a href="{{ route('permohonan.create', ['jadwal_id' => $jadwal->id]) }}"
                                        class="btn btn-success me-2">
