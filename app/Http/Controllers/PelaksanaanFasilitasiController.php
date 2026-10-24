@@ -51,7 +51,7 @@ class PelaksanaanFasilitasiController extends Controller
 
                 $fileName = $originalName;
 
-                $filePath = $file->store('dokumen-tahapan/pelaksanaan/'.$permohonan->id, 'public');
+                $filePath = $file->store('dokumen-tahapan/pelaksanaan/'.$permohonan->id, 'dokumen');
 
                 // Create dokumen record
                 $dokumen = DokumenTahapan::create([
@@ -111,7 +111,7 @@ class PelaksanaanFasilitasiController extends Controller
         // Cek akses menggunakan helper
         $this->authorizeView($permohonan);
 
-        if (! $dokumenTahapan->file_path || ! Storage::disk('public')->exists($dokumenTahapan->file_path)) {
+        if (! $dokumenTahapan->file_path || ! Storage::disk('dokumen')->exists($dokumenTahapan->file_path)) {
             abort(404, 'File tidak ditemukan.');
         }
 
@@ -125,7 +125,7 @@ class PelaksanaanFasilitasiController extends Controller
             ])
             ->log('Download dokumen: '.$dokumenTahapan->nama_dokumen);
 
-        return Storage::disk('public')->download(
+        return Storage::disk('dokumen')->download(
             $dokumenTahapan->file_path,
             $dokumenTahapan->file_name
         );
@@ -150,8 +150,8 @@ class PelaksanaanFasilitasiController extends Controller
 
         try {
             // Hapus file dari storage
-            if ($dokumenTahapan->file_path && Storage::disk('public')->exists($dokumenTahapan->file_path)) {
-                Storage::disk('public')->delete($dokumenTahapan->file_path);
+            if ($dokumenTahapan->file_path && Storage::disk('dokumen')->exists($dokumenTahapan->file_path)) {
+                Storage::disk('dokumen')->delete($dokumenTahapan->file_path);
             }
 
             // Log before delete

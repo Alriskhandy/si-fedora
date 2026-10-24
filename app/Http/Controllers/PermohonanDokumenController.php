@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PermohonanDokumen;
+use App\Models\MasterTahapan;
 use App\Models\Permohonan;
-use App\Models\PersyaratanDokumen;
+use App\Models\PermohonanDokumen;
+use App\Models\PermohonanTahapan;
+use App\Services\PermohonanNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,7 +19,7 @@ class PermohonanDokumenController extends Controller
     {
         $request->validate([
             'permohonan_id' => 'required|exists:permohonan,id',
-            'persyaratan_dokumen_id' => 'required|exists:persyaratan_dokumen,id|unique:permohonan_dokumen,permohonan_id,NULL,id,persyaratan_dokumen_id,' . $request->persyaratan_dokumen_id,
+            'persyaratan_dokumen_id' => 'required|exists:persyaratan_dokumen,id|unique:permohonan_dokumen,permohonan_id,NULL,id,persyaratan_dokumen_id,'.$request->persyaratan_dokumen_id,
             'is_ada' => 'required|boolean',
             'file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB
         ]);
@@ -38,8 +41,8 @@ class PermohonanDokumenController extends Controller
         $filePath = null;
         if ($request->hasFile('file')) {
             $file = $request->file('file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->store('permohonan_dokumen/' . $permohonan->id, 'public');
+            $fileName = time().'_'.$file->getClientOriginalName();
+            $filePath = $file->store('permohonan_dokumen/'.$permohonan->id, 'dokumen');
         }
 
         PermohonanDokumen::create([
@@ -80,12 +83,12 @@ class PermohonanDokumenController extends Controller
         if ($request->hasFile('file')) {
             // Hapus file lama
             if ($oldFilePath) {
-                Storage::disk('public')->delete($oldFilePath);
+                Storage::disk('dokumen')->delete($oldFilePath);
             }
 
             $file = $request->file('file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $newFilePath = $file->store('permohonan_dokumen/' . $permohonanDokumen->permohonan_id, 'public');
+            $fileName = time().'_'.$file->getClientOriginalName();
+            $newFilePath = $file->store('permohonan_dokumen/'.$permohonanDokumen->permohonan_id, 'dokumen');
 
             $permohonanDokumen->update([
                 'is_ada' => $request->is_ada,
@@ -122,7 +125,7 @@ class PermohonanDokumenController extends Controller
         ], [
             'file.required' => 'File harus diupload',
             'file.mimes' => 'File harus berformat PDF atau Excel (xlsx, xls)',
-            'file.max' => 'Ukuran file maksimal 100MB'
+            'file.max' => 'Ukuran file maksimal 100MB',
         ]);
 
         // Cek akses - hanya pemohon yang bisa upload
@@ -133,17 +136,19 @@ class PermohonanDokumenController extends Controller
                     'user_id' => Auth::id(),
                     'owner_id' => $permohonanDokumen->permohonan->user_id,
                 ]);
+
                 return back()->with('error', 'Anda tidak memiliki akses ke dokumen ini.');
             }
         }
 
         // Cek status permohonan - hanya bisa upload jika status belum atau revisi
         $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
-        if (!in_array($permohonan->status_akhir, ['belum', 'revisi'])) {
+        if (! in_array($permohonan->status_akhir, ['belum', 'revisi'])) {
             Log::warning('[Upload Dokumen] Status tidak valid untuk upload', [
                 'dokumen_id' => $permohonanDokumen->id,
                 'status_akhir' => $permohonan->status_akhir,
             ]);
+
             return back()->with('error', 'Dokumen tidak dapat diupload. Permohonan sudah disubmit atau selesai.');
         }
 
@@ -153,28 +158,30 @@ class PermohonanDokumenController extends Controller
                 'dokumen_id' => $permohonanDokumen->id,
                 'batas' => $permohonan->getEffectiveDeadline(),
             ]);
+
             return back()->with('error', $permohonan->getUploadDeadlineMessage());
         }
 
         try {
             // Hapus file lama jika ada
             if ($permohonanDokumen->file_path) {
-                Storage::disk('public')->delete($permohonanDokumen->file_path);
+                Storage::disk('dokumen')->delete($permohonanDokumen->file_path);
                 Log::info('[Upload Dokumen] File lama dihapus', ['old_path' => $permohonanDokumen->file_path]);
             }
 
             // Upload file baru
             $file = $request->file('file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->store('permohonan_dokumen/' . $permohonanDokumen->permohonan_id, 'public');
+            $fileName = time().'_'.$file->getClientOriginalName();
+            $filePath = $file->store('permohonan_dokumen/'.$permohonanDokumen->permohonan_id, 'dokumen');
 
-            if (!$filePath) {
+            if (! $filePath) {
                 Log::error('[Upload Dokumen] Gagal menyimpan file ke storage', [
                     'dokumen_id' => $permohonanDokumen->id,
                     'original_name' => $file->getClientOriginalName(),
                     'size' => $file->getSize(),
                     'disk_free' => disk_free_space(storage_path()),
                 ]);
+
                 return back()->with('error', 'Gagal menyimpan file. Silakan coba lagi.');
             }
 
@@ -205,27 +212,27 @@ class PermohonanDokumenController extends Controller
                     ->exists();
 
                 // Jika sudah tidak ada dokumen revisi lagi, ubah status menjadi 'proses' untuk verifikasi ulang
-                if (!$masihAdaRevisi) {
+                if (! $masihAdaRevisi) {
                     $permohonan->update(['status_akhir' => 'proses']);
 
                     // Update tahapan Verifikasi kembali ke status proses
-                    $masterTahapanVerifikasi = \App\Models\MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
+                    $masterTahapanVerifikasi = MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
                     if ($masterTahapanVerifikasi) {
-                        \App\Models\PermohonanTahapan::updateOrCreate(
+                        PermohonanTahapan::updateOrCreate(
                             [
                                 'permohonan_id' => $permohonan->id,
                                 'tahapan_id' => $masterTahapanVerifikasi->id,
                             ],
                             [
                                 'status' => 'proses',
-                                'catatan' => 'Dokumen revisi telah diupload ulang pada ' . now()->format('d M Y H:i') . '. Menunggu verifikasi ulang dari Tim Fedora.',
+                                'catatan' => 'Dokumen revisi telah diupload ulang pada '.now()->format('d M Y H:i').'. Menunggu verifikasi ulang dari Tim Fedora.',
                                 'updated_by' => Auth::id(),
                             ]
                         );
                     }
 
                     // Kirim notifikasi ke verifikator
-                    $notificationService = app(\App\Services\PermohonanNotificationService::class);
+                    $notificationService = app(PermohonanNotificationService::class);
                     $notificationService->notifyDokumenRevisiUploaded($permohonan, $namaDokumen);
 
                     Log::info('[Upload Dokumen] Semua revisi selesai, status diubah ke proses', [
@@ -246,7 +253,7 @@ class PermohonanDokumenController extends Controller
             ]);
 
             return redirect()->route($redirectRoute, $permohonanDokumen->permohonan_id)
-                ->with('success', 'Dokumen "' . $namaDokumen . '" berhasil diupload');
+                ->with('success', 'Dokumen "'.$namaDokumen.'" berhasil diupload');
         } catch (\Exception $e) {
             Log::error('[Upload Dokumen] Exception', [
                 'dokumen_id' => $permohonanDokumen->id,
@@ -254,7 +261,8 @@ class PermohonanDokumenController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return back()->with('error', 'Terjadi kesalahan saat upload: ' . $e->getMessage());
+
+            return back()->with('error', 'Terjadi kesalahan saat upload: '.$e->getMessage());
         }
     }
 
@@ -268,16 +276,16 @@ class PermohonanDokumenController extends Controller
         }
 
         // Cek status permohonan - hanya bisa hapus jika status belum atau revisi
-        if (!in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
+        if (! in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
             return back()->with('error', 'Dokumen tidak dapat dihapus. Permohonan sudah disubmit atau selesai.');
         }
 
-        if (!$permohonanDokumen->file_path) {
+        if (! $permohonanDokumen->file_path) {
             return back()->with('error', 'Dokumen belum memiliki file untuk dihapus.');
         }
 
         // Hapus file dari storage
-        Storage::disk('public')->delete($permohonanDokumen->file_path);
+        Storage::disk('dokumen')->delete($permohonanDokumen->file_path);
 
         $namaDokumen = $permohonanDokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen';
 
@@ -295,7 +303,7 @@ class PermohonanDokumenController extends Controller
         ]);
 
         return redirect()->route('permohonan.tahapan.permohonan', $permohonanDokumen->permohonan_id)
-            ->with('success', 'Dokumen "' . $namaDokumen . '" berhasil dihapus. Silakan upload ulang dokumen.');
+            ->with('success', 'Dokumen "'.$namaDokumen.'" berhasil dihapus. Silakan upload ulang dokumen.');
     }
 
     public function destroy(PermohonanDokumen $permohonanDokumen)
@@ -309,7 +317,7 @@ class PermohonanDokumenController extends Controller
 
         // Hapus file
         if ($permohonanDokumen->file_path) {
-            Storage::disk('public')->delete($permohonanDokumen->file_path);
+            Storage::disk('dokumen')->delete($permohonanDokumen->file_path);
         }
 
         $permohonanDokumen->delete();
@@ -321,28 +329,20 @@ class PermohonanDokumenController extends Controller
     {
         $this->authorizeView($permohonanDokumen);
 
-        if (!$permohonanDokumen->file_path) {
+        if (! $permohonanDokumen->file_path) {
             abort(404, 'File tidak ditemukan.');
         }
 
-        return Storage::disk('public')->download($permohonanDokumen->file_path, $permohonanDokumen->file_name);
+        return Storage::disk('dokumen')->download($permohonanDokumen->file_path, $permohonanDokumen->file_name);
     }
 
     private function authorizeView(PermohonanDokumen $permohonanDokumen)
     {
-        $user = Auth::user();
-
         // Tambahin null check
-        if (!$permohonanDokumen->permohonan) {
+        if (! $permohonanDokumen->permohonan) {
             abort(404, 'Permohonan tidak ditemukan.');
         }
 
-        if ($user->hasRole('pemohon')) {
-            if ($permohonanDokumen->permohonan->user_id !== $user->id) {
-                abort(403, 'Anda tidak memiliki akses ke dokumen ini.');
-            }
-        }
-        // Admin PERAN, Kaban, Superadmin bisa akses semua
-        // Verifikator & Fasilitator cek via assignment (TODO: implement jika perlu)
+        Gate::authorize('downloadDokumen', $permohonanDokumen->permohonan);
     }
 }

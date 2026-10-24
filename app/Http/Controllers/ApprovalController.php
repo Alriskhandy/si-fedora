@@ -2,23 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Permohonan;
 use App\Models\HasilFasilitasi;
-use App\Models\PermohonanTahapan;
 use App\Models\MasterTahapan;
 use App\Models\Notifikasi;
+use App\Models\Permohonan;
+use App\Models\PermohonanTahapan;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
 use App\Services\PermohonanNotificationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Controller untuk approval draft final hasil fasilitasi oleh Kepala Badan
- * 
+ *
  * Fitur utama:
  * - List draft final yang menunggu persetujuan
  * - Review detail draft final
@@ -42,8 +45,6 @@ class ApprovalController extends Controller
 
     /**
      * Check if user is Kepala Badan
-     * 
-     * @return bool
      */
     private function isKepalaBadan(): bool
     {
@@ -52,8 +53,6 @@ class ApprovalController extends Controller
 
     /**
      * Check if user is admin or superadmin
-     * 
-     * @return bool
      */
     private function isAdmin(): bool
     {
@@ -66,12 +65,6 @@ class ApprovalController extends Controller
 
     /**
      * Kirim notifikasi ke admin
-     * 
-     * @param Permohonan $permohonan
-     * @param string $title
-     * @param string $message
-     * @param string $type
-     * @return void
      */
     private function notifyAdmins(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
@@ -93,7 +86,7 @@ class ApprovalController extends Controller
                 } catch (\Exception $e) {
                     Log::error('Failed to create notification for admin', [
                         'user_id' => $admin->id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -102,12 +95,6 @@ class ApprovalController extends Controller
 
     /**
      * Kirim notifikasi ke tim fasilitasi
-     * 
-     * @param Permohonan $permohonan
-     * @param string $title
-     * @param string $message
-     * @param string $type
-     * @return void
      */
     private function notifyTeamMembers(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
@@ -134,7 +121,7 @@ class ApprovalController extends Controller
                 } catch (\Exception $e) {
                     Log::error('Failed to create notification for team member', [
                         'user_id' => $assignment->user_id,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
@@ -143,12 +130,6 @@ class ApprovalController extends Controller
 
     /**
      * Kirim notifikasi ke pemohon
-     * 
-     * @param Permohonan $permohonan
-     * @param string $title
-     * @param string $message
-     * @param string $type
-     * @return void
      */
     private function notifyPemohon(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
@@ -167,7 +148,7 @@ class ApprovalController extends Controller
             } catch (\Exception $e) {
                 Log::error('Failed to create notification for pemohon', [
                     'user_id' => $permohonan->user_id,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
             }
         } else {
@@ -185,43 +166,41 @@ class ApprovalController extends Controller
     /**
      * Tampilkan daftar draft final hasil fasilitasi yang menunggu persetujuan
      * Hanya dapat diakses oleh Kepala Badan dan Admin
-     * 
-     * @param Request $request
-     * @return \Illuminate\View\View
+     *
+     * @return View
      */
     /**
      * Tampilkan daftar draft final hasil fasilitasi yang menunggu persetujuan
      * Hanya dapat diakses oleh Kepala Badan dan Admin
-     * 
-     * @param Request $request
-     * @return \Illuminate\View\View
+     *
+     * @return View
      */
     public function index(Request $request)
     {
         // Check authorization
-        if (!$this->isKepalaBadan() && !$this->isAdmin()) {
+        if (! $this->isKepalaBadan() && ! $this->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses untuk halaman ini.');
         }
 
         $query = Permohonan::with([
-            'kabupatenKota', 
-            'jenisDokumen', 
-            'hasilFasilitasi'
+            'kabupatenKota',
+            'jenisDokumen',
+            'hasilFasilitasi',
         ])
-        ->whereHas('hasilFasilitasi', function($q) {
-            $q->where('status_draft', 'menunggu_persetujuan_kaban')
-              ->whereNotNull('draft_final_file');
-        });
+            ->whereHas('hasilFasilitasi', function ($q) {
+                $q->where('status_draft', 'menunggu_persetujuan_kaban')
+                    ->whereNotNull('draft_final_file');
+            });
 
         // Filter pencarian
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->whereHas('kabupatenKota', function($subQ) use ($request) {
-                    $subQ->where('nama', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('kabupatenKota', function ($subQ) use ($request) {
+                    $subQ->where('nama', 'like', '%'.$request->search.'%');
                 })
-                ->orWhereHas('jenisDokumen', function($subQ) use ($request) {
-                    $subQ->where('nama', 'like', '%' . $request->search . '%');
-                });
+                    ->orWhereHas('jenisDokumen', function ($subQ) use ($request) {
+                        $subQ->where('nama', 'like', '%'.$request->search.'%');
+                    });
             });
         }
 
@@ -238,14 +217,13 @@ class ApprovalController extends Controller
     /**
      * Tampilkan detail draft final hasil fasilitasi untuk review
      * Hanya dapat diakses oleh Kepala Badan dan Admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Illuminate\View\View
+     *
+     * @return View
      */
     public function show(Permohonan $permohonan)
     {
         // Check authorization
-        if (!$this->isKepalaBadan() && !$this->isAdmin()) {
+        if (! $this->isKepalaBadan() && ! $this->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses untuk halaman ini.');
         }
 
@@ -255,32 +233,32 @@ class ApprovalController extends Controller
             'jenisDokumen',
             'hasilFasilitasi.hasilSistematika.masterBab',
             'hasilFasilitasi.hasilUrusan.masterUrusan',
-            'hasilFasilitasi.pembuat'
+            'hasilFasilitasi.pembuat',
         ]);
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
         // Pastikan ada hasil fasilitasi
-        if (!$hasilFasilitasi) {
+        if (! $hasilFasilitasi) {
             return redirect()->route('approval.index')
                 ->with('error', 'Hasil fasilitasi tidak ditemukan untuk permohonan ini.');
         }
 
         // Pastikan ada draft final file
-        if (!$hasilFasilitasi->draft_final_file) {
+        if (! $hasilFasilitasi->draft_final_file) {
             return redirect()->route('approval.index')
                 ->with('error', 'Draft final belum diupload. Silakan hubungi admin untuk mengupload draft final terlebih dahulu.');
         }
 
         // Pastikan status sudah menunggu persetujuan
         if ($hasilFasilitasi->status_draft !== 'menunggu_persetujuan_kaban') {
-            $statusMessage = match($hasilFasilitasi->status_draft) {
+            $statusMessage = match ($hasilFasilitasi->status_draft) {
                 'disetujui_kaban' => 'Draft final sudah disetujui.',
                 'ditolak_kaban' => 'Draft final ditolak dan memerlukan revisi.',
                 null, '' => 'Draft final belum diajukan untuk persetujuan. Silakan hubungi admin untuk submit ke Kepala Badan.',
                 default => 'Status draft tidak valid untuk review persetujuan.'
             };
-            
+
             return redirect()->route('approval.index')
                 ->with('info', $statusMessage);
         }
@@ -308,7 +286,7 @@ class ApprovalController extends Controller
         $timInfo = [
             'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
             'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
-            'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values()
+            'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
         ];
 
         return view('pages.approval.show', compact('permohonan', 'hasilFasilitasi', 'timInfo'));
@@ -318,15 +296,13 @@ class ApprovalController extends Controller
      * Approve draft final hasil fasilitasi
      * Hanya dapat dilakukan oleh Kepala Badan
      * Mengupdate tahapan hasil fasilitasi ke selesai dan tahapan berikutnya ke proses
-     * 
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function approve(Request $request, Permohonan $permohonan)
     {
         // Only Kepala Badan can approve
-        if (!$this->isKepalaBadan()) {
+        if (! $this->isKepalaBadan()) {
             return redirect()->back()->with('error', 'Hanya Kepala Badan yang dapat menyetujui dokumen.');
         }
 
@@ -338,7 +314,7 @@ class ApprovalController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi tidak ditemukan.');
             }
 
@@ -369,7 +345,7 @@ class ApprovalController extends Controller
                     [
                         'status' => 'selesai',
                         'tanggal_selesai' => Carbon::now(),
-                        'catatan' => 'Disetujui oleh Kepala Badan: ' . ($request->keterangan_kaban ?? 'Tidak ada catatan'),
+                        'catatan' => 'Disetujui oleh Kepala Badan: '.($request->keterangan_kaban ?? 'Tidak ada catatan'),
                         'updated_by' => Auth::id(),
                     ]
                 );
@@ -411,7 +387,7 @@ class ApprovalController extends Controller
             try {
                 $this->notificationService->notifyDraftApproved($permohonan, $request->keterangan_kaban);
             } catch (\Exception $e) {
-                Log::error('Failed to send notifications via notification service: ' . $e->getMessage());
+                Log::error('Failed to send notifications via notification service: '.$e->getMessage());
             }
 
             // Notifikasi legacy (database only) - backup
@@ -419,11 +395,11 @@ class ApprovalController extends Controller
                 $this->notifyPemohon(
                     $permohonan,
                     'Hasil Fasilitasi Disetujui',
-                    'Hasil fasilitasi untuk permohonan ' . $permohonan->kabupatenKota->nama . ' telah disetujui oleh Kepala Badan.',
+                    'Hasil fasilitasi untuk permohonan '.$permohonan->kabupatenKota->nama.' telah disetujui oleh Kepala Badan.',
                     'success'
                 );
             } catch (\Exception $e) {
-                Log::error('Failed to notify Pemohon: ' . $e->getMessage());
+                Log::error('Failed to notify Pemohon: '.$e->getMessage());
             }
 
             // Notifikasi ke admin
@@ -431,11 +407,11 @@ class ApprovalController extends Controller
                 $this->notifyAdmins(
                     $permohonan,
                     'Draft Final Disetujui',
-                    'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah disetujui oleh Kepala Badan.',
+                    'Draft final hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah disetujui oleh Kepala Badan.',
                     'success'
                 );
             } catch (\Exception $e) {
-                Log::error('Failed to notify Admins: ' . $e->getMessage());
+                Log::error('Failed to notify Admins: '.$e->getMessage());
             }
 
             // Notifikasi ke tim
@@ -443,18 +419,18 @@ class ApprovalController extends Controller
                 $this->notifyTeamMembers(
                     $permohonan,
                     'Draft Final Disetujui',
-                    'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' telah disetujui oleh Kepala Badan.',
+                    'Draft final hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah disetujui oleh Kepala Badan.',
                     'success'
                 );
             } catch (\Exception $e) {
-                Log::error('Failed to notify Team Members: ' . $e->getMessage());
+                Log::error('Failed to notify Team Members: '.$e->getMessage());
             }
-
 
             return redirect()->route('approval.index')->with('success', 'Draft final hasil fasilitasi berhasil disetujui. Tahapan berikutnya telah dimulai.');
         } catch (\Exception $e) {
-            Log::error('Error approving draft final: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal menyetujui dokumen: ' . $e->getMessage());
+            Log::error('Error approving draft final: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menyetujui dokumen: '.$e->getMessage());
         }
     }
 
@@ -462,15 +438,13 @@ class ApprovalController extends Controller
      * Reject/Request revision untuk draft final hasil fasilitasi
      * Hanya dapat dilakukan oleh Kepala Badan
      * Admin/koordinator harus upload ulang dan submit ulang
-     * 
-     * @param Request $request
-     * @param Permohonan $permohonan
-     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @return RedirectResponse
      */
     public function reject(Request $request, Permohonan $permohonan)
     {
         // Only Kepala Badan can reject
-        if (!$this->isKepalaBadan()) {
+        if (! $this->isKepalaBadan()) {
             return redirect()->back()->with('error', 'Hanya Kepala Badan yang dapat meminta revisi dokumen.');
         }
 
@@ -481,7 +455,7 @@ class ApprovalController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi tidak ditemukan.');
             }
 
@@ -514,7 +488,7 @@ class ApprovalController extends Controller
             try {
                 $this->notificationService->notifyDraftRejected($permohonan, $request->catatan_penolakan);
             } catch (\Exception $e) {
-                Log::error('Failed to send rejection notifications via notification service: ' . $e->getMessage());
+                Log::error('Failed to send rejection notifications via notification service: '.$e->getMessage());
             }
 
             // Notifikasi legacy ke admin (database only) - backup
@@ -522,11 +496,11 @@ class ApprovalController extends Controller
                 $this->notifyAdmins(
                     $permohonan,
                     'Draft Final Memerlukan Revisi',
-                    'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' memerlukan revisi. Catatan: ' . $request->catatan_penolakan,
+                    'Draft final hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' memerlukan revisi. Catatan: '.$request->catatan_penolakan,
                     'warning'
                 );
             } catch (\Exception $e) {
-                Log::error('Failed to notify Admins (rejection): ' . $e->getMessage());
+                Log::error('Failed to notify Admins (rejection): '.$e->getMessage());
             }
 
             // Notifikasi ke tim
@@ -534,17 +508,18 @@ class ApprovalController extends Controller
                 $this->notifyTeamMembers(
                     $permohonan,
                     'Draft Final Memerlukan Revisi',
-                    'Draft final hasil fasilitasi untuk ' . $permohonan->kabupatenKota->nama . ' memerlukan revisi dari Kepala Badan. Silakan perbaiki dan upload ulang.',
+                    'Draft final hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' memerlukan revisi dari Kepala Badan. Silakan perbaiki dan upload ulang.',
                     'warning'
                 );
             } catch (\Exception $e) {
-                Log::error('Failed to notify Team Members (rejection): ' . $e->getMessage());
+                Log::error('Failed to notify Team Members (rejection): '.$e->getMessage());
             }
 
             return redirect()->route('approval.index')->with('success', 'Draft final memerlukan revisi. Admin dan tim akan menerima notifikasi untuk melakukan perbaikan dan upload ulang.');
         } catch (\Exception $e) {
-            Log::error('Error rejecting draft final: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal memproses permintaan revisi: ' . $e->getMessage());
+            Log::error('Error rejecting draft final: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal memproses permintaan revisi: '.$e->getMessage());
         }
     }
 
@@ -555,38 +530,39 @@ class ApprovalController extends Controller
     /**
      * Download draft final PDF hasil fasilitasi
      * Dapat diakses oleh Kepala Badan dan Admin
-     * 
-     * @param Permohonan $permohonan
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+     *
+     * @return BinaryFileResponse|RedirectResponse
      */
     public function downloadDraftFinal(Permohonan $permohonan)
     {
         // Check authorization
-        if (!$this->isKepalaBadan() && !$this->isAdmin()) {
+        if (! $this->isKepalaBadan() && ! $this->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses untuk mengunduh dokumen ini.');
         }
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi tidak ditemukan.');
             }
 
             // Check if draft final exists
-            if (!$hasilFasilitasi->draft_final_file || !Storage::disk('public')->exists($hasilFasilitasi->draft_final_file)) {
+            if (! $hasilFasilitasi->draft_final_file || ! Storage::disk('dokumen')->exists($hasilFasilitasi->draft_final_file)) {
                 return redirect()->back()->with('error', 'Draft final PDF tidak tersedia.');
             }
 
-            $filename = 'Draft_Final_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
+            $filename = 'Draft_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
             return response()->download(
-                Storage::disk('public')->path($hasilFasilitasi->draft_final_file),
+                Storage::disk('dokumen')->path($hasilFasilitasi->draft_final_file),
                 $filename,
                 ['Content-Type' => 'application/pdf']
             );
         } catch (\Exception $e) {
-            Log::error('Error downloading draft final: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengunduh draft final: ' . $e->getMessage());
+            Log::error('Error downloading draft final: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh draft final: '.$e->getMessage());
         }
     }
 }

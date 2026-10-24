@@ -2,15 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
 use App\Models\PerpanjanganWaktu;
 use App\Policies\PerpanjanganWaktuPolicy;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Notification;
-use App\Notifications\Channels\WhatsAppChannel;
-use Illuminate\Support\Facades\View;
 use App\View\Composers\NavbarComposer;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,8 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register WhatsApp Service as singleton
-        $this->app->singleton(\App\Services\WhatsAppService::class);
+        //
     }
 
     /**
@@ -34,11 +31,6 @@ class AppServiceProvider extends ServiceProvider
         // Batasi akses Log Viewer hanya untuk superadmin
         Gate::define('viewLogViewer', function ($user) {
             return $user->hasRole('superadmin');
-        });
-
-        // Register custom WhatsApp notification channel
-        Notification::extend('whatsapp', function ($app) {
-            return $app->make(WhatsAppChannel::class);
         });
 
         Paginator::useBootstrapFive();

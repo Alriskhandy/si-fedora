@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminPeranController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\ArsipController;
+use App\Http\Controllers\BerkasController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HasilFasilitasiController;
 use App\Http\Controllers\JadwalFasilitasiController;
@@ -80,6 +81,11 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::delete('/', 'destroyAll')->name('destroy-all');
         Route::post('/mark-all-read', 'markAllAsRead')->name('mark-all-read');
     });
+
+    // BerkasController - dokumen privat dengan pemeriksaan hak akses
+    Route::get('/berkas/{jenis}/{id}', [BerkasController::class, 'show'])
+        ->whereNumber('id')
+        ->name('berkas.show');
 
     // ArsipController - Archive of all documents
     Route::prefix('arsip')->name('arsip.')->controller(ArsipController::class)->group(function () {

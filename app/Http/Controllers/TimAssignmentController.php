@@ -10,6 +10,7 @@ use App\Services\FonteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TimAssignmentController extends Controller
 {
@@ -120,24 +121,8 @@ class TimAssignmentController extends Controller
             $fileSk = null;
             if ($request->hasFile('file_sk')) {
                 $file = $request->file('file_sk');
-                $filename = $file->hashName();
-
-                Log::info('Uploading SK file: '.$filename);
-                Log::info('File size: '.$file->getSize().' bytes');
-                Log::info('File mime: '.$file->getMimeType());
-
-                // Simpan ke public/sk-tim directory
-                $directory = public_path('sk-tim');
-                if (! file_exists($directory)) {
-                    mkdir($directory, 0755, true);
-                    Log::info('Created directory: '.$directory);
-                }
-
-                $file->move($directory, $filename);
-                Log::info('File stored at: '.$directory.'/'.$filename);
-
-                $fileSk = 'sk-tim/'.$filename;
-                Log::info('File SK path saved to database: '.$fileSk);
+                $fileSk = $file->store('sk-tim', 'dokumen');
+                Log::info('File SK disimpan: '.$fileSk);
             }
 
             // Check if tim already exists for this kabkota, jenis dokumen, and tahun
@@ -341,23 +326,8 @@ class TimAssignmentController extends Controller
             $fileSk = $timAssignment->file_sk; // Keep old file by default
             if ($request->hasFile('file_sk')) {
                 $file = $request->file('file_sk');
-                $filename = $file->hashName();
-
-                Log::info('Updating SK file: '.$filename);
-                Log::info('File size: '.$file->getSize().' bytes');
-
-                // Simpan ke public/sk-tim directory
-                $directory = public_path('sk-tim');
-                if (! file_exists($directory)) {
-                    mkdir($directory, 0755, true);
-                    Log::info('Created directory: '.$directory);
-                }
-
-                $file->move($directory, $filename);
-                Log::info('File updated at: '.$directory.'/'.$filename);
-
-                $fileSk = 'sk-tim/'.$filename;
-                Log::info('New file SK path: '.$fileSk);
+                $fileSk = $file->store('sk-tim', 'dokumen');
+                Log::info('File SK disimpan: '.$fileSk);
             }
 
             // Delete all current assignments
@@ -624,12 +594,12 @@ class TimAssignmentController extends Controller
             return response()->json(['error' => 'File SK tidak ditemukan'], 404);
         }
 
-        $filePath = public_path($timAssignment->file_sk);
+        $filePath = Storage::disk('dokumen')->path($timAssignment->file_sk);
 
         Log::info('Mencoba akses file SK: '.$filePath);
 
         if (! file_exists($filePath)) {
-            Log::error('File SK tidak ditemukan di public: '.$filePath);
+            Log::error('File SK tidak ditemukan: '.$filePath);
             Log::error('File SK dari database: '.$timAssignment->file_sk);
 
             return response()->json(['error' => 'File SK tidak ditemukan di server'], 404);

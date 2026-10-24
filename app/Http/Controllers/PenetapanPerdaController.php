@@ -55,7 +55,7 @@ class PenetapanPerdaController extends Controller
             // Upload file
             $file = $request->file('file');
             $fileName = 'penetapan_perda_'.$permohonan->id.'_'.time().'.pdf';
-            $filePath = $file->store('dokumen-tahapan/penetapan-perda', 'public');
+            $filePath = $file->store('dokumen-tahapan/penetapan-perda', 'dokumen');
 
             // Simpan ke DokumenTahapan
             $dokumen = DokumenTahapan::create([
@@ -238,7 +238,7 @@ class PenetapanPerdaController extends Controller
             return back()->with('error', 'File penetapan tidak ditemukan.');
         }
 
-        $filepath = storage_path('app/public/'.$filePath);
+        $filepath = storage_path('app/private/'.$filePath);
 
         if (! file_exists($filepath)) {
             return back()->with('error', 'File tidak ditemukan di storage.');

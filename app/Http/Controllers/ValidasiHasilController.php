@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MasterTahapan;
 use App\Models\Permohonan;
-use App\Models\HasilFasilitasi;
+use App\Models\PermohonanTahapan;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class ValidasiHasilController extends Controller
 {
@@ -24,7 +25,7 @@ class ValidasiHasilController extends Controller
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi) {
+        if (! $hasilFasilitasi) {
             return back()->with('error', 'Hasil fasilitasi tidak dapat disetujui.');
         }
 
@@ -38,23 +39,23 @@ class ValidasiHasilController extends Controller
 
             // Update tahapan (Pelaksanaan = selesai)
             try {
-                $tahapanPelaksanaan = \App\Models\MasterTahapan::where('nama_tahapan', 'Pelaksanaan')->first();
+                $tahapanPelaksanaan = MasterTahapan::where('nama_tahapan', 'Pelaksanaan')->first();
 
                 if ($tahapanPelaksanaan) {
-                    \App\Models\PermohonanTahapan::updateOrCreate(
+                    PermohonanTahapan::updateOrCreate(
                         [
                             'permohonan_id' => $permohonan->id,
-                            'tahapan_id' => $tahapanPelaksanaan->id
+                            'tahapan_id' => $tahapanPelaksanaan->id,
                         ],
                         [
                             'status' => 'selesai',
                             'tanggal_selesai' => now(),
-                            'keterangan' => 'Hasil fasilitasi telah disetujui'
+                            'keterangan' => 'Hasil fasilitasi telah disetujui',
                         ]
                     );
                 }
             } catch (\Exception $e) {
-                Log::warning('Gagal update tahapan pelaksanaan: ' . $e->getMessage());
+                Log::warning('Gagal update tahapan pelaksanaan: '.$e->getMessage());
             }
 
             DB::commit();
@@ -62,7 +63,8 @@ class ValidasiHasilController extends Controller
             return back()->with('success', 'Hasil fasilitasi berhasil disetujui.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal menyetujui hasil fasilitasi: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal menyetujui hasil fasilitasi: '.$e->getMessage());
         }
     }
 
@@ -77,7 +79,7 @@ class ValidasiHasilController extends Controller
 
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-        if (!$hasilFasilitasi) {
+        if (! $hasilFasilitasi) {
             return back()->with('error', 'Hasil fasilitasi tidak dapat direvisi.');
         }
 
@@ -89,7 +91,7 @@ class ValidasiHasilController extends Controller
 
             return back()->with('success', 'Hasil fasilitasi dikembalikan untuk revisi.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal meminta revisi: ' . $e->getMessage());
+            return back()->with('error', 'Gagal meminta revisi: '.$e->getMessage());
         }
     }
 
@@ -101,7 +103,7 @@ class ValidasiHasilController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
@@ -112,23 +114,24 @@ class ValidasiHasilController extends Controller
             $content = $this->generateDocumentContent($permohonan, $sistematika, $urusan);
 
             // Save to file
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.doc';
-            $filepath = 'hasil-fasilitasi/' . $filename;
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.doc';
+            $filepath = 'hasil-fasilitasi/'.$filename;
 
-            Storage::disk('public')->put($filepath, $content);
+            Storage::disk('dokumen')->put($filepath, $content);
 
             // Update draft_file in hasil_fasilitasi
             $hasilFasilitasi->update([
                 'draft_file' => $filepath,
-                'updated_by' => Auth::id()
+                'updated_by' => Auth::id(),
             ]);
 
-            return response()->download(storage_path('app/public/' . $filepath), $filename, [
-                'Content-Type' => 'application/msword'
+            return response()->download(storage_path('app/private/'.$filepath), $filename, [
+                'Content-Type' => 'application/msword',
             ]);
         } catch (\Exception $e) {
-            Log::error('Error generating hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal generate dokumen: ' . $e->getMessage());
+            Log::error('Error generating hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal generate dokumen: '.$e->getMessage());
         }
     }
 
@@ -158,10 +161,10 @@ class ValidasiHasilController extends Controller
                 </style>
             </head>
             <body>
-                <h1>HASIL FASILITASI<br>RANCANGAN AKHIR RKPD ' . strtoupper($kabkota) . ' TAHUN ' . $tahun . '</h1>
+                <h1>HASIL FASILITASI<br>RANCANGAN AKHIR RKPD '.strtoupper($kabkota).' TAHUN '.$tahun.'</h1>
                 
                 <h2>I. Sistematika dan Substansi Rancangan Akhir RKPD</h2>
-                <p>Catatan penyempurnaan terhadap sistematika dan rancangan akhir RKPD ' . $kabkota . ', sebagai berikut:</p>
+                <p>Catatan penyempurnaan terhadap sistematika dan rancangan akhir RKPD '.$kabkota.', sebagai berikut:</p>
                 
                 <table>
                     <thead>
@@ -176,9 +179,9 @@ class ValidasiHasilController extends Controller
         if ($sistematika->count() > 0) {
             foreach ($sistematika as $index => $item) {
                 $html .= '<tr>
-                                <td class="no-col">' . ($index + 1) . '</td>
-                                <td><strong>' . htmlspecialchars($item->bab_sub_bab) . '</strong></td>
-                                <td>' . nl2br(htmlspecialchars($item->catatan_penyempurnaan)) . '</td>
+                                <td class="no-col">'.($index + 1).'</td>
+                                <td><strong>'.htmlspecialchars($item->bab_sub_bab).'</strong></td>
+                                <td>'.nl2br(htmlspecialchars($item->catatan_penyempurnaan)).'</td>
                             </tr>';
             }
         } else {
@@ -212,15 +215,15 @@ class ValidasiHasilController extends Controller
                     $itemIndex = 0;
 
                     $html .= '<tr>
-                                    <td class="no-col">' . $urusanIndex . '</td>
-                                    <td><strong>Urusan ' . htmlspecialchars($currentUrusan) . '</strong></td>
+                                    <td class="no-col">'.$urusanIndex.'</td>
+                                    <td><strong>Urusan '.htmlspecialchars($currentUrusan).'</strong></td>
                                 </tr>';
                 }
 
                 $itemIndex++;
                 $html .= '<tr>
-                                <td class="no-col">' . $itemIndex . '.</td>
-                                <td>' . nl2br(htmlspecialchars($item->catatan_masukan)) . '</td>
+                                <td class="no-col">'.$itemIndex.'.</td>
+                                <td>'.nl2br(htmlspecialchars($item->catatan_masukan)).'</td>
                             </tr>';
             }
         } else {
@@ -243,7 +246,7 @@ class ValidasiHasilController extends Controller
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
-            if (!$hasilFasilitasi) {
+            if (! $hasilFasilitasi) {
                 return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
             }
 
@@ -262,7 +265,7 @@ class ValidasiHasilController extends Controller
                 'kabkota' => $permohonan->kabupatenKota->nama,
                 'tahun' => date('Y'),
                 'sistematika' => $sistematika,
-                'urusan' => $urusan
+                'urusan' => $urusan,
             ];
 
             // Generate PDF
@@ -270,21 +273,22 @@ class ValidasiHasilController extends Controller
                 ->setPaper('a4', 'portrait');
 
             // Save to file
-            $filename = 'Hasil_Fasilitasi_' . $permohonan->kabupatenKota->nama . '_' . date('Y') . '.pdf';
-            $filepath = 'hasil-fasilitasi/' . $filename;
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+            $filepath = 'hasil-fasilitasi/'.$filename;
 
-            Storage::disk('public')->put($filepath, $pdf->output());
+            Storage::disk('dokumen')->put($filepath, $pdf->output());
 
             // Update final_file in hasil_fasilitasi
             $hasilFasilitasi->update([
                 'final_file' => $filepath,
-                'updated_by' => Auth::id()
+                'updated_by' => Auth::id(),
             ]);
 
             return $pdf->download($filename);
         } catch (\Exception $e) {
-            Log::error('Error generating PDF hasil fasilitasi: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal generate PDF: ' . $e->getMessage());
+            Log::error('Error generating PDF hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal generate PDF: '.$e->getMessage());
         }
     }
 }

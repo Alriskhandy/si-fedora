@@ -153,7 +153,7 @@
                                     <h6 class="mb-0 fw-bold">
                                         <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
                                     </h6>
-                                    <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                    <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                         class="btn btn-primary btn-sm shadow-sm" target="_blank">
                                         <i class='bx bx-download me-1'></i>Download PDF
                                     </a>
@@ -161,11 +161,11 @@
 
                                 <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
                                     <iframe
-                                        src="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}#toolbar=1&view=FitH"
+                                        src="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}#toolbar=1&view=FitH"
                                         type="application/pdf" width="100%" height="600px" style="border: none;">
                                         <p class="text-center py-5">
                                             Browser Anda tidak mendukung preview PDF.
-                                            <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                            <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                                 class="btn btn-primary" target="_blank">
                                                 <i class='bx bx-download me-1'></i>Download PDF
                                             </a>
@@ -245,7 +245,7 @@
                                     <h6 class="mb-0 fw-bold">
                                         <i class='bx bx-file-pdf me-1 text-danger'></i>Preview Dokumen
                                     </h6>
-                                    <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                    <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                         class="btn btn-primary btn-sm shadow-sm" target="_blank">
                                         <i class='bx bx-download me-1'></i>Download PDF
                                     </a>
@@ -253,11 +253,11 @@
 
                                 <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
                                     <iframe
-                                        src="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}#toolbar=1&view=FitH"
+                                        src="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}#toolbar=1&view=FitH"
                                         type="application/pdf" width="100%" height="600px" style="border: none;">
                                         <p class="text-center py-5">
                                             Browser Anda tidak mendukung preview PDF.
-                                            <a href="{{ asset('storage/' . $dokumenTindakLanjut->file_path) }}"
+                                            <a href="{{ route('berkas.show', ['dokumen-tahapan', $dokumenTindakLanjut->id]) }}"
                                                 class="btn btn-primary" target="_blank">
                                                 <i class='bx bx-download me-1'></i>Download PDF
                                             </a>

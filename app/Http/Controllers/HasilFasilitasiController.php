@@ -418,9 +418,9 @@ class HasilFasilitasiController extends Controller
             if ($request->hasFile('file_draft')) {
                 // Hapus file lama jika ada
                 if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->file_draft) {
-                    Storage::disk('public')->delete($permohonan->hasilFasilitasi->file_draft);
+                    Storage::disk('dokumen')->delete($permohonan->hasilFasilitasi->file_draft);
                 }
-                $filePath = $request->file('file_draft')->store('hasil-fasilitasi', 'public');
+                $filePath = $request->file('file_draft')->store('hasil-fasilitasi', 'dokumen');
             } elseif ($permohonan->hasilFasilitasi) {
                 $filePath = $permohonan->hasilFasilitasi->file_draft;
             }
@@ -1189,7 +1189,7 @@ class HasilFasilitasiController extends Controller
             ))->setPaper([0, 0, 595.28, 935.43], 'portrait');
 
             $pdfPath = str_replace('.docx', '.pdf', $filepath);
-            Storage::disk('public')->put($pdfPath, $pdf->output());
+            Storage::disk('dokumen')->put($pdfPath, $pdf->output());
 
             // Update draft_file di hasil_fasilitasi (simpan path .docx)
             $hasilFasilitasi->update([
@@ -1242,7 +1242,7 @@ class HasilFasilitasiController extends Controller
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
             }
 
-            if (! $hasilFasilitasi->draft_file || ! Storage::disk('public')->exists($hasilFasilitasi->draft_file)) {
+            if (! $hasilFasilitasi->draft_file || ! Storage::disk('dokumen')->exists($hasilFasilitasi->draft_file)) {
                 return redirect()->back()->with('error', 'File draft belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
             }
 
@@ -1289,14 +1289,14 @@ class HasilFasilitasiController extends Controller
             $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
 
             // Check if PDF file exists
-            if (! Storage::disk('public')->exists($pdfPath)) {
+            if (! Storage::disk('dokumen')->exists($pdfPath)) {
                 return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
             }
 
             $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
 
             return response()->download(
-                Storage::disk('public')->path($pdfPath),
+                Storage::disk('dokumen')->path($pdfPath),
                 $filename,
                 ['Content-Type' => 'application/pdf']
             );
@@ -1336,7 +1336,7 @@ class HasilFasilitasiController extends Controller
             $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
 
             // Check if PDF file exists
-            if (! Storage::disk('public')->exists($pdfPath)) {
+            if (! Storage::disk('dokumen')->exists($pdfPath)) {
                 return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
             }
 
@@ -1344,7 +1344,7 @@ class HasilFasilitasiController extends Controller
             $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
 
             return response()->file(
-                Storage::disk('public')->path($pdfPath),
+                Storage::disk('dokumen')->path($pdfPath),
                 ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="'.$filename.'"']
             );
         } catch (\Exception $e) {
@@ -1388,14 +1388,14 @@ class HasilFasilitasiController extends Controller
             ]);
 
             // Delete old draft final if exists
-            if ($hasilFasilitasi->draft_final_file && Storage::disk('public')->exists($hasilFasilitasi->draft_final_file)) {
-                Storage::disk('public')->delete($hasilFasilitasi->draft_final_file);
+            if ($hasilFasilitasi->draft_final_file && Storage::disk('dokumen')->exists($hasilFasilitasi->draft_final_file)) {
+                Storage::disk('dokumen')->delete($hasilFasilitasi->draft_final_file);
             }
 
             // Store new draft final
             $file = $request->file('draft_final_file');
             $filename = 'Hasil_Fasilitasi_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'_'.time().'.pdf';
-            $filepath = $file->store('hasil-fasilitasi/final', 'public');
+            $filepath = $file->store('hasil-fasilitasi/final', 'dokumen');
 
             // Update hasil fasilitasi
             $hasilFasilitasi->update([
@@ -1445,14 +1445,14 @@ class HasilFasilitasiController extends Controller
             }
 
             // Check if draft final exists
-            if (! $hasilFasilitasi->draft_final_file || ! Storage::disk('public')->exists($hasilFasilitasi->draft_final_file)) {
+            if (! $hasilFasilitasi->draft_final_file || ! Storage::disk('dokumen')->exists($hasilFasilitasi->draft_final_file)) {
                 return redirect()->back()->with('error', 'Draft final PDF belum tersedia.');
             }
 
             $filename = 'Hasil_Fasilitasi_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
 
             return response()->download(
-                Storage::disk('public')->path($hasilFasilitasi->draft_final_file),
+                Storage::disk('dokumen')->path($hasilFasilitasi->draft_final_file),
                 $filename,
                 ['Content-Type' => 'application/pdf']
             );

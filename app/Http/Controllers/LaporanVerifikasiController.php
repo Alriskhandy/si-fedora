@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Permohonan;
 use App\Models\LaporanVerifikasi;
-use App\Models\Notifikasi;
-use App\Models\User;
 use App\Models\MasterTahapan;
+use App\Models\Notifikasi;
+use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
 use App\Services\PermohonanNotificationService;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,7 @@ class LaporanVerifikasiController extends Controller
         // Filter pencarian
         if ($request->filled('search')) {
             $query->whereHas('kabupatenKota', function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
+                $q->where('nama', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -146,9 +146,10 @@ class LaporanVerifikasiController extends Controller
                 ->with('success', 'Laporan verifikasi berhasil disimpan. Tahapan verifikasi selesai.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error membuat laporan verifikasi: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            return back()->withInput()->with('error', 'Gagal membuat laporan: ' . $e->getMessage());
+            Log::error('Error membuat laporan verifikasi: '.$e->getMessage());
+            Log::error('Stack trace: '.$e->getTraceAsString());
+
+            return back()->withInput()->with('error', 'Gagal membuat laporan: '.$e->getMessage());
         }
     }
 
@@ -159,17 +160,17 @@ class LaporanVerifikasiController extends Controller
     {
         try {
             $tahapanVerifikasi = MasterTahapan::where('nama_tahapan', 'Verifikasi')->first();
-            
+
             if ($tahapanVerifikasi) {
                 // Update tahapan Verifikasi menjadi selesai
                 PermohonanTahapan::updateOrCreate(
                     [
                         'permohonan_id' => $permohonan->id,
-                        'tahapan_id' => $tahapanVerifikasi->id
+                        'tahapan_id' => $tahapanVerifikasi->id,
                     ],
                     [
                         'status' => 'selesai',
-                        'catatan' => 'Laporan verifikasi telah dibuat oleh admin pada ' . now()->format('d M Y H:i'),
+                        'catatan' => 'Laporan verifikasi telah dibuat oleh admin pada '.now()->format('d M Y H:i'),
                         'updated_by' => Auth::id(),
                     ]
                 );
@@ -178,7 +179,7 @@ class LaporanVerifikasiController extends Controller
                 $this->activateNextTahapan($permohonan, $tahapanVerifikasi);
             }
         } catch (\Exception $e) {
-            Log::warning('Gagal update tahapan: ' . $e->getMessage());
+            Log::warning('Gagal update tahapan: '.$e->getMessage());
         }
     }
 
@@ -192,7 +193,7 @@ class LaporanVerifikasiController extends Controller
             ->orderBy('urutan', 'asc')
             ->first();
 
-        if (!$nextTahapan) {
+        if (! $nextTahapan) {
             return;
         }
 
@@ -248,7 +249,7 @@ class LaporanVerifikasiController extends Controller
     private function sendNotifications($permohonan, $laporan)
     {
         $notificationService = app(PermohonanNotificationService::class);
-        
+
         // Kirim notifikasi lengkap (database + WhatsApp) ke:
         // - Kaban (untuk penetapan jadwal)
         // - Tim Fedora (Verifikator & Fasilitator)
@@ -263,7 +264,7 @@ class LaporanVerifikasiController extends Controller
     {
         $laporan = $permohonan->laporanVerifikasi;
 
-        if (!$laporan) {
+        if (! $laporan) {
             return redirect()->route('laporan-verifikasi.create', $permohonan)
                 ->with('info', 'Laporan verifikasi belum dibuat.');
         }
@@ -278,13 +279,17 @@ class LaporanVerifikasiController extends Controller
     {
         $laporan = $permohonan->laporanVerifikasi;
 
-        if (!$laporan) {
+        if (! $laporan) {
             return back()->with('error', 'Laporan verifikasi tidak ditemukan.');
         }
 
-        // TODO: Implement PDF generation
-        // Untuk sementara redirect ke show
-        return redirect()->route('laporan-verifikasi.show', $permohonan)
-            ->with('info', 'Fitur download PDF akan segera tersedia.');
+        $permohonan->load(['kabupatenKota', 'jenisDokumen', 'permohonanDokumen.masterKelengkapan']);
+        $laporan->load('pembuatLaporan');
+
+        $namaFile = 'Laporan_Verifikasi_'.str($permohonan->kabupatenKota->nama ?? 'Kabkota')->slug('_').'_'.$permohonan->tahun.'.pdf';
+
+        return PDF::loadView('laporan-verifikasi.pdf', compact('permohonan', 'laporan'))
+            ->setPaper('a4')
+            ->download($namaFile);
     }
 }

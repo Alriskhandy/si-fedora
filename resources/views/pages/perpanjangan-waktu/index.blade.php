@@ -213,7 +213,7 @@
                                         <td><small>{{ str()->limit($perpanjangan->alasan, 60) }}</small></td>
                                         <td>
                                             @if ($perpanjangan->surat_permohonan)
-                                                <a href="{{ asset('storage/' . $perpanjangan->surat_permohonan) }}"
+                                                <a href="{{ route('berkas.show', ['perpanjangan-waktu', $perpanjangan->id]) }}"
                                                     target="_blank" class="btn btn-sm btn-outline-success">
                                                     <i class='bx bx-file-blank'></i> Lihat
                                                 </a>

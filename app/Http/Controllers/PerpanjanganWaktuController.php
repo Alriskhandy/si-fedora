@@ -3,16 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\JadwalFasilitasi;
-use App\Models\PerpanjanganWaktu;
 use App\Models\Permohonan;
+use App\Models\PerpanjanganWaktu;
+use App\Services\PermohonanNotificationService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Carbon\Carbon;
 
 class PerpanjanganWaktuController extends Controller
 {
     use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
@@ -33,7 +34,7 @@ class PerpanjanganWaktuController extends Controller
             })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $query->whereHas('permohonan.kabupatenKota', function ($q) use ($request) {
-                    $q->where('nama', 'like', '%' . $request->search . '%');
+                    $q->where('nama', 'like', '%'.$request->search.'%');
                 });
             })
             ->latest()
@@ -73,7 +74,7 @@ class PerpanjanganWaktuController extends Controller
         if ($request->filled('permohonan_id')) {
             $permohonan = Permohonan::with('jadwalFasilitasi')->findOrFail($request->query('permohonan_id'));
 
-            if (!auth()->user()->hasRole('pemohon') || $permohonan->user_id !== auth()->id()) {
+            if (! auth()->user()->hasRole('pemohon') || $permohonan->user_id !== auth()->id()) {
                 abort(403);
             }
 
@@ -125,9 +126,9 @@ class PerpanjanganWaktuController extends Controller
 
         // Upload file
         $folder = $permohonan
-            ? 'perpanjangan_waktu/permohonan_' . $permohonan->id
-            : 'perpanjangan_waktu/jadwal_' . $jadwal->id;
-        $filePath = $request->file('surat_permohonan')->store($folder, 'public');
+            ? 'perpanjangan_waktu/permohonan_'.$permohonan->id
+            : 'perpanjangan_waktu/jadwal_'.$jadwal->id;
+        $filePath = $request->file('surat_permohonan')->store($folder, 'dokumen');
 
         // Create perpanjangan
         $perpanjangan = PerpanjanganWaktu::create([
@@ -138,8 +139,7 @@ class PerpanjanganWaktuController extends Controller
             'surat_permohonan' => $filePath,
         ]);
 
-        // TODO: Send notification to admin
-        // event(new PerpanjanganWaktuCreated($perpanjangan));
+        app(PermohonanNotificationService::class)->notifyPerpanjanganWaktuDiajukan($perpanjangan);
 
         return $permohonan
             ? redirect()->route('permohonan.show', $permohonan)
@@ -177,14 +177,14 @@ class PerpanjanganWaktuController extends Controller
 
         // Delete old file if exists
         if ($perpanjanganWaktu->surat_permohonan) {
-            Storage::disk('public')->delete($perpanjanganWaktu->surat_permohonan);
+            Storage::disk('dokumen')->delete($perpanjanganWaktu->surat_permohonan);
         }
 
         // Upload new file
         $folder = $perpanjanganWaktu->permohonan_id
-            ? 'perpanjangan_waktu/permohonan_' . $perpanjanganWaktu->permohonan_id
-            : 'perpanjangan_waktu/jadwal_' . $perpanjanganWaktu->jadwal_fasilitasi_id;
-        $filePath = $request->file('file_surat')->store($folder, 'public');
+            ? 'perpanjangan_waktu/permohonan_'.$perpanjanganWaktu->permohonan_id
+            : 'perpanjangan_waktu/jadwal_'.$perpanjanganWaktu->jadwal_fasilitasi_id;
+        $filePath = $request->file('file_surat')->store($folder, 'dokumen');
 
         $perpanjanganWaktu->update([
             'surat_permohonan' => $filePath,
@@ -203,7 +203,7 @@ class PerpanjanganWaktuController extends Controller
     public function process(Request $request, PerpanjanganWaktu $perpanjanganWaktu)
     {
         // Only admin_peran and superadmin can process
-        if (!auth()->user()->hasAnyRole(['admin_peran', 'superadmin'])) {
+        if (! auth()->user()->hasAnyRole(['admin_peran', 'superadmin'])) {
             abort(403, 'Anda tidak memiliki akses untuk memproses perpanjangan waktu.');
         }
 
@@ -241,11 +241,11 @@ class PerpanjanganWaktuController extends Controller
     {
         $this->authorize('view', $perpanjanganWaktu);
 
-        if (!$perpanjanganWaktu->surat_permohonan || !Storage::disk('public')->exists($perpanjanganWaktu->surat_permohonan)) {
+        if (! $perpanjanganWaktu->surat_permohonan || ! Storage::disk('dokumen')->exists($perpanjanganWaktu->surat_permohonan)) {
             abort(404, 'File tidak ditemukan');
         }
 
-        return Storage::disk('public')->download($perpanjanganWaktu->surat_permohonan);
+        return Storage::disk('dokumen')->download($perpanjanganWaktu->surat_permohonan);
     }
 
     /**
@@ -257,7 +257,7 @@ class PerpanjanganWaktuController extends Controller
 
         // Delete file
         if ($perpanjanganWaktu->surat_permohonan) {
-            Storage::disk('public')->delete($perpanjanganWaktu->surat_permohonan);
+            Storage::disk('dokumen')->delete($perpanjanganWaktu->surat_permohonan);
         }
 
         $permohonanId = $perpanjanganWaktu->permohonan_id;

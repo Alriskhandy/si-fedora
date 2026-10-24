@@ -38,6 +38,16 @@ return [
             'report' => false,
         ],
 
+        // Dokumen resmi (permohonan, tahapan, hasil, surat). Tidak dapat diakses lewat URL publik;
+        // disajikan lewat BerkasController atau route unduh yang memeriksa otorisasi.
+        'dokumen' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

@@ -187,10 +187,10 @@
                                                     <!-- Preview Thumbnail -->
                                                     <div class="preview-thumbnail"
                                                         style="width: 50px; height: 50px; cursor: pointer; border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8f9fa;"
-                                                        ondblclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ asset('storage/' . $dokumen->file_path) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
+                                                        ondblclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ route('berkas.show', ['dokumen-tahapan', $dokumen->id]) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
                                                         title="Klik dua kali untuk melihat preview">
                                                         @if ($isImage)
-                                                            <img src="{{ asset('storage/' . $dokumen->file_path) }}"
+                                                            <img src="{{ route('berkas.show', ['dokumen-tahapan', $dokumen->id]) }}"
                                                                 alt="Preview"
                                                                 style="width: 100%; height: 100%; object-fit: cover;">
                                                         @else
@@ -209,7 +209,7 @@
                                             </td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-info"
-                                                    onclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ asset('storage/' . $dokumen->file_path) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
+                                                    onclick="showPreview('{{ $dokumen->id }}', '{{ $isImage }}', '{{ route('berkas.show', ['dokumen-tahapan', $dokumen->id]) }}', '{{ $dokumen->nama_dokumen }}', '{{ $extension }}')"
                                                     title="Lihat">
                                                     <i class='bx bx-show'></i>
                                                 </button>

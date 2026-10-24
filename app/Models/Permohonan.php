@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Permohonan extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     // ============================================================
     // PROPERTIES
@@ -80,7 +82,7 @@ class Permohonan extends Model
 
     public function activityLogs()
     {
-        return $this->morphMany(\Spatie\Activitylog\Models\Activity::class, 'subject')
+        return $this->morphMany(Activity::class, 'subject')
             ->orderBy('created_at', 'desc');
     }
 
@@ -208,7 +210,8 @@ class Permohonan extends Model
             return $query->where('jenis_dokumen_id', $jenis);
         }
 
-        $jenisDokumen = \App\Models\MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
+        $jenisDokumen = MasterJenisDokumen::whereRaw('UPPER(nama) = ?', [strtoupper($jenis)])->first();
+
         return $query->where('jenis_dokumen_id', $jenisDokumen ? $jenisDokumen->id : null);
     }
 
@@ -227,13 +230,92 @@ class Permohonan extends Model
         return $query->where('status_akhir', $status);
     }
 
+    /**
+     * Batasi ke permohonan yang boleh dilihat pengguna di daftar.
+     *
+     * Aturan detail per record ada di PermohonanPolicy::view().
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasAnyRole(['superadmin', 'admin_peran', 'kaban', 'auditor'])) {
+            return $query;
+        }
+
+        if ($user->hasRole('pemohon')) {
+            return $query->where(function (Builder $q) use ($user) {
+                $q->where('user_id', $user->id);
+
+                if ($user->kabupaten_kota_id) {
+                    $q->orWhere('kab_kota_id', $user->kabupaten_kota_id);
+                }
+            });
+        }
+
+        if ($user->hasRole('verifikator')) {
+            $assignments = UserKabkotaAssignment::where('user_id', $user->id)->where('is_active', true)->get();
+
+            return $query->where(function (Builder $q) use ($assignments, $user) {
+                if ($assignments->isNotEmpty()) {
+                    $q->orWhere(function (Builder $qq) use ($assignments) {
+                        $qq->where(function (Builder $sub) use ($assignments) {
+                            foreach ($assignments as $assignment) {
+                                $sub->orWhere(function (Builder $s) use ($assignment) {
+                                    $s->where('kab_kota_id', $assignment->kabupaten_kota_id);
+
+                                    if ($assignment->tahun) {
+                                        $s->where('tahun', $assignment->tahun);
+                                    }
+
+                                    if ($assignment->jenis_dokumen_id) {
+                                        $s->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                                    }
+                                });
+                            }
+                        })->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+                    });
+                }
+
+                // Permohonan selesai yang pernah diverifikasi langsung (pergantian PIC)
+                $q->orWhere(function (Builder $qq) use ($user) {
+                    $qq->where('status_akhir', 'selesai')
+                        ->whereHas('permohonanDokumen', function (Builder $sub) use ($user) {
+                            $sub->where('verified_by', $user->id)->whereNotNull('verified_at');
+                        });
+                });
+            });
+        }
+
+        if ($user->hasRole('fasilitator')) {
+            $assignments = UserKabkotaAssignment::where('user_id', $user->id)->where('is_active', true)->get();
+
+            if ($assignments->isEmpty()) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->where(function (Builder $q) use ($assignments) {
+                foreach ($assignments as $assignment) {
+                    $q->orWhere(function (Builder $qq) use ($assignment) {
+                        $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                            ->where('tahun', $assignment->tahun);
+
+                        if ($assignment->jenis_dokumen_id) {
+                            $qq->where('jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                        }
+                    });
+                }
+            })->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
     // ============================================================
     // PROGRESS TRACKING METHODS
     // ============================================================
 
     public function getProgressSteps()
     {
-        $masterTahapan = \App\Models\MasterTahapan::orderBy('urutan')->get();
+        $masterTahapan = MasterTahapan::orderBy('urutan')->get();
 
         $iconMap = [
             'Permohonan' => 'bx-send',
@@ -423,7 +505,7 @@ class Permohonan extends Model
     {
         $deadline = $this->getEffectiveDeadline();
 
-        if (!$deadline) {
+        if (! $deadline) {
             return false;
         }
 
@@ -432,7 +514,7 @@ class Permohonan extends Model
 
     public function canUploadDocuments()
     {
-        if (!in_array($this->status_akhir, ['belum', 'revisi'])) {
+        if (! in_array($this->status_akhir, ['belum', 'revisi'])) {
             return false;
         }
 
@@ -447,14 +529,14 @@ class Permohonan extends Model
     {
         $deadline = $this->getEffectiveDeadline();
 
-        if (!$deadline) {
+        if (! $deadline) {
             return null;
         }
 
         if ($this->isUploadDeadlinePassed()) {
-            return 'Batas waktu upload dokumen telah berakhir pada ' . $deadline->format('d M Y, H:i');
+            return 'Batas waktu upload dokumen telah berakhir pada '.$deadline->format('d M Y, H:i');
         }
 
-        return 'Batas waktu upload dokumen: ' . $deadline->format('d M Y, H:i');
+        return 'Batas waktu upload dokumen: '.$deadline->format('d M Y, H:i');
     }
 }

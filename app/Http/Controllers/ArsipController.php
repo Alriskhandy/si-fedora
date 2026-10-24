@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\MasterJenisDokumen;
 use App\Models\Permohonan;
+use App\Models\SuratPemberitahuan;
+use App\Models\UndanganPelaksanaan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ArsipController extends Controller
 {
@@ -14,11 +17,12 @@ class ArsipController extends Controller
     public function index(Request $request)
     {
         // Get all jenis dokumen with count of permohonan
-        $jenisDokumenList = MasterJenisDokumen::withCount(['permohonan' => function($query) {
-            $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']); // Permohonan yang sudah diajukan
+        $jenisDokumenList = MasterJenisDokumen::withCount(['permohonan' => function ($query) use ($request) {
+            $query->whereIn('status_akhir', ['proses', 'revisi', 'selesai']) // Permohonan yang sudah diajukan
+                ->visibleTo($request->user());
         }])
-        ->orderBy('nama')
-        ->get();
+            ->orderBy('nama')
+            ->get();
 
         return view('pages.arsip.index', compact('jenisDokumenList'));
     }
@@ -29,24 +33,25 @@ class ArsipController extends Controller
     public function listByJenis(Request $request, $jenisDokumenId)
     {
         $jenisDokumen = MasterJenisDokumen::findOrFail($jenisDokumenId);
-        
+
         $query = Permohonan::with([
-            'kabupatenKota', 
-            'jenisDokumen', 
+            'kabupatenKota',
+            'jenisDokumen',
             'tahapanAktif.masterTahapan',
-            'pemohon'
+            'pemohon',
         ])
-        ->where('jenis_dokumen_id', $jenisDokumenId)
-        ->whereIn('status_akhir', ['proses', 'revisi', 'selesai']);
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->whereIn('status_akhir', ['proses', 'revisi', 'selesai'])
+            ->visibleTo($request->user());
 
         // Filter by search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->whereHas('kabupatenKota', function($q) use ($search) {
-                    $q->where('nama', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('kabupatenKota', function ($q) use ($search) {
+                    $q->where('nama', 'like', '%'.$search.'%');
                 })
-                ->orWhere('tahun', 'like', '%' . $search . '%');
+                    ->orWhere('tahun', 'like', '%'.$search.'%');
             });
         }
 
@@ -56,10 +61,11 @@ class ArsipController extends Controller
         }
 
         $permohonan = $query->latest()->paginate(15);
-        
+
         // Get filter options
         $tahunList = Permohonan::where('jenis_dokumen_id', $jenisDokumenId)
             ->whereIn('status_akhir', ['proses', 'revisi', 'selesai'])
+            ->visibleTo($request->user())
             ->selectRaw('DISTINCT tahun')
             ->orderByDesc('tahun')
             ->pluck('tahun');
@@ -72,6 +78,8 @@ class ArsipController extends Controller
      */
     public function show(Permohonan $permohonan)
     {
+        Gate::authorize('view', $permohonan);
+
         $permohonan->load([
             'kabupatenKota',
             'jenisDokumen',
@@ -93,7 +101,7 @@ class ArsipController extends Controller
             'laporan_verifikasi' => $permohonan->laporanVerifikasi ? 1 : 0,
             'hasil_fasilitasi' => $permohonan->hasilFasilitasi ? 1 : 0,
             'jadwal_fasilitasi' => $permohonan->jadwalFasilitasi ? 1 : 0,
-            'undangan_pelaksanaan' => \App\Models\UndanganPelaksanaan::where('permohonan_id', $permohonan->id)->count(),
+            'undangan_pelaksanaan' => UndanganPelaksanaan::where('permohonan_id', $permohonan->id)->count(),
             'surat_pemberitahuan' => 0, // Surat pemberitahuan related to jadwal, not permohonan
             'surat_penyampaian_hasil' => ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->surat_penyampaian) ? 1 : 0,
             'perpanjangan_waktu' => $permohonan->perpanjanganWaktu ? $permohonan->perpanjanganWaktu->count() : 0,
@@ -102,13 +110,13 @@ class ArsipController extends Controller
 
         // Get surat pemberitahuan if jadwal exists
         if ($permohonan->jadwalFasilitasi) {
-            $documentCounts['surat_pemberitahuan'] = \App\Models\SuratPemberitahuan::where('jadwal_fasilitasi_id', $permohonan->jadwalFasilitasi->id)
+            $documentCounts['surat_pemberitahuan'] = SuratPemberitahuan::where('jadwal_fasilitasi_id', $permohonan->jadwalFasilitasi->id)
                 ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
                 ->count();
         }
 
         // Get undangan pelaksanaan
-        $undanganPelaksanaan = \App\Models\UndanganPelaksanaan::where('permohonan_id', $permohonan->id)->get();
+        $undanganPelaksanaan = UndanganPelaksanaan::where('permohonan_id', $permohonan->id)->get();
         $permohonan->setRelation('undanganPelaksanaan', $undanganPelaksanaan);
 
         return view('pages.arsip.show', compact('permohonan', 'documentCounts'));

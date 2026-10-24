@@ -19,8 +19,7 @@
         "spatie/laravel-permission": "^6.23",
         "symfony/html-sanitizer": "^7.4",
         "tinymce/tinymce": "^8.3",
-        "tonysm/rich-text-laravel": "^3.3",
-        "twilio/sdk": "^8.9"
+        "tonysm/rich-text-laravel": "^3.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

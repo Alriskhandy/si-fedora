@@ -305,7 +305,7 @@
 
                                 <div class="ratio ratio-16x9 border rounded" style="min-height: 600px;">
                                     <iframe
-                                        src="{{ asset('storage/' . $permohonan->hasilFasilitasi->draft_final_file) }}#toolbar=1&view=FitH"
+                                        src="{{ route('berkas.show', ['hasil-fasilitasi-final', $permohonan->hasilFasilitasi->id]) }}#toolbar=1&view=FitH"
                                         type="application/pdf" width="100%" height="600px" style="border: none;">
                                         <p class="text-center py-5">
                                             Browser Anda tidak mendukung preview PDF.

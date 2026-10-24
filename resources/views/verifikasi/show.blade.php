@@ -125,7 +125,7 @@
                                     </td>
                                     <td class="text-center">
                                         @if ($suratPermohonan->file_path)
-                                            <a href="{{ asset('storage/' . $suratPermohonan->file_path) }}" target="_blank"
+                                            <a href="{{ route('berkas.show', ['permohonan-dokumen', $suratPermohonan->id]) }}" target="_blank"
                                                 class="btn btn-sm btn-outline-primary">
                                                 <i class="bx bx-download"></i> Lihat
                                             </a>
@@ -218,7 +218,7 @@
                                     </td>
                                     <td class="text-center">
                                         @if ($dokumen->file_path)
-                                            <a href="{{ asset('storage/' . $dokumen->file_path) }}" target="_blank"
+                                            <a href="{{ route('berkas.show', ['permohonan-dokumen', $dokumen->id]) }}" target="_blank"
                                                 class="btn btn-sm btn-outline-primary">
                                                 <i class="bx bx-download"></i> Lihat
                                             </a>

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SuratPemberitahuan;
 use App\Models\JadwalFasilitasi;
 use App\Models\KabupatenKota;
+use App\Models\SuratPemberitahuan;
 use Illuminate\Http\Request;
-use App\Jobs\SendSuratPemberitahuanJob;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,10 +17,10 @@ class SuratPemberitahuanController extends Controller
 
         if ($request->filled('search')) {
             $query->whereHas('kabupatenKota', function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
+                $q->where('nama', 'like', '%'.$request->search.'%');
             })
-                ->orWhere('nomor_surat', 'like', '%' . $request->search . '%')
-                ->orWhere('perihal', 'like', '%' . $request->search . '%');
+                ->orWhere('nomor_surat', 'like', '%'.$request->search.'%')
+                ->orWhere('perihal', 'like', '%'.$request->search.'%');
         }
 
         $suratPemberitahuan = $query->latest()->paginate(10);
@@ -41,7 +40,7 @@ class SuratPemberitahuanController extends Controller
     {
         $request->validate([
             'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
-            'kabupaten_kota_id' => 'required|exists:kabupaten_kota,id|unique:surat_pemberitahuan,kabupaten_kota_id,NULL,id,jadwal_fasilitasi_id,' . $request->jadwal_fasilitasi_id,
+            'kabupaten_kota_id' => 'required|exists:kabupaten_kota,id|unique:surat_pemberitahuan,kabupaten_kota_id,NULL,id,jadwal_fasilitasi_id,'.$request->jadwal_fasilitasi_id,
             'nomor_surat' => 'nullable|string|unique:surat_pemberitahuan,nomor_surat',
             'tanggal_surat' => 'required|date',
             'perihal' => 'required|string|max:200',
@@ -51,7 +50,7 @@ class SuratPemberitahuanController extends Controller
 
         $file_path = null;
         if ($request->hasFile('file_path')) {
-            $file_path = $request->file('file_path')->store('surat-pemberitahuan', 'public');
+            $file_path = $request->file('file_path')->store('surat-pemberitahuan', 'dokumen');
         }
 
         SuratPemberitahuan::create([
@@ -86,8 +85,8 @@ class SuratPemberitahuanController extends Controller
     {
         $request->validate([
             'jadwal_fasilitasi_id' => 'required|exists:jadwal_fasilitasi,id',
-            'kabupaten_kota_id' => 'required|exists:kabupaten_kota,id|unique:surat_pemberitahuan,kabupaten_kota_id,' . $suratPemberitahuan->id . ',id,jadwal_fasilitasi_id,' . $request->jadwal_fasilitasi_id,
-            'nomor_surat' => 'nullable|string|unique:surat_pemberitahuan,nomor_surat,' . $suratPemberitahuan->id,
+            'kabupaten_kota_id' => 'required|exists:kabupaten_kota,id|unique:surat_pemberitahuan,kabupaten_kota_id,'.$suratPemberitahuan->id.',id,jadwal_fasilitasi_id,'.$request->jadwal_fasilitasi_id,
+            'nomor_surat' => 'nullable|string|unique:surat_pemberitahuan,nomor_surat,'.$suratPemberitahuan->id,
             'tanggal_surat' => 'required|date',
             'perihal' => 'required|string|max:200',
             'isi_surat' => 'nullable|string',
@@ -98,9 +97,9 @@ class SuratPemberitahuanController extends Controller
         if ($request->hasFile('file_path')) {
             // Hapus file lama kalo ada
             if ($suratPemberitahuan->file_path) {
-                Storage::disk('public')->delete($suratPemberitahuan->file_path);
+                Storage::disk('dokumen')->delete($suratPemberitahuan->file_path);
             }
-            $file_path = $request->file('file_path')->store('surat-pemberitahuan', 'public');
+            $file_path = $request->file('file_path')->store('surat-pemberitahuan', 'dokumen');
         }
 
         $suratPemberitahuan->update([
@@ -121,10 +120,11 @@ class SuratPemberitahuanController extends Controller
     {
         // Hapus file kalo ada
         if ($suratPemberitahuan->file_path) {
-            Storage::disk('public')->delete($suratPemberitahuan->file_path);
+            Storage::disk('dokumen')->delete($suratPemberitahuan->file_path);
         }
 
         $suratPemberitahuan->delete();
+
         return redirect()->route('surat-pemberitahuan.index')->with('success', 'Surat pemberitahuan berhasil dihapus.');
     }
 
@@ -133,29 +133,16 @@ class SuratPemberitahuanController extends Controller
         // Update status surat
         $suratPemberitahuan->update([
             'status' => 'sent',
-            'sent_at' => now()
+            'sent_at' => now(),
         ]);
 
-        // // Dispatch job untuk kirim notifikasi WhatsApp
-        // SendSuratPemberitahuanJob::dispatch($suratPemberitahuan);
-
-        // // Get user count for feedback
-        // $userCount = $suratPemberitahuan->kabupatenKota
-        //     ->users()
-        //     ->whereNotNull('phone')
-        //     ->count();
-
-        // if ($userCount > 0) {
-        //     return redirect()->back()->with('success', "Surat berhasil dikirim. Notifikasi WhatsApp akan dikirim ke {$userCount} user.");
-        // }
-
-        return redirect()->back()->with('success', 'Surat berhasil dikirim. Tidak ada user dengan nomor telepon yang terdaftar.');
+        return redirect()->back()->with('success', 'Surat berhasil dikirim.');
     }
 
     public function download(SuratPemberitahuan $suratPemberitahuan)
     {
         if ($suratPemberitahuan->file_path) {
-            return response()->download(storage_path('app/public/' . $suratPemberitahuan->file_path));
+            return response()->download(storage_path('app/private/'.$suratPemberitahuan->file_path));
         }
 
         return redirect()->back()->with('error', 'File surat tidak ditemukan.');

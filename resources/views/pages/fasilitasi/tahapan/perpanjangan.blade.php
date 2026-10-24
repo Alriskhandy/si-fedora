@@ -61,7 +61,7 @@
                                 <small class="text-muted">Surat Permohonan:</small>
                                 @if ($perpanjangan->surat_permohonan)
                                     <p class="mb-1">
-                                        <a href="{{ asset('storage/' . $perpanjangan->surat_permohonan) }}"
+                                        <a href="{{ route('berkas.show', ['perpanjangan-waktu', $perpanjangan->id]) }}"
                                             target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i class='bx bx-file-blank'></i> Lihat Surat
                                         </a>

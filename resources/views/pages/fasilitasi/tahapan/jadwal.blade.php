@@ -268,7 +268,7 @@
                                         <td class="text-muted"><i class='bx bx-envelope me-1'></i> Undangan:</td>
                                         <td>
                                             @if ($permohonan->undanganPelaksanaan->file_undangan)
-                                                <a href="{{ asset('storage/' . $permohonan->undanganPelaksanaan->file_undangan) }}"
+                                                <a href="{{ route('berkas.show', ['undangan-pelaksanaan', $permohonan->undanganPelaksanaan->id]) }}"
                                                     target="_blank" class="btn btn-sm btn-primary">
                                                     <i class='bx bx-download'></i> Download
                                                 </a>
@@ -349,7 +349,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4 text-end">
-                                <a href="{{ asset('storage/' . $permohonan->undanganPelaksanaan->file_undangan) }}"
+                                <a href="{{ route('berkas.show', ['undangan-pelaksanaan', $permohonan->undanganPelaksanaan->id]) }}"
                                     target="_blank" class="btn btn-primary">
                                     <i class='bx bx-download'></i> Download Undangan
                                 </a>

@@ -35,7 +35,7 @@ class TindakLanjutController extends Controller
             return back()->with('error', 'File laporan tidak ditemukan.');
         }
 
-        $filepath = storage_path('app/public/'.$tindakLanjut->file_laporan);
+        $filepath = storage_path('app/private/'.$tindakLanjut->file_laporan);
 
         if (! file_exists($filepath)) {
             return back()->with('error', 'File tidak ditemukan di storage.');
@@ -75,7 +75,7 @@ class TindakLanjutController extends Controller
             // Upload file
             $file = $request->file('file');
             $fileName = 'tindak_lanjut_'.$permohonan->id.'_'.time().'.pdf';
-            $filePath = $file->store('dokumen-tahapan/tindak-lanjut', 'public');
+            $filePath = $file->store('dokumen-tahapan/tindak-lanjut', 'dokumen');
 
             // Simpan ke DokumenTahapan
             $dokumen = DokumenTahapan::create([
