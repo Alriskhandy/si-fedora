@@ -1004,9 +1004,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "PUT perpanjangan-waktu/{perpanjanganWaktu}/upload-surat": [
-        "pemohon"
-    ],
     "PUT surat-pemberitahuan/{suratPemberitahuan}": [
         "admin_peran"
     ],

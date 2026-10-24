@@ -168,43 +168,6 @@ class PerpanjanganWaktuController extends Controller
     }
 
     /**
-     * Upload surat permohonan for existing perpanjangan.
-     */
-    public function uploadSurat(Request $request, PerpanjanganWaktu $perpanjanganWaktu)
-    {
-        $this->authorize('update', $perpanjanganWaktu);
-
-        $validated = $request->validate([
-            'file_surat' => 'required|file|mimes:pdf|max:2048',
-        ], [
-            'file_surat.required' => 'File surat harus diupload',
-            'file_surat.mimes' => 'File harus berformat PDF',
-            'file_surat.max' => 'Ukuran file maksimal 2MB',
-        ]);
-
-        // Delete old file if exists
-        if ($perpanjanganWaktu->surat_permohonan) {
-            Storage::disk('dokumen')->delete($perpanjanganWaktu->surat_permohonan);
-        }
-
-        // Upload new file
-        $folder = $perpanjanganWaktu->permohonan_id
-            ? 'perpanjangan_waktu/permohonan_'.$perpanjanganWaktu->permohonan_id
-            : 'perpanjangan_waktu/jadwal_'.$perpanjanganWaktu->jadwal_fasilitasi_id;
-        $filePath = $request->file('file_surat')->store($folder, 'dokumen');
-
-        $perpanjanganWaktu->update([
-            'surat_permohonan' => $filePath,
-        ]);
-
-        return $perpanjanganWaktu->permohonan_id
-            ? redirect()->route('permohonan.show', $perpanjanganWaktu->permohonan_id)
-                ->with('success', 'Surat permohonan berhasil diupload.')
-            : redirect()->route('perpanjangan-waktu.index')
-                ->with('success', 'Surat permohonan berhasil diupload.');
-    }
-
-    /**
      * Setujui perpanjangan: simpan batas waktu baru dan catatan admin. Batas waktu berlaku per permohonan/pengaju; jadwal fasilitasi tidak diubah.
      */
     public function process(Request $request, PerpanjanganWaktu $perpanjanganWaktu)
