@@ -7,10 +7,17 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * Menyinkronkan role & permission dengan katalog config/permissions.php.
+ *
+ * Tanpa --reset: menambah permission baru ke role default tanpa mencabut perubahan dari UI.
+ * Dengan --reset: menyamakan seluruh pemetaan role persis dengan katalog.
+ * Permission yang tidak ada di katalog selalu dihapus.
+ */
 class SyncPermissions extends Command
 {
     /**
-     * The name and signature of the console command.
+     * Nama dan argumen command.
      *
      * @var string
      */
@@ -18,14 +25,14 @@ class SyncPermissions extends Command
         {--reset : Samakan pemetaan semua role persis dengan katalog (mencabut perubahan dari UI)}';
 
     /**
-     * The console command description.
+     * Deskripsi yang tampil di `php artisan list`.
      *
      * @var string
      */
     protected $description = 'Sinkronkan role & permission dengan katalog config/permissions.php';
 
     /**
-     * Execute the console command.
+     * Buat role & permission yang belum ada, hapus yang tidak ada di katalog, lalu petakan ke role.
      */
     public function handle(PermissionRegistrar $registrar): int
     {

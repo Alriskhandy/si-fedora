@@ -19,6 +19,9 @@ class PermohonanNotificationService
 {
     protected $fonteService;
 
+    /**
+     * Inject layanan WhatsApp Fonnte.
+     */
     public function __construct(FonteService $fonteService)
     {
         $this->fonteService = $fonteService;

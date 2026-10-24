@@ -10,17 +10,23 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 
+/**
+ * Menyanitasi ulang konten rich text hasil fasilitasi yang tersimpan sebelum cast SanitizedHtml diterapkan.
+ *
+ * Kolom yang diproses didaftarkan di konstanta COLUMNS; tambahkan kolom baru di sini bila menambah kolom rich text.
+ * Dijalankan sekali saat rilis Fase 0, atau setelah whitelist sanitizer diubah.
+ */
 class SanitizeRichText extends Command
 {
     /**
-     * The name and signature of the console command.
+     * Nama dan argumen command.
      *
      * @var string
      */
     protected $signature = 'richtext:sanitize {--dry-run : Hanya tampilkan jumlah record yang akan berubah}';
 
     /**
-     * The console command description.
+     * Deskripsi yang tampil di `php artisan list`.
      *
      * @var string
      */
@@ -39,7 +45,7 @@ class SanitizeRichText extends Command
     ];
 
     /**
-     * Execute the console command.
+     * Sanitasi setiap kolom rich text dan laporkan jumlah record yang berubah.
      */
     public function handle(HtmlSanitizer $sanitizer): int
     {

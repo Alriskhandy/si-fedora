@@ -4,6 +4,9 @@ namespace App\Policies;
 
 use App\Models\User;
 
+/**
+ * Aturan akses pengelolaan akun pengguna. Dipakai oleh UserController dan UpdateUserRequest.
+ */
 class UserPolicy
 {
     /**

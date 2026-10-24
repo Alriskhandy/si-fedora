@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Fonnte WhatsApp Service
- * 
+ *
  * Service untuk mengirim pesan WhatsApp menggunakan Fonnte API
  * Dokumentasi: https://api.fonnte.com/docs
  */
@@ -23,79 +23,84 @@ class FonteService
      */
     private $token;
 
+    /**
+     * Ambil token dari config/services.php (`services.fonnte.token`, env FONNTE_TOKEN).
+     *
+     * Jangan membaca env() langsung di kode aplikasi: nilainya kosong setelah `php artisan config:cache`.
+     */
     public function __construct()
     {
-        $this->token = env('FONNTE_TOKEN');
+        $this->token = config('services.fonnte.token');
     }
 
     /**
      * Format nomor telepon ke format WhatsApp
-     * 
-     * @param string $phone
+     *
+     * @param  string  $phone
      * @return string
      */
     private function formatPhone($phone)
     {
         // Pastikan nomor dalam format internasional tanpa + atau spasi
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
+
         // Pastikan dimulai dengan 62 (Indonesia)
-        if (!str_starts_with($phone, '62')) {
-            $phone = '62' . ltrim($phone, '0');
+        if (! str_starts_with($phone, '62')) {
+            $phone = '62'.ltrim($phone, '0');
         }
-        
+
         return $phone;
     }
 
     /**
      * Kirim pesan WhatsApp menggunakan Fonnte API
-     * 
-     * @param string $target Nomor telepon tujuan
-     * @param string $message Isi pesan
+     *
+     * @param  string  $target  Nomor telepon tujuan
+     * @param  string  $message  Isi pesan
      * @return array Response dari Fonnte API
      */
     public function sendMessage($target, $message)
     {
         try {
             $response = Http::withHeaders([
-                'Authorization' => $this->token
-            ])->asForm()->post($this->baseUrl . '/send', [
+                'Authorization' => $this->token,
+            ])->asForm()->post($this->baseUrl.'/send', [
                 'target' => $this->formatPhone($target),
                 'message' => $message,
-                'countryCode' => '62'
+                'countryCode' => '62',
             ]);
 
             $result = $response->json();
-            
+
             // Log response untuk debugging
             Log::info('Fonnte sendMessage response', [
                 'target' => $target,
                 'status' => $response->status(),
-                'response' => $result
+                'response' => $result,
             ]);
 
             return [
                 'success' => $response->successful(),
-                'data' => $result
+                'data' => $result,
             ];
         } catch (\Exception $e) {
-            Log::error('Fonnte sendMessage error: ' . $e->getMessage(), [
+            Log::error('Fonnte sendMessage error: '.$e->getMessage(), [
                 'target' => $target,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }
 
     /**
      * Kirim OTP ke WhatsApp
-     * 
-     * @param string $phone Nomor telepon tujuan
-     * @param string $otp Kode OTP
+     *
+     * @param  string  $phone  Nomor telepon tujuan
+     * @param  string  $otp  Kode OTP
      * @return array Response dari pengiriman pesan
      */
     public function sendOTP($phone, $otp)
@@ -106,58 +111,60 @@ class FonteService
             $message .= "⚠️ Jangan bagikan kode ini kepada siapapun.\n";
             $message .= "⏱️ Kode berlaku selama 5 menit.\n\n";
             $message .= "_*SI-FEDORA*_\n";
-            $message .= "_si-fedora.malutprov.go.id_";
-            
+            $message .= '_si-fedora.malutprov.go.id_';
+
             $result = $this->sendMessage($phone, $message);
-            
+
             if ($result['success']) {
                 Log::info("OTP sent successfully to {$phone}");
             } else {
                 Log::error("Failed to send OTP to {$phone}", $result);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
-            Log::error('Fonnte sendOTP error: ' . $e->getMessage());
+            Log::error('Fonnte sendOTP error: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }
 
     /**
      * Kirim notifikasi ke WhatsApp
-     * 
-     * @param string $phone Nomor telepon tujuan
-     * @param string $message Isi notifikasi
+     *
+     * @param  string  $phone  Nomor telepon tujuan
+     * @param  string  $message  Isi notifikasi
      * @return array Response dari pengiriman pesan
      */
     public function sendNotification($phone, $message)
     {
         try {
             $result = $this->sendMessage($phone, $message);
-            
+
             if ($result['success']) {
                 Log::info("Notification sent successfully to {$phone}");
             } else {
                 Log::error("Failed to send notification to {$phone}", $result);
             }
-            
+
             return $result;
         } catch (\Exception $e) {
-            Log::error('Fonnte sendNotification error: ' . $e->getMessage());
+            Log::error('Fonnte sendNotification error: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }
 
     /**
      * Kirim pesan ke multiple nomor sekaligus (Bulk Message)
-     * 
-     * @param array $recipients Array of ['target' => phone, 'message' => message, 'delay' => '1-3']
+     *
+     * @param  array  $recipients  Array of ['target' => phone, 'message' => message, 'delay' => '1-3']
      * @return array Response dari Fonnte API
      */
     public function sendBulkMessage(array $recipients)
@@ -174,34 +181,34 @@ class FonteService
             }
 
             $response = Http::withHeaders([
-                'Authorization' => $this->token
-            ])->asForm()->post($this->baseUrl . '/send', [
-                'data' => json_encode($formattedData)
+                'Authorization' => $this->token,
+            ])->asForm()->post($this->baseUrl.'/send', [
+                'data' => json_encode($formattedData),
             ]);
 
             $result = $response->json();
-            
+
             // Log response untuk debugging
             Log::info('Fonnte sendBulkMessage response', [
                 'total_recipients' => count($recipients),
                 'status' => $response->status(),
-                'response' => $result
+                'response' => $result,
             ]);
 
             return [
                 'success' => $response->successful(),
                 'total' => count($recipients),
-                'data' => $result
+                'data' => $result,
             ];
         } catch (\Exception $e) {
-            Log::error('Fonnte sendBulkMessage error: ' . $e->getMessage(), [
+            Log::error('Fonnte sendBulkMessage error: '.$e->getMessage(), [
                 'total_recipients' => count($recipients),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }

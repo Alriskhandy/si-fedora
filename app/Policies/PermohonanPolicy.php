@@ -6,6 +6,12 @@ use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
 
+/**
+ * Aturan akses per record permohonan.
+ *
+ * Pasangan untuk daftar ada di scope Permohonan::visibleTo; ubah keduanya bersamaan.
+ * Dipakai oleh PermohonanController, ArsipController, BerkasController, dan controller tahapan.
+ */
 class PermohonanPolicy
 {
     /**
@@ -48,12 +54,18 @@ class PermohonanPolicy
         return $this->view($user, $permohonan);
     }
 
+    /**
+     * Permohonan dibuat oleh akun ini atau berasal dari kab/kota akun ini.
+     */
     private function isOwnedBy(User $user, Permohonan $permohonan): bool
     {
         return $permohonan->user_id === $user->id
             || ($user->kabupaten_kota_id !== null && (int) $permohonan->kab_kota_id === (int) $user->kabupaten_kota_id);
     }
 
+    /**
+     * Akun punya penugasan aktif (UserKabkotaAssignment) untuk kab/kota, tahun, dan jenis dokumen permohonan.
+     */
     private function isAssigned(User $user, Permohonan $permohonan): bool
     {
         return UserKabkotaAssignment::where('user_id', $user->id)

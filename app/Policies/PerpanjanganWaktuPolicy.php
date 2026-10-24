@@ -8,12 +8,19 @@ use App\Models\PerpanjanganWaktu;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Aturan akses perpanjangan waktu.
+ *
+ * Pemegang perpanjangan-waktu.process (Admin) mengelola semua pengajuan; pemegang
+ * perpanjangan-waktu.submit (pemohon) hanya pengajuannya sendiri.
+ * Persetujuan (proses) diperiksa langsung dengan permission di PerpanjanganWaktuController::process.
+ */
 class PerpanjanganWaktuPolicy
 {
     use HandlesAuthorization;
 
     /**
-     * Determine whether the user can view any models.
+     * Boleh membuka daftar perpanjangan waktu.
      */
     public function viewAny(User $user): bool
     {
@@ -21,7 +28,7 @@ class PerpanjanganWaktuPolicy
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Boleh melihat satu pengajuan: pemroses melihat semua, pengaju hanya miliknya.
      */
     public function view(User $user, PerpanjanganWaktu $perpanjanganWaktu): bool
     {
@@ -35,7 +42,7 @@ class PerpanjanganWaktuPolicy
     }
 
     /**
-     * Determine whether the user can create models.
+     * Boleh mengajukan perpanjangan untuk target tertentu.
      *
      * $target berupa Permohonan (perpanjangan batas upload dokumen) atau
      * JadwalFasilitasi (perpanjangan batas pembuatan permohonan, untuk
@@ -63,16 +70,7 @@ class PerpanjanganWaktuPolicy
     }
 
     /**
-     * Determine whether the user can update the model status.
-     */
-    public function updateStatus(User $user, PerpanjanganWaktu $perpanjanganWaktu): bool
-    {
-        // Hanya pemroses yang bisa approve/reject
-        return $user->can('perpanjangan-waktu.process');
-    }
-
-    /**
-     * Determine whether the user can delete the model.
+     * Boleh menghapus pengajuan: pemroses semua, pengaju hanya miliknya yang belum diproses.
      */
     public function delete(User $user, PerpanjanganWaktu $perpanjanganWaktu): bool
     {

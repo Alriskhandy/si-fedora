@@ -2,28 +2,26 @@
 
 namespace App\View\Composers;
 
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Notifikasi;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
+/**
+ * Menyediakan jumlah notifikasi belum dibaca (`$unreadNotifications`) untuk partial navbar.
+ *
+ * Didaftarkan untuk view `partials.navbar` di AppServiceProvider.
+ */
 class NavbarComposer
 {
     /**
-     * Bind data to the view.
-     *
-     * @param  \Illuminate\View\View  $view
-     * @return void
+     * Tambahkan `$unreadNotifications` ke view (0 untuk tamu).
      */
-    public function compose(View $view)
+    public function compose(View $view): void
     {
-        if (Auth::check()) {
-            $unreadNotifications = Notifikasi::where('user_id', Auth::id())
-                ->where('is_read', false)
-                ->count();
+        $unreadNotifications = Auth::check()
+            ? Notifikasi::where('user_id', Auth::id())->where('is_read', false)->count()
+            : 0;
 
-            $view->with('unreadNotifications', $unreadNotifications);
-        } else {
-            $view->with('unreadNotifications', 0);
-        }
+        $view->with('unreadNotifications', $unreadNotifications);
     }
 }

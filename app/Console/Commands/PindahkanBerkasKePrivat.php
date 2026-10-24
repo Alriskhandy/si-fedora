@@ -6,10 +6,17 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Memindahkan dokumen lama dari folder publik (storage/app/public dan public/sk-tim) ke disk privat `dokumen`.
+ *
+ * Path relatif dipertahankan sehingga kolom path di database tidak perlu diubah. Folder profile-photos tetap publik.
+ * Dijalankan sekali saat rilis Fase 1 dalam maintenance mode (lihat docs/operasional/RUNBOOK.md). Aman diulang:
+ * file yang sudah ada di tujuan dilewati.
+ */
 class PindahkanBerkasKePrivat extends Command
 {
     /**
-     * The name and signature of the console command.
+     * Nama dan argumen command.
      *
      * @var string
      */
@@ -19,7 +26,7 @@ class PindahkanBerkasKePrivat extends Command
         {--sk-tim-dir= : Lokasi folder SK Tim lama (default: public/sk-tim)}';
 
     /**
-     * The console command description.
+     * Deskripsi yang tampil di `php artisan list`.
      *
      * @var string
      */
@@ -33,7 +40,7 @@ class PindahkanBerkasKePrivat extends Command
     private const TETAP_PUBLIK = ['profile-photos'];
 
     /**
-     * Execute the console command.
+     * Pindahkan (atau kembalikan dengan --rollback) berkas, lalu tampilkan ringkasan.
      */
     public function handle(): int
     {

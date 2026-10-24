@@ -10,24 +10,30 @@ use App\Services\PermohonanNotificationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
+/**
+ * Mengirim pengingat H-3, H-2, dan H-1 kepada pemohon yang belum mengajukan permohonan pada jadwal yang batas pengajuannya mendekat.
+ *
+ * Notifikasi database + WhatsApp, maksimal sekali per pemohon per jadwal per hari.
+ * Dijadwalkan setiap hari pukul 08:00 di bootstrap/app.php.
+ */
 class RemindPermohonanDeadline extends Command
 {
     /**
-     * The name and signature of the console command.
+     * Nama dan argumen command.
      *
      * @var string
      */
     protected $signature = 'permohonan:remind-deadline';
 
     /**
-     * The console command description.
+     * Deskripsi yang tampil di `php artisan list`.
      *
      * @var string
      */
     protected $description = 'Kirim pengingat H-3, H-2, H-1 ke pemohon yang belum membuat permohonan sebelum batas waktu permohonan berakhir';
 
     /**
-     * Execute the console command.
+     * Kirim pengingat untuk jadwal published yang batas pengajuannya 1–3 hari lagi.
      */
     public function handle(PermohonanNotificationService $notificationService)
     {
@@ -40,6 +46,7 @@ class RemindPermohonanDeadline extends Command
 
         if ($jadwalList->isEmpty()) {
             $this->info('Tidak ada jadwal fasilitasi dengan batas permohonan dalam 3 hari ke depan.');
+
             return Command::SUCCESS;
         }
 

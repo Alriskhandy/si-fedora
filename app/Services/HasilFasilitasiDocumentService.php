@@ -8,6 +8,12 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Settings;
 
+/**
+ * Membuat dokumen Word (.docx) hasil fasilitasi dengan PhpWord dan menyimpannya di disk `dokumen`.
+ *
+ * Teks catatan dibersihkan dari HTML (cleanText) karena Word tidak merender rich text.
+ * Dipakai oleh HasilFasilitasiController::generate.
+ */
 class HasilFasilitasiDocumentService
 {
     // F4 content width: 21cm − 1.9cm(kiri) − 2.5cm(kanan) = 16.6cm = 9412 twips
@@ -573,16 +579,11 @@ class HasilFasilitasiDocumentService
         return $d->format('j').' '.self::BULAN_ID[(int) $d->format('n')].' '.$d->format('Y');
     }
 
-    public function saveDocument(string $content, string $filename): string
-    {
-        $filepath = 'hasil-fasilitasi/'.$filename;
-        Storage::disk('dokumen')->put($filepath, $content);
-
-        return $filepath;
-    }
-
+    /**
+     * Path absolut sebuah file di disk `dokumen`.
+     */
     public function getStoragePath(string $filepath): string
     {
-        return storage_path('app/private/'.$filepath);
+        return Storage::disk('dokumen')->path($filepath);
     }
 }

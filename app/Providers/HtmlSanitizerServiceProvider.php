@@ -7,10 +7,15 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerAction;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 
+/**
+ * Mendaftarkan HtmlSanitizer (symfony/html-sanitizer) sebagai singleton.
+ *
+ * Dipakai oleh cast App\Casts\SanitizedHtml dan command richtext:sanitize.
+ */
 class HtmlSanitizerServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * Daftarkan sanitizer dengan whitelist elemen.
      *
      * Whitelist mengikuti `valid_elements` TinyMCE di form hasil fasilitasi
      * (resources/views/pages/hasil-fasilitasi/create.blade.php), agar konten yang
