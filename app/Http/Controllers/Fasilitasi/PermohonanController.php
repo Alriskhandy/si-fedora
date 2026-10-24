@@ -26,7 +26,7 @@ use Spatie\Activitylog\Models\Activity;
  * Permohonan fasilitasi: daftar, buat, ajukan, hapus, dan halaman per tahapan. Inti alur bisnis.
  *
  * Akses: lihat: PermohonanPolicy::view + scope visibleTo; buat/ajukan/hapus: permohonan.create + PermohonanPolicy::update; ubah batas waktu: tahapan.update-deadline.
- * View: resources/views/pages/fasilitasi
+ * View: resources/views/pages/fasilitasi/permohonan
  */
 class PermohonanController extends Controller
 {
@@ -72,7 +72,7 @@ class PermohonanController extends Controller
             ],
         ];
 
-        return view('pages.fasilitasi.index', compact('permohonan', 'filterOptions'));
+        return view('pages.fasilitasi.permohonan.index', compact('permohonan', 'filterOptions'));
     }
 
     /**
@@ -107,7 +107,7 @@ class PermohonanController extends Controller
             $selectedJadwal = JadwalFasilitasi::find($request->jadwal_id);
         }
 
-        return view('pages.fasilitasi.create', compact('jadwalFasilitasi', 'selectedJadwal'));
+        return view('pages.fasilitasi.permohonan.create', compact('jadwalFasilitasi', 'selectedJadwal'));
     }
 
     /**
@@ -219,7 +219,7 @@ class PermohonanController extends Controller
             'activityLogs.causer',
         ]);
 
-        return view('pages.fasilitasi.show', compact('permohonan'));
+        return view('pages.fasilitasi.permohonan.show', compact('permohonan'));
     }
 
     /**
@@ -398,7 +398,7 @@ class PermohonanController extends Controller
         );
         // dd($permohonan);
 
-        return view('pages.fasilitasi.tahapan.permohonan', compact('permohonan'));
+        return view('pages.fasilitasi.permohonan.tahapan.permohonan', compact('permohonan'));
     }
 
     /**
@@ -417,7 +417,7 @@ class PermohonanController extends Controller
             'perpanjanganWaktu',
         ]);
 
-        return view('pages.fasilitasi.tahapan.verifikasi', compact('permohonan'));
+        return view('pages.fasilitasi.permohonan.tahapan.verifikasi', compact('permohonan'));
     }
 
     /**
@@ -434,7 +434,7 @@ class PermohonanController extends Controller
             'penetapanJadwal',
         ]);
 
-        return view('pages.fasilitasi.tahapan.jadwal', compact('permohonan'));
+        return view('pages.fasilitasi.permohonan.tahapan.jadwal', compact('permohonan'));
     }
 
     /**
@@ -444,7 +444,7 @@ class PermohonanController extends Controller
     {
         $this->authorizeView($permohonan);
 
-        return view('pages.fasilitasi.tahapan.pelaksanaan', compact('permohonan'));
+        return view('pages.fasilitasi.permohonan.tahapan.pelaksanaan', compact('permohonan'));
     }
 
     /**
@@ -463,7 +463,7 @@ class PermohonanController extends Controller
             'hasilFasilitasi.pembuat',
         ]);
 
-        return view('pages.fasilitasi.tahapan.hasil', compact('permohonan'));
+        return view('pages.fasilitasi.permohonan.tahapan.hasil', compact('permohonan'));
     }
 
     /**
@@ -492,7 +492,7 @@ class PermohonanController extends Controller
                 ->first();
         }
 
-        return view('pages.fasilitasi.tahapan.tindak-lanjut', compact('permohonan', 'dokumenTindakLanjut'));
+        return view('pages.fasilitasi.permohonan.tahapan.tindak-lanjut', compact('permohonan', 'dokumenTindakLanjut'));
     }
 
     /**
@@ -520,7 +520,7 @@ class PermohonanController extends Controller
                 ->first();
         }
 
-        return view('pages.fasilitasi.tahapan.penetapan', compact('permohonan', 'dokumenPenetapan'));
+        return view('pages.fasilitasi.permohonan.tahapan.penetapan', compact('permohonan', 'dokumenPenetapan'));
     }
 
     /**

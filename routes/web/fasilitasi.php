@@ -27,7 +27,6 @@ use App\Http\Controllers\Fasilitasi\PermohonanDokumenController;
 use App\Http\Controllers\Fasilitasi\PerpanjanganWaktuController;
 use App\Http\Controllers\Fasilitasi\SuratPenyampaianHasilController;
 use App\Http\Controllers\Fasilitasi\TindakLanjutController;
-use App\Http\Controllers\Fasilitasi\ValidasiHasilController;
 use App\Http\Controllers\Fasilitasi\VerifikasiController;
 use Illuminate\Support\Facades\Route;
 
@@ -144,14 +143,6 @@ Route::get('/hasil-fasilitasi/{permohonan}/download-draft-final', [HasilFasilita
 Route::middleware(['can:hasil-fasilitasi.submit-kaban'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
     Route::post('/{permohonan}/upload-draft-final', 'uploadDraftFinal')->name('upload-draft-final');
     Route::post('/{permohonan}/submit-to-kaban', 'submitToKaban')->name('submit-to-kaban');
-});
-
-// Validasi hasil oleh Admin
-Route::middleware(['can:validasi-hasil.manage'])->prefix('validasi-hasil')->name('validasi-hasil.')->controller(ValidasiHasilController::class)->group(function () {
-    Route::post('/{permohonan}/approve', 'approve')->name('approve');
-    Route::post('/{permohonan}/revise', 'revise')->name('revise');
-    Route::get('/{permohonan}/generate', 'generate')->name('generate');
-    Route::get('/{permohonan}/generate-pdf', 'generatePdf')->name('generate-pdf');
 });
 
 // Persetujuan Kaban

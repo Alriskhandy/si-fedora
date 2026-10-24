@@ -48,7 +48,8 @@ Route::middleware(['can:master.jenis-dokumen.manage'])->group(function () {
         ->name('master-jenis-dokumen.toggle-status');
 });
 
+// Tambah & ubah memakai form di halaman daftar (store/update), tanpa halaman create/edit terpisah
 Route::resource('master-bab', MasterBabController::class)
     ->parameters(['master-bab' => 'masterBab'])
-    ->except(['show'])
+    ->only(['index', 'store', 'update', 'destroy'])
     ->middleware('can:master.bab.manage');

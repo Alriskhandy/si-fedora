@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
  * Pengajuan dan pemrosesan perpanjangan batas waktu (unggah dokumen atau pengajuan permohonan).
  *
  * Akses: lihat: perpanjangan-waktu.view; ajukan: perpanjangan-waktu.submit; proses: perpanjangan-waktu.process (lihat PerpanjanganWaktuPolicy).
- * View: resources/views/pages/perpanjangan-waktu
+ * View: resources/views/pages/fasilitasi/perpanjangan-waktu
  */
 class PerpanjanganWaktuController extends Controller
 {
@@ -67,7 +67,7 @@ class PerpanjanganWaktuController extends Controller
                 ->get();
         }
 
-        return view('pages.perpanjangan-waktu.index', compact('perpanjanganList', 'permohonanLewatBatas', 'jadwalLewatBatas'));
+        return view('pages.fasilitasi.perpanjangan-waktu.index', compact('perpanjanganList', 'permohonanLewatBatas', 'jadwalLewatBatas'));
     }
 
     /**
@@ -97,7 +97,7 @@ class PerpanjanganWaktuController extends Controller
             return redirect()->back()->with('error', 'Permohonan atau Jadwal Fasilitasi tidak ditemukan');
         }
 
-        return view('pages.perpanjangan-waktu.create', compact('permohonan', 'jadwal'));
+        return view('pages.fasilitasi.perpanjangan-waktu.create', compact('permohonan', 'jadwal'));
     }
 
     /**
@@ -164,7 +164,7 @@ class PerpanjanganWaktuController extends Controller
 
         $perpanjanganWaktu->load(['permohonan.kabupatenKota', 'jadwalFasilitasi.jenisDokumen', 'user', 'admin']);
 
-        return view('pages.perpanjangan-waktu.show', compact('perpanjanganWaktu'));
+        return view('pages.fasilitasi.perpanjangan-waktu.show', compact('perpanjanganWaktu'));
     }
 
     /**

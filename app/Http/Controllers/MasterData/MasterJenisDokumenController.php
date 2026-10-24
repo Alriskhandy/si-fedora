@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  * Master jenis dokumen perencanaan (RPJPD, RPJMD, RKPD).
  *
  * Akses: master.jenis-dokumen.manage.
- * View: resources/views/pages/master-jenis-dokumen
+ * View: resources/views/pages/master-data/jenis-dokumen
  */
 class MasterJenisDokumenController extends Controller
 {
@@ -38,7 +38,7 @@ class MasterJenisDokumenController extends Controller
 
         $jenisDokumens = $query->orderBy('nama')->paginate(20);
 
-        return view('pages.master-jenis-dokumen.index', compact('jenisDokumens', 'request'));
+        return view('pages.master-data.jenis-dokumen.index', compact('jenisDokumens', 'request'));
     }
 
     /**
@@ -46,7 +46,7 @@ class MasterJenisDokumenController extends Controller
      */
     public function create()
     {
-        return view('pages.master-jenis-dokumen.create');
+        return view('pages.master-data.jenis-dokumen.create');
     }
 
     /**
@@ -82,7 +82,7 @@ class MasterJenisDokumenController extends Controller
      */
     public function edit(MasterJenisDokumen $masterJenisDokuman)
     {
-        return view('pages.master-jenis-dokumen.edit', compact('masterJenisDokuman'));
+        return view('pages.master-data.jenis-dokumen.edit', compact('masterJenisDokuman'));
     }
 
     /**

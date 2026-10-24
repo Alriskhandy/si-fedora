@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
  * Master dokumen kelengkapan yang wajib diunggah pemohon.
  *
  * Akses: master.kelengkapan.manage.
- * View: resources/views/pages/master-kelengkapan
+ * View: resources/views/pages/master-data/kelengkapan
  */
 class MasterKelengkapanController extends Controller
 {
@@ -45,7 +45,7 @@ class MasterKelengkapanController extends Controller
         $kelengkapan = $query->orderBy('jenis_dokumen_id')->orderBy('urutan')->get();
         $jenisDokumen = MasterJenisDokumen::where('status', true)->get();
 
-        return view('pages.master-kelengkapan.index', compact('kelengkapan', 'jenisDokumen'));
+        return view('pages.master-data.kelengkapan.index', compact('kelengkapan', 'jenisDokumen'));
     }
 
     /**
@@ -55,7 +55,7 @@ class MasterKelengkapanController extends Controller
     {
         $jenisDokumen = MasterJenisDokumen::where('status', true)->get();
 
-        return view('pages.master-kelengkapan.create', compact('jenisDokumen'));
+        return view('pages.master-data.kelengkapan.create', compact('jenisDokumen'));
     }
 
     /**
@@ -92,7 +92,7 @@ class MasterKelengkapanController extends Controller
     {
         $jenisDokumen = MasterJenisDokumen::where('status', true)->get();
 
-        return view('pages.master-kelengkapan.edit', compact('masterKelengkapan', 'jenisDokumen'));
+        return view('pages.master-data.kelengkapan.edit', compact('masterKelengkapan', 'jenisDokumen'));
     }
 
     /**

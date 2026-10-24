@@ -11,7 +11,7 @@ use Spatie\Activitylog\Models\Activity;
  * Menampilkan log aktivitas pengguna (spatie/laravel-activitylog) dengan filter.
  *
  * Akses: activity-log.view.
- * View: resources/views/pages/activity-log
+ * View: resources/views/pages/admin/activity-log
  */
 class ActivityLogController extends Controller
 {
@@ -72,6 +72,6 @@ class ActivityLogController extends Controller
             })
             ->sortBy('label');
 
-        return view('pages.activity-log.index', compact('activities', 'users', 'subjectTypes'));
+        return view('pages.admin.activity-log.index', compact('activities', 'users', 'subjectTypes'));
     }
 }

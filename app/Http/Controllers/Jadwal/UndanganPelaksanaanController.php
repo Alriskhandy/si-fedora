@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Storage;
  * Undangan pelaksanaan fasilitasi: dibuat dan dikirim Admin PERAN, dilihat dan dikonfirmasi penerima.
  *
  * Akses: kelola: undangan-pelaksanaan.manage; lihat undangan sendiri: pengguna login.
- * View: resources/views/pages/undangan-pelaksanaan
+ * View: resources/views/pages/jadwal/undangan-pelaksanaan
  */
 class UndanganPelaksanaanController extends Controller
 {
@@ -57,7 +57,7 @@ class UndanganPelaksanaanController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('pages.undangan-pelaksanaan.index', compact('permohonan'));
+        return view('pages.jadwal.undangan-pelaksanaan.index', compact('permohonan'));
     }
 
     /**
@@ -77,7 +77,7 @@ class UndanganPelaksanaanController extends Controller
 
         $timData = $this->getTimAssignments($permohonan);
 
-        return view('pages.undangan-pelaksanaan.create', array_merge(
+        return view('pages.jadwal.undangan-pelaksanaan.create', array_merge(
             ['permohonan' => $permohonan],
             $timData
         ));
@@ -145,7 +145,7 @@ class UndanganPelaksanaanController extends Controller
 
         $undangan->load('penerima.user');
 
-        return view('pages.undangan-pelaksanaan.show', compact('permohonan', 'undangan'));
+        return view('pages.jadwal.undangan-pelaksanaan.show', compact('permohonan', 'undangan'));
     }
 
     /**
@@ -230,7 +230,7 @@ class UndanganPelaksanaanController extends Controller
 
         $undanganList = $query->latest()->paginate(10);
 
-        return view('pages.undangan-pelaksanaan.my-undangan', compact('undanganList'));
+        return view('pages.jadwal.undangan-pelaksanaan.my-undangan', compact('undanganList'));
     }
 
     /**
@@ -246,7 +246,7 @@ class UndanganPelaksanaanController extends Controller
             $undanganPenerima->markAsRead();
         }
 
-        return view('pages.undangan-pelaksanaan.view', compact('undanganPenerima'));
+        return view('pages.jadwal.undangan-pelaksanaan.view', compact('undanganPenerima'));
     }
 
     /**

@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Log;
  * Laporan hasil verifikasi kelengkapan dokumen oleh Admin PERAN, termasuk unduh PDF.
  *
  * Akses: laporan-verifikasi.manage.
- * View: resources/views/laporan-verifikasi
+ * View: resources/views/pages/fasilitasi/laporan-verifikasi
  */
 class LaporanVerifikasiController extends Controller
 {
@@ -58,7 +58,7 @@ class LaporanVerifikasiController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('laporan-verifikasi.index', compact('permohonan'));
+        return view('pages.fasilitasi.laporan-verifikasi.index', compact('permohonan'));
     }
 
     /**
@@ -81,7 +81,7 @@ class LaporanVerifikasiController extends Controller
             ")
             ->first();
 
-        return view('laporan-verifikasi.create', compact('permohonan', 'dokumenStats'));
+        return view('pages.fasilitasi.laporan-verifikasi.create', compact('permohonan', 'dokumenStats'));
     }
 
     /**
@@ -276,7 +276,7 @@ class LaporanVerifikasiController extends Controller
                 ->with('info', 'Laporan verifikasi belum dibuat.');
         }
 
-        return view('laporan-verifikasi.show', compact('permohonan', 'laporan'));
+        return view('pages.fasilitasi.laporan-verifikasi.show', compact('permohonan', 'laporan'));
     }
 
     /**
@@ -295,7 +295,7 @@ class LaporanVerifikasiController extends Controller
 
         $namaFile = 'Laporan_Verifikasi_'.str($permohonan->kabupatenKota->nama ?? 'Kabkota')->slug('_').'_'.$permohonan->tahun.'.pdf';
 
-        return PDF::loadView('laporan-verifikasi.pdf', compact('permohonan', 'laporan'))
+        return PDF::loadView('pages.fasilitasi.laporan-verifikasi.pdf', compact('permohonan', 'laporan'))
             ->setPaper('a4')
             ->download($namaFile);
     }

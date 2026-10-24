@@ -9,7 +9,7 @@ use Illuminate\View\View;
 /**
  * Menyediakan jumlah notifikasi belum dibaca (`$unreadNotifications`) untuk partial navbar.
  *
- * Didaftarkan untuk view `partials.navbar` di AppServiceProvider.
+ * Didaftarkan untuk view `layouts.partials.navbar` di AppServiceProvider.
  */
 class NavbarComposer
 {

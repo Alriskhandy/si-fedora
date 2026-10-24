@@ -2,9 +2,9 @@
 
 @section('title', 'Tambah Role')
 
-@section('styles')
+@push('styles')
 <link rel="stylesheet" href="{{ asset('assets/vendor/libs/select2/select2.css') }}" />
-@endsection
+@endpush
 
 @section('main')
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -55,7 +55,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
 <script>
     $(document).ready(function() {
@@ -66,4 +66,4 @@
         });
     });
 </script>
-@endsection
+@endpush

@@ -50,13 +50,13 @@
         <div class="layout-container">
             
            
-            @include('partials.sidebar')
+            @include('layouts.partials.sidebar')
 
             {{-- Layout page --}}
             <div class="layout-page">
                 
                
-                @include('partials.navbar')
+                @include('layouts.partials.navbar')
 
                 {{-- Content wrapper --}}
                 <div class="content-wrapper">
@@ -64,7 +64,7 @@
                     @yield('main')
 
                     {{-- Footer --}}
-                    @include('partials.footer')
+                    @include('layouts.partials.footer')
 
                     <div class="content-backdrop fade"></div>
                 </div>

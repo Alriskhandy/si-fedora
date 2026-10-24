@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Permission;
  * Daftar permission. Nama permission seharusnya hanya berasal dari config/permissions.php; pembuatan/penghapusan lewat UI akan diganti di PRD #6.
  *
  * Akses: role.manage.
- * View: resources/views/admin/permissions
+ * View: resources/views/pages/admin/permissions
  */
 class PermissionController extends Controller
 {
@@ -21,7 +21,7 @@ class PermissionController extends Controller
     {
         $permissions = Permission::all();
 
-        return view('admin.permissions.index', compact('permissions'));
+        return view('pages.admin.permissions.index', compact('permissions'));
     }
 
     /**
@@ -29,7 +29,7 @@ class PermissionController extends Controller
      */
     public function create()
     {
-        return view('admin.permissions.create');
+        return view('pages.admin.permissions.create');
     }
 
     /**

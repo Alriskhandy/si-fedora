@@ -22,7 +22,7 @@ use Spatie\Permission\Models\Role;
  * Dashboard per role. Memilih tampilan berdasarkan role pengguna (identitas, bukan hak akses).
  *
  * Akses: pengguna login.
- * View: resources/views/pages/dashboard
+ * View: resources/views/pages/umum/dashboard
  */
 class DashboardController extends Controller
 {
@@ -42,7 +42,7 @@ class DashboardController extends Controller
             $user->hasRole('fasilitator') => $this->pokjaDashboard($user),
             $user->hasRole('auditor') => $this->auditorDashboard($user),
             $user->hasRole('pemohon') => $this->kabKotaDashboard($user),
-            default => view('pages.dashboard.default', ['user' => $user])
+            default => view('pages.umum.dashboard.default', ['user' => $user])
         };
     }
 
@@ -58,7 +58,7 @@ class DashboardController extends Controller
                 ->get(),
         ];
 
-        return view('pages.dashboard.superadmin', compact('stats'));
+        return view('pages.umum.dashboard.superadmin', compact('stats'));
     }
 
     private function kabanDashboard($user)
@@ -76,7 +76,7 @@ class DashboardController extends Controller
             'notifications' => $this->getNotificationCounts($user->id),
         ];
 
-        return view('pages.dashboard.kaban', compact('stats'));
+        return view('pages.umum.dashboard.kaban', compact('stats'));
     }
 
     private function adminPeranDashboard($user)
@@ -92,7 +92,7 @@ class DashboardController extends Controller
             'notifications' => $this->getNotificationCounts($user->id),
         ];
 
-        return view('pages.dashboard.admin_peran', compact('stats'));
+        return view('pages.umum.dashboard.admin_peran', compact('stats'));
     }
 
     private function verifikatorDashboard($user)
@@ -109,7 +109,7 @@ class DashboardController extends Controller
             'notifications' => $this->getNotificationCounts($user->id),
         ];
 
-        return view('pages.dashboard.verifikator', compact('stats'));
+        return view('pages.umum.dashboard.verifikator', compact('stats'));
     }
 
     private function pokjaDashboard($user)
@@ -133,7 +133,7 @@ class DashboardController extends Controller
             'notifications' => $this->getNotificationCounts($user->id),
         ];
 
-        return view('pages.dashboard.pokja', compact('stats'));
+        return view('pages.umum.dashboard.pokja', compact('stats'));
     }
 
     private function kabKotaDashboard($user)
@@ -155,7 +155,7 @@ class DashboardController extends Controller
             'notifications' => $this->getNotificationCounts($user->id),
         ];
 
-        return view('pages.dashboard.kab_kota', compact('stats'));
+        return view('pages.umum.dashboard.kab_kota', compact('stats'));
     }
 
     private function auditorDashboard($user)
@@ -175,7 +175,7 @@ class DashboardController extends Controller
             'notifications' => $this->getNotificationCounts($user->id),
         ];
 
-        return view('pages.dashboard.auditor', compact('stats'));
+        return view('pages.umum.dashboard.auditor', compact('stats'));
     }
 
     // ============================================

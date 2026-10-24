@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
  * Surat pemberitahuan jadwal fasilitasi kepada kabupaten/kota.
  *
  * Akses: surat-pemberitahuan.manage.
- * View: resources/views/surat-pemberitahuan
+ * View: resources/views/pages/jadwal/surat-pemberitahuan
  */
 class SuratPemberitahuanController extends Controller
 {
@@ -35,7 +35,7 @@ class SuratPemberitahuanController extends Controller
 
         $suratPemberitahuan = $query->latest()->paginate(10);
 
-        return view('surat-pemberitahuan.index', compact('suratPemberitahuan'));
+        return view('pages.jadwal.surat-pemberitahuan.index', compact('suratPemberitahuan'));
     }
 
     /**
@@ -46,7 +46,7 @@ class SuratPemberitahuanController extends Controller
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')->get();
         $kabupatenKota = KabupatenKota::where('is_active', true)->get();
 
-        return view('surat-pemberitahuan.create', compact('jadwalFasilitasi', 'kabupatenKota'));
+        return view('pages.jadwal.surat-pemberitahuan.create', compact('jadwalFasilitasi', 'kabupatenKota'));
     }
 
     /**
@@ -89,7 +89,7 @@ class SuratPemberitahuanController extends Controller
      */
     public function show(SuratPemberitahuan $suratPemberitahuan)
     {
-        return view('surat-pemberitahuan.show', compact('suratPemberitahuan'));
+        return view('pages.jadwal.surat-pemberitahuan.show', compact('suratPemberitahuan'));
     }
 
     /**
@@ -100,7 +100,7 @@ class SuratPemberitahuanController extends Controller
         $jadwalFasilitasi = JadwalFasilitasi::where('status', 'published')->get();
         $kabupatenKota = KabupatenKota::where('is_active', true)->get();
 
-        return view('surat-pemberitahuan.edit', compact('suratPemberitahuan', 'jadwalFasilitasi', 'kabupatenKota'));
+        return view('pages.jadwal.surat-pemberitahuan.edit', compact('suratPemberitahuan', 'jadwalFasilitasi', 'kabupatenKota'));
     }
 
     /**

@@ -17,7 +17,7 @@ use Spatie\Permission\Models\Role;
  * Kelola akun pengguna. Akun superadmin hanya dapat dikelola superadmin (UserPolicy); role yang boleh diberikan dibatasi di StoreUserRequest/UpdateUserRequest.
  *
  * Akses: user.manage (ekspor: user.export).
- * View: resources/views/pages/users
+ * View: resources/views/pages/admin/users
  */
 class UserController extends Controller
 {
@@ -49,7 +49,7 @@ class UserController extends Controller
         $users = $query->with('roles')->latest()->paginate(10);
         $roles = Role::whereNotIn('name', ['superadmin'])->orderBy('name')->get();
 
-        return view('pages.users.index', compact('users', 'roles'));
+        return view('pages.admin.users.index', compact('users', 'roles'));
     }
 
     /**
@@ -110,7 +110,7 @@ class UserController extends Controller
         $kab_kota = KabupatenKota::all();
 
         // dd($roles);
-        return view('pages.users.create', compact('roles', 'kab_kota'));
+        return view('pages.admin.users.create', compact('roles', 'kab_kota'));
     }
 
     /**
@@ -143,7 +143,7 @@ class UserController extends Controller
     {
         $this->authorize('manage', $user);
 
-        return view('pages.users.show', compact('user'));
+        return view('pages.admin.users.show', compact('user'));
     }
 
     /**
@@ -156,7 +156,7 @@ class UserController extends Controller
         $roles = Role::whereNotIn('name', User::nonEditableRolesFor(Auth::user()))->get();
         $currentRole = $user->roles->first()?->name;
 
-        return view('pages.users.edit', compact('user', 'roles', 'currentRole'));
+        return view('pages.admin.users.edit', compact('user', 'roles', 'currentRole'));
     }
 
     /**

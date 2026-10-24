@@ -141,7 +141,7 @@
                         <p class="text-muted small mb-0">Update informasi pribadi dan kontak Anda</p>
                     </div>
                     <div class="card-body">
-                        @include('pages.profile.partials.update-profile-information-form')
+                        @include('pages.umum.profile.partials.update-profile-information-form')
                     </div>
                 </div>
 
@@ -152,7 +152,7 @@
                         <p class="text-muted small mb-0">Pastikan password Anda aman</p>
                     </div>
                     <div class="card-body">
-                        @include('pages.profile.partials.update-password-form')
+                        @include('pages.umum.profile.partials.update-password-form')
                     </div>
                 </div>
             </div>

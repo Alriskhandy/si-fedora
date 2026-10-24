@@ -11,7 +11,7 @@ use Spatie\Permission\Models\Role;
  * Kelola role dan pemetaan permission-nya.
  *
  * Akses: role.manage.
- * View: resources/views/admin/roles
+ * View: resources/views/pages/admin/roles
  */
 class RoleController extends Controller
 {
@@ -22,7 +22,7 @@ class RoleController extends Controller
     {
         $roles = Role::with('permissions')->get();
 
-        return view('admin.roles.index', compact('roles'));
+        return view('pages.admin.roles.index', compact('roles'));
     }
 
     /**
@@ -32,7 +32,7 @@ class RoleController extends Controller
     {
         $permissions = Permission::all();
 
-        return view('admin.roles.create', compact('permissions'));
+        return view('pages.admin.roles.create', compact('permissions'));
     }
 
     /**
@@ -43,7 +43,7 @@ class RoleController extends Controller
         $permissions = Permission::all();
         $rolePermissions = $role->permissions->pluck('name')->toArray();
 
-        return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
+        return view('pages.admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
 
     /**

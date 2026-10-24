@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
  * Penugasan tim (verifikator & fasilitator) ke kabupaten/kota per tahun dan jenis dokumen, termasuk file SK tim.
  *
  * Akses: tim-assignment.manage.
- * View: resources/views/pages/tim-assignment
+ * View: resources/views/pages/admin/tim-assignment
  */
 class TimAssignmentController extends Controller
 {
@@ -76,7 +76,7 @@ class TimAssignmentController extends Controller
         $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
 
         // dd($kabkotaListForm, $verifikators, $fasilitators);
-        return view('pages.tim-assignment.index', compact(
+        return view('pages.admin.tim-assignment.index', compact(
             'kabkotaList',
             'allKabkota',
             'kabkotaListForm',
@@ -281,13 +281,8 @@ class TimAssignmentController extends Controller
             ], 500);
         }
 
-        // Otherwise return edit view
-        $users = User::role(['verifikator', 'fasilitator', 'koordinator'])
-            ->orderBy('name')
-            ->get();
-        $kabkotaList = KabupatenKota::orderBy('nama')->get();
-
-        return view('pages.tim-assignment.edit', compact('timAssignment', 'users', 'kabkotaList'));
+        // Form ubah tim berada di halaman daftar (modal yang mengambil data lewat AJAX di atas)
+        return redirect()->route('tim-assignment.index');
     }
 
     /**

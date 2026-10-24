@@ -67,7 +67,6 @@ return [
         'hasil-fasilitasi.manage-all' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Akses & kelola semua hasil fasilitasi', 'roles' => $adminSistem],
         'hasil-fasilitasi.input' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Input hasil fasilitasi', 'roles' => ['fasilitator']],
         'hasil-fasilitasi.submit-kaban' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Unggah draft final & ajukan ke Kaban', 'roles' => ['superadmin', 'admin_peran', 'fasilitator']],
-        'validasi-hasil.manage' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Validasi hasil fasilitasi', 'roles' => ['admin_peran']],
         'approval.approve' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Setujui / tolak hasil fasilitasi', 'roles' => ['kaban']],
         'surat-penyampaian-hasil.manage' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Kelola surat penyampaian hasil', 'roles' => ['kaban']],
 

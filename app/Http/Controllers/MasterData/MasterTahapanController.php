@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  * Master tahapan fasilitasi. Hanya bisa diubah (nama, urutan); daftar tahapan tetap 7.
  *
  * Akses: master.tahapan.manage.
- * View: resources/views/pages/master-tahapan
+ * View: resources/views/pages/master-data/tahapan
  */
 class MasterTahapanController extends Controller
 {
@@ -21,7 +21,7 @@ class MasterTahapanController extends Controller
     {
         $tahapan = MasterTahapan::orderBy('urutan')->get();
 
-        return view('pages.master-tahapan.index', compact('tahapan'));
+        return view('pages.master-data.tahapan.index', compact('tahapan'));
     }
 
     /**
@@ -29,7 +29,7 @@ class MasterTahapanController extends Controller
      */
     public function edit(MasterTahapan $masterTahapan)
     {
-        return view('pages.master-tahapan.edit', compact('masterTahapan'));
+        return view('pages.master-data.tahapan.edit', compact('masterTahapan'));
     }
 
     /**

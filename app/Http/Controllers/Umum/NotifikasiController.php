@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
  * Notifikasi in-app milik pengguna yang sedang login.
  *
  * Akses: pengguna login (hanya notifikasinya sendiri).
- * View: resources/views/pages/notifikasi
+ * View: resources/views/pages/umum/notifikasi
  */
 class NotifikasiController extends Controller
 {
@@ -51,7 +51,7 @@ class NotifikasiController extends Controller
             'sudah_dibaca' => Notifikasi::where('user_id', $user->id)->where('is_read', true)->count(),
         ];
 
-        return view('pages.notifikasi.index', compact('notifikasi', 'stats'));
+        return view('pages.umum.notifikasi.index', compact('notifikasi', 'stats'));
     }
 
     /**

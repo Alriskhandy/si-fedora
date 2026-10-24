@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  *
  * Akses: lihat & unduh: hasil-fasilitasi.view; input catatan: hasil-fasilitasi.input; draft final & ajukan ke Kaban: hasil-fasilitasi.submit-kaban.
  * Catatan hanya dapat diubah/dihapus pemiliknya atau koordinator tim (fasilitator PIC). Teks catatan disanitasi lewat cast SanitizedHtml.
- * View: resources/views/pages/hasil-fasilitasi
+ * View: resources/views/pages/fasilitasi/hasil-fasilitasi
  */
 class HasilFasilitasiController extends Controller
 {
@@ -293,7 +293,7 @@ class HasilFasilitasiController extends Controller
 
         $permohonan = $query->latest()->paginate(10);
 
-        return view('pages.hasil-fasilitasi.index', compact('permohonan'));
+        return view('pages.fasilitasi.hasil-fasilitasi.index', compact('permohonan'));
     }
 
     /**
@@ -393,7 +393,7 @@ class HasilFasilitasiController extends Controller
             ];
         }
 
-        return view('pages.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
+        return view('pages.fasilitasi.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
     }
 
     /**
@@ -534,7 +534,7 @@ class HasilFasilitasiController extends Controller
         // Pass isVerifikator to view
         $isKoordinator = $this->isKoordinator($permohonan);
 
-        return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo', 'isPemohon'));
+        return view('pages.fasilitasi.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo', 'isPemohon'));
     }
 
     /**
@@ -1200,7 +1200,7 @@ class HasilFasilitasiController extends Controller
             $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
             $ranperkada = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
             $jabatanTtd = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
-            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact(
+            $pdf = PDF::loadView('pages.fasilitasi.hasil-fasilitasi.pdf', compact(
                 'sistematika', 'urusan', 'form', 'rekomendasi', 'kelengkapan',
                 'kabkota', 'tahun', 'jenisDokumen', 'jenisWilayah',
                 'ranperkada', 'jabatanTtd', 'tanggalGenerate'

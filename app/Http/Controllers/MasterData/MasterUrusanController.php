@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  * Master urusan pemerintahan.
  *
  * Akses: master.urusan.manage.
- * View: resources/views/pages/master-urusan
+ * View: resources/views/pages/master-data/urusan
  */
 class MasterUrusanController extends Controller
 {
@@ -34,7 +34,7 @@ class MasterUrusanController extends Controller
             END"
         )->orderBy('urutan')->get();
 
-        return view('pages.master-urusan.index', compact('urusan'));
+        return view('pages.master-data.urusan.index', compact('urusan'));
     }
 
     /**
@@ -42,7 +42,7 @@ class MasterUrusanController extends Controller
      */
     public function create()
     {
-        return view('pages.master-urusan.create');
+        return view('pages.master-data.urusan.create');
     }
 
     /**
@@ -67,7 +67,7 @@ class MasterUrusanController extends Controller
      */
     public function edit(MasterUrusan $masterUrusan)
     {
-        return view('pages.master-urusan.edit', compact('masterUrusan'));
+        return view('pages.master-data.urusan.edit', compact('masterUrusan'));
     }
 
     /**

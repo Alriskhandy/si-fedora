@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  *
  * Akses: approval.approve.
  * Disetujui: tahapan Hasil Fasilitasi selesai dan tahapan berikutnya dimulai. Ditolak: admin/koordinator mengunggah ulang draft final.
- * View: resources/views/pages/approval
+ * View: resources/views/pages/fasilitasi/approval
  */
 class ApprovalController extends Controller
 {
@@ -211,7 +211,7 @@ class ApprovalController extends Controller
 
         $permohonan = $query->latest('updated_at')->paginate(10);
 
-        return view('pages.approval.index', compact('permohonan'));
+        return view('pages.fasilitasi.approval.index', compact('permohonan'));
     }
 
     /**
@@ -289,7 +289,7 @@ class ApprovalController extends Controller
             'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
         ];
 
-        return view('pages.approval.show', compact('permohonan', 'hasilFasilitasi', 'timInfo'));
+        return view('pages.fasilitasi.approval.show', compact('permohonan', 'hasilFasilitasi', 'timInfo'));
     }
 
     /**

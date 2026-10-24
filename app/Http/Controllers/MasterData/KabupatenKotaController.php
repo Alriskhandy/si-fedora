@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  * Master data kabupaten/kota.
  *
  * Akses: master.kabkota.manage.
- * View: resources/views/pages/master-kab-kota
+ * View: resources/views/pages/master-data/kabupaten-kota
  */
 class KabupatenKotaController extends Controller
 {
@@ -28,7 +28,7 @@ class KabupatenKotaController extends Controller
 
         $kabupatenKota = $query->latest()->paginate(10);
 
-        return view('pages.master-kab-kota.index', compact('kabupatenKota'));
+        return view('pages.master-data.kabupaten-kota.index', compact('kabupatenKota'));
     }
 
     /**
@@ -36,7 +36,7 @@ class KabupatenKotaController extends Controller
      */
     public function create()
     {
-        return view('pages.master-kab-kota.create');
+        return view('pages.master-data.kabupaten-kota.create');
     }
 
     /**
@@ -74,7 +74,7 @@ class KabupatenKotaController extends Controller
      */
     public function show(KabupatenKota $kabupatenKota)
     {
-        return view('pages.master-kab-kota.show', compact('kabupatenKota'));
+        return view('pages.master-data.kabupaten-kota.show', compact('kabupatenKota'));
     }
 
     /**
@@ -82,7 +82,7 @@ class KabupatenKotaController extends Controller
      */
     public function edit(KabupatenKota $kabupatenKota)
     {
-        return view('pages.master-kab-kota.edit', compact('kabupatenKota'));
+        return view('pages.master-data.kabupaten-kota.edit', compact('kabupatenKota'));
     }
 
     /**

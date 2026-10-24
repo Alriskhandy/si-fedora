@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
  * Arsip seluruh dokumen permohonan per jenis dokumen. Daftar dibatasi scope Permohonan::visibleTo, detail oleh PermohonanPolicy.
  *
  * Akses: semua pengguna login (dibatasi policy).
- * View: resources/views/pages/arsip
+ * View: resources/views/pages/umum/arsip
  */
 class ArsipController extends Controller
 {
@@ -31,7 +31,7 @@ class ArsipController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('pages.arsip.index', compact('jenisDokumenList'));
+        return view('pages.umum.arsip.index', compact('jenisDokumenList'));
     }
 
     /**
@@ -77,7 +77,7 @@ class ArsipController extends Controller
             ->orderByDesc('tahun')
             ->pluck('tahun');
 
-        return view('pages.arsip.list', compact('permohonan', 'jenisDokumen', 'tahunList'));
+        return view('pages.umum.arsip.list', compact('permohonan', 'jenisDokumen', 'tahunList'));
     }
 
     /**
@@ -126,6 +126,6 @@ class ArsipController extends Controller
         $undanganPelaksanaan = UndanganPelaksanaan::where('permohonan_id', $permohonan->id)->get();
         $permohonan->setRelation('undanganPelaksanaan', $undanganPelaksanaan);
 
-        return view('pages.arsip.show', compact('permohonan', 'documentCounts'));
+        return view('pages.umum.arsip.show', compact('permohonan', 'documentCounts'));
     }
 }

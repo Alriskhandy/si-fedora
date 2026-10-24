@@ -308,14 +308,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "GET master-bab/create": [
-        "superadmin",
-        "admin_peran"
-    ],
-    "GET master-bab/{masterBab}/edit": [
-        "superadmin",
-        "admin_peran"
-    ],
     "GET master-jenis-dokumen": [
         "superadmin",
         "admin_peran"
@@ -683,12 +675,6 @@
         "superadmin",
         "admin_peran"
     ],
-    "GET validasi-hasil/{permohonan}/generate": [
-        "admin_peran"
-    ],
-    "GET validasi-hasil/{permohonan}/generate-pdf": [
-        "admin_peran"
-    ],
     "GET verifikasi/{permohonan}/lembar-verifikasi": [
         "verifikator"
     ],
@@ -927,12 +913,6 @@
     ],
     "POST users/{user}/reset-password": [
         "superadmin",
-        "admin_peran"
-    ],
-    "POST validasi-hasil/{permohonan}/approve": [
-        "admin_peran"
-    ],
-    "POST validasi-hasil/{permohonan}/revise": [
         "admin_peran"
     ],
     "POST verifikasi/{permohonan}/submit": [

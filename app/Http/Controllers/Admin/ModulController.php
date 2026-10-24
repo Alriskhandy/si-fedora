@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
  * Modul/panduan pengguna. Setiap modul dapat ditujukan ke satu role atau semua.
  *
  * Akses: lihat & unduh: pengguna login sesuai role modul; kelola: modul.manage.
- * View: resources/views/pages/modul
+ * View: resources/views/pages/admin/modul
  */
 class ModulController extends Controller
 {
@@ -47,7 +47,7 @@ class ModulController extends Controller
         $roles = self::ROLES;
         $isSuperadmin = $user->can('modul.manage');
 
-        return view('pages.modul.index', compact('modul', 'roles', 'isSuperadmin'));
+        return view('pages.admin.modul.index', compact('modul', 'roles', 'isSuperadmin'));
     }
 
     /**

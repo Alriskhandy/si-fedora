@@ -18,7 +18,7 @@ class HtmlSanitizerServiceProvider extends ServiceProvider
      * Daftarkan sanitizer dengan whitelist elemen.
      *
      * Whitelist mengikuti `valid_elements` TinyMCE di form hasil fasilitasi
-     * (resources/views/pages/hasil-fasilitasi/create.blade.php), agar konten yang
+     * (resources/views/pages/fasilitasi/hasil-fasilitasi/create.blade.php), agar konten yang
      * disimpan sama dengan yang dapat dihasilkan editor dan aman diekspor ke Word/PDF.
      */
     public function register(): void

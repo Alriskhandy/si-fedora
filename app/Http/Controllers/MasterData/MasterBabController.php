@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
  * Master sistematika dokumen (bab dan sub-bab) per jenis dokumen.
  *
  * Akses: master.bab.manage.
- * View: resources/views/pages/master-bab
+ * View: resources/views/pages/master-data/bab
  */
 class MasterBabController extends Controller
 {
@@ -31,18 +31,7 @@ class MasterBabController extends Controller
         $babs = $query->orderBy('jenis_dokumen_id')->orderBy('urutan')->orderBy('nama_bab')->get();
         $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
 
-        return view('pages.master-bab.index', compact('babs', 'jenisDokumenList', 'request'));
-    }
-
-    /**
-     * Form tambah bab/sub-bab.
-     */
-    public function create()
-    {
-        $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
-        $parentBabs = MasterBab::mainBab()->orderBy('urutan')->orderBy('nama_bab')->get();
-
-        return view('pages.master-bab.create', compact('jenisDokumenList', 'parentBabs'));
+        return view('pages.master-data.bab.index', compact('babs', 'jenisDokumenList', 'request'));
     }
 
     /**
@@ -75,21 +64,6 @@ class MasterBabController extends Controller
                 ->withInput()
                 ->withErrors(['error' => 'Gagal menambahkan bab: '.$e->getMessage()]);
         }
-    }
-
-    /**
-     * Form ubah bab/sub-bab.
-     */
-    public function edit(MasterBab $masterBab)
-    {
-        $jenisDokumenList = MasterJenisDokumen::active()->orderBy('nama')->get();
-        $parentBabs = MasterBab::mainBab()
-            ->where('id', '!=', $masterBab->id)
-            ->orderBy('urutan')
-            ->orderBy('nama_bab')
-            ->get();
-
-        return view('pages.master-bab.edit', compact('masterBab', 'jenisDokumenList', 'parentBabs'));
     }
 
     /**

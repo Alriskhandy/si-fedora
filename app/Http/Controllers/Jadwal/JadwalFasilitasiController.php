@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
  * Jadwal fasilitasi per tahun anggaran dan jenis dokumen, termasuk batas pengajuan permohonan dan file undangan.
  *
  * Akses: lihat: semua pengguna login (non-pengelola hanya jadwal published); kelola: jadwal.manage.
- * View: resources/views/pages/jadwal-fasilitasi
+ * View: resources/views/pages/jadwal/jadwal-fasilitasi
  */
 class JadwalFasilitasiController extends Controller
 {
@@ -61,7 +61,7 @@ class JadwalFasilitasiController extends Controller
 
         [$jadwalExtendedIds, $jadwalEligibleForExtensionIds] = $this->extensionEligibilityIds($jadwalFasilitasi->pluck('id'));
 
-        return view('pages.jadwal-fasilitasi.index', compact('jadwalFasilitasi', 'filterOptions', 'jadwalExtendedIds', 'jadwalEligibleForExtensionIds'));
+        return view('pages.jadwal.jadwal-fasilitasi.index', compact('jadwalFasilitasi', 'filterOptions', 'jadwalExtendedIds', 'jadwalEligibleForExtensionIds'));
     }
 
     /**
@@ -71,7 +71,7 @@ class JadwalFasilitasiController extends Controller
     {
         $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
 
-        return view('pages.jadwal-fasilitasi.create', compact('jenisdokumen'));
+        return view('pages.jadwal.jadwal-fasilitasi.create', compact('jenisdokumen'));
     }
 
     /**
@@ -180,7 +180,7 @@ class JadwalFasilitasiController extends Controller
             [$jadwalExtendedIds, $jadwalEligibleForExtensionIds] = $this->extensionEligibilityIds(collect([$jadwal->id]));
         }
 
-        return view('pages.jadwal-fasilitasi.show', compact('jadwal', 'jadwalExtendedIds', 'jadwalEligibleForExtensionIds'));
+        return view('pages.jadwal.jadwal-fasilitasi.show', compact('jadwal', 'jadwalExtendedIds', 'jadwalEligibleForExtensionIds'));
     }
 
     /**
@@ -221,7 +221,7 @@ class JadwalFasilitasiController extends Controller
     {
         $jenisdokumen = MasterJenisDokumen::where('status', true)->get();
 
-        return view('pages.jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
+        return view('pages.jadwal.jadwal-fasilitasi.edit', compact('jadwal', 'jenisdokumen'));
     }
 
     /**

@@ -15,7 +15,7 @@ use Illuminate\View\View;
  * Profil pengguna: data diri, nomor WhatsApp, foto profil, dan hapus akun.
  *
  * Akses: pengguna login (akunnya sendiri).
- * View: resources/views/pages/profile
+ * View: resources/views/pages/umum/profile
  */
 class ProfileController extends Controller
 {
@@ -24,7 +24,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('pages.profile.edit', [
+        return view('pages.umum.profile.edit', [
             'user' => $request->user(),
         ]);
     }
