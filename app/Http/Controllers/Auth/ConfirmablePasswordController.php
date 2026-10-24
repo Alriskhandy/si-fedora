@@ -9,10 +9,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+/**
+ * Konfirmasi ulang kata sandi sebelum aksi sensitif (bawaan Breeze).
+ *
+ * Akses: pengguna login.
+ * View: resources/views/auth
+ */
 class ConfirmablePasswordController extends Controller
 {
     /**
-     * Show the confirm password view.
+     * Halaman konfirmasi kata sandi.
      */
     public function show(): View
     {
@@ -20,7 +26,7 @@ class ConfirmablePasswordController extends Controller
     }
 
     /**
-     * Confirm the user's password.
+     * Periksa kata sandi, lalu lanjutkan ke halaman tujuan.
      */
     public function store(Request $request): RedirectResponse
     {

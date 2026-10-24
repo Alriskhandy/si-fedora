@@ -63,9 +63,6 @@
         "pemohon",
         "auditor"
     ],
-    "DELETE permohonan-dokumen/{permohonanDokumen}": [
-        "pemohon"
-    ],
     "DELETE permohonan-dokumen/{permohonanDokumen}/file": [
         "pemohon"
     ],
@@ -107,9 +104,6 @@
         "kaban",
         "admin_peran",
         "auditor"
-    ],
-    "GET admin-peran": [
-        "admin_peran"
     ],
     "GET admin/permissions": [
         "superadmin"
@@ -719,12 +713,6 @@
         "pemohon",
         "auditor"
     ],
-    "POST admin-peran/{permohonan}/assign": [
-        "admin_peran"
-    ],
-    "POST admin-peran/{permohonan}/unassign": [
-        "admin_peran"
-    ],
     "POST admin/permissions": [
         "superadmin"
     ],
@@ -854,9 +842,6 @@
     "POST permohonan": [
         "pemohon"
     ],
-    "POST permohonan-dokumen": [
-        "pemohon"
-    ],
     "POST permohonan/{permohonan}/dokumen/upload-pelaksanaan": [
         "(tanpa role)",
         "superadmin",
@@ -953,12 +938,6 @@
     "POST verifikasi/{permohonan}/submit": [
         "verifikator"
     ],
-    "POST verifikasi/{permohonan}/verifikasi": [
-        "verifikator"
-    ],
-    "POST verifikasi/{permohonan}/verifikasi-dokumen": [
-        "verifikator"
-    ],
     "PUT admin/roles/{role}": [
         "superadmin"
     ],
@@ -1013,9 +992,6 @@
     ],
     "PUT penetapan-jadwal/{permohonan}": [
         "kaban"
-    ],
-    "PUT permohonan-dokumen/{permohonanDokumen}": [
-        "pemohon"
     ],
     "PUT permohonan-dokumen/{permohonanDokumen}/upload": [
         "pemohon"

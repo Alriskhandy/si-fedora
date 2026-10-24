@@ -7,10 +7,13 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validasi ubah pengguna. Hanya pengguna yang boleh mengelola akun target (UserPolicy::manage), dan role superadmin hanya bisa diberikan pemegang user.manage-superadmin.
+ */
 class UpdateUserRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Hanya pengguna yang boleh mengelola akun target.
      */
     public function authorize(): bool
     {
@@ -18,7 +21,7 @@ class UpdateUserRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Aturan validasi ubah pengguna.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -35,7 +38,7 @@ class UpdateUserRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Pesan validasi kustom.
      *
      * @return array<string, string>
      */

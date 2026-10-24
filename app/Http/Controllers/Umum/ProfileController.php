@@ -1,0 +1,99 @@
+<?php
+
+namespace App\Http\Controllers\Umum;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\ProfileUpdateRequest;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+
+/**
+ * Profil pengguna: data diri, nomor WhatsApp, foto profil, dan hapus akun.
+ *
+ * Akses: pengguna login (akunnya sendiri).
+ * View: resources/views/pages/profile
+ */
+class ProfileController extends Controller
+{
+    /**
+     * Halaman profil.
+     */
+    public function edit(Request $request): View
+    {
+        return view('pages.profile.edit', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
+     * Simpan perubahan profil, termasuk foto profil (disk public).
+     */
+    public function update(ProfileUpdateRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        $data = $request->validated();
+
+        // Handle foto upload
+        if ($request->hasFile('foto_profile')) {
+            // Delete old foto if exists
+            if ($user->foto && Storage::disk('public')->exists($user->foto)) {
+                Storage::disk('public')->delete($user->foto);
+            }
+
+            // Store new foto
+            $path = $request->file('foto_profile')->store('profile-photos', 'public');
+            $data['foto_profile'] = $path;
+        }
+
+        // Remove foto from data if not uploaded
+        if (! isset($data['foto_profile'])) {
+            unset($data['foto_profile']);
+        }
+
+        $user->fill($data);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        // Reset phone verification if phone number changed
+        if ($user->isDirty('no_hp')) {
+            $user->phone_verified_at = null;
+        }
+
+        $user->save();
+
+        // If phone number changed, redirect to verification
+        if ($user->wasChanged('no_hp') && $user->no_hp) {
+            return Redirect::route('phone.verify')
+                ->with('status', 'Nomor WhatsApp berhasil diubah. Silakan verifikasi nomor baru Anda.');
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Hapus akun sendiri setelah konfirmasi kata sandi (soft delete).
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $user = $request->user();
+
+        Auth::logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Redirect::to('/');
+    }
+}

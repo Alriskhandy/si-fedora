@@ -7,10 +7,13 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validasi tambah pengguna. Role superadmin, kaban, dan admin_peran tidak boleh diberikan lewat form ini (User::NON_CREATABLE_ROLES).
+ */
 class StoreUserRequest extends FormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
+     * Aturan validasi tambah pengguna.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -29,7 +32,7 @@ class StoreUserRequest extends FormRequest
     }
 
     /**
-     * Get custom validation messages.
+     * Pesan validasi kustom.
      *
      * @return array<string, string>
      */

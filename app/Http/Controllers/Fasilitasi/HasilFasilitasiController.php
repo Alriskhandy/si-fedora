@@ -1,0 +1,1557 @@
+<?php
+
+namespace App\Http\Controllers\Fasilitasi;
+
+use App\Http\Controllers\Controller;
+use App\Models\HasilFasilitasi;
+use App\Models\HasilFasilitasiForm;
+use App\Models\HasilFasilitasiRekomendasi;
+use App\Models\HasilFasilitasiSistematika;
+use App\Models\HasilFasilitasiUrusan;
+use App\Models\MasterBab;
+use App\Models\MasterUrusan;
+use App\Models\Notifikasi;
+use App\Models\Permohonan;
+use App\Models\User;
+use App\Models\UserKabkotaAssignment;
+use App\Services\HasilFasilitasiDocumentService;
+use App\Services\PermohonanNotificationService;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+/**
+ * Hasil fasilitasi/evaluasi (tahapan 5): input catatan oleh Tim (sistematika, urusan, konsistensi, rekomendasi),
+ * pembuatan dokumen Word/PDF, unggah draft final, dan pengajuan ke Kepala Badan.
+ *
+ * Akses: lihat & unduh: hasil-fasilitasi.view; input catatan: hasil-fasilitasi.input; draft final & ajukan ke Kaban: hasil-fasilitasi.submit-kaban.
+ * Catatan hanya dapat diubah/dihapus pemiliknya atau koordinator tim (fasilitator PIC). Teks catatan disanitasi lewat cast SanitizedHtml.
+ * View: resources/views/pages/hasil-fasilitasi
+ */
+class HasilFasilitasiController extends Controller
+{
+    protected $documentService;
+
+    protected $notificationService;
+
+    /**
+     * Inject layanan dokumen hasil fasilitasi dan notifikasi.
+     */
+    public function __construct(
+        HasilFasilitasiDocumentService $documentService,
+        PermohonanNotificationService $notificationService
+    ) {
+        $this->documentService = $documentService;
+        $this->notificationService = $notificationService;
+    }
+
+    // ============================================================
+    // AUTHORIZATION HELPER METHODS
+    // ============================================================
+
+    /**
+     * Check if user is koordinator for this permohonan
+     */
+    private function isKoordinator(Permohonan $permohonan): bool
+    {
+        // Get jenis_dokumen_id directly from permohonan
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        // Get assignment for debugging
+        $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->where('role_type', 'fasilitator')
+            ->where('is_pic', true)
+            ->where('is_active', true)
+            ->first();
+
+        return $assignment !== null;
+    }
+
+    /**
+     * Check if user is admin or superadmin
+     */
+    private function isAdmin(): bool
+    {
+        return Auth::user()->can('hasil-fasilitasi.manage-all');
+    }
+
+    /**
+     * Check if user is Kepala Badan
+     */
+    private function isKepalaBadan(): bool
+    {
+        return Auth::user()->can('approval.approve');
+    }
+
+    /**
+     * Check if user is member of this permohonan's tim (fasilitator or verifikator)
+     */
+    private function isTimMember(Permohonan $permohonan): bool
+    {
+        // Admin can access all
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Get jenis_dokumen_id directly from permohonan
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        // Get assignment for debugging
+        $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->whereIn('role_type', ['fasilitator', 'verifikator'])
+            ->where('is_active', true)
+            ->first();
+
+        return $assignment !== null;
+    }
+
+    /**
+     * Check if user can edit/delete an item (owner or koordinator)
+     *
+     * @param  mixed  $item
+     */
+    private function canManageItem($item, Permohonan $permohonan): bool
+    {
+        return $item->user_id == Auth::id() || $this->isKoordinator($permohonan);
+    }
+
+    /**
+     * Check if user is verifikator for this permohonan
+     */
+    private function isVerifikator(Permohonan $permohonan): bool
+    {
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
+            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->where('role_type', 'verifikator')
+            ->where('is_active', true)
+            ->first();
+
+        return $assignment !== null;
+    }
+
+    // ============================================================
+    // NOTIFICATION HELPER METHODS
+    // ============================================================
+
+    /**
+     * Kirim notifikasi ke semua anggota tim
+     */
+    private function notifyTeamMembers(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
+    {
+        $kabkotaId = $permohonan->kab_kota_id;
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        // Get all team members (fasilitator dan verifikator)
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->where('is_active', true)
+            ->whereIn('role_type', ['fasilitator', 'verifikator'])
+            ->get();
+
+        foreach ($assignments as $assignment) {
+            // Skip current user
+            if ($assignment->user_id != Auth::id()) {
+                Notifikasi::create([
+                    'user_id' => $assignment->user_id,
+                    'title' => $title,
+                    'message' => $message,
+                    'type' => $type,
+                    'model_type' => HasilFasilitasi::class,
+                    'model_id' => $permohonan->hasilFasilitasi?->id,
+                    'action_url' => route('hasil-fasilitasi.show', $permohonan->id),
+                    'is_read' => false,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Kirim notifikasi ke koordinator
+     */
+    private function notifyKoordinator(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
+    {
+        $kabkotaId = $permohonan->kab_kota_id;
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        // Get koordinator (fasilitator dengan is_pic = true)
+        $koordinator = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
+            ->where('jenis_dokumen_id', $jenisDokumenId)
+            ->where('tahun', $permohonan->tahun)
+            ->where('is_active', true)
+            ->where('role_type', 'fasilitator')
+            ->where('is_pic', true)
+            ->first();
+
+        if ($koordinator && $koordinator->user_id != Auth::id()) {
+            Notifikasi::create([
+                'user_id' => $koordinator->user_id,
+                'title' => $title,
+                'message' => $message,
+                'type' => $type,
+                'model_type' => HasilFasilitasi::class,
+                'model_id' => $permohonan->hasilFasilitasi?->id,
+                'action_url' => route('hasil-fasilitasi.show', $permohonan->id),
+                'is_read' => false,
+            ]);
+        }
+    }
+
+    /**
+     * Kirim notifikasi ke admin dan kepala badan
+     */
+    private function notifyAdminAndKaban(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
+    {
+        // Get all admin and superadmin users
+        $admins = User::role(['admin_peran', 'superadmin', 'kaban'])->get();
+
+        foreach ($admins as $admin) {
+            if ($admin->id != Auth::id()) {
+                Notifikasi::create([
+                    'user_id' => $admin->id,
+                    'title' => $title,
+                    'message' => $message,
+                    'type' => $type,
+                    'model_type' => HasilFasilitasi::class,
+                    'model_id' => $permohonan->hasilFasilitasi?->id,
+                    'action_url' => route('hasil-fasilitasi.show', $permohonan->id),
+                    'is_read' => false,
+                ]);
+            }
+        }
+    }
+
+    // ============================================================
+    // MAIN CRUD OPERATIONS
+    // ============================================================
+
+    /**
+     * Tampilkan daftar permohonan untuk input hasil fasilitasi
+     * Menampilkan permohonan yang dapat diakses oleh user (fasilitator, verifikator, admin)
+     *
+     * @return View
+     */
+    public function index(Request $request)
+    {
+        $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi']);
+
+        // Admin can see all permohonan
+        if (! $this->isAdmin()) {
+            // Get user's tim assignments (fasilitator or verifikator)
+            $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
+                ->whereIn('role_type', ['fasilitator', 'verifikator'])
+                ->where('is_active', true)
+                ->get();
+
+            $query->where(function ($q) use ($userAssignments) {
+                foreach ($userAssignments as $assignment) {
+                    $q->orWhere(function ($subQ) use ($assignment) {
+                        // Use correct column name: kab_kota_id (not kabupaten_kota_id)
+                        $subQ->where('permohonan.kab_kota_id', $assignment->kabupaten_kota_id)
+                            ->where('permohonan.tahun', $assignment->tahun)
+                            ->where('permohonan.jenis_dokumen_id', $assignment->jenis_dokumen_id);
+                    });
+                }
+            });
+        }
+
+        // Filter pencarian
+        if ($request->filled('search')) {
+            $query->whereHas('kabupatenKota', function ($q) use ($request) {
+                $q->where('nama', 'like', '%'.$request->search.'%');
+            });
+        }
+
+        // Filter status draft
+        if ($request->filled('status_draft')) {
+            if ($request->status_draft == 'belum_ada') {
+                $query->doesntHave('hasilFasilitasi');
+            } else {
+                $query->whereHas('hasilFasilitasi', function ($q) use ($request) {
+                    $q->where('status_draft', $request->status_draft);
+                });
+            }
+        }
+
+        $permohonan = $query->latest()->paginate(10);
+
+        return view('pages.hasil-fasilitasi.index', compact('permohonan'));
+    }
+
+    /**
+     * Tampilkan form untuk membuat/edit hasil fasilitasi
+     * Hanya dapat diakses oleh fasilitator/koordinator dan admin
+     *
+     * @return View|RedirectResponse
+     */
+    public function create(Permohonan $permohonan)
+    {
+        // Prevent verifikator from accessing create/edit (only fasilitator allowed)
+        if ($this->isVerifikator($permohonan)) {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if ($hasilFasilitasi) {
+                return redirect()->route('hasil-fasilitasi.show', $permohonan)
+                    ->with('info', 'Verifikator hanya dapat melihat hasil fasilitasi.');
+            } else {
+                return redirect()->route('hasil-fasilitasi.index')
+                    ->with('info', 'Hasil fasilitasi belum dibuat. Verifikator tidak dapat membuat hasil fasilitasi.');
+            }
+        }
+
+        // Check if user is member of this tim (fasilitator)
+        if (! $this->isTimMember($permohonan)) {
+            abort(403, 'Anda bukan anggota tim untuk permohonan ini.');
+        }
+
+        // Jika belum ada hasil fasilitasi, buat otomatis
+        if (! $permohonan->hasilFasilitasi) {
+            HasilFasilitasi::create([
+                'permohonan_id' => $permohonan->id,
+                'dibuat_oleh' => Auth::id(),
+            ]);
+            $permohonan->refresh();
+        }
+
+        // Ambil daftar urusan
+        $masterUrusanList = MasterUrusan::orderBy('urutan')->get();
+
+        // Ambil daftar bab berdasarkan jenis dokumen dari permohonan (hanya parent/level 1)
+        $masterBabList = collect();
+        if ($permohonan->jenis_dokumen_id) {
+            $masterBabList = MasterBab::where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
+                ->whereNull('parent_id')
+                ->orderBy('urutan')
+                ->get();
+        }
+
+        // Load hasil fasilitasi dengan relasi
+        $hasilFasilitasi = $permohonan->hasilFasilitasi;
+        $hasilFasilitasi->load([
+            'hasilSistematika.masterBab', 'hasilSistematika.user',
+            'hasilUrusan.masterUrusan', 'hasilUrusan.user',
+            'hasilForm.user',
+            'hasilRekomendasi.user',
+        ]);
+
+        // Sort sistematika by bab urutan
+        $sortedSistematika = $hasilFasilitasi->hasilSistematika->sortBy(function ($item) {
+            return $item->masterBab->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilSistematika', $sortedSistematika);
+
+        // Sort urusan by master urusan urutan
+        $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
+            return $item->masterUrusan->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
+
+        // Sort form & rekomendasi by created_at
+        $hasilFasilitasi->setRelation('hasilForm', $hasilFasilitasi->hasilForm->sortBy('created_at'));
+        $hasilFasilitasi->setRelation('hasilRekomendasi', $hasilFasilitasi->hasilRekomendasi->sortBy('created_at'));
+
+        // Check if current user is koordinator (fasilitator dengan is_pic=true)
+        $isKoordinator = $this->isKoordinator($permohonan);
+
+        // Check if current user is admin
+        $isAdmin = $this->isAdmin();
+
+        // Get tim info untuk ditampilkan
+        $kabkotaId = $permohonan->kab_kota_id;
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+
+        $timInfo = null;
+        if ($jenisDokumenId && $kabkotaId) {
+            $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
+                ->where('jenis_dokumen_id', $jenisDokumenId)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->with('user')
+                ->get();
+
+            $timInfo = [
+                'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
+                'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
+                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
+            ];
+        }
+
+        return view('pages.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
+    }
+
+    /**
+     * Simpan hasil fasilitasi baru atau update yang sudah ada
+     * Hanya dapat diakses oleh fasilitator/koordinator
+     *
+     * @return RedirectResponse
+     */
+    public function store(Request $request, Permohonan $permohonan)
+    {
+        $request->validate([
+            'ringkasan_hasil' => 'required|string',
+            'rekomendasi' => 'required|string',
+            'catatan_fasilitator' => 'nullable|string',
+            'file_draft' => 'nullable|file|mimes:pdf,doc,docx|max:102400',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $filePath = null;
+            if ($request->hasFile('file_draft')) {
+                // Hapus file lama jika ada
+                if ($permohonan->hasilFasilitasi && $permohonan->hasilFasilitasi->file_draft) {
+                    Storage::disk('dokumen')->delete($permohonan->hasilFasilitasi->file_draft);
+                }
+                $filePath = $request->file('file_draft')->store('hasil-fasilitasi', 'dokumen');
+            } elseif ($permohonan->hasilFasilitasi) {
+                $filePath = $permohonan->hasilFasilitasi->file_draft;
+            }
+
+            // Simpan atau update hasil fasilitasi
+            $hasilFasilitasi = HasilFasilitasi::updateOrCreate(
+                ['permohonan_id' => $permohonan->id],
+                [
+                    'undangan_id' => $permohonan->undanganPelaksanaan->id ?? null,
+                    'ringkasan_hasil' => $request->ringkasan_hasil,
+                    'rekomendasi' => $request->rekomendasi,
+                    'catatan_fasilitator' => $request->catatan_fasilitator,
+                    'file_draft' => $filePath,
+                    'status_draft' => 'draft',
+                    'dibuat_oleh' => Auth::id(),
+                    'tanggal_dibuat' => $permohonan->hasilFasilitasi ? $permohonan->hasilFasilitasi->tanggal_dibuat : now(),
+                ]
+            );
+
+            DB::commit();
+
+            return redirect()->route('hasil-fasilitasi.create', $permohonan)
+                ->with('success', 'Hasil fasilitasi berhasil disimpan sebagai draft. Silakan tambahkan item sistematika atau urusan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error menyimpan hasil fasilitasi: '.$e->getMessage());
+
+            return back()->withInput()->with('error', 'Gagal menyimpan hasil fasilitasi: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Tampilkan detail hasil fasilitasi dengan semua sistematikas dan urusans
+     * Dapat diakses oleh tim member, verifikator, dan admin
+     *
+     * @return View
+     */
+    public function show(Permohonan $permohonan)
+    {
+        // Admin can access all
+        $isAdmin = $this->isAdmin();
+        $isVerifikator = $this->isVerifikator($permohonan);
+        $isTimMember = $this->isTimMember($permohonan);
+        $isPemohon = Auth::user()->can('permohonan.view-own') && $permohonan->user_id === Auth::id();
+        $isKaban = $this->isKepalaBadan();
+
+        // Check access - allow admin, tim member, verifikator, pemohon, and kaban
+        if (! $isAdmin && ! $isTimMember && ! $isVerifikator && ! $isPemohon && ! $isKaban) {
+            abort(403, 'Anda tidak memiliki akses untuk melihat hasil fasilitasi ini.');
+        }
+
+        $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+        if (! $hasilFasilitasi) {
+            // Jika belum ada hasil, redirect verifikator dan pemohon ke halaman tahapan hasil
+            // Mereka akan melihat info "sedang dalam proses"
+            if (($isVerifikator || $isPemohon) && ! $isTimMember) {
+                return redirect()->route('permohonan.tahapan.hasil', $permohonan)
+                    ->with('info', 'Hasil fasilitasi sedang dalam proses penyusunan oleh tim fasilitator.');
+            }
+
+            // Fasilitator dan admin bisa create
+            return redirect()->route('hasil-fasilitasi.create', $permohonan)
+                ->with('info', 'Hasil fasilitasi belum dibuat.');
+        }
+
+        $hasilFasilitasi->load(
+            'hasilUrusan.masterUrusan',
+            'hasilUrusan.user',
+            'hasilSistematika.masterBab',
+            'hasilSistematika.user',
+            'hasilForm.user',
+            'hasilRekomendasi.user',
+            'pembuat'
+        );
+
+        // Sort sistematika by bab urutan
+        $sortedSistematika = $hasilFasilitasi->hasilSistematika->sortBy(function ($item) {
+            return $item->masterBab->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilSistematika', $sortedSistematika);
+
+        // Sort urusan by master urusan urutan
+        $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
+            return $item->masterUrusan->urutan ?? 999;
+        });
+        $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
+
+        $hasilFasilitasi->setRelation('hasilForm', $hasilFasilitasi->hasilForm->sortBy('created_at'));
+        $hasilFasilitasi->setRelation('hasilRekomendasi', $hasilFasilitasi->hasilRekomendasi->sortBy('created_at'));
+
+        // Get tim info untuk ditampilkan
+        $kabkotaId = $permohonan->kab_kota_id;
+        $jenisDokumenId = $permohonan->jenis_dokumen_id;
+        $timInfo = null;
+        if ($jenisDokumenId && $kabkotaId) {
+            $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
+                ->where('jenis_dokumen_id', $jenisDokumenId)
+                ->where('tahun', $permohonan->tahun)
+                ->where('is_active', true)
+                ->with('user')
+                ->get();
+
+            $timInfo = [
+                'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
+                'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
+                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
+            ];
+        }
+
+        // Pass isVerifikator to view
+        $isKoordinator = $this->isKoordinator($permohonan);
+
+        return view('pages.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo', 'isPemohon'));
+    }
+
+    /**
+     * Ajukan hasil fasilitasi ke admin untuk review
+     * Hanya dapat dilakukan oleh koordinator
+     *
+     * @return RedirectResponse
+     */
+    public function submit(Permohonan $permohonan)
+    {
+        $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+        if (! $hasilFasilitasi) {
+            return back()->with('error', 'Hasil fasilitasi tidak ditemukan.');
+        }
+
+        if (! $hasilFasilitasi->canEdit()) {
+            return back()->with('info', 'Hasil fasilitasi sudah diajukan/disetujui.');
+        }
+
+        try {
+            $hasilFasilitasi->update([
+                'status_draft' => 'diajukan',
+                'tanggal_diajukan' => now(),
+            ]);
+
+            return back()->with('success', 'Hasil fasilitasi berhasil diajukan untuk validasi.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengajukan hasil fasilitasi: '.$e->getMessage());
+        }
+    }
+
+    // ============================================================
+    // SISTEMATIKA OPERATIONS
+    // ============================================================
+
+    /**
+     * Simpan item sistematika baru
+     *
+     * @return JsonResponse
+     */
+    public function storeSistematika(Request $request, Permohonan $permohonan)
+    {
+        // Check if user is member of this tim
+        if (! $this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
+        $request->validate([
+            'master_bab_id' => 'required|exists:master_bab,id',
+            'sub_bab' => 'nullable|string',
+            'catatan_penyempurnaan' => 'required|string',
+        ]);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
+            }
+
+            $sistematika = HasilFasilitasiSistematika::create([
+                'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'master_bab_id' => $request->master_bab_id,
+                'sub_bab' => $request->sub_bab,
+                'catatan_penyempurnaan' => $request->catatan_penyempurnaan,
+                'user_id' => Auth::id(),
+            ]);
+
+            // Load relasi untuk response
+            $sistematika->load('masterBab', 'user');
+
+            // Activity Log
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('sistematika_added')
+                ->withProperties([
+                    'bab' => $sistematika->masterBab->nama_bab,
+                    'sub_bab' => $sistematika->sub_bab,
+                ])
+                ->log('Menambahkan item sistematika: '.$sistematika->masterBab->nama_bab);
+
+            // Notifikasi ke koordinator
+            $this->notifyKoordinator(
+                $permohonan,
+                'Item Sistematika Ditambahkan',
+                Auth::user()->name.' menambahkan item sistematika "'.$sistematika->masterBab->nama_bab.'" ke hasil fasilitasi '.$permohonan->kabupatenKota->nama,
+                'info'
+            );
+
+            // Convert to array with rendered rich text
+            $data = [
+                'id' => $sistematika->id,
+                'master_bab_id' => $sistematika->master_bab_id,
+                'sub_bab' => $sistematika->sub_bab,
+                'user_id' => $sistematika->user_id,
+                'catatan_penyempurnaan' => is_object($sistematika->catatan_penyempurnaan) && method_exists($sistematika->catatan_penyempurnaan, 'render')
+                    ? $sistematika->catatan_penyempurnaan->render()
+                    : $sistematika->catatan_penyempurnaan,
+                'masterBab' => $sistematika->masterBab,
+                'bab_urutan' => $sistematika->masterBab->urutan ?? 999,
+                'user' => $sistematika->user,
+                'created_at' => $sistematika->created_at->format('d/m/Y H:i'),
+                'created_at_ts' => $sistematika->created_at->timestamp,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item sistematika berhasil ditambahkan',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update item sistematika
+     * Hanya dapat dilakukan oleh pemilik item atau koordinator
+     *
+     * @param  int  $id  ID dari HasilFasilitasiSistematika
+     * @return JsonResponse
+     */
+    public function updateSistematika(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate([
+            'sub_bab' => 'nullable|string',
+            'catatan_penyempurnaan' => 'required|string',
+        ]);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $sistematika = HasilFasilitasiSistematika::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('id', $id)
+                ->first();
+
+            if (! $sistematika) {
+                return response()->json(['error' => 'Item tidak ditemukan'], 404);
+            }
+
+            if (! $this->canManageItem($sistematika, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $sistematika->update([
+                'sub_bab' => $request->sub_bab,
+                'catatan_penyempurnaan' => $request->catatan_penyempurnaan,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item sistematika berhasil diperbarui',
+                'data' => [
+                    'sub_bab' => $sistematika->sub_bab,
+                    'catatan_penyempurnaan' => $sistematika->catatan_penyempurnaan,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus item sistematika
+     * Hanya dapat dilakukan oleh pemilik item atau koordinator
+     *
+     * @param  int  $id  ID dari HasilFasilitasiSistematika
+     * @return JsonResponse
+     */
+    public function deleteSistematika(Permohonan $permohonan, $id)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $sistematika = HasilFasilitasiSistematika::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('id', $id)
+                ->first();
+
+            if (! $sistematika) {
+                return response()->json(['error' => 'Item tidak ditemukan'], 404);
+            }
+
+            // Check authorization: owner or koordinator
+            if (! $this->canManageItem($sistematika, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
+            // Store info before delete for activity log
+            $babNama = $sistematika->masterBab->nama_bab;
+            $subBab = $sistematika->sub_bab;
+
+            $sistematika->delete();
+
+            // Activity Log
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('sistematika_deleted')
+                ->withProperties([
+                    'bab' => $babNama,
+                    'sub_bab' => $subBab,
+                ])
+                ->log('Menghapus item sistematika: '.$babNama);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item sistematika berhasil dihapus',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ============================================================
+    // URUSAN OPERATIONS
+    // ============================================================
+
+    /**
+     * Simpan item urusan baru
+     *
+     * @return JsonResponse
+     */
+    public function storeUrusan(Request $request, Permohonan $permohonan)
+    {
+        // Check if user is member of this tim
+        if (! $this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
+        $request->validate([
+            'master_urusan_id' => 'required|exists:master_urusan,id',
+            'catatan_masukan' => 'required|string',
+        ]);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
+            }
+
+            $urusan = HasilFasilitasiUrusan::create([
+                'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'master_urusan_id' => $request->master_urusan_id,
+                'catatan_masukan' => $request->catatan_masukan,
+                'user_id' => Auth::id(),
+            ]);
+
+            $urusan->load('masterUrusan', 'user');
+
+            // Activity Log
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('urusan_added')
+                ->withProperties([
+                    'urusan' => $urusan->masterUrusan->nama_urusan,
+                ])
+                ->log('Menambahkan item urusan: '.$urusan->masterUrusan->nama_urusan);
+
+            // Notifikasi ke koordinator
+            $this->notifyKoordinator(
+                $permohonan,
+                'Item Urusan Ditambahkan',
+                Auth::user()->name.' menambahkan item urusan "'.$urusan->masterUrusan->nama_urusan.'" ke hasil fasilitasi '.$permohonan->kabupatenKota->nama,
+                'info'
+            );
+
+            // Convert to array with rendered rich text
+            $data = [
+                'id' => $urusan->id,
+                'master_urusan_id' => $urusan->master_urusan_id,
+                'user_id' => $urusan->user_id,
+                'catatan_masukan' => is_object($urusan->catatan_masukan) && method_exists($urusan->catatan_masukan, 'render')
+                    ? $urusan->catatan_masukan->render()
+                    : $urusan->catatan_masukan,
+                'masterUrusan' => $urusan->masterUrusan,
+                'urusan_urutan' => $urusan->masterUrusan->urutan ?? 999,
+                'user' => $urusan->user,
+                'created_at' => $urusan->created_at->format('d/m/Y H:i'),
+                'created_at_ts' => $urusan->created_at->timestamp,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item urusan berhasil ditambahkan',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update item urusan
+     * Hanya dapat dilakukan oleh pemilik item atau koordinator
+     *
+     * @param  int  $id  ID dari HasilFasilitasiUrusan
+     * @return JsonResponse
+     */
+    public function updateUrusan(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate([
+            'catatan_masukan' => 'required|string',
+        ]);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $urusan = HasilFasilitasiUrusan::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('id', $id)
+                ->first();
+
+            if (! $urusan) {
+                return response()->json(['error' => 'Item tidak ditemukan'], 404);
+            }
+
+            if (! $this->canManageItem($urusan, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $urusan->update([
+                'catatan_masukan' => $request->catatan_masukan,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item urusan berhasil diperbarui',
+                'data' => [
+                    'catatan_masukan' => $urusan->catatan_masukan,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus item urusan
+     * Hanya dapat dilakukan oleh pemilik item atau koordinator
+     *
+     * @param  int  $id  ID dari HasilFasilitasiUrusan
+     * @return JsonResponse
+     */
+    public function deleteUrusan(Permohonan $permohonan, $id)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $urusan = HasilFasilitasiUrusan::where('hasil_fasilitasi_id', $hasilFasilitasi->id)
+                ->where('id', $id)
+                ->first();
+
+            if (! $urusan) {
+                return response()->json(['error' => 'Item tidak ditemukan'], 404);
+            }
+
+            // Check authorization: owner or koordinator
+            if (! $this->canManageItem($urusan, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
+            // Store info before delete for activity log
+            $urusanNama = $urusan->masterUrusan->nama_urusan;
+
+            $urusan->delete();
+
+            // Activity Log
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('urusan_deleted')
+                ->withProperties([
+                    'urusan' => $urusanNama,
+                ])
+                ->log('Menghapus item urusan: '.$urusanNama);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item urusan berhasil dihapus',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ============================================================
+    // KONSISTENSI & KESELARASAN (FORM) OPERATIONS
+    // ============================================================
+
+    /**
+     * Tambah catatan "Konsistensi & Keselarasan".
+     */
+    public function storeForm(Request $request, Permohonan $permohonan)
+    {
+        if (! $this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
+            }
+
+            $item = HasilFasilitasiForm::create([
+                'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'catatan' => $request->catatan,
+                'user_id' => Auth::id(),
+            ]);
+
+            $item->load('user');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item konsistensi & keselarasan berhasil ditambahkan',
+                'data' => [
+                    'id' => $item->id,
+                    'catatan' => $item->catatan,
+                    'user_id' => $item->user_id,
+                    'user' => $item->user,
+                    'created_at' => $item->created_at->format('d/m/Y H:i'),
+                    'created_at_ts' => $item->created_at->timestamp,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Ubah catatan "Konsistensi & Keselarasan" (hanya pemilik catatan atau koordinator).
+     */
+    public function updateForm(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiForm::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (! $this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $item->update(['catatan' => $request->catatan]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item berhasil diperbarui',
+                'data' => ['catatan' => $item->catatan],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus catatan "Konsistensi & Keselarasan" (hanya pemilik catatan atau koordinator).
+     */
+    public function deleteForm(Permohonan $permohonan, $id)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiForm::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (! $this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
+            $item->delete();
+
+            return response()->json(['success' => true, 'message' => 'Item berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ============================================================
+    // REKOMENDASI OPERATIONS
+    // ============================================================
+
+    /**
+     * Tambah butir rekomendasi.
+     */
+    public function storeRekomendasi(Request $request, Permohonan $permohonan)
+    {
+        if (! $this->isTimMember($permohonan)) {
+            return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
+        }
+
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi belum dibuat'], 400);
+            }
+
+            $item = HasilFasilitasiRekomendasi::create([
+                'hasil_fasilitasi_id' => $hasilFasilitasi->id,
+                'catatan' => $request->catatan,
+                'user_id' => Auth::id(),
+            ]);
+
+            $item->load('user');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item rekomendasi berhasil ditambahkan',
+                'data' => [
+                    'id' => $item->id,
+                    'catatan' => $item->catatan,
+                    'user_id' => $item->user_id,
+                    'user' => $item->user,
+                    'created_at' => $item->created_at->format('d/m/Y H:i'),
+                    'created_at_ts' => $item->created_at->timestamp,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Ubah butir rekomendasi (hanya pemilik catatan atau koordinator).
+     */
+    public function updateRekomendasi(Request $request, Permohonan $permohonan, $id)
+    {
+        $request->validate(['catatan' => 'required|string']);
+
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiRekomendasi::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (! $this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk mengedit item ini'], 403);
+            }
+
+            $item->update(['catatan' => $request->catatan]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item rekomendasi berhasil diperbarui',
+                'data' => ['catatan' => $item->catatan],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus butir rekomendasi (hanya pemilik catatan atau koordinator).
+     */
+    public function deleteRekomendasi(Permohonan $permohonan, $id)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+            if (! $hasilFasilitasi) {
+                return response()->json(['error' => 'Hasil fasilitasi tidak ditemukan'], 404);
+            }
+
+            $item = HasilFasilitasiRekomendasi::where('hasil_fasilitasi_id', $hasilFasilitasi->id)->findOrFail($id);
+
+            if (! $this->canManageItem($item, $permohonan)) {
+                return response()->json(['error' => 'Anda tidak memiliki akses untuk menghapus item ini'], 403);
+            }
+
+            $item->delete();
+
+            return response()->json(['success' => true, 'message' => 'Item rekomendasi berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ============================================================
+    // DOCUMENT GENERATION & DOWNLOAD OPERATIONS
+    // ============================================================
+
+    /**
+     * Generate dokumen hasil fasilitasi dalam format Word & PDF (koordinator only)
+     * Membuat draft document dan menyimpannya ke storage
+     *
+     * @return RedirectResponse
+     */
+    public function generate(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Only koordinator can generate draft
+            if (! $this->isKoordinator($permohonan)) {
+                return redirect()->back()->with('error', 'Hanya koordinator yang dapat membuat draft dokumen.');
+            }
+
+            $sistematika = $hasilFasilitasi->hasilSistematika()
+                ->with('masterBab')
+                ->orderBy('master_bab_id')
+                ->orderBy('id')
+                ->get();
+
+            $urusan = $hasilFasilitasi->hasilUrusan()
+                ->with('masterUrusan')
+                ->join('master_urusan', 'hasil_fasilitasi_urusan.master_urusan_id', '=', 'master_urusan.id')
+                ->orderBy('master_urusan.urutan')
+                ->orderBy('hasil_fasilitasi_urusan.id')
+                ->select('hasil_fasilitasi_urusan.*')
+                ->get();
+
+            $form = $hasilFasilitasi->hasilForm()->orderBy('id')->get();
+            $rekomendasi = $hasilFasilitasi->hasilRekomendasi()->orderBy('id')->get();
+            $kelengkapan = $permohonan->permohonanDokumen()->with('masterKelengkapan')->orderBy('id')->get();
+
+            // Tanggal generate dalam format Indonesia
+            $bulanId = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $tanggalGenerate = date('j').' '.$bulanId[(int) date('n')].' '.date('Y');
+
+            // Generate dokumen DOCX menggunakan PhpWord (format native, format TinyMCE terjaga)
+            $filepath = $this->documentService->generateDocx($permohonan, $sistematika, $urusan, $form, $rekomendasi, $kelengkapan);
+
+            // Generate PDF dari Blade template (DomPDF) — kertas F4 (21×33 cm)
+            $kabkota = $permohonan->kabupatenKota->nama;
+            $tahun = $permohonan->tahun ?? date('Y');
+            $jenisDokumen = ucwords(strtolower($permohonan->jenisDokumen->nama ?? 'Dokumen'));
+            $jenisWilayah = ucfirst(strtolower($permohonan->kabupatenKota->jenis ?? ''));
+            $ranperkada = strtolower($jenisWilayah) === 'kota' ? 'Ranperwal' : 'Ranperbup';
+            $jabatanTtd = strtolower($jenisWilayah) === 'kota' ? 'Walikota' : 'Bupati';
+            $pdf = PDF::loadView('pages.hasil-fasilitasi.pdf', compact(
+                'sistematika', 'urusan', 'form', 'rekomendasi', 'kelengkapan',
+                'kabkota', 'tahun', 'jenisDokumen', 'jenisWilayah',
+                'ranperkada', 'jabatanTtd', 'tanggalGenerate'
+            ))->setPaper([0, 0, 595.28, 935.43], 'portrait');
+
+            $pdfPath = str_replace('.docx', '.pdf', $filepath);
+            Storage::disk('dokumen')->put($pdfPath, $pdf->output());
+
+            // Update draft_file di hasil_fasilitasi (simpan path .docx)
+            $hasilFasilitasi->update([
+                'draft_file' => $filepath,
+                'updated_by' => Auth::id(),
+            ]);
+
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('draft_created')
+                ->withProperties([
+                    'kabupaten_kota' => $permohonan->kabupatenKota->nama,
+                    'jenis_dokumen' => $permohonan->jenisDokumen->nama,
+                ])
+                ->log('Draft dokumen hasil fasilitasi berhasil dibuat (Word & PDF)');
+
+            // Notifikasi ke semua anggota tim
+            $this->notifyTeamMembers(
+                $permohonan,
+                'Draft Dokumen Tersedia',
+                'Draft dokumen hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah dibuat dan siap untuk diunduh.',
+                'success'
+            );
+
+            return redirect()->back()->with('success', 'Draft dokumen hasil fasilitasi berhasil dibuat. Tim dapat mengunduh dokumen dalam format Word atau PDF.');
+        } catch (\Exception $e) {
+            Log::error('Error generating hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal membuat draft dokumen: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Download dokumen Word hasil fasilitasi
+     * Dapat diakses oleh semua tim member dan admin
+     *
+     * @return BinaryFileResponse|RedirectResponse
+     */
+    public function downloadWord(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            if (! $this->isTimMember($permohonan) && ! $this->isAdmin() && ! $this->isKepalaBadan()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            if (! $hasilFasilitasi->draft_file || ! Storage::disk('dokumen')->exists($hasilFasilitasi->draft_file)) {
+                return redirect()->back()->with('error', 'File draft belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.docx';
+
+            return response()->download(
+                $this->documentService->getStoragePath($hasilFasilitasi->draft_file),
+                $filename,
+                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading Word hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh dokumen: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Download dokumen PDF hasil fasilitasi
+     * Dapat diakses oleh semua tim member dan admin
+     *
+     * @return BinaryFileResponse|RedirectResponse
+     */
+    public function downloadPdf(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check access: must be team member, admin, or kepala badan
+            if (! $this->isTimMember($permohonan) && ! $this->isAdmin() && ! $this->isKepalaBadan()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            // Check if draft exists
+            if (! $hasilFasilitasi->draft_file) {
+                return redirect()->back()->with('error', 'Draft dokumen belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            // Get PDF path (same as Word but with .pdf extension)
+            $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
+
+            // Check if PDF file exists
+            if (! Storage::disk('dokumen')->exists($pdfPath)) {
+                return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
+            }
+
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
+            return response()->download(
+                Storage::disk('dokumen')->path($pdfPath),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading PDF hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh PDF: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Preview dokumen PDF hasil fasilitasi di browser
+     * Dapat diakses oleh semua tim member dan admin
+     *
+     * @return Response|RedirectResponse
+     */
+    public function previewPdf(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check access: must be team member, admin, or kepala badan
+            if (! $this->isTimMember($permohonan) && ! $this->isAdmin() && ! $this->isKepalaBadan()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk dokumen ini');
+            }
+
+            // Check if draft exists
+            if (! $hasilFasilitasi->draft_file) {
+                return redirect()->back()->with('error', 'Draft dokumen belum tersedia. Silakan koordinator membuat draft terlebih dahulu.');
+            }
+
+            // Get PDF path (same as Word but with .pdf extension)
+            $pdfPath = str_replace(['.docx', '.doc'], '.pdf', $hasilFasilitasi->draft_file);
+
+            // Check if PDF file exists
+            if (! Storage::disk('dokumen')->exists($pdfPath)) {
+                return redirect()->back()->with('error', 'File PDF belum tersedia. Silakan koordinator membuat ulang draft.');
+            }
+
+            // Stream PDF file to browser (inline preview)
+            $filename = 'Hasil_Fasilitasi_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
+            return response()->file(
+                Storage::disk('dokumen')->path($pdfPath),
+                ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="'.$filename.'"']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error previewing PDF hasil fasilitasi: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menampilkan preview PDF: '.$e->getMessage());
+        }
+    }
+
+    // ============================================================
+    // DRAFT FINAL OPERATIONS
+    // ============================================================
+
+    /**
+     * Upload draft final PDF (admin/koordinator only)
+     * Draft final adalah file yang sudah dilengkapi kop surat secara manual
+     *
+     * @return RedirectResponse
+     */
+    public function uploadDraftFinal(Request $request, Permohonan $permohonan)
+    {
+        try {
+            // Only admin or koordinator can upload draft final
+            if (! $this->isAdmin() && ! $this->isKoordinator($permohonan)) {
+                return redirect()->back()->with('error', 'Hanya admin atau koordinator yang dapat mengupload draft final.');
+            }
+
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Validate file must be PDF
+            $request->validate([
+                'draft_final_file' => 'required|file|mimes:pdf|max:102400', // max 100MB
+            ], [
+                'draft_final_file.required' => 'File PDF wajib diupload',
+                'draft_final_file.mimes' => 'File harus berformat PDF',
+                'draft_final_file.max' => 'Ukuran file maksimal 100MB',
+            ]);
+
+            // Delete old draft final if exists
+            if ($hasilFasilitasi->draft_final_file && Storage::disk('dokumen')->exists($hasilFasilitasi->draft_final_file)) {
+                Storage::disk('dokumen')->delete($hasilFasilitasi->draft_final_file);
+            }
+
+            // Store new draft final
+            $file = $request->file('draft_final_file');
+            $filename = 'Hasil_Fasilitasi_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'_'.time().'.pdf';
+            $filepath = $file->store('hasil-fasilitasi/final', 'dokumen');
+
+            // Update hasil fasilitasi
+            $hasilFasilitasi->update([
+                'draft_final_file' => $filepath,
+                'updated_by' => Auth::id(),
+            ]);
+
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('draft_final_uploaded')
+                ->withProperties([
+                    'kabupaten_kota' => $permohonan->kabupatenKota->nama,
+                    'file_name' => $filename,
+                ])
+                ->log('Draft final PDF hasil fasilitasi berhasil diupload');
+
+            // Notifikasi ke semua anggota tim dan admin
+            $this->notifyTeamMembers(
+                $permohonan,
+                'Draft Final PDF Diupload',
+                'Draft final PDF hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah diupload dan siap untuk diajukan ke Kepala Badan.',
+                'success'
+            );
+
+            return redirect()->back()->with('success', 'Draft final PDF berhasil diupload. Dokumen siap untuk diajukan ke Kepala Badan.');
+        } catch (\Exception $e) {
+            Log::error('Error uploading draft final: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengupload draft final: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Download draft final PDF yang telah dilengkapi kop surat
+     * Dapat diakses oleh semua yang berwenang
+     *
+     * @return BinaryFileResponse|RedirectResponse
+     */
+    public function downloadDraftFinal(Permohonan $permohonan)
+    {
+        try {
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check if draft final exists
+            if (! $hasilFasilitasi->draft_final_file || ! Storage::disk('dokumen')->exists($hasilFasilitasi->draft_final_file)) {
+                return redirect()->back()->with('error', 'Draft final PDF belum tersedia.');
+            }
+
+            $filename = 'Hasil_Fasilitasi_Final_'.$permohonan->kabupatenKota->nama.'_'.date('Y').'.pdf';
+
+            return response()->download(
+                Storage::disk('dokumen')->path($hasilFasilitasi->draft_final_file),
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading draft final PDF: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengunduh draft final PDF: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Submit hasil fasilitasi ke Kepala Badan untuk persetujuan
+     * Hanya dapat dilakukan oleh admin setelah draft final diupload
+     *
+     * @return RedirectResponse
+     */
+    public function submitToKaban(Permohonan $permohonan)
+    {
+        try {
+            // Only admin can submit to kaban
+            if (! $this->isAdmin()) {
+                return redirect()->back()->with('error', 'Hanya admin yang dapat mengajukan dokumen ke Kepala Badan.');
+            }
+
+            $hasilFasilitasi = $permohonan->hasilFasilitasi;
+
+            if (! $hasilFasilitasi) {
+                return redirect()->back()->with('error', 'Hasil fasilitasi belum tersedia');
+            }
+
+            // Check if draft final exists
+            if (! $hasilFasilitasi->draft_final_file) {
+                return redirect()->back()->with('error', 'Draft final PDF belum diupload. Silakan upload terlebih dahulu.');
+            }
+
+            // Check if already submitted or approved
+            if (in_array($hasilFasilitasi->status_draft, ['menunggu_persetujuan_kaban', 'disetujui_kaban'])) {
+                return redirect()->back()->with('info', 'Dokumen sudah diajukan/disetujui oleh Kepala Badan.');
+            }
+
+            // Update status
+            $hasilFasilitasi->update([
+                'status_draft' => 'menunggu_persetujuan_kaban',
+                'tanggal_diajukan_kaban' => now(),
+                'updated_by' => Auth::id(),
+            ]);
+
+            activity()
+                ->performedOn($hasilFasilitasi)
+                ->causedBy(Auth::user())
+                ->event('submitted_to_kaban')
+                ->withProperties([
+                    'kabupaten_kota' => $permohonan->kabupatenKota->nama,
+                    'status' => 'menunggu_persetujuan_kaban',
+                ])
+                ->log('Hasil fasilitasi diajukan ke Kepala Badan untuk persetujuan');
+
+            // Notifikasi ke Kepala Badan (database + WhatsApp)
+            $this->notificationService->notifyDraftSubmittedToKaban($permohonan);
+
+            // Notifikasi ke Kepala Badan dan Admin (database only - legacy)
+            $this->notifyAdminAndKaban(
+                $permohonan,
+                'Dokumen Menunggu Persetujuan',
+                'Dokumen hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah diajukan dan menunggu persetujuan Kepala Badan.',
+                'warning'
+            );
+
+            // Notifikasi ke tim bahwa dokumen sudah diajukan
+            $this->notifyTeamMembers(
+                $permohonan,
+                'Dokumen Diajukan ke Kepala Badan',
+                'Dokumen hasil fasilitasi untuk '.$permohonan->kabupatenKota->nama.' telah diajukan ke Kepala Badan untuk persetujuan.',
+                'info'
+            );
+
+            return redirect()->back()->with('success', 'Dokumen hasil fasilitasi berhasil diajukan ke Kepala Badan untuk persetujuan.');
+        } catch (\Exception $e) {
+            Log::error('Error submitting to kaban: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengajukan dokumen: '.$e->getMessage());
+        }
+    }
+}

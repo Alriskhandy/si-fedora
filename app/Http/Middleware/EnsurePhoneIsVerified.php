@@ -6,19 +6,23 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Mewajibkan pengguna memverifikasi nomor WhatsApp sebelum mengakses fitur aplikasi.
+ *
+ * Route verifikasi telepon, logout, dan ubah profil tetap bisa diakses agar pengguna dapat
+ * mengisi atau memperbaiki nomornya. Dipasang sebagai alias `verified.phone` di bootstrap/app.php.
+ */
 class EnsurePhoneIsVerified
 {
     /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * Arahkan ke halaman verifikasi bila nomor WhatsApp belum diisi atau belum terverifikasi.
      */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
         // Skip check if user is not authenticated
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -41,7 +45,7 @@ class EnsurePhoneIsVerified
         }
 
         // Check if phone is verified
-        if (!$user->no_hp || !$user->phone_verified_at) {
+        if (! $user->no_hp || ! $user->phone_verified_at) {
             return redirect()->route('phone.verify')
                 ->with('error', 'Anda harus memverifikasi nomor WhatsApp terlebih dahulu.');
         }

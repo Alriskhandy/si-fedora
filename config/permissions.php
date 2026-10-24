@@ -47,7 +47,6 @@ return [
         'permohonan.view-assigned' => ['modul' => 'Permohonan', 'label' => 'Lihat permohonan yang ditugaskan', 'roles' => ['verifikator', 'fasilitator']],
         'permohonan.create' => ['modul' => 'Permohonan', 'label' => 'Buat, ajukan & hapus permohonan', 'roles' => ['pemohon']],
         'permohonan.upload-dokumen' => ['modul' => 'Permohonan', 'label' => 'Unggah dokumen permohonan', 'roles' => ['pemohon']],
-        'permohonan.assign' => ['modul' => 'Permohonan', 'label' => 'Tugaskan tim ke permohonan', 'roles' => ['admin_peran']],
         'permohonan.verify' => ['modul' => 'Permohonan', 'label' => 'Verifikasi kelengkapan dokumen', 'roles' => ['verifikator']],
         'tahapan.update-deadline' => ['modul' => 'Permohonan', 'label' => 'Ubah batas waktu tahapan', 'roles' => $adminSistem],
 

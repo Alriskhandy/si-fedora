@@ -1,39 +1,38 @@
 <?php
 
-use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\AdminPeranController;
-use App\Http\Controllers\ApprovalController;
-use App\Http\Controllers\ArsipController;
-use App\Http\Controllers\BerkasController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\HasilFasilitasiController;
-use App\Http\Controllers\JadwalFasilitasiController;
-use App\Http\Controllers\KabupatenKotaController;
-use App\Http\Controllers\LaporanVerifikasiController;
-use App\Http\Controllers\MasterBabController;
-use App\Http\Controllers\MasterJenisDokumenController;
-use App\Http\Controllers\MasterKelengkapanController;
-use App\Http\Controllers\MasterTahapanController;
-use App\Http\Controllers\MasterUrusanController;
-use App\Http\Controllers\ModulController;
-use App\Http\Controllers\NotifikasiController;
-use App\Http\Controllers\PelaksanaanFasilitasiController;
-use App\Http\Controllers\PenetapanJadwalController;
-use App\Http\Controllers\PenetapanPerdaController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\PermohonanController;
-use App\Http\Controllers\PermohonanDokumenController;
-use App\Http\Controllers\PerpanjanganWaktuController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\SuratPemberitahuanController;
-use App\Http\Controllers\SuratPenyampaianHasilController;
-use App\Http\Controllers\TimAssignmentController;
-use App\Http\Controllers\TindakLanjutController;
-use App\Http\Controllers\UndanganPelaksanaanController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ValidasiHasilController;
-use App\Http\Controllers\VerifikasiController;
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\ModulController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\TimAssignmentController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Fasilitasi\ApprovalController;
+use App\Http\Controllers\Fasilitasi\HasilFasilitasiController;
+use App\Http\Controllers\Fasilitasi\LaporanVerifikasiController;
+use App\Http\Controllers\Fasilitasi\PelaksanaanFasilitasiController;
+use App\Http\Controllers\Fasilitasi\PenetapanPerdaController;
+use App\Http\Controllers\Fasilitasi\PermohonanController;
+use App\Http\Controllers\Fasilitasi\PermohonanDokumenController;
+use App\Http\Controllers\Fasilitasi\PerpanjanganWaktuController;
+use App\Http\Controllers\Fasilitasi\SuratPenyampaianHasilController;
+use App\Http\Controllers\Fasilitasi\TindakLanjutController;
+use App\Http\Controllers\Fasilitasi\ValidasiHasilController;
+use App\Http\Controllers\Fasilitasi\VerifikasiController;
+use App\Http\Controllers\Jadwal\JadwalFasilitasiController;
+use App\Http\Controllers\Jadwal\PenetapanJadwalController;
+use App\Http\Controllers\Jadwal\SuratPemberitahuanController;
+use App\Http\Controllers\Jadwal\UndanganPelaksanaanController;
+use App\Http\Controllers\MasterData\KabupatenKotaController;
+use App\Http\Controllers\MasterData\MasterBabController;
+use App\Http\Controllers\MasterData\MasterJenisDokumenController;
+use App\Http\Controllers\MasterData\MasterKelengkapanController;
+use App\Http\Controllers\MasterData\MasterTahapanController;
+use App\Http\Controllers\MasterData\MasterUrusanController;
+use App\Http\Controllers\Umum\ArsipController;
+use App\Http\Controllers\Umum\BerkasController;
+use App\Http\Controllers\Umum\DashboardController;
+use App\Http\Controllers\Umum\NotifikasiController;
+use App\Http\Controllers\Umum\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -235,7 +234,6 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
 
     // PermohonanDokumenController (Pemohon only)
     Route::middleware(['can:permohonan.upload-dokumen'])->group(function () {
-        Route::resource('permohonan-dokumen', PermohonanDokumenController::class)->parameters(['permohonan-dokumen' => 'permohonanDokumen'])->only(['store', 'update', 'destroy']);
         Route::put('/permohonan-dokumen/{permohonanDokumen}/upload', [PermohonanDokumenController::class, 'upload'])->name('permohonan-dokumen.upload');
         Route::delete('/permohonan-dokumen/{permohonanDokumen}/file', [PermohonanDokumenController::class, 'removeFile'])->name('permohonan-dokumen.remove-file');
     });
@@ -252,21 +250,12 @@ Route::middleware(['auth', 'verified.phone'])->group(function () {
         Route::post('/{permohonan}/complete', 'completeTahapan')->name('complete')->middleware('can:pelaksanaan.complete');
     });
 
-    // AdminPeranController (Admin only - Assignment Tim)
-    Route::middleware(['can:permohonan.assign'])->prefix('admin-peran')->name('admin-peran.')->controller(AdminPeranController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/{permohonan}/assign', 'assign')->name('assign');
-        Route::post('/{permohonan}/unassign', 'unassign')->name('unassign');
-    });
-
     // ============================================================
     // VERIFIKASI & VALIDASI
     // ============================================================
 
     // VerifikasiController (Verifikator only)
     Route::middleware(['can:permohonan.verify'])->prefix('verifikasi')->name('verifikasi.')->controller(VerifikasiController::class)->group(function () {
-        Route::post('/{permohonan}/verifikasi', 'verifikasi')->name('verifikasi');
-        Route::post('/{permohonan}/verifikasi-dokumen', 'verifikasiDokumen')->name('verifikasi-dokumen');
         Route::post('/{permohonan}/submit', 'submit')->name('submit');
         Route::get('/{permohonan}/lembar-verifikasi', 'generateLembarVerifikasi')->name('lembar-verifikasi');
     });

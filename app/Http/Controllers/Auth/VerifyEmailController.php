@@ -7,10 +7,15 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 
+/**
+ * Tandai email terverifikasi dari tautan bertanda tangan (bawaan Breeze).
+ *
+ * Akses: pengguna login, URL signed.
+ */
 class VerifyEmailController extends Controller
 {
     /**
-     * Mark the authenticated user's email address as verified.
+     * Tandai email pengguna terverifikasi.
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {

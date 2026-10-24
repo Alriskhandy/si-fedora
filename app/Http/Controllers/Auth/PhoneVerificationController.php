@@ -3,30 +3,40 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\OtpCode;
+use App\Models\User;
+use App\Services\FonteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
-use App\Models\User;
-use App\Models\OtpCode;
-use App\Services\FonteService;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 
+/**
+ * Verifikasi nomor WhatsApp dengan OTP via Fonnte. Wajib sebelum mengakses fitur lain (middleware EnsurePhoneIsVerified).
+ *
+ * Akses: pengguna login.
+ * View: resources/views/auth
+ */
 class PhoneVerificationController extends Controller
 {
     protected $fonteService;
 
+    /**
+     * Inject layanan WhatsApp Fonnte.
+     */
     public function __construct(FonteService $fonteService)
     {
         $this->fonteService = $fonteService;
     }
 
     /**
-     * Show the phone verification form
+     * Form isi nomor WhatsApp.
      */
     public function showPhoneForm()
     {
         $user = Auth::user();
-        
+
         // Redirect if phone is already verified
         if ($user->no_hp && $user->phone_verified_at) {
             return redirect()->route('dashboard')
@@ -37,7 +47,7 @@ class PhoneVerificationController extends Controller
     }
 
     /**
-     * Send OTP to WhatsApp
+     * Simpan nomor WhatsApp dan kirim kode OTP lewat Fonnte.
      */
     public function sendOtp(Request $request)
     {
@@ -51,36 +61,38 @@ class PhoneVerificationController extends Controller
 
         $user = Auth::user();
         $phone = $request->phone;
-        
+
         // Pastikan nomor dimulai dengan 62
-        if (!str_starts_with($phone, '62')) {
-            $phone = '62' . ltrim($phone, '0');
+        if (! str_starts_with($phone, '62')) {
+            $phone = '62'.ltrim($phone, '0');
         }
 
         // Generate OTP dan simpan ke database
         $otpData = OtpCode::generate($phone, $user->id);
         $otp = $otpData['code'];
-        
+
         // Simpan phone ke session untuk keperluan form OTP
         Session::put('otp_phone', $phone);
 
         // Send OTP via WhatsApp using Fonnte
         try {
             $result = $this->fonteService->sendOTP($phone, $otp);
-            
+
             if (isset($result['success']) && $result['success'] === false) {
-                Log::error("Failed to send OTP via Fonnte: " . ($result['error'] ?? 'Unknown error'));
+                Log::error('Failed to send OTP via Fonnte: '.($result['error'] ?? 'Unknown error'));
+
                 return back()->with('error', 'Gagal mengirim kode OTP. Silakan coba lagi.');
             }
-            
+
             Log::info("OTP sent successfully to {$phone} for user {$user->name} ({$user->email})");
         } catch (\Exception $e) {
-            Log::error("Failed to send OTP: " . $e->getMessage());
+            Log::error('Failed to send OTP: '.$e->getMessage());
+
             return back()->with('error', 'Gagal mengirim kode OTP. Silakan coba lagi.');
         }
 
         // Mask phone for display
-        $maskedPhone = '+62 ' . substr($phone, 2, 3) . '***' . substr($phone, -3);
+        $maskedPhone = '+62 '.substr($phone, 2, 3).'***'.substr($phone, -3);
 
         return redirect()->route('phone.verify.otp.form')
             ->with('phone_masked', $maskedPhone)
@@ -88,12 +100,12 @@ class PhoneVerificationController extends Controller
     }
 
     /**
-     * Show the OTP verification form
+     * Form masukkan kode OTP.
      */
     public function showOtpForm()
     {
         // Check if phone session exists
-        if (!Session::has('otp_phone')) {
+        if (! Session::has('otp_phone')) {
             return redirect()->route('phone.verify')
                 ->with('error', 'Silakan masukkan nomor WhatsApp terlebih dahulu');
         }
@@ -105,8 +117,9 @@ class PhoneVerificationController extends Controller
             ->valid()
             ->exists();
 
-        if (!$validOtp) {
+        if (! $validOtp) {
             Session::forget('otp_phone');
+
             return redirect()->route('phone.verify')
                 ->with('error', 'Kode OTP telah kadaluarsa. Silakan kirim ulang.');
         }
@@ -115,7 +128,7 @@ class PhoneVerificationController extends Controller
     }
 
     /**
-     * Verify OTP
+     * Periksa kode OTP; bila benar, nomor ditandai terverifikasi (phone_verified_at).
      */
     public function verifyOtp(Request $request)
     {
@@ -128,37 +141,39 @@ class PhoneVerificationController extends Controller
                 'otp.numeric' => 'Kode OTP harus berupa angka',
                 'otp.digits' => 'Kode OTP harus 6 digit',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->validator->errors()->first()
+                    'message' => $e->validator->errors()->first(),
                 ], 422);
             }
             throw $e;
         }
 
         // Check if phone session exists
-        if (!Session::has('otp_phone')) {
+        if (! Session::has('otp_phone')) {
             if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Sesi telah berakhir. Silakan kirim ulang kode OTP.'
+                    'message' => 'Sesi telah berakhir. Silakan kirim ulang kode OTP.',
                 ], 400);
             }
+
             return back()->with('error', 'Sesi telah berakhir. Silakan kirim ulang kode OTP.');
         }
 
         $phone = Session::get('otp_phone');
 
         // Verify OTP using database
-        if (!OtpCode::verify($phone, $request->otp)) {
+        if (! OtpCode::verify($phone, $request->otp)) {
             if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode OTP yang Anda masukkan salah atau sudah kadaluarsa.'
+                    'message' => 'Kode OTP yang Anda masukkan salah atau sudah kadaluarsa.',
                 ], 422);
             }
+
             return back()->with('error', 'Kode OTP yang Anda masukkan salah atau sudah kadaluarsa. Silakan coba lagi.');
         }
 
@@ -178,7 +193,7 @@ class PhoneVerificationController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Nomor WhatsApp berhasil diverifikasi!',
-                'redirect' => route('dashboard')
+                'redirect' => route('dashboard'),
             ]);
         }
 
@@ -187,15 +202,15 @@ class PhoneVerificationController extends Controller
     }
 
     /**
-     * Resend OTP
+     * Kirim ulang kode OTP.
      */
     public function resendOtp(Request $request)
     {
         // Check if phone session exists
-        if (!Session::has('otp_phone')) {
+        if (! Session::has('otp_phone')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sesi telah berakhir. Silakan mulai dari awal.'
+                'message' => 'Sesi telah berakhir. Silakan mulai dari awal.',
             ], 400);
         }
 
@@ -209,26 +224,28 @@ class PhoneVerificationController extends Controller
         // Send OTP via WhatsApp using Fonnte
         try {
             $result = $this->fonteService->sendOTP($phone, $otp);
-            
+
             if (isset($result['success']) && $result['success'] === false) {
-                Log::error("Failed to resend OTP via Fonnte: " . ($result['error'] ?? 'Unknown error'));
+                Log::error('Failed to resend OTP via Fonnte: '.($result['error'] ?? 'Unknown error'));
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal mengirim kode OTP. Silakan coba lagi.'
+                    'message' => 'Gagal mengirim kode OTP. Silakan coba lagi.',
                 ], 500);
             }
-            
+
             Log::info("OTP resent successfully to {$phone} for user {$user->name} ({$user->email})");
-            
+
             return response()->json([
                 'success' => true,
-                'message' => 'Kode OTP baru telah dikirim'
+                'message' => 'Kode OTP baru telah dikirim',
             ]);
         } catch (\Exception $e) {
-            Log::error("Failed to resend OTP: " . $e->getMessage());
+            Log::error('Failed to resend OTP: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengirim kode OTP. Silakan coba lagi.'
+                'message' => 'Gagal mengirim kode OTP. Silakan coba lagi.',
             ], 500);
         }
     }
