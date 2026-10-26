@@ -205,6 +205,46 @@
             </div>
         @endif
 
+        <!-- Ringkasan masukan hasil fasilitasi untuk Kepala Badan (read-only) -->
+        @if ($permohonan->hasilFasilitasi && auth()->user()->can('approval.approve'))
+            @php
+                $hasil = $permohonan->hasilFasilitasi->loadMissing(['hasilSistematika', 'hasilForm', 'hasilRekomendasi', 'hasilUrusan.user']);
+                $ringkasanMasukan = [
+                    'Sistematika & Rancangan Akhir' => $hasil->hasilSistematika->count(),
+                    'Konsistensi & Keselarasan' => $hasil->hasilForm->count(),
+                    'Urusan Pemerintahan' => $hasil->hasilUrusan->count(),
+                    'Rekomendasi' => $hasil->hasilRekomendasi->count(),
+                ];
+                $masukanOpd = $hasil->hasilUrusan->filter(fn ($item) => $item->user?->opd_id)->count();
+            @endphp
+            <div class="card border-0 shadow-sm mb-4" id="ringkasan-masukan">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div>
+                            <h6 class="fw-bold mb-1"><i class='bx bx-message-square-detail me-1'></i>Masukan Hasil Fasilitasi</h6>
+                            <p class="text-muted small mb-3">Masukan Tim Fasilitasi dan OPD yang tercatat sejauh ini.</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach ($ringkasanMasukan as $bagian => $jumlah)
+                                    <span class="badge bg-label-primary px-3 py-2">{{ $bagian }}: {{ $jumlah }}</span>
+                                @endforeach
+                                <span class="badge bg-label-info px-3 py-2">Dari OPD: {{ $masukanOpd }}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}" class="btn btn-primary shadow-sm">
+                                <i class='bx bx-show me-1'></i>Lihat Masukan
+                            </a>
+                            @if ($hasil->status_draft === 'menunggu_persetujuan_kaban' && $hasil->draft_final_file)
+                                <a href="{{ route('approval.show', $permohonan) }}" class="btn btn-success shadow-sm">
+                                    <i class='bx bx-check-circle me-1'></i>Review & Setujui
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Info untuk Pemohon, Kaban, dan Auditor saat Proses Input Hasil Sedang Berlangsung -->
         @if (
             ($isPemohon || $isKabanOrAuditor) &&

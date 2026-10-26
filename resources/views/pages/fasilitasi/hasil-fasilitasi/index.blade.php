@@ -89,7 +89,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if (auth()->user()->can('hasil-fasilitasi.input'))
+                                        @if (auth()->user()->can('hasil-fasilitasi.input-urusan'))
                                             <a href="{{ route('hasil-fasilitasi.create', $item) }}"
                                                 class="btn btn-sm btn-primary">
                                                 <i class="bx bx-edit"></i>

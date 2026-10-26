@@ -23,6 +23,69 @@
                 <i class="bx bx-plus me-1"></i> Tambah OPD
             </a>
         </div>
+        <div class="card-body border-bottom">
+            <form method="GET" action="{{ route('opd.index') }}" class="row g-2 align-items-end">
+                <div class="col-12 col-lg-4">
+                    <label class="form-label small mb-1" for="q">Cari</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                        <input type="search" class="form-control" id="q" name="q" value="{{ $filter['q'] }}"
+                            placeholder="Kode, nama, atau singkatan OPD">
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small mb-1" for="jenis">Jenis</label>
+                    <select class="form-select" id="jenis" name="jenis">
+                        <option value="">Semua</option>
+                        @foreach (App\Models\Opd::JENIS_OPD as $jenis)
+                            <option value="{{ $jenis }}" @selected($filter['jenis'] === $jenis)>{{ $jenis }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small mb-1" for="rumpun">Rumpun Urusan</label>
+                    <select class="form-select" id="rumpun" name="rumpun">
+                        <option value="">Semua</option>
+                        @foreach (App\Models\MasterUrusan::rumpunList() as $rumpun)
+                            <option value="{{ $rumpun }}" @selected($filter['rumpun'] === $rumpun)>{{ $rumpun }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-lg-1">
+                    <label class="form-label small mb-1" for="status">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Semua</option>
+                        @foreach (App\Models\Opd::STATUS as $status)
+                            <option value="{{ $status }}" @selected($filter['status'] === $status)>{{ $status }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small mb-1" for="urusan">Urusan Masukan</label>
+                    <select class="form-select" id="urusan" name="urusan">
+                        <option value="">Semua</option>
+                        <option value="ada" @selected($filter['urusan'] === 'ada')>Sudah diatur</option>
+                        <option value="belum" @selected($filter['urusan'] === 'belum')>Belum diatur</option>
+                    </select>
+                </div>
+                <div class="col-12 col-lg-1 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill" title="Terapkan filter">
+                        <i class="bx bx-filter-alt"></i><span class="d-lg-none ms-1">Terapkan</span>
+                    </button>
+                    @if (array_filter($filter))
+                        <a href="{{ route('opd.index') }}" class="btn btn-outline-secondary flex-fill" title="Reset filter">
+                            <i class="bx bx-reset"></i><span class="d-lg-none ms-1">Reset</span>
+                        </a>
+                    @endif
+                </div>
+            </form>
+            <div class="small text-muted mt-2">
+                Menampilkan {{ $opd->total() }} dari {{ $totalOpd }} OPD
+                @if (array_filter($filter))
+                    sesuai filter
+                @endif
+            </div>
+        </div>
         <div class="table-responsive">
             <table class="table table-striped mb-0">
                 <thead>
@@ -45,7 +108,7 @@
                                 <small class="d-block text-muted">
                                     {{ $item->singkatan }}
                                     @if ($item->induk_opd)
-                                        · induk {{ $item->induk_opd }}
+                                        · induk {{ $item->induk?->singkatan ?? $item->induk_opd }}
                                     @endif
                                 </small>
                             </td>
@@ -55,9 +118,9 @@
                             </td>
                             <td>
                                 @forelse ($item->urusan as $urusan)
-                                    <span class="badge bg-label-primary mb-1">{{ $urusan->nama_urusan }}</span>
+                                    <span class="badge bg-label-primary mb-1" title="{{ $urusan->nama_urusan }}">{{ $urusan->kode_urusan }} {{ $urusan->nama_urusan }}</span>
                                 @empty
-                                    <span class="text-muted">—</span>
+                                    <span class="badge bg-label-warning">Belum diatur</span>
                                 @endforelse
                             </td>
                             <td>{{ $item->users_count }}</td>
@@ -66,13 +129,13 @@
                                 <small class="d-block text-muted">{{ $item->tanggal_update?->format('d/m/Y') }}</small>
                             </td>
                             <td class="text-end text-nowrap">
-                                <a href="{{ route('opd.edit', $item) }}" class="btn btn-sm btn-primary">
+                                <a href="{{ route('opd.edit', $item) }}" class="btn btn-sm btn-primary" title="Ubah">
                                     <i class="bx bx-edit-alt"></i>
                                 </a>
                                 <form action="{{ route('opd.destroy', $item) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus"
                                         onclick="return confirm('Yakin ingin menghapus OPD ini?')">
                                         <i class="bx bx-trash"></i>
                                     </button>
@@ -81,12 +144,19 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada OPD</td>
+                            <td colspan="7" class="text-center text-muted">
+                                {{ array_filter($filter) ? 'Tidak ada OPD yang sesuai filter.' : 'Belum ada OPD.' }}
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+        @if ($opd->hasPages())
+            <div class="card-footer">
+                {{ $opd->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

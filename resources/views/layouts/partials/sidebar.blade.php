@@ -105,6 +105,12 @@
                         <div data-i18n="Approval">Hasil Fasilitasi</div>
                     </a>
                 </li>
+                <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
+                    <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-message-square-detail"></i>
+                        <div data-i18n="Masukan Hasil">Masukan Hasil Fasilitasi</div>
+                    </a>
+                </li>
             @endcan
             @can('penetapan-jadwal.manage')
                 <li class="menu-item {{ request()->routeIs('penetapan-jadwal.*') ? 'active' : '' }}">

@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OpdRequest;
 use App\Models\MasterUrusan;
 use App\Models\Opd;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -20,13 +21,38 @@ use Illuminate\View\View;
 class OpdController extends Controller
 {
     /**
-     * Daftar OPD.
+     * Daftar OPD dengan pencarian (kode, nama, singkatan) dan filter jenis, rumpun, status,
+     * serta ada/tidaknya urusan masukan. Nilai filter di luar daftar referensi diabaikan.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $opd = Opd::with('urusan:id,nama_urusan')->withCount('users')->orderBy('kode_opd')->get();
+        $filter = [
+            'q' => trim((string) $request->query('q')),
+            'jenis' => in_array($request->query('jenis'), Opd::JENIS_OPD, true) ? $request->query('jenis') : null,
+            'rumpun' => in_array($request->query('rumpun'), MasterUrusan::rumpunList(), true) ? $request->query('rumpun') : null,
+            'status' => in_array($request->query('status'), Opd::STATUS, true) ? $request->query('status') : null,
+            'urusan' => in_array($request->query('urusan'), ['ada', 'belum'], true) ? $request->query('urusan') : null,
+        ];
 
-        return view('pages.master-data.opd.index', compact('opd'));
+        $opd = Opd::query()
+            ->with(['urusan:id,kode_urusan,nama_urusan', 'induk:id,kode_opd,singkatan'])
+            ->withCount('users')
+            ->when($filter['q'] !== '', fn (Builder $query) => $query->where(fn (Builder $q) => $q
+                ->whereLike('kode_opd', "%{$filter['q']}%")
+                ->orWhereLike('nama_opd', "%{$filter['q']}%")
+                ->orWhereLike('singkatan', "%{$filter['q']}%")))
+            ->when($filter['jenis'], fn (Builder $query, string $jenis) => $query->where('jenis_opd', $jenis))
+            ->when($filter['rumpun'], fn (Builder $query, string $rumpun) => $query->where('rumpun_urusan', $rumpun))
+            ->when($filter['status'], fn (Builder $query, string $status) => $query->where('status', $status))
+            ->when($filter['urusan'] === 'ada', fn (Builder $query) => $query->has('urusan'))
+            ->when($filter['urusan'] === 'belum', fn (Builder $query) => $query->doesntHave('urusan'))
+            ->orderBy('kode_opd')
+            ->paginate(15)
+            ->withQueryString();
+
+        $totalOpd = Opd::count();
+
+        return view('pages.master-data.opd.index', compact('opd', 'filter', 'totalOpd'));
     }
 
     /**
@@ -34,7 +60,7 @@ class OpdController extends Controller
      */
     public function create(): View
     {
-        return view('pages.master-data.opd.create', ['urusanList' => $this->urusanList()]);
+        return view('pages.master-data.opd.create', ['opd' => null]);
     }
 
     /**
@@ -42,8 +68,7 @@ class OpdController extends Controller
      */
     public function store(OpdRequest $request): RedirectResponse
     {
-        $opd = Opd::create($request->safe()->except('urusan'));
-        $opd->urusan()->sync($request->validated('urusan', []));
+        Opd::create($request->validated());
 
         return redirect()->route('opd.index')->with('success', 'OPD berhasil ditambahkan.');
     }
@@ -53,7 +78,7 @@ class OpdController extends Controller
      */
     public function edit(Opd $opd): View
     {
-        return view('pages.master-data.opd.edit', ['opd' => $opd, 'urusanList' => $this->urusanList()]);
+        return view('pages.master-data.opd.edit', ['opd' => $opd->load('urusan')]);
     }
 
     /**
@@ -61,8 +86,7 @@ class OpdController extends Controller
      */
     public function update(OpdRequest $request, Opd $opd): RedirectResponse
     {
-        $opd->update($request->safe()->except('urusan'));
-        $opd->urusan()->sync($request->validated('urusan', []));
+        $opd->update($request->validated());
 
         return redirect()->route('opd.index')->with('success', 'OPD berhasil diperbarui.');
     }
@@ -79,15 +103,5 @@ class OpdController extends Controller
         $opd->delete();
 
         return redirect()->route('opd.index')->with('success', 'OPD berhasil dihapus.');
-    }
-
-    /**
-     * Daftar urusan untuk pilihan bidang OPD.
-     *
-     * @return Collection<int, MasterUrusan>
-     */
-    private function urusanList()
-    {
-        return MasterUrusan::untukHasilFasilitasi()->orderBy('kode_urusan')->get(['id', 'kode_urusan', 'nama_urusan']);
     }
 }

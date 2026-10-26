@@ -35,7 +35,7 @@ class HasilFasilitasiOpdTest extends TestCase
         $this->urusanBidang = MasterUrusan::factory()->create(['kode_urusan' => '1.02', 'nama_urusan' => 'Kesehatan']);
         $this->urusanLain = MasterUrusan::factory()->create(['kode_urusan' => '3.27', 'nama_urusan' => 'Pertanian Lahan Kering']);
 
-        $opd = Opd::factory()->create(['nama_opd' => 'Dinas Kesehatan Provinsi']);
+        $opd = Opd::factory()->create(['nama_opd' => 'Dinas Kesehatan Provinsi', 'singkatan' => 'DINKES']);
         $opd->urusan()->attach($this->urusanBidang);
         $this->opdUser = User::factory()->withRole('opd')->create(['opd_id' => $opd->id]);
     }
@@ -183,7 +183,7 @@ class HasilFasilitasiOpdTest extends TestCase
         $this->actingAs($kaban)->get(route('approval.show', $this->permohonan))
             ->assertOk()
             ->assertSee('Masukan Urusan Pemerintahan')
-            ->assertSee('OPD: Dinas Kesehatan Provinsi')
+            ->assertSee('DINKES')
             ->assertSee('Perkuat target SPM.');
     }
 

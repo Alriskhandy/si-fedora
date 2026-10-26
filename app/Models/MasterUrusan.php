@@ -82,6 +82,8 @@ class MasterUrusan extends Model
             $urusan->tampil_hasil_fasilitasi ??= in_array((int) substr((string) $urusan->kode_urusan, 0, 1), self::KELOMPOK_HASIL_FASILITASI, true);
         });
 
+        static::saved(fn (MasterUrusan $urusan) => self::sinkronkanOpdBila($urusan));
+
         static::saving(function (MasterUrusan $urusan): void {
             $kelompok = self::KELOMPOK[(int) substr((string) $urusan->kode_urusan, 0, 1)] ?? null;
 
@@ -99,6 +101,23 @@ class MasterUrusan extends Model
                 $urusan->opd_pengampu = $kodes === [] ? null : collect($kodes)->map(fn (string $kode) => $singkatan[$kode] ?? $kode)->implode('; ');
             }
         });
+    }
+
+    /**
+     * Urusan baru atau kode yang berubah: sinkronkan ulang urusan masukan semua OPD yang mengampu kode itu.
+     */
+    protected static function sinkronkanOpdBila(MasterUrusan $urusan): void
+    {
+        if (! $urusan->wasRecentlyCreated && ! $urusan->wasChanged('kode_urusan')) {
+            return;
+        }
+
+        $kodes = array_filter([$urusan->kode_urusan, $urusan->getOriginal('kode_urusan')]);
+
+        Opd::query()
+            ->where(fn ($query) => collect($kodes)->each(fn (string $kode) => $query->orWhereLike('kode_urusan', "%{$kode}%")))
+            ->get()
+            ->each->sinkronkanUrusan();
     }
 
     /**

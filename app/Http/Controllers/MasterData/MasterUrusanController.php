@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MasterUrusanRequest;
 use App\Models\HasilFasilitasiUrusan;
 use App\Models\MasterUrusan;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,16 +21,38 @@ use Illuminate\View\View;
 class MasterUrusanController extends Controller
 {
     /**
-     * Daftar urusan per kelompok, urut kode urusan.
+     * Daftar urusan per kelompok, urut kode urusan, dengan pencarian (kode, nama, OPD pengampu) dan
+     * filter kelompok, status, tampil di hasil fasilitasi, serta ada/tidaknya OPD pengampu.
+     * Nilai filter di luar daftar referensi diabaikan.
      */
     public function index(Request $request): View
     {
-        $urusan = MasterUrusan::query()
-            ->when($request->filled('kelompok'), fn ($query) => $query->where('kode_kelompok', $request->kelompok))
-            ->orderBy('kode_urusan')
-            ->get();
+        $filter = [
+            'q' => trim((string) $request->query('q')),
+            'kelompok' => array_key_exists((int) $request->query('kelompok'), MasterUrusan::KELOMPOK) ? (string) (int) $request->query('kelompok') : null,
+            'status' => in_array($request->query('status'), MasterUrusan::STATUS, true) ? $request->query('status') : null,
+            'hasil' => in_array($request->query('hasil'), ['tampil', 'tidak'], true) ? $request->query('hasil') : null,
+            'pengampu' => in_array($request->query('pengampu'), ['ada', 'belum'], true) ? $request->query('pengampu') : null,
+        ];
 
-        return view('pages.master-data.urusan.index', compact('urusan'));
+        $urusan = MasterUrusan::query()
+            ->when($filter['q'] !== '', fn (Builder $query) => $query->where(fn (Builder $q) => $q
+                ->whereLike('kode_urusan', "%{$filter['q']}%")
+                ->orWhereLike('nama_urusan', "%{$filter['q']}%")
+                ->orWhereLike('kode_opd_pengampu', "%{$filter['q']}%")
+                ->orWhereLike('opd_pengampu', "%{$filter['q']}%")))
+            ->when($filter['kelompok'], fn (Builder $query, string $kelompok) => $query->where('kode_kelompok', $kelompok))
+            ->when($filter['status'], fn (Builder $query, string $status) => $query->where('status', $status))
+            ->when($filter['hasil'], fn (Builder $query, string $hasil) => $query->where('tampil_hasil_fasilitasi', $hasil === 'tampil'))
+            ->when($filter['pengampu'] === 'ada', fn (Builder $query) => $query->whereNotNull('kode_opd_pengampu'))
+            ->when($filter['pengampu'] === 'belum', fn (Builder $query) => $query->whereNull('kode_opd_pengampu'))
+            ->orderBy('kode_urusan')
+            ->paginate(15)
+            ->withQueryString();
+
+        $totalUrusan = MasterUrusan::count();
+
+        return view('pages.master-data.urusan.index', compact('urusan', 'filter', 'totalUrusan'));
     }
 
     /**

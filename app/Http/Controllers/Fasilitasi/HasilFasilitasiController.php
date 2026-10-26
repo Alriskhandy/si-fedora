@@ -296,8 +296,8 @@ class HasilFasilitasiController extends Controller
     {
         $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi']);
 
-        // Admin dan anggota tim terbatas urusan (tanpa penugasan) melihat semua permohonan
-        if (! $this->isAdmin() && ! $this->isUrusanOnlyMember()) {
+        // Pemegang permohonan.view-all (Admin, Kaban, OPD) melihat semua; tim lain sesuai penugasan
+        if (! Auth::user()->can('permohonan.view-all')) {
             // Get user's tim assignments (fasilitator or verifikator)
             $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
                 ->whereIn('role_type', ['fasilitator', 'verifikator'])
@@ -528,9 +528,9 @@ class HasilFasilitasiController extends Controller
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
         if (! $hasilFasilitasi) {
-            // Jika belum ada hasil, redirect verifikator dan pemohon ke halaman tahapan hasil
-            // Mereka akan melihat info "sedang dalam proses"
-            if (($isVerifikator || $isPemohon) && ! $isTimMember) {
+            // Belum ada hasil: selain anggota tim (verifikator, pemohon, Kaban) diarahkan ke halaman tahapan hasil
+            // yang menampilkan info "sedang dalam proses"
+            if (! $isTimMember) {
                 return redirect()->route('permohonan.tahapan.hasil', $permohonan)
                     ->with('info', 'Hasil fasilitasi sedang dalam proses penyusunan oleh tim fasilitator.');
             }

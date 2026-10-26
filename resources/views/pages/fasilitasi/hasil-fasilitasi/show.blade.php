@@ -358,7 +358,8 @@
                     </div>
                     <div class="card-body">
                         @php
-                            $showExtendedTabs = (bool) ($isAdmin ?? false);
+                            // Konsistensi & Keselarasan dan Rekomendasi: Admin dan Kepala Badan
+                            $showExtendedTabs = ($isAdmin ?? false) || auth()->user()->can('approval.approve');
                         @endphp
                         <ul class="nav nav-tabs" role="tablist">
                             <li class="nav-item">

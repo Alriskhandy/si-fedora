@@ -11,6 +11,9 @@
             <span class="badge bg-label-primary ms-1">{{ $hasilFasilitasi->hasilUrusan->count() }}</span>
             <span class="badge bg-label-info ms-1">{{ $jumlahOpd }} dari OPD</span>
         </h5>
+        <a href="{{ route('hasil-fasilitasi.show', $hasilFasilitasi->permohonan_id) }}" class="btn btn-sm btn-outline-primary ms-auto">
+            <i class="bx bx-show me-1"></i>Lihat semua bagian masukan
+        </a>
         <div class="btn-group btn-group-sm" role="group" aria-label="Filter masukan">
             <button type="button" class="btn btn-outline-primary active js-filter-masukan" data-filter="semua">Semua</button>
             <button type="button" class="btn btn-outline-primary js-filter-masukan" data-filter="opd">Hanya OPD</button>

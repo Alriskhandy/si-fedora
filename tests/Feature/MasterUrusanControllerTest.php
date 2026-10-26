@@ -122,23 +122,59 @@ class MasterUrusanControllerTest extends TestCase
             ->assertDontSee('Pendidikan');
     }
 
+    public function test_search_matches_code_name_or_supporting_opd(): void
+    {
+        Opd::factory()->create(['kode_opd' => '82.05.02', 'singkatan' => 'DINKES']);
+        MasterUrusan::factory()->create(['kode_urusan' => '1.01', 'nama_urusan' => 'Pendidikan']);
+        MasterUrusan::factory()->create(['kode_urusan' => '1.02', 'nama_urusan' => 'Kesehatan', 'kode_opd_pengampu' => '82.05.02']);
+
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['q' => 'pendidikan']))
+            ->assertOk()->assertSee('Pendidikan')->assertDontSee('Kesehatan');
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['q' => 'dinkes']))
+            ->assertOk()->assertSee('Kesehatan')->assertDontSee('Pendidikan');
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['q' => '1.01']))
+            ->assertOk()->assertSee('Pendidikan')->assertDontSee('Kesehatan');
+    }
+
+    public function test_filters_by_status_hasil_fasilitasi_flag_and_supporting_opd(): void
+    {
+        Opd::factory()->create(['kode_opd' => '82.05.02']);
+        MasterUrusan::factory()->create(['nama_urusan' => 'Urusan Berpengampu', 'kode_opd_pengampu' => '82.05.02']);
+        MasterUrusan::factory()->create(['nama_urusan' => 'Urusan Tersembunyi', 'tampil_hasil_fasilitasi' => false]);
+        MasterUrusan::factory()->inactive()->create(['nama_urusan' => 'Urusan Nonaktif']);
+
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['status' => 'Tidak Aktif']))
+            ->assertOk()->assertSee('Urusan Nonaktif')->assertDontSee('Urusan Berpengampu');
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['hasil' => 'tidak']))
+            ->assertOk()->assertSee('Urusan Tersembunyi')->assertDontSee('Urusan Berpengampu');
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['pengampu' => 'ada']))
+            ->assertOk()->assertSee('Urusan Berpengampu')->assertDontSee('Urusan Tersembunyi');
+    }
+
+    public function test_unknown_filter_value_is_ignored(): void
+    {
+        MasterUrusan::factory()->create(['nama_urusan' => 'Pendidikan']);
+
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['kelompok' => '9', 'hasil' => 'semua']))
+            ->assertOk()->assertSee('Pendidikan');
+    }
+
+    public function test_pagination_keeps_filters(): void
+    {
+        MasterUrusan::factory()->count(16)->create(['status' => 'Aktif']);
+
+        $this->actingAs($this->admin)->get(route('master-urusan.index', ['status' => 'Aktif']))
+            ->assertOk()
+            ->assertSee('Menampilkan 16 dari 16 urusan')
+            ->assertSee('status=Aktif&amp;page=2', false);
+    }
+
     public function test_forms_render(): void
     {
         $urusan = MasterUrusan::factory()->create(['kode_urusan' => '1.01']);
 
         $this->actingAs($this->admin)->get(route('master-urusan.create'))->assertOk()->assertSee('Kode OPD Pengampu');
         $this->actingAs($this->admin)->get(route('master-urusan.edit', $urusan))->assertOk()->assertSee('1.01');
-    }
-
-    public function test_inactive_urusan_is_not_offered_for_opd_input_scope(): void
-    {
-        MasterUrusan::factory()->create(['nama_urusan' => 'Urusan Aktif']);
-        MasterUrusan::factory()->inactive()->create(['nama_urusan' => 'Urusan Lama']);
-
-        $this->actingAs($this->admin)->get(route('opd.create'))
-            ->assertOk()
-            ->assertSee('Urusan Aktif')
-            ->assertDontSee('Urusan Lama');
     }
 
     public function test_new_urusan_defaults_hasil_fasilitasi_flag_by_kelompok(): void
@@ -148,6 +184,19 @@ class MasterUrusanControllerTest extends TestCase
 
         $this->assertTrue($wajib->tampil_hasil_fasilitasi);
         $this->assertFalse(MasterUrusan::where('kode_urusan', '5.01')->sole()->tampil_hasil_fasilitasi);
+    }
+
+    public function test_changing_kode_urusan_moves_opd_input_scope(): void
+    {
+        $urusan = MasterUrusan::factory()->create(['kode_urusan' => '1.01']);
+        $lama = Opd::factory()->create(['kode_urusan' => '1.01']);
+        $baru = Opd::factory()->create(['kode_urusan' => '1.09']);
+
+        $this->actingAs($this->admin)->put(route('master-urusan.update', $urusan), $this->payload(['kode_urusan' => '1.09']))
+            ->assertRedirect(route('master-urusan.index'));
+
+        $this->assertSame([], $lama->fresh()->urusan->pluck('id')->all());
+        $this->assertSame([$urusan->id], $baru->fresh()->urusan->pluck('id')->all());
     }
 
     public function test_admin_toggles_urusan_in_hasil_fasilitasi(): void

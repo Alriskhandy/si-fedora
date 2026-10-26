@@ -1,5 +1,7 @@
-{{-- Field form OPD sesuai kamus data OPD. Variabel: $opd (null saat tambah), $urusanList. --}}
-@php($selectedUrusan = array_map('intval', old('urusan', $opd?->urusan->pluck('id')->all() ?? [])))
+{{--
+    Field form OPD sesuai kamus data OPD. Variabel: $opd (null saat tambah).
+    Urusan yang dapat diberi masukan tidak dipilih manual: disinkronkan dari "Kode Urusan Diampu".
+--}}
 
 <h6 class="text-muted text-uppercase small mb-3">Identitas</h6>
 <div class="row g-3 mb-4">
@@ -73,7 +75,7 @@
         <label class="form-label" for="kode_urusan">Kode Urusan Diampu</label>
         <input type="text" class="form-control @error('kode_urusan') is-invalid @enderror" id="kode_urusan" name="kode_urusan"
             value="{{ old('kode_urusan', $opd?->kode_urusan) }}" placeholder="X.XX" maxlength="255">
-        <div class="form-text">Lebih dari satu dipisah titik koma (;).</div>
+        <div class="form-text">Lebih dari satu dipisah titik koma (;). Menentukan urusan yang dapat diberi masukan.</div>
         @error('kode_urusan')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -112,18 +114,17 @@
 </div>
 
 <h6 class="text-muted text-uppercase small mb-1">Urusan yang Dapat Diberi Masukan</h6>
-<div class="form-text mb-2">Menentukan urusan pemerintahan yang dapat diberi masukan oleh akun OPD ini pada hasil fasilitasi. Hanya urusan yang ditampilkan di hasil fasilitasi (master urusan) yang tersedia.</div>
-@error('urusan.*')
-    <div class="text-danger small mb-2">{{ $message }}</div>
-@enderror
-<div class="row">
-    @foreach ($urusanList as $urusan)
-        <div class="col-md-6">
-            <div class="form-check mb-1">
-                <input class="form-check-input" type="checkbox" name="urusan[]" value="{{ $urusan->id }}"
-                    id="urusan-{{ $urusan->id }}" @checked(in_array($urusan->id, $selectedUrusan, true))>
-                <label class="form-check-label" for="urusan-{{ $urusan->id }}">{{ $urusan->kode_urusan }} {{ $urusan->nama_urusan }}</label>
-            </div>
-        </div>
-    @endforeach
+<div class="form-text mb-2">
+    Disinkronkan otomatis dari <strong>Kode Urusan Diampu</strong> saat OPD disimpan. Di hasil fasilitasi hanya
+    urusan yang ditandai tampil di master urusan yang dapat diberi masukan.
 </div>
+@if ($opd?->urusan->isNotEmpty())
+    @foreach ($opd->urusan->sortBy('kode_urusan') as $urusan)
+        <span class="badge {{ $urusan->tampil_hasil_fasilitasi ? 'bg-label-primary' : 'bg-label-secondary' }} mb-1"
+            title="{{ $urusan->tampil_hasil_fasilitasi ? 'Tampil di hasil fasilitasi' : 'Tidak tampil di hasil fasilitasi' }}">
+            {{ $urusan->kode_urusan }} {{ $urusan->nama_urusan }}
+        </span>
+    @endforeach
+@else
+    <p class="text-muted small mb-0">Belum ada. Isi Kode Urusan Diampu lalu simpan.</p>
+@endif

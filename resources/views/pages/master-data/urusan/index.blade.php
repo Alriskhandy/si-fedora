@@ -15,19 +15,74 @@
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h5 class="card-title mb-0">Daftar Urusan Pemerintahan</h5>
-            <div class="d-flex gap-2">
-                <form method="GET">
-                    <select name="kelompok" class="form-select" onchange="this.form.submit()" aria-label="Filter kelompok">
-                        <option value="">Semua Kelompok</option>
+            <div>
+                <h5 class="card-title mb-0">Daftar Urusan Pemerintahan</h5>
+                <small class="text-muted">Hanya urusan berstatus Aktif dan bertanda "Tampil" yang muncul di bagian urusan hasil fasilitasi.</small>
+            </div>
+            <a href="{{ route('master-urusan.create') }}" class="btn btn-primary text-nowrap">
+                <i class="bx bx-plus me-1"></i> Tambah Urusan
+            </a>
+        </div>
+        <div class="card-body border-bottom">
+            <form method="GET" action="{{ route('master-urusan.index') }}" class="row g-2 align-items-end">
+                <div class="col-12 col-lg-3">
+                    <label class="form-label small mb-1" for="q">Cari</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                        <input type="search" class="form-control" id="q" name="q" value="{{ $filter['q'] }}"
+                            placeholder="Kode, nama urusan, atau OPD pengampu">
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label small mb-1" for="kelompok">Kelompok</label>
+                    <select class="form-select" id="kelompok" name="kelompok">
+                        <option value="">Semua</option>
                         @foreach (App\Models\MasterUrusan::KELOMPOK as $kode => $item)
-                            <option value="{{ $kode }}" @selected((string) request('kelompok') === (string) $kode)>{{ $kode }}. {{ $item['rumpun'] }}</option>
+                            <option value="{{ $kode }}" @selected($filter['kelompok'] === (string) $kode)>{{ $kode }}. {{ $item['rumpun'] }}</option>
                         @endforeach
                     </select>
-                </form>
-                <a href="{{ route('master-urusan.create') }}" class="btn btn-primary text-nowrap">
-                    <i class="bx bx-plus me-1"></i> Tambah Urusan
-                </a>
+                </div>
+                <div class="col-6 col-md-2 col-lg-1">
+                    <label class="form-label small mb-1" for="status">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Semua</option>
+                        @foreach (App\Models\MasterUrusan::STATUS as $status)
+                            <option value="{{ $status }}" @selected($filter['status'] === $status)>{{ $status }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 col-lg-2">
+                    <label class="form-label small mb-1" for="hasil">Hasil Fasilitasi</label>
+                    <select class="form-select" id="hasil" name="hasil">
+                        <option value="">Semua</option>
+                        <option value="tampil" @selected($filter['hasil'] === 'tampil')>Tampil</option>
+                        <option value="tidak" @selected($filter['hasil'] === 'tidak')>Tidak tampil</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 col-lg-2">
+                    <label class="form-label small mb-1" for="pengampu">OPD Pengampu</label>
+                    <select class="form-select" id="pengampu" name="pengampu">
+                        <option value="">Semua</option>
+                        <option value="ada" @selected($filter['pengampu'] === 'ada')>Sudah diisi</option>
+                        <option value="belum" @selected($filter['pengampu'] === 'belum')>Belum diisi</option>
+                    </select>
+                </div>
+                <div class="col-6 col-lg-1 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill" title="Terapkan filter">
+                        <i class="bx bx-filter-alt"></i><span class="d-lg-none ms-1">Terapkan</span>
+                    </button>
+                    @if (array_filter($filter))
+                        <a href="{{ route('master-urusan.index') }}" class="btn btn-outline-secondary flex-fill" title="Reset filter">
+                            <i class="bx bx-reset"></i><span class="d-lg-none ms-1">Reset</span>
+                        </a>
+                    @endif
+                </div>
+            </form>
+            <div class="small text-muted mt-2">
+                Menampilkan {{ $urusan->total() }} dari {{ $totalUrusan }} urusan
+                @if (array_filter($filter))
+                    sesuai filter
+                @endif
             </div>
         </div>
         <div class="table-responsive">
@@ -57,9 +112,11 @@
                             <td>{{ $item->nama_urusan }}</td>
                             <td>{{ $item->rumpun_urusan }}</td>
                             <td>
-                                {{ $item->opd_pengampu ?? '—' }}
                                 @if ($item->kode_opd_pengampu)
+                                    {{ $item->opd_pengampu }}
                                     <small class="d-block text-muted">{{ $item->kode_opd_pengampu }}</small>
+                                @else
+                                    <span class="badge bg-label-warning">Belum diisi</span>
                                 @endif
                             </td>
                             <td>
@@ -91,12 +148,19 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Tidak ada data</td>
+                            <td colspan="7" class="text-center text-muted">
+                                {{ array_filter($filter) ? 'Tidak ada urusan yang sesuai filter.' : 'Belum ada urusan.' }}
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+        @if ($urusan->hasPages())
+            <div class="card-footer">
+                {{ $urusan->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

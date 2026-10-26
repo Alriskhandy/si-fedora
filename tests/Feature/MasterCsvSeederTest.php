@@ -31,6 +31,7 @@ class MasterCsvSeederTest extends TestCase
         $this->assertTrue($kesehatan->tampil_hasil_fasilitasi);
         $this->assertFalse(MasterUrusan::where('kode_urusan', '5.01')->sole()->tampil_hasil_fasilitasi);
         $this->assertSame(32, MasterUrusan::untukHasilFasilitasi()->count());
+        $this->assertSame(['1.01', '2.22'], Opd::where('kode_opd', '82.05.01')->sole()->urusan->pluck('kode_urusan')->sort()->values()->all());
     }
 
     public function test_existing_rows_are_only_completed_not_overwritten(): void

@@ -353,7 +353,7 @@
                         @endphp
                         @if ($isLocked)
                             <div class="alert alert-warning">
-                                <i class="bx bx-lock-alt"></i> Hasil fasilitasi sedang dinilai atau sudah disetujui Kepala Badan. Masukan tidak dapat ditambah, diubah, atau dihapus.
+                                <i class="bx bx-lock-alt"></i> Hasil fasilitasi sedang dinilai atau sudah disetujui Kepala BAPPEDA. Masukan tidak dapat ditambah, diubah, atau dihapus.
                             </div>
                         @endif
                         @if ($isUrusanOnly && $masterUrusanList->isEmpty())
@@ -1325,7 +1325,7 @@
                             <td class="text-center">${rowCount}</td>
                             <td><strong>${namaUrusan}</strong></td>
                             <td class="catatan-cell">${data.data.catatan_masukan}</td>
-                            <td><small class="text-muted">${data.data.user ? escapeHtml(data.data.user.name) : '-'}${data.data.user && data.data.user.opd ? ' <span class="badge bg-label-info d-inline-block text-wrap text-start">OPD: ' + escapeHtml(data.data.user.opd.nama_opd) + '</span>' : ''}<br><span class="text-secondary">${data.data.created_at}</span></small></td>
+                            <td><small class="text-muted">${data.data.user ? escapeHtml(data.data.user.name) : '-'}${data.data.user && data.data.user.opd ? ' <span class="badge bg-label-info d-inline-block text-wrap text-start">' + escapeHtml(data.data.user.opd.singkatan) + '</span>' : ''}<br><span class="text-secondary">${data.data.created_at}</span></small></td>
                             <td class="text-center">
                                 ${actionButtons}
                             </td>

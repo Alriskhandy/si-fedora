@@ -41,13 +41,12 @@ class OpdRequest extends FormRequest
             'kode_urusan' => ['nullable', 'string', 'max:255'],
             'urusan_pemerintahan' => ['nullable', 'string', 'max:255'],
             'induk_opd' => ['nullable', 'regex:'.Opd::KODE_PATTERN, 'different:kode_opd', Rule::exists('opd', 'kode_opd')],
-            'urusan' => ['array'],
-            'urusan.*' => ['integer', 'exists:master_urusan,id'],
         ];
     }
 
     /**
-     * Setiap kode urusan yang diampu (dipisah ;) berformat X.XX.
+     * Setiap kode urusan yang diampu (dipisah ;) berformat X.XX dan terdaftar di master urusan,
+     * karena kode ini menentukan urusan yang boleh diberi masukan oleh akun OPD.
      *
      * @return array<int, callable(Validator): void>
      */
@@ -62,6 +61,15 @@ class OpdRequest extends FormRequest
 
                 if ($salah !== []) {
                     $validator->errors()->add('kode_urusan', 'Format kode urusan harus X.XX (lebih dari satu dipisah ;): '.implode(', ', $salah).'.');
+
+                    return;
+                }
+
+                $kodes = MasterUrusan::splitDaftarKode($this->input('kode_urusan'));
+                $tidakTerdaftar = array_diff($kodes, MasterUrusan::whereIn('kode_urusan', $kodes)->pluck('kode_urusan')->all());
+
+                if ($tidakTerdaftar !== []) {
+                    $validator->errors()->add('kode_urusan', 'Kode urusan tidak terdaftar di master urusan: '.implode(', ', $tidakTerdaftar).'.');
                 }
             },
         ];
@@ -98,7 +106,6 @@ class OpdRequest extends FormRequest
             'induk_opd.regex' => 'Format kode OPD induk harus 82.XX.XX atau 82.XX.XX.XX.',
             'induk_opd.different' => 'OPD induk tidak boleh OPD itu sendiri.',
             'induk_opd.exists' => 'Kode OPD induk tidak terdaftar.',
-            'urusan.*.exists' => 'Urusan yang dipilih tidak valid.',
         ];
     }
 }

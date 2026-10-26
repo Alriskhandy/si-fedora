@@ -13,8 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Master OPD lingkungan Provinsi, sesuai kamus data OPD (id = id_opd).
  *
  * Akun ber-role opd wajib terhubung ke satu OPD berstatus Aktif. Relasi urusan() (tabel opd_urusan)
- * menentukan urusan yang boleh diberi masukan pada hasil fasilitasi (PRD #2). Kolom kode_urusan dan
- * urusan_pemerintahan adalah keterangan urusan yang diampu (kamus data) dan tidak dipakai untuk hak akses.
+ * menentukan urusan yang boleh diberi masukan pada hasil fasilitasi (PRD #2) dan **disinkronkan otomatis**
+ * dari kolom kode_urusan (urusan yang diampu OPD): saat OPD disimpan, dan saat urusan baru ditambahkan
+ * atau kodenya berubah di master urusan. Tidak diisi manual.
  * Daftar rumpun urusan diambil dari MasterUrusan::rumpunList().
  */
 class Opd extends Model
@@ -85,6 +86,34 @@ class Opd extends Model
     public function induk(): BelongsTo
     {
         return $this->belongsTo(self::class, 'induk_opd', 'kode_opd');
+    }
+
+    /**
+     * Rapikan daftar kode urusan, lalu sinkronkan urusan masukan bila kode berubah.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Opd $opd): void {
+            $kodes = MasterUrusan::splitDaftarKode($opd->kode_urusan);
+            $opd->kode_urusan = $kodes === [] ? null : implode('; ', $kodes);
+        });
+
+        static::saved(function (Opd $opd): void {
+            if ($opd->wasRecentlyCreated || $opd->wasChanged('kode_urusan')) {
+                $opd->sinkronkanUrusan();
+            }
+        });
+    }
+
+    /**
+     * Samakan urusan masukan (opd_urusan) dengan kode urusan yang diampu OPD.
+     * Kode yang belum ada di master urusan dilewati dan ikut tersinkron saat urusannya ditambahkan.
+     */
+    public function sinkronkanUrusan(): void
+    {
+        $this->urusan()->sync(
+            MasterUrusan::whereIn('kode_urusan', MasterUrusan::splitDaftarKode($this->kode_urusan))->pluck('id')->all()
+        );
     }
 
     public function isActive(): bool
