@@ -105,6 +105,22 @@ class HasilFasilitasi extends Model
     }
 
     /**
+     * Label dan kelas badge status_draft untuk tampilan.
+     *
+     * @return array{0: string, 1: string}
+     */
+    public function statusLabel(): array
+    {
+        return match ($this->status_draft) {
+            'menunggu_persetujuan_kaban' => ['Menunggu Persetujuan Kaban', 'bg-label-warning'],
+            'disetujui_kaban' => ['Disetujui Kaban', 'bg-label-success'],
+            'ditolak_kaban' => ['Dikembalikan Kaban', 'bg-label-danger'],
+            'diajukan' => ['Diajukan', 'bg-label-info'],
+            default => ['Penyusunan Masukan', 'bg-label-primary'],
+        };
+    }
+
+    /**
      * Kebalikan isLocked(); dipakai alur ajukan hasil oleh tim.
      */
     public function canEdit(): bool

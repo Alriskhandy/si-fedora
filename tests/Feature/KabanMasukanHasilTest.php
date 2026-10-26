@@ -78,7 +78,7 @@ class KabanMasukanHasilTest extends TestCase
 
         $this->actingAs($this->kaban)->get(route('hasil-fasilitasi.show', $this->permohonan))
             ->assertOk()
-            ->assertSee('Konsistensi & Keselarasan', false)
+            ->assertSee('Konsistensi & Keselarasan')
             ->assertSee('Selaraskan target RPJMD.')
             ->assertSee('Rekomendasi perbaikan indikator.');
 

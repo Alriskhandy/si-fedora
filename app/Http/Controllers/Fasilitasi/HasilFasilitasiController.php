@@ -392,10 +392,10 @@ class HasilFasilitasiController extends Controller
         // Load hasil fasilitasi dengan relasi
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
         $hasilFasilitasi->load([
-            'hasilSistematika.masterBab', 'hasilSistematika.user',
+            'hasilSistematika.masterBab', 'hasilSistematika.user.opd',
             'hasilUrusan.masterUrusan', 'hasilUrusan.user.opd',
-            'hasilForm.user',
-            'hasilRekomendasi.user',
+            'hasilForm.user.opd',
+            'hasilRekomendasi.user.opd',
         ]);
 
         // Sort sistematika by bab urutan
@@ -420,29 +420,14 @@ class HasilFasilitasiController extends Controller
         // Check if current user is admin
         $isAdmin = $this->isAdmin();
 
-        // Get tim info untuk ditampilkan
-        $kabkotaId = $permohonan->kab_kota_id;
-        $jenisDokumenId = $permohonan->jenis_dokumen_id;
-
-        $timInfo = null;
-        if ($jenisDokumenId && $kabkotaId) {
-            $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
-                ->where('jenis_dokumen_id', $jenisDokumenId)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->with('user')
-                ->get();
-
-            $timInfo = [
-                'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
-                'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
-                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
-            ];
-        }
+        // Tahapan untuk ringkasan (waktu pelaksanaan & batas waktu penginputan)
+        $permohonan->load('tahapan.masterTahapan');
+        $tahapanPelaksanaan = $permohonan->tahapan->firstWhere('masterTahapan.nama_tahapan', 'Pelaksanaan');
+        $tahapanHasil = $permohonan->tahapan->firstWhere('masterTahapan.nama_tahapan', 'Hasil Fasilitasi / Evaluasi');
 
         $isLocked = $hasilFasilitasi->isLocked();
 
-        return view('pages.fasilitasi.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo', 'isUrusanOnly', 'isLocked'));
+        return view('pages.fasilitasi.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'isUrusanOnly', 'isLocked', 'tahapanPelaksanaan', 'tahapanHasil'));
     }
 
     /**
@@ -544,9 +529,9 @@ class HasilFasilitasiController extends Controller
             'hasilUrusan.masterUrusan',
             'hasilUrusan.user.opd',
             'hasilSistematika.masterBab',
-            'hasilSistematika.user',
-            'hasilForm.user',
-            'hasilRekomendasi.user',
+            'hasilSistematika.user.opd',
+            'hasilForm.user.opd',
+            'hasilRekomendasi.user.opd',
             'pembuat'
         );
 
@@ -565,29 +550,20 @@ class HasilFasilitasiController extends Controller
         $hasilFasilitasi->setRelation('hasilForm', $hasilFasilitasi->hasilForm->sortBy('created_at'));
         $hasilFasilitasi->setRelation('hasilRekomendasi', $hasilFasilitasi->hasilRekomendasi->sortBy('created_at'));
 
-        // Get tim info untuk ditampilkan
-        $kabkotaId = $permohonan->kab_kota_id;
-        $jenisDokumenId = $permohonan->jenis_dokumen_id;
-        $timInfo = null;
-        if ($jenisDokumenId && $kabkotaId) {
-            $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $kabkotaId)
-                ->where('jenis_dokumen_id', $jenisDokumenId)
-                ->where('tahun', $permohonan->tahun)
-                ->where('is_active', true)
-                ->with('user')
-                ->get();
+        // Tahapan untuk ringkasan (waktu pelaksanaan & batas waktu penginputan)
+        $permohonan->load('tahapan.masterTahapan');
+        $tahapanPelaksanaan = $permohonan->tahapan->firstWhere('masterTahapan.nama_tahapan', 'Pelaksanaan');
+        $tahapanHasil = $permohonan->tahapan->firstWhere('masterTahapan.nama_tahapan', 'Hasil Fasilitasi / Evaluasi');
 
-            $timInfo = [
-                'verifikator' => $assignments->where('role_type', 'verifikator')->where('is_pic', true)->first(),
-                'koordinator' => $assignments->where('role_type', 'fasilitator')->where('is_pic', true)->first(),
-                'anggota' => $assignments->where('role_type', 'fasilitator')->where('is_pic', false)->values(),
-            ];
-        }
-
-        // Pass isVerifikator to view
         $isKoordinator = $this->isKoordinator($permohonan);
 
-        return view('pages.fasilitasi.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'timInfo', 'isPemohon'));
+        // Konsistensi & Keselarasan dan Rekomendasi: Admin dan Kepala Badan
+        $showExtendedTabs = $isAdmin || $isKaban;
+
+        // Tombol ke halaman input: anggota tim (fasilitator/OPD) selama masukan belum terkunci
+        $bisaInput = Auth::user()->can('hasil-fasilitasi.input-urusan') && $isTimMember && ! $isVerifikator && ! $hasilFasilitasi->isLocked();
+
+        return view('pages.fasilitasi.hasil-fasilitasi.show', compact('permohonan', 'hasilFasilitasi', 'isVerifikator', 'isAdmin', 'isKoordinator', 'isKaban', 'isPemohon', 'tahapanPelaksanaan', 'tahapanHasil', 'showExtendedTabs', 'bisaInput'));
     }
 
     /**
@@ -723,6 +699,7 @@ class HasilFasilitasiController extends Controller
         }
 
         $request->validate([
+            'master_bab_id' => 'sometimes|required|exists:master_bab,id',
             'sub_bab' => 'nullable|string',
             'catatan_penyempurnaan' => 'required|string',
         ]);
@@ -747,6 +724,7 @@ class HasilFasilitasiController extends Controller
             }
 
             $sistematika->update([
+                'master_bab_id' => $request->input('master_bab_id', $sistematika->master_bab_id),
                 'sub_bab' => $request->sub_bab,
                 'catatan_penyempurnaan' => $request->catatan_penyempurnaan,
             ]);
@@ -926,8 +904,14 @@ class HasilFasilitasiController extends Controller
         }
 
         $request->validate([
+            'master_urusan_id' => 'sometimes|required|exists:master_urusan,id',
             'catatan_masukan' => 'required|string',
         ]);
+
+        $allowedUrusanIds = $this->allowedUrusanIds();
+        if ($request->has('master_urusan_id') && $allowedUrusanIds !== null && ! in_array((int) $request->master_urusan_id, $allowedUrusanIds, true)) {
+            return response()->json(['error' => 'Anda hanya dapat memberi masukan pada urusan pemerintahan bidang OPD Anda.'], 403);
+        }
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
@@ -949,6 +933,7 @@ class HasilFasilitasiController extends Controller
             }
 
             $urusan->update([
+                'master_urusan_id' => $request->input('master_urusan_id', $urusan->master_urusan_id),
                 'catatan_masukan' => $request->catatan_masukan,
             ]);
 
