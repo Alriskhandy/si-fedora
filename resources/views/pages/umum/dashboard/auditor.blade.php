@@ -229,14 +229,14 @@
                                             </td>
                                             <td>
                                                 <span
-                                                    class="badge bg-{{ match ($permohonan->status_akhir ?? 'draft') {
+                                                    class="badge bg-{{ match ($permohonan->status_akhir?->value ?? 'draft') {
                                                         'belum' => 'secondary',
                                                         'proses' => 'primary',
                                                         'revisi' => 'warning',
                                                         'selesai' => 'success',
                                                         default => 'secondary',
                                                     } }}">
-                                                    {{ match ($permohonan->status_akhir ?? 'draft') {
+                                                    {{ match ($permohonan->status_akhir?->value ?? 'draft') {
                                                         'belum' => 'Belum Diproses',
                                                         'proses' => 'Sedang Diproses',
                                                         'revisi' => 'Perlu Revisi',

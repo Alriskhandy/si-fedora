@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Fasilitasi;
 
+use App\Enums\StatusPermohonan;
 use App\Http\Controllers\Controller;
 use App\Models\DokumenTahapan;
 use App\Models\JadwalFasilitasi;
@@ -140,7 +141,7 @@ class PermohonanController extends Controller
         // Buat permohonan dengan data dari jadwal
         $permohonan = Permohonan::create([
             'user_id' => Auth::id(),
-            'kab_kota_id' => Auth::user()->kabupaten_kota_id,
+            'kabupaten_kota_id' => Auth::user()->kabupaten_kota_id,
             'jadwal_fasilitasi_id' => $request->jadwal_fasilitasi_id,
             'tahun' => $jadwal->tahun_anggaran,
             'jenis_dokumen_id' => $jadwal->jenis_dokumen,
@@ -236,7 +237,7 @@ class PermohonanController extends Controller
         Gate::authorize('update', $permohonan);
 
         // Allow resubmit if status is 'proses' but submitted_at is null (failed submission)
-        if ($permohonan->status_akhir !== 'belum' && ! ($permohonan->status_akhir === 'proses' && is_null($permohonan->submitted_at))) {
+        if ($permohonan->status_akhir !== StatusPermohonan::Belum && ! ($permohonan->status_akhir === StatusPermohonan::Proses && is_null($permohonan->submitted_at))) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -272,7 +273,7 @@ class PermohonanController extends Controller
 
             // Update status ke proses (tahapan permohonan)
             // Status hanya akan menjadi 'selesai' ketika submit di tahapan penetapan perda (tahapan terakhir)
-            $permohonan->status_akhir = 'proses';
+            $permohonan->status_akhir = StatusPermohonan::Proses;
             $permohonan->submitted_at = now();
             $permohonan->save();
             $permohonan->refresh();
@@ -366,7 +367,7 @@ class PermohonanController extends Controller
         Gate::authorize('update', $permohonan);
 
         // Hanya bisa hapus kalo status belum
-        if ($permohonan->status_akhir !== 'belum') {
+        if ($permohonan->status_akhir !== StatusPermohonan::Belum) {
             return redirect()->route('permohonan.show', $permohonan)->with('error', 'Permohonan sudah dalam proses dan tidak bisa dihapus.');
         }
 
@@ -597,7 +598,7 @@ class PermohonanController extends Controller
                 ->log('Deadline tahapan '.$request->tahapan.' diperbarui oleh '.Auth::user()->name);
 
             // Kirim notifikasi ke fasilitator yang terkait
-            $fasilitators = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            $fasilitators = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
                 ->where('tahun', $permohonan->tahun)
                 ->where('is_active', true)
                 ->where('role_type', 'fasilitator')

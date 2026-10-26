@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Fasilitasi;
 
+use App\Enums\StatusPermohonan;
 use App\Http\Controllers\Controller;
 use App\Models\MasterTahapan;
 use App\Models\Permohonan;
@@ -58,7 +59,7 @@ class PermohonanDokumenController extends Controller
 
         // Cek status permohonan - hanya bisa upload jika status belum atau revisi
         $permohonan = $permohonanDokumen->permohonan()->with('jadwalFasilitasi')->first();
-        if (! in_array($permohonan->status_akhir, ['belum', 'revisi'])) {
+        if (! $permohonan->status_akhir->bisaUbahDokumen()) {
             Log::warning('[Upload Dokumen] Status tidak valid untuk upload', [
                 'dokumen_id' => $permohonanDokumen->id,
                 'status_akhir' => $permohonan->status_akhir,
@@ -68,7 +69,7 @@ class PermohonanDokumenController extends Controller
         }
 
         // Cek batas waktu - hanya berlaku untuk upload awal, bukan revisi
-        if ($permohonan->status_akhir !== 'revisi' && $permohonan->isUploadDeadlinePassed()) {
+        if ($permohonan->status_akhir !== StatusPermohonan::Revisi && $permohonan->isUploadDeadlinePassed()) {
             Log::warning('[Upload Dokumen] Batas waktu terlewat', [
                 'dokumen_id' => $permohonanDokumen->id,
                 'batas' => $permohonan->getEffectiveDeadline(),
@@ -119,7 +120,7 @@ class PermohonanDokumenController extends Controller
             $namaDokumen = $permohonanDokumen->masterKelengkapan->nama_dokumen ?? 'Dokumen';
 
             // Update status permohonan jika ada dokumen yang diupload ulang dari status revisi
-            if ($permohonan->status_akhir === 'revisi') {
+            if ($permohonan->status_akhir === StatusPermohonan::Revisi) {
                 // Cek apakah masih ada dokumen dengan status 'revision'
                 $masihAdaRevisi = $permohonan->permohonanDokumen()
                     ->where('status_verifikasi', 'revision')
@@ -192,7 +193,7 @@ class PermohonanDokumenController extends Controller
         }
 
         // Cek status permohonan - hanya bisa hapus jika status belum atau revisi
-        if (! in_array($permohonanDokumen->permohonan->status_akhir, ['belum', 'revisi'])) {
+        if (! $permohonanDokumen->permohonan->status_akhir->bisaUbahDokumen()) {
             return back()->with('error', 'Dokumen tidak dapat dihapus. Permohonan sudah disubmit atau selesai.');
         }
 

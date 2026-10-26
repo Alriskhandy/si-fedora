@@ -128,7 +128,7 @@ class JadwalFasilitasiController extends Controller
                 'jenis_dokumen' => $jadwal->jenisDokumen->nama,
                 'tanggal_mulai' => $jadwal->tanggal_mulai->format('Y-m-d'),
                 'tanggal_selesai' => $jadwal->tanggal_selesai->format('Y-m-d'),
-                'status' => $jadwal->status,
+                'status' => $jadwal->status->value,
             ])
             ->log('Membuat jadwal fasilitasi baru');
 
@@ -276,7 +276,7 @@ class JadwalFasilitasiController extends Controller
         $oldData = [
             'tahun_anggaran' => $jadwal->tahun_anggaran,
             'jenis_dokumen' => $jadwal->jenisDokumen->nama,
-            'status' => $jadwal->status,
+            'status' => $jadwal->status->value,
         ];
 
         $jadwal->update($data);
@@ -293,7 +293,7 @@ class JadwalFasilitasiController extends Controller
                     'jenis_dokumen' => $jadwal->jenisDokumen->nama,
                     'tanggal_mulai' => $jadwal->tanggal_mulai->format('Y-m-d'),
                     'tanggal_selesai' => $jadwal->tanggal_selesai->format('Y-m-d'),
-                    'status' => $jadwal->status,
+                    'status' => $jadwal->status->value,
                 ],
             ])
             ->log('Mengupdate jadwal fasilitasi');
@@ -336,7 +336,7 @@ class JadwalFasilitasiController extends Controller
             ->withProperties([
                 'tahun_anggaran' => $jadwal->tahun_anggaran,
                 'jenis_dokumen' => $jadwal->jenisDokumen->nama,
-                'status' => $jadwal->status,
+                'status' => $jadwal->status->value,
             ])
             ->log('Menghapus jadwal fasilitasi');
 

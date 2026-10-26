@@ -46,8 +46,8 @@ class ArsipControllerTest extends TestCase
         $kabKotaSendiri = KabupatenKota::factory()->create(['nama' => 'Kota Sendiri']);
         $kabKotaLain = KabupatenKota::factory()->create(['nama' => 'Kabupaten Lain']);
         $pemohon = User::factory()->withRole('pemohon')->create(['kabupaten_kota_id' => $kabKotaSendiri->id]);
-        Permohonan::factory()->create(['kab_kota_id' => $kabKotaSendiri->id, 'jenis_dokumen_id' => $jenisDokumen->id]);
-        Permohonan::factory()->create(['kab_kota_id' => $kabKotaLain->id, 'jenis_dokumen_id' => $jenisDokumen->id]);
+        Permohonan::factory()->create(['kabupaten_kota_id' => $kabKotaSendiri->id, 'jenis_dokumen_id' => $jenisDokumen->id]);
+        Permohonan::factory()->create(['kabupaten_kota_id' => $kabKotaLain->id, 'jenis_dokumen_id' => $jenisDokumen->id]);
 
         $response = $this->actingAs($pemohon)->get(route('arsip.listByJenis', $jenisDokumen->id));
 

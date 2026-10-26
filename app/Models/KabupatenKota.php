@@ -21,11 +21,6 @@ class KabupatenKota extends Model
         'kode',
         'nama',
         'jenis',
-        'provinsi',
-        'kepala_daerah',
-        'email',
-        'telepon',
-        'alamat',
         'is_active',
     ];
 
@@ -46,7 +41,7 @@ class KabupatenKota extends Model
 
     public function permohonan(): HasMany
     {
-        return $this->hasMany(Permohonan::class, 'kab_kota_id');
+        return $this->hasMany(Permohonan::class);
     }
 
     public function suratPemberitahuan(): HasMany

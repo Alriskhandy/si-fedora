@@ -92,7 +92,7 @@
                 <tr>
                     <td style="text-align: center;">{{ $loop->iteration }}</td>
                     <td>{{ $dokumen->masterKelengkapan->nama_dokumen ?? $dokumen->file_name ?? '-' }}</td>
-                    <td>{{ ucfirst($dokumen->status_verifikasi ?? '-') }}</td>
+                    <td>{{ ucfirst($dokumen->status_verifikasi?->value ?? '-') }}</td>
                     <td>{{ $dokumen->catatan_verifikasi ?? '-' }}</td>
                 </tr>
             @empty

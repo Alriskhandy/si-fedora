@@ -16,12 +16,12 @@ class PersyaratanDokumen extends Model
     protected $table = 'persyaratan_dokumen';
 
     protected $fillable = [
-        'jenis_dokumen_id',
         'kode',
         'nama',
         'deskripsi',
         'urutan',
-        'is_required',
+        'is_wajib',
+        'template_file',
         'is_active',
     ];
 
@@ -31,7 +31,7 @@ class PersyaratanDokumen extends Model
     protected function casts(): array
     {
         return [
-            'is_required' => 'boolean',
+            'is_wajib' => 'boolean',
             'is_active' => 'boolean',
             'urutan' => 'integer',
         ];

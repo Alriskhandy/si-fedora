@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\StatusPermohonan;
 use App\Models\Permohonan;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
@@ -60,7 +61,7 @@ class PermohonanPolicy
     private function isOwnedBy(User $user, Permohonan $permohonan): bool
     {
         return $permohonan->user_id === $user->id
-            || ($user->kabupaten_kota_id !== null && (int) $permohonan->kab_kota_id === (int) $user->kabupaten_kota_id);
+            || ($user->kabupaten_kota_id !== null && (int) $permohonan->kabupaten_kota_id === (int) $user->kabupaten_kota_id);
     }
 
     /**
@@ -69,7 +70,7 @@ class PermohonanPolicy
     private function isAssigned(User $user, Permohonan $permohonan): bool
     {
         return UserKabkotaAssignment::where('user_id', $user->id)
-            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('tahun', $permohonan->tahun)
             ->where('is_active', true)
             ->where(function ($query) use ($permohonan) {
@@ -84,7 +85,7 @@ class PermohonanPolicy
      */
     private function hasVerified(User $user, Permohonan $permohonan): bool
     {
-        return $permohonan->status_akhir === 'selesai'
+        return $permohonan->status_akhir === StatusPermohonan::Selesai
             && $permohonan->permohonanDokumen()
                 ->where('verified_by', $user->id)
                 ->whereNotNull('verified_at')

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\StatusPermohonan;
 use App\Models\Permohonan;
 use App\Models\PermohonanTahapan;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -58,7 +59,7 @@ class UpdateTanggalSelesaiTahapanRequest extends FormRequest
 
                 $tahapan = $this->permohonanTahapan();
 
-                if ($tahapan->status !== 'selesai') {
+                if ($tahapan->status !== StatusPermohonan::Selesai) {
                     $validator->errors()->add('tanggal_selesai', 'Hanya tahapan yang sudah selesai yang dapat diubah tanggal selesainya.');
 
                     return;

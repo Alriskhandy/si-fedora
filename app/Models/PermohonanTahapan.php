@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusPermohonan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -41,7 +42,7 @@ class PermohonanTahapan extends Model
                 return;
             }
 
-            if ($tahapan->status === 'selesai') {
+            if ($tahapan->status === StatusPermohonan::Selesai) {
                 $tahapan->tanggal_selesai ??= now();
             } else {
                 $tahapan->tanggal_selesai = null;
@@ -57,6 +58,7 @@ class PermohonanTahapan extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'status' => StatusPermohonan::class,
             'deadline' => 'datetime',
             'tanggal_selesai' => 'datetime',
         ];
@@ -79,7 +81,7 @@ class PermohonanTahapan extends Model
      */
     public function getTanggalSelesaiTampilAttribute(): ?Carbon
     {
-        if ($this->status !== 'selesai') {
+        if ($this->status !== StatusPermohonan::Selesai) {
             return null;
         }
 

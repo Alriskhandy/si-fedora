@@ -60,7 +60,7 @@ class HasilFasilitasiInputPageTest extends TestCase
         $koordinator = User::factory()->withRole('fasilitator')->create();
         UserKabkotaAssignment::create([
             'user_id' => $koordinator->id,
-            'kabupaten_kota_id' => $this->permohonan->kab_kota_id,
+            'kabupaten_kota_id' => $this->permohonan->kabupaten_kota_id,
             'jenis_dokumen_id' => $this->permohonan->jenis_dokumen_id,
             'tahun' => $this->permohonan->tahun,
             'role_type' => 'fasilitator',

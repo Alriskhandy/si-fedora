@@ -79,9 +79,9 @@
                                     <td><strong>Status</strong></td>
                                     <td>:</td>
                                     <td>
-                                        @if ($jadwal->status == 'draft')
+                                        @if ($jadwal->status === \App\Enums\StatusJadwal::Draft)
                                             <span class="badge bg-label-secondary">Draft</span>
-                                        @elseif($jadwal->status == 'published')
+                                        @elseif($jadwal->status === \App\Enums\StatusJadwal::Published)
                                             <span class="badge bg-label-success">Published</span>
                                         @else
                                             <span class="badge bg-label-danger">Closed</span>

@@ -82,7 +82,7 @@
                     ->user()
                     ->can('hasil-fasilitasi.input') &&
                 \App\Models\UserKabkotaAssignment::where('user_id', auth()->id())
-                    ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                    ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
                     ->where('tahun', $permohonan->tahun)
                     ->where('is_active', true)
                     ->exists();
@@ -96,7 +96,7 @@
                     ->user()
                     ->can('permohonan.verify') &&
                 \App\Models\UserKabkotaAssignment::where('user_id', auth()->id())
-                    ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                    ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
                     ->where('tahun', $permohonan->tahun)
                     ->where('is_active', true)
                     ->exists();
@@ -234,7 +234,7 @@
                             <a href="{{ route('hasil-fasilitasi.show', $permohonan) }}" class="btn btn-primary shadow-sm">
                                 <i class='bx bx-show me-1'></i>Lihat Masukan
                             </a>
-                            @if ($hasil->status_draft === 'menunggu_persetujuan_kaban' && $hasil->draft_final_file)
+                            @if ($hasil->status_draft === \App\Enums\StatusHasilFasilitasi::MenungguPersetujuanKaban && $hasil->draft_final_file)
                                 <a href="{{ route('approval.show', $permohonan) }}" class="btn btn-success shadow-sm">
                                     <i class='bx bx-check-circle me-1'></i>Review & Setujui
                                 </a>
@@ -249,10 +249,10 @@
         @if (
             ($isPemohon || $isKabanOrAuditor) &&
                 $tahapanHasil &&
-                $tahapanHasil->status === 'proses' &&
+                $tahapanHasil->status === \App\Enums\StatusPermohonan::Proses &&
                 (!$permohonan->hasilFasilitasi ||
                     !$permohonan->hasilFasilitasi->draft_final_file ||
-                    $permohonan->hasilFasilitasi->status_draft !== 'disetujui_kaban'))
+                    $permohonan->hasilFasilitasi->status_draft !== \App\Enums\StatusHasilFasilitasi::DisetujuiKaban))
             <div class="alert alert-info border-0 shadow-sm mb-4">
                 <div class="d-flex align-items-start">
                     <div class="flex-shrink-0 me-3">
@@ -279,7 +279,7 @@
         @if (
             $permohonan->hasilFasilitasi &&
                 $permohonan->hasilFasilitasi->draft_final_file &&
-                $permohonan->hasilFasilitasi->status_draft === 'disetujui_kaban' &&
+                $permohonan->hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::DisetujuiKaban &&
                 (auth()->user()->canAny(['hasil-fasilitasi.manage-all', 'approval.approve']) ||
                     $isFasilitator ||
                     $isVerifikator ||

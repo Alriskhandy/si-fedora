@@ -17,15 +17,9 @@ class TindakLanjut extends Model
 
     protected $fillable = [
         'permohonan_id',
-        'jenis_tindak_lanjut',
-        'file_tindak_lanjut',
         'keterangan',
         'file_laporan',
         'tanggal_upload',
-        'is_submitted',
-        'submitted_at',
-        'batas_waktu',
-        'catatan_admin',
         'diupload_oleh',
     ];
 
@@ -36,9 +30,6 @@ class TindakLanjut extends Model
     {
         return [
             'tanggal_upload' => 'datetime',
-            'submitted_at' => 'datetime',
-            'batas_waktu' => 'datetime',
-            'is_submitted' => 'boolean',
         ];
     }
 

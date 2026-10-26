@@ -63,7 +63,7 @@
                     <strong>Masukan terkunci.</strong>
                     Hasil fasilitasi sedang dinilai atau sudah disetujui Kepala BAPPEDA. Masukan tidak dapat ditambah, diubah, atau dihapus.
                     <div class="small mt-1">
-                        @if ($hasilFasilitasi->status_draft === 'menunggu_persetujuan_kaban')
+                        @if ($hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::MenungguPersetujuanKaban)
                             Kunci terbuka kembali bila Kepala Badan mengembalikan hasil untuk diperbaiki.
                         @else
                             Hasil sudah disetujui; tidak ada perubahan masukan lagi.

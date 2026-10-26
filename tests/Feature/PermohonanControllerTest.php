@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StatusPermohonan;
 use App\Models\MasterKelengkapanVerifikasi;
 use App\Models\MasterTahapan;
 use App\Models\Permohonan;
@@ -30,10 +31,10 @@ class PermohonanControllerTest extends TestCase
 
         $response->assertRedirect(route('permohonan.show', $permohonan))->assertSessionHas('success');
         $permohonan->refresh();
-        $this->assertSame('proses', $permohonan->status_akhir);
+        $this->assertSame(StatusPermohonan::Proses, $permohonan->status_akhir);
         $this->assertNotNull($permohonan->submitted_at);
-        $this->assertSame('selesai', PermohonanTahapan::where('permohonan_id', $permohonan->id)->where('tahapan_id', $tahapanPermohonan->id)->value('status'));
-        $this->assertSame('proses', PermohonanTahapan::where('permohonan_id', $permohonan->id)->where('tahapan_id', $tahapanVerifikasi->id)->value('status'));
+        $this->assertSame(StatusPermohonan::Selesai, PermohonanTahapan::where('permohonan_id', $permohonan->id)->where('tahapan_id', $tahapanPermohonan->id)->value('status'));
+        $this->assertSame(StatusPermohonan::Proses, PermohonanTahapan::where('permohonan_id', $permohonan->id)->where('tahapan_id', $tahapanVerifikasi->id)->value('status'));
     }
 
     public function test_submitting_with_incomplete_documents_is_rejected(): void
@@ -45,7 +46,7 @@ class PermohonanControllerTest extends TestCase
         $response = $this->actingAs($pemohon)->post(route('permohonan.submit', $permohonan));
 
         $response->assertSessionHas('error', 'Tidak dapat mengirim permohonan. Harap lengkapi semua dokumen persyaratan terlebih dahulu.');
-        $this->assertSame('belum', $permohonan->fresh()->status_akhir);
+        $this->assertSame(StatusPermohonan::Belum, $permohonan->fresh()->status_akhir);
     }
 
     public function test_pemohon_cannot_submit_permohonan_of_another_account(): void
@@ -55,7 +56,7 @@ class PermohonanControllerTest extends TestCase
 
         $this->actingAs($pemohonLain)->post(route('permohonan.submit', $permohonan))->assertForbidden();
 
-        $this->assertSame('belum', $permohonan->fresh()->status_akhir);
+        $this->assertSame(StatusPermohonan::Belum, $permohonan->fresh()->status_akhir);
     }
 
     public function test_pemohon_cannot_delete_permohonan_of_another_account(): void

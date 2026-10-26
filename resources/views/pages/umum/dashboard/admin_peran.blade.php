@@ -262,7 +262,7 @@
                                         </small>
                                     </div>
                                     <span class="badge bg-label-info">
-                                        {{ $jadwal->status_label ?? ucfirst($jadwal->status ?? '-') }}
+                                        {{ $jadwal->status_label }}
                                     </span>
                                 </div>
                                 <p class="mb-2 small">

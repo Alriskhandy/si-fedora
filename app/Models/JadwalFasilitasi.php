@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusJadwal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,13 +18,6 @@ class JadwalFasilitasi extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'jadwal_fasilitasi';
-
-    // Status constants
-    const STATUS_DRAFT = 'draft';
-
-    const STATUS_PUBLISHED = 'published';
-
-    const STATUS_CLOSED = 'closed';
 
     protected $fillable = [
         'tahun_anggaran',
@@ -44,6 +38,7 @@ class JadwalFasilitasi extends Model
     {
         return [
             'tahun_anggaran' => 'integer',
+            'status' => StatusJadwal::class,
             'tanggal_mulai' => 'datetime',
             'tanggal_selesai' => 'datetime',
             'batas_permohonan' => 'datetime',
@@ -84,12 +79,7 @@ class JadwalFasilitasi extends Model
     // Accessor
     public function getStatusLabelAttribute()
     {
-        return match ($this->status) {
-            self::STATUS_DRAFT => 'Draft',
-            self::STATUS_PUBLISHED => 'Published',
-            self::STATUS_CLOSED => 'Closed',
-            default => $this->status,
-        };
+        return $this->status?->label() ?? '-';
     }
 
     public function getJenisDokumenLabelAttribute()
@@ -105,12 +95,12 @@ class JadwalFasilitasi extends Model
     // Scope
     public function scopePublished(Builder $query)
     {
-        return $query->where('status', self::STATUS_PUBLISHED);
+        return $query->where('status', StatusJadwal::Published);
     }
 
     public function scopeActive(Builder $query)
     {
-        return $query->where('status', self::STATUS_PUBLISHED)
+        return $query->where('status', StatusJadwal::Published)
             ->where('batas_permohonan', '>=', now());
     }
 
@@ -121,7 +111,7 @@ class JadwalFasilitasi extends Model
      */
     public function scopeAvailableForExtensionRequest(Builder $query, int $userId)
     {
-        return $query->where('status', self::STATUS_PUBLISHED)
+        return $query->where('status', StatusJadwal::Published)
             ->where('batas_permohonan', '<', now())
             ->whereDoesntHave('permohonan', fn ($q) => $q->where('user_id', $userId))
             ->whereDoesntHave('perpanjanganWaktu', fn ($q) => $q->where('user_id', $userId));

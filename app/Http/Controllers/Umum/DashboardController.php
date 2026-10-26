@@ -217,9 +217,9 @@ class DashboardController extends Controller
             'tahun' => $permohonan->tahun ?? date('Y'),
             'jenis_dokumen_id' => $permohonan->jenis_dokumen_id ?? '',
             'jenis_dokumen_nama' => $permohonan->jenisDokumen?->nama ?? '-',
-            'kabupaten_kota_id' => $permohonan->kab_kota_id ?? '',
+            'kabupaten_kota_id' => $permohonan->kabupaten_kota_id ?? '',
             'kabupaten_kota_nama' => $permohonan->kabupatenKota?->nama ?? '-',
-            'status' => $permohonan->status_akhir ?? 'draft',
+            'status' => $permohonan->status_akhir?->value ?? 'draft',
         ])->toArray();
     }
 

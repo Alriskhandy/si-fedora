@@ -86,7 +86,7 @@
                     <div class="col-md-3">
                         <small class="text-muted">Status</small>
                         <p class="mb-0"><span
-                                class="badge bg-{{ $permohonan->statusBadgeClass }}">{{ strtoupper($permohonan->status_akhir) }}</span>
+                                class="badge bg-{{ $permohonan->statusBadgeClass }}">{{ strtoupper($permohonan->status_akhir->value) }}</span>
                         </p>
                     </div>
                 </div>
@@ -115,14 +115,14 @@
                 </div>
 
                 @if ($isPemohon)
-                    @if ($permohonan->status_akhir == 'belum' && $progress == 100)
+                    @if ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum && $progress == 100)
                         <form action="{{ route('permohonan.submit', $permohonan) }}" method="POST" id="submitPermohonanForm">
                             @csrf
                             <button type="submit" class="btn btn-success" id="submitPermohonanBtn">
                                 <i class='bx bx-check-circle me-1'></i>Submit Dokumen
                             </button>
                         </form>
-                    @elseif($permohonan->status_akhir != 'belum')
+                    @elseif($permohonan->status_akhir !== \App\Enums\StatusPermohonan::Belum)
                         <span class="badge bg-success">
                             <i class='bx bx-check-circle'></i> Dokumen Telah Disubmit
                         </span>
@@ -138,7 +138,7 @@
                     </div>
                 </div>
 
-                @if ($isPemohon && $permohonan->status_akhir == 'belum' && $progress < 100)
+                @if ($isPemohon && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum && $progress < 100)
                     <div class="alert alert-info mb-4">
                         <i class='bx bx-info-circle me-2'></i>
                         Silakan upload semua dokumen kelengkapan. Setelah semua dokumen terupload, Anda dapat submit dokumen
@@ -160,7 +160,7 @@
                                 <th width="40%">Nama Dokumen</th>
                                 <th width="10%">File</th>
                                 <th width="20%" class="text-center">Status Upload</th>
-                                @if ($isPemohon && $permohonan->status_akhir == 'belum')
+                                @if ($isPemohon && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum)
                                     <th width="25%" class="text-center">Aksi</th>
                                 @else
                                     <th width="25%">Keterangan</th>
@@ -212,8 +212,8 @@
                                         @endif
                                     </td>
                                     <td
-                                        class="{{ $isPemohon && $permohonan->status_akhir == 'belum' ? 'text-center' : '' }}">
-                                        @if ($isPemohon && $permohonan->status_akhir == 'belum')
+                                        class="{{ $isPemohon && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum ? 'text-center' : '' }}">
+                                        @if ($isPemohon && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum)
                                             @if (!$dokumen->is_ada)
                                                 <form action="{{ route('permohonan-dokumen.upload', $dokumen) }}"
                                                     method="POST" enctype="multipart/form-data"

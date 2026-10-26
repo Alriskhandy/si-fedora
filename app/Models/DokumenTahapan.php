@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusDokumen;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,7 @@ class DokumenTahapan extends Model
     {
         return [
             'file_size' => 'integer',
+            'status' => StatusDokumen::class,
             'verified_at' => 'datetime',
         ];
     }

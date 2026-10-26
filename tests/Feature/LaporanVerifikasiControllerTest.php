@@ -17,7 +17,7 @@ class LaporanVerifikasiControllerTest extends TestCase
     {
         $admin = User::factory()->withRole('admin_peran')->create();
         $permohonan = Permohonan::factory()->create([
-            'kab_kota_id' => KabupatenKota::factory()->create(['nama' => 'Kota Ternate'])->id,
+            'kabupaten_kota_id' => KabupatenKota::factory()->create(['nama' => 'Kota Ternate'])->id,
             'tahun' => 2026,
         ]);
         LaporanVerifikasi::create([

@@ -87,7 +87,7 @@
                                     )
                                         ->where('tahapan_id', $masterTahapanPelaksanaan->id)
                                         ->first();
-                                    $isCompleted = $currentTahapan && $currentTahapan->status === 'selesai';
+                                    $isCompleted = $currentTahapan && $currentTahapan->status === \App\Enums\StatusPermohonan::Selesai;
                                 }
                             @endphp
 

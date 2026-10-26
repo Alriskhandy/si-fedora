@@ -48,10 +48,6 @@ class KabupatenKotaController extends Controller
             'kode' => 'required|string|unique:kabupaten_kota,kode',
             'nama' => 'required|string|max:100',
             'jenis' => 'required|in:kabupaten,kota',
-            'kepala_daerah' => 'nullable|string|max:100',
-            'email' => 'nullable|email',
-            'telepon' => 'nullable|string|max:20',
-            'alamat' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
@@ -59,10 +55,6 @@ class KabupatenKotaController extends Controller
             'kode' => $request->kode,
             'nama' => $request->nama,
             'jenis' => $request->jenis,
-            'kepala_daerah' => $request->kepala_daerah,
-            'email' => $request->email,
-            'telepon' => $request->telepon,
-            'alamat' => $request->alamat,
             'is_active' => $request->is_active ?? false,
         ]);
 
@@ -94,10 +86,6 @@ class KabupatenKotaController extends Controller
             'kode' => 'required|string|unique:kabupaten_kota,kode,'.$kabupatenKota->id,
             'nama' => 'required|string|max:100',
             'jenis' => 'required|in:kabupaten,kota',
-            'kepala_daerah' => 'nullable|string|max:100',
-            'email' => 'nullable|email',
-            'telepon' => 'nullable|string|max:20',
-            'alamat' => 'nullable|string',
             'is_active' => 'boolean',
         ]);
 
@@ -105,10 +93,6 @@ class KabupatenKotaController extends Controller
             'kode' => $request->kode,
             'nama' => $request->nama,
             'jenis' => $request->jenis,
-            'kepala_daerah' => $request->kepala_daerah,
-            'email' => $request->email,
-            'telepon' => $request->telepon,
-            'alamat' => $request->alamat,
             'is_active' => $request->is_active ?? false,
         ]);
 

@@ -179,7 +179,7 @@ class TanggalSelesaiTahapanTest extends TestCase
     public function test_panel_is_hidden_from_other_roles(string $role): void
     {
         $this->createRiwayat();
-        $user = User::factory()->withRole($role)->create(['kabupaten_kota_id' => $this->permohonan->kab_kota_id]);
+        $user = User::factory()->withRole($role)->create(['kabupaten_kota_id' => $this->permohonan->kabupaten_kota_id]);
 
         $this->actingAs($user)->get(route('permohonan.show', $this->permohonan))
             ->assertOk()

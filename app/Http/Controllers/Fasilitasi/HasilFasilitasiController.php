@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Fasilitasi;
 
+use App\Enums\StatusHasilFasilitasi;
 use App\Http\Controllers\Controller;
 use App\Models\HasilFasilitasi;
 use App\Models\HasilFasilitasiForm;
@@ -67,7 +68,7 @@ class HasilFasilitasiController extends Controller
 
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('jenis_dokumen_id', $jenisDokumenId)
             ->where('tahun', $permohonan->tahun)
             ->where('role_type', 'fasilitator')
@@ -115,7 +116,7 @@ class HasilFasilitasiController extends Controller
 
         // Get assignment for debugging
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('jenis_dokumen_id', $jenisDokumenId)
             ->where('tahun', $permohonan->tahun)
             ->whereIn('role_type', ['fasilitator', 'verifikator'])
@@ -180,7 +181,7 @@ class HasilFasilitasiController extends Controller
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
 
         $assignment = UserKabkotaAssignment::where('user_id', Auth::id())
-            ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('jenis_dokumen_id', $jenisDokumenId)
             ->where('tahun', $permohonan->tahun)
             ->where('role_type', 'verifikator')
@@ -199,7 +200,7 @@ class HasilFasilitasiController extends Controller
      */
     private function notifyTeamMembers(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
-        $kabkotaId = $permohonan->kab_kota_id;
+        $kabkotaId = $permohonan->kabupaten_kota_id;
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
 
         // Get all team members (fasilitator dan verifikator)
@@ -232,7 +233,7 @@ class HasilFasilitasiController extends Controller
      */
     private function notifyKoordinator(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
-        $kabkotaId = $permohonan->kab_kota_id;
+        $kabkotaId = $permohonan->kabupaten_kota_id;
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
 
         // Get koordinator (fasilitator dengan is_pic = true)
@@ -307,8 +308,7 @@ class HasilFasilitasiController extends Controller
             $query->where(function ($q) use ($userAssignments) {
                 foreach ($userAssignments as $assignment) {
                     $q->orWhere(function ($subQ) use ($assignment) {
-                        // Use correct column name: kab_kota_id (not kabupaten_kota_id)
-                        $subQ->where('permohonan.kab_kota_id', $assignment->kabupaten_kota_id)
+                        $subQ->where('permohonan.kabupaten_kota_id', $assignment->kabupaten_kota_id)
                             ->where('permohonan.tahun', $assignment->tahun)
                             ->where('permohonan.jenis_dokumen_id', $assignment->jenis_dokumen_id);
                     });
@@ -1598,7 +1598,7 @@ class HasilFasilitasiController extends Controller
             }
 
             // Check if already submitted or approved
-            if (in_array($hasilFasilitasi->status_draft, ['menunggu_persetujuan_kaban', 'disetujui_kaban'])) {
+            if (in_array($hasilFasilitasi->status_draft, [StatusHasilFasilitasi::MenungguPersetujuanKaban, StatusHasilFasilitasi::DisetujuiKaban], true)) {
                 return redirect()->back()->with('info', 'Dokumen sudah diajukan/disetujui oleh Kepala Badan.');
             }
 

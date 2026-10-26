@@ -35,7 +35,7 @@
         $isVerifikator = auth()->user()->can('permohonan.verify');
         $isAdmin = auth()->user()->can('laporan-verifikasi.manage');
         $allDocsVerified = $permohonan->permohonanDokumen->count() > 0
-            && $permohonan->permohonanDokumen->every(fn($d) => $d->status_verifikasi === 'verified');
+            && $permohonan->permohonanDokumen->every(fn($d) => $d->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Verified);
     @endphp
 
     <div class="container-xxl flex-grow-1 container-p-y">
@@ -55,7 +55,7 @@
                 </nav>
             </div>
             <div class="d-flex gap-2">
-                @if ($isVerifikator && ($permohonan->status_akhir === 'selesai' || $allDocsVerified))
+                @if ($isVerifikator && ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Selesai || $allDocsVerified))
                     <a href="{{ route('verifikasi.lembar-verifikasi', $permohonan) }}" class="btn btn-success">
                         <i class='bx bx-download me-1'></i> Download Lembar Verifikasi
                     </a>
@@ -96,7 +96,7 @@
             </div>
         @endif
 
-        @if ($permohonan->status_akhir == 'belum')
+        @if ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum)
             <div class="alert alert-info">
                 <i class='bx bx-info-circle me-2'></i>
                 @if ($isPemohon)
@@ -140,7 +140,7 @@
                     </div>
                 @endif
             @endif
-        @elseif ($permohonan->status_akhir == 'proses')
+        @elseif ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Proses)
             @if ($allDocsVerified)
                 @if ($isPemohon)
                     <div class="alert alert-info">
@@ -176,7 +176,7 @@
                     </div>
                 @endif
             @endif
-        @elseif($permohonan->status_akhir == 'revisi')
+        @elseif($permohonan->status_akhir === \App\Enums\StatusPermohonan::Revisi)
             @if ($isPemohon)
                 @php
                     $dokumenRevisi = $permohonan->permohonanDokumen->where('status_verifikasi', 'revision')->count();
@@ -192,7 +192,7 @@
                     Permohonan memerlukan revisi dokumen dari pemohon.
                 </div>
             @endif
-        @elseif($permohonan->status_akhir == 'selesai')
+        @elseif($permohonan->status_akhir === \App\Enums\StatusPermohonan::Selesai)
             <div class="alert alert-success">
                 <i class='bx bx-check-circle me-2'></i>
                 <strong>Verifikasi Selesai</strong><br>
@@ -205,7 +205,7 @@
         @endif
 
         <!-- Laporan Verifikasi untuk Admin -->
-        @if ($isAdmin && ($permohonan->status_akhir === 'selesai' || ($permohonan->status_akhir === 'proses' && $allDocsVerified)))
+        @if ($isAdmin && ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Selesai || ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Proses && $allDocsVerified)))
             <div class="row mb-4">
                 <!-- Statistik Verifikasi -->
                 <div class="col-lg-4">
@@ -376,7 +376,7 @@
                     <i
                         class='bx bx-list-check me-2'></i>{{ ($isVerifikator || $isAdmin) ? 'Verifikasi Dokumen' : 'Status Verifikasi Dokumen' }}
                 </h5>
-                @if (($isVerifikator) && $permohonan->status_akhir == 'proses')
+                @if (($isVerifikator) && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Proses)
                     <button type="button" class="btn btn-success" id="submitVerificationBtn">
                         <i class='bx bx-check-circle me-1'></i>Submit Verifikasi
                     </button>
@@ -399,11 +399,11 @@
                                     @if ($isVerifikator || $isAdmin)
                                         <th width="15%">Status Verifikasi</th>
                                         <th width="30%">
-                                            {{ ($isVerifikator || $isAdmin) && $permohonan->status_akhir == 'proses' ? 'Verifikasi' : 'Catatan' }}
+                                            {{ ($isVerifikator || $isAdmin) && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Proses ? 'Verifikasi' : 'Catatan' }}
                                         </th>
                                     @else
                                         <th width="15%">Status Verifikasi</th>
-                                        <th width="30%">{{ $isPemohon && $permohonan->status_akhir == 'revisi' ? 'Catatan / Aksi' : 'Catatan' }}</th>
+                                        <th width="30%">{{ $isPemohon && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Revisi ? 'Catatan / Aksi' : 'Catatan' }}</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -453,15 +453,15 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if ($dokumen->status_verifikasi === 'verified')
+                                            @if ($dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Verified)
                                                 <span class="badge bg-success">
                                                     Sesuai
                                                 </span>
-                                            @elseif($dokumen->status_verifikasi === 'revision')
+                                            @elseif($dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Revision)
                                                 <span class="badge bg-danger">
                                                     Revisi
                                                 </span>
-                                            @elseif($dokumen->status_verifikasi === 'pending' && $permohonan->status_akhir === 'revisi')
+                                            @elseif($dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Pending && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Revisi)
                                                 <span class="badge bg-warning">
                                                     Menunggu Verifikasi Ulang
                                                 </span>
@@ -472,23 +472,23 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if (($isVerifikator || $isAdmin) && $permohonan->status_akhir == 'proses')
+                                            @if (($isVerifikator || $isAdmin) && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Proses)
                                                 <div class="verification-form">
                                                     <select class="form-select form-select-sm mb-2 dokumen-status"
                                                         data-dokumen-id="{{ $dokumen->id }}">
                                                         <option value="">-- Pilih Status --</option>
                                                         <option value="verified"
-                                                            {{ $dokumen->status_verifikasi == 'verified' ? 'selected' : '' }}>
+                                                            {{ $dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Verified ? 'selected' : '' }}>
                                                             Sesuai</option>
                                                         <option value="revision"
-                                                            {{ $dokumen->status_verifikasi == 'revision' ? 'selected' : '' }}>
+                                                            {{ $dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Revision ? 'selected' : '' }}>
                                                             Perlu Revisi</option>
                                                     </select>
                                                     <textarea class="form-control form-control-sm dokumen-catatan" data-dokumen-id="{{ $dokumen->id }}" rows="2"
                                                         placeholder="Catatan verifikasi (opsional)">{{ $dokumen->catatan_verifikasi }}</textarea>
                                                 </div>
-                                            @elseif ($isPemohon && $permohonan->status_akhir == 'revisi')
-                                                @if ($dokumen->status_verifikasi == 'revision')
+                                            @elseif ($isPemohon && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Revisi)
+                                                @if ($dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Revision)
                                                     {{-- Dokumen perlu revisi - tampilkan catatan dan form upload --}}
                                                     @if ($dokumen->catatan_verifikasi)
                                                         <div class="alert alert-danger alert-sm p-2 mb-2">
@@ -515,7 +515,7 @@
                                                         </button>
                                                         <small class="d-block mt-1 text-muted text-center">PDF atau Excel (Max 100MB)</small>
                                                     </form>
-                                                @elseif ($dokumen->status_verifikasi == 'pending')
+                                                @elseif ($dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Pending)
                                                     {{-- Dokumen sudah diupload ulang, menunggu verifikasi --}}
                                                     <div class="alert alert-warning alert-sm p-2">
                                                         <small>
@@ -530,7 +530,7 @@
                                                             {{ $dokumen->catatan_verifikasi }}
                                                         </small>
                                                     @endif
-                                                @elseif ($dokumen->status_verifikasi == 'verified')
+                                                @elseif ($dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Verified)
                                                     {{-- Dokumen sudah verified --}}
                                                     <small class="text-success">
                                                         <i class='bx bx-check-circle'></i>
@@ -543,9 +543,9 @@
                                                 {{-- Tampilan default untuk pemohon dan role lain --}}
                                                 @if ($dokumen->catatan_verifikasi)
                                                     <small
-                                                        class="text-{{ $dokumen->status_verifikasi === 'verified' ? 'success' : 'danger' }}">
+                                                        class="text-{{ $dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Verified ? 'success' : 'danger' }}">
                                                         <i
-                                                            class='bx bx-{{ $dokumen->status_verifikasi === 'verified' ? 'check-circle' : 'error-circle' }}'></i>
+                                                            class='bx bx-{{ $dokumen->status_verifikasi === \App\Enums\StatusVerifikasiDokumen::Verified ? 'check-circle' : 'error-circle' }}'></i>
                                                         {{ $dokumen->catatan_verifikasi }}
                                                     </small>
                                                 @else

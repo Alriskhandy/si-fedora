@@ -361,7 +361,7 @@
                                         <th width="45%">Status:</th>
                                         <td>
                                             <span class="badge bg-{{ $permohonan->statusBadgeClass }}">
-                                                {{ strtoupper($permohonan->status_akhir) }}
+                                                {{ strtoupper($permohonan->status_akhir->value) }}
                                             </span>
                                         </td>
                                     </tr>
@@ -416,24 +416,24 @@
                         @endif
 
                         <!-- Info Status -->
-                        @if ($permohonan->status_akhir == 'belum')
+                        @if ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum)
                             <div class="alert alert-primary mt-3 mb-0">
                                 <i class='bx bx-info-circle me-2'></i>
                                 <strong>Status:</strong> Permohonan telah dibuat. Silakan lengkapi dokumen persyaratan dan
                                 submit permohonan Anda.
                             </div>
-                        @elseif ($permohonan->status_akhir == 'proses')
+                        @elseif ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Proses)
                             <div class="alert alert-info mt-3 mb-0">
                                 <i class='bx bx-time-five me-2'></i>
                                 <strong>Status:</strong> Permohonan telah disubmit dan sedang dalam proses.
                             </div>
-                        @elseif ($permohonan->status_akhir == 'revisi')
+                        @elseif ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Revisi)
                             <div class="alert alert-warning mt-3 mb-0">
                                 <i class='bx bx-error me-2'></i>
                                 <strong>Status:</strong> Permohonan memerlukan revisi. Silakan periksa catatan dari
                                 verifikator.
                             </div>
-                        @elseif ($permohonan->status_akhir == 'selesai')
+                        @elseif ($permohonan->status_akhir === \App\Enums\StatusPermohonan::Selesai)
                             <div class="alert alert-success mt-3 mb-0">
                                 <i class='bx bx-check-circle me-2'></i>
                                 <strong>Status:</strong> Permohonan telah selesai diproses.
@@ -441,7 +441,7 @@
                         @endif
 
                         {{-- Tombol Perpanjangan Waktu untuk Pemohon --}}
-                        @if (auth()->user()->can('perpanjangan-waktu.submit') && $permohonan->isUploadDeadlinePassed() && $permohonan->status_akhir == 'belum')
+                        @if (auth()->user()->can('perpanjangan-waktu.submit') && $permohonan->isUploadDeadlinePassed() && $permohonan->status_akhir === \App\Enums\StatusPermohonan::Belum)
                             @php
                                 $existingPerpanjangan = $permohonan->perpanjanganWaktu()->latest()->first();
                             @endphp
@@ -493,14 +493,14 @@
                                     </div>
                                     <div class="text-muted" style="font-size: 0.8rem; line-height: 1.6;">
                                         Status:
-                                        @if ($history->status === 'selesai')
+                                        @if ($history->status === \App\Enums\StatusPermohonan::Selesai)
                                             <span class="text-primary fw-semibold">Selesai</span>
-                                        @elseif ($history->status === 'proses')
+                                        @elseif ($history->status === \App\Enums\StatusPermohonan::Proses)
                                             <span class="text-warning fw-semibold">Sedang Proses</span>
-                                        @elseif ($history->status === 'revisi')
+                                        @elseif ($history->status === \App\Enums\StatusPermohonan::Revisi)
                                             <span class="text-danger fw-semibold">Perlu Revisi</span>
                                         @else
-                                            <span class="text-secondary">{{ ucfirst($history->status) }}</span>
+                                            <span class="text-secondary">{{ ucfirst($history->status?->value ?? '') }}</span>
                                         @endif
 
                                         <br>

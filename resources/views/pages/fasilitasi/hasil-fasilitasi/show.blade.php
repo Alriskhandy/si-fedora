@@ -43,7 +43,7 @@
                         <i class="bx bx-edit"></i> Input Masukan
                     </a>
                 @endif
-                @if ($isKaban && $hasilFasilitasi->status_draft === 'menunggu_persetujuan_kaban')
+                @if ($isKaban && $hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::MenungguPersetujuanKaban)
                     <a href="{{ route('approval.show', $permohonan) }}" class="btn btn-success">
                         <i class="bx bx-check-shield"></i> Review &amp; Setujui
                     </a>

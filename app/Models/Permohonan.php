@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusPermohonan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,7 @@ class Permohonan extends Model
 
     protected $fillable = [
         'user_id',
-        'kab_kota_id',
+        'kabupaten_kota_id',
         'jadwal_fasilitasi_id',
         'tahun',
         'jenis_dokumen_id',
@@ -44,6 +45,7 @@ class Permohonan extends Model
     {
         return [
             'tahun' => 'integer',
+            'status_akhir' => StatusPermohonan::class,
             'submitted_at' => 'datetime',
         ];
     }
@@ -52,33 +54,14 @@ class Permohonan extends Model
     // ACCESSORS & MUTATORS
     // ============================================================
 
-    public function getKabupatenKotaIdAttribute()
+    public function getStatusLabelAttribute(): string
     {
-        return $this->attributes['kab_kota_id'] ?? null;
+        return $this->status_akhir?->label() ?? 'Status Tidak Dikenal';
     }
 
-    public function getStatusLabelAttribute()
+    public function getStatusBadgeClassAttribute(): string
     {
-        $labels = [
-            'belum' => 'Belum Dimulai',
-            'proses' => 'Dalam Proses',
-            'revisi' => 'Perlu Revisi',
-            'selesai' => 'Selesai',
-        ];
-
-        return $labels[$this->status_akhir] ?? 'Status Tidak Dikenal';
-    }
-
-    public function getStatusBadgeClassAttribute()
-    {
-        $classes = [
-            'belum' => 'secondary',
-            'proses' => 'warning',
-            'revisi' => 'danger',
-            'selesai' => 'success',
-        ];
-
-        return $classes[$this->status_akhir] ?? 'secondary';
+        return $this->status_akhir?->badgeClass() ?? 'secondary';
     }
 
     // ============================================================
@@ -112,7 +95,7 @@ class Permohonan extends Model
     // Master Data Relations
     public function kabupatenKota(): BelongsTo
     {
-        return $this->belongsTo(KabupatenKota::class, 'kab_kota_id');
+        return $this->belongsTo(KabupatenKota::class);
     }
 
     public function jenisDokumen(): BelongsTo
@@ -220,7 +203,7 @@ class Permohonan extends Model
 
     public function scopeByKabKota(Builder $query, $kabKotaId)
     {
-        return $query->where('kab_kota_id', $kabKotaId);
+        return $query->where('kabupaten_kota_id', $kabKotaId);
     }
 
     public function scopeByStatus(Builder $query, $status)
@@ -244,7 +227,7 @@ class Permohonan extends Model
                 $q->where('user_id', $user->id);
 
                 if ($user->kabupaten_kota_id) {
-                    $q->orWhere('kab_kota_id', $user->kabupaten_kota_id);
+                    $q->orWhere('kabupaten_kota_id', $user->kabupaten_kota_id);
                 }
             });
         }
@@ -259,7 +242,7 @@ class Permohonan extends Model
                         $qq->where(function (Builder $sub) use ($assignments) {
                             foreach ($assignments as $assignment) {
                                 $sub->orWhere(function (Builder $s) use ($assignment) {
-                                    $s->where('kab_kota_id', $assignment->kabupaten_kota_id);
+                                    $s->where('kabupaten_kota_id', $assignment->kabupaten_kota_id);
 
                                     if ($assignment->tahun) {
                                         $s->where('tahun', $assignment->tahun);
@@ -295,7 +278,7 @@ class Permohonan extends Model
             return $query->where(function (Builder $q) use ($assignments) {
                 foreach ($assignments as $assignment) {
                     $q->orWhere(function (Builder $qq) use ($assignment) {
-                        $qq->where('kab_kota_id', $assignment->kabupaten_kota_id)
+                        $qq->where('kabupaten_kota_id', $assignment->kabupaten_kota_id)
                             ->where('tahun', $assignment->tahun);
 
                         if ($assignment->jenis_dokumen_id) {
@@ -344,7 +327,7 @@ class Permohonan extends Model
             // Tahap 1 (Permohonan) - Otomatis active saat permohonan dibuat
             if ($index === 0 && $this->exists) {
                 if ($permohonanTahapan) {
-                    if ($permohonanTahapan->status === 'selesai') {
+                    if ($permohonanTahapan->status === StatusPermohonan::Selesai) {
                         $status = 'completed';
                         $completed = true;
                         $lastCompletedIndex = $index;
@@ -365,12 +348,12 @@ class Permohonan extends Model
             } else {
                 // Tahap lainnya (Verifikasi dst)
                 if ($permohonanTahapan) {
-                    if ($permohonanTahapan->status === 'selesai') {
+                    if ($permohonanTahapan->status === StatusPermohonan::Selesai) {
                         $status = 'completed';
                         $completed = true;
                         $lastCompletedIndex = $index;
                         $date = $permohonanTahapan->tanggal_selesai_tampil;
-                    } elseif (in_array($permohonanTahapan->status, ['proses', 'revisi'])) {
+                    } elseif (in_array($permohonanTahapan->status, [StatusPermohonan::Proses, StatusPermohonan::Revisi], true)) {
                         $status = 'active';
                         $isActive = true;
                         $date = $permohonanTahapan->created_at;
@@ -392,7 +375,7 @@ class Permohonan extends Model
                 'isActive' => $isActive,
                 'status' => $status, // pending | active | completed
                 'tahapan_id' => $tahapan->id,
-                'db_status' => $permohonanTahapan->status ?? null,
+                'db_status' => $permohonanTahapan?->status?->value,
             ];
         }
 
@@ -514,7 +497,7 @@ class Permohonan extends Model
 
     public function canUploadDocuments()
     {
-        if (! in_array($this->status_akhir, ['belum', 'revisi'])) {
+        if (! $this->status_akhir->bisaUbahDokumen()) {
             return false;
         }
 

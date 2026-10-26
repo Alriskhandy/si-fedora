@@ -17,9 +17,7 @@ class MasterTahapan extends Model
     protected $table = 'master_tahapan';
 
     protected $fillable = [
-        'kode',
         'nama_tahapan',
-        'deskripsi',
         'urutan',
     ];
 

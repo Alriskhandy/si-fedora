@@ -125,9 +125,9 @@
                                             </td>
                                             @if (auth()->user()->can('jadwal.manage'))
                                                 <td>
-                                                    @if ($item->status == 'draft')
+                                                    @if ($item->status === \App\Enums\StatusJadwal::Draft)
                                                         <span class="badge bg-label-secondary">Draft</span>
-                                                    @elseif($item->status == 'published')
+                                                    @elseif($item->status === \App\Enums\StatusJadwal::Published)
                                                         <span class="badge bg-label-success">Published</span>
                                                     @else
                                                         <span class="badge bg-label-danger">Closed</span>

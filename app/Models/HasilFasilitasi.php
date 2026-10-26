@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusHasilFasilitasi;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +42,7 @@ class HasilFasilitasi extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'status_draft' => StatusHasilFasilitasi::class,
             'surat_tanggal' => 'datetime',
             'tanggal_diajukan_kaban' => 'datetime',
             'tanggal_disetujui_kaban' => 'datetime',
@@ -89,19 +91,12 @@ class HasilFasilitasi extends Model
     }
 
     /**
-     * Status saat isi hasil fasilitasi tidak boleh diubah: sedang dinilai atau sudah disetujui Kaban.
-     *
-     * @var list<string>
-     */
-    public const STATUS_TERKUNCI = ['menunggu_persetujuan_kaban', 'disetujui_kaban'];
-
-    /**
      * Apakah masukan (sistematika, urusan, form, rekomendasi) terkunci (keputusan K5).
      * Kunci terbuka lagi bila Kaban menolak (status ditolak_kaban).
      */
     public function isLocked(): bool
     {
-        return in_array($this->status_draft, self::STATUS_TERKUNCI, true);
+        return $this->status_draft?->terkunci() ?? false;
     }
 
     /**
@@ -111,13 +106,9 @@ class HasilFasilitasi extends Model
      */
     public function statusLabel(): array
     {
-        return match ($this->status_draft) {
-            'menunggu_persetujuan_kaban' => ['Menunggu Persetujuan Kaban', 'bg-label-warning'],
-            'disetujui_kaban' => ['Disetujui Kaban', 'bg-label-success'],
-            'ditolak_kaban' => ['Dikembalikan Kaban', 'bg-label-danger'],
-            'diajukan' => ['Diajukan', 'bg-label-info'],
-            default => ['Penyusunan Masukan', 'bg-label-primary'],
-        };
+        $status = $this->status_draft ?? StatusHasilFasilitasi::Draft;
+
+        return [$status->label(), $status->badgeClass()];
     }
 
     /**

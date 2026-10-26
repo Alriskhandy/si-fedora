@@ -99,25 +99,6 @@
                                     </div>
                                 </div>
 
-                                @if ($permohonan->tindakLanjut && $permohonan->tindakLanjut->jenis_tindak_lanjut)
-                                    <div class="mb-4">
-                                        <label class="text-muted small d-block mb-2">Jenis Tindak Lanjut</label>
-                                        @php
-                                            $jenisLabels = [
-                                                'perbaikan' => ['text' => 'Perbaikan', 'class' => 'warning'],
-                                                'revisi_total' => ['text' => 'Revisi Total', 'class' => 'danger'],
-                                                'sudah_sesuai' => ['text' => 'Sudah Sesuai', 'class' => 'success'],
-                                            ];
-                                            $current = $jenisLabels[$permohonan->tindakLanjut->jenis_tindak_lanjut] ?? [
-                                                'text' => 'Unknown',
-                                                'class' => 'secondary',
-                                            ];
-                                        @endphp
-                                        <span class="badge bg-{{ $current['class'] }} px-3 py-2">
-                                            {{ $current['text'] }}
-                                        </span>
-                                    </div>
-                                @endif
 
                                 <div class="mb-4">
                                     <label class="text-muted small d-block mb-2">Tanggal Upload</label>

@@ -56,7 +56,6 @@ class User extends Authenticatable
         'opd_id',
         'no_hp',
         'foto_profile',
-        'last_login_at',
     ];
 
     protected $hidden = [
@@ -70,7 +69,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
-            'last_login_at' => 'datetime',
         ];
     }
 
@@ -96,11 +94,6 @@ class User extends Authenticatable
     public function unreadNotifikasi(): HasMany
     {
         return $this->hasMany(Notifikasi::class)->where('is_read', false);
-    }
-
-    public function updateLastLogin(): void
-    {
-        $this->update(['last_login_at' => now()]);
     }
 
     // Assignment Kabupaten/Kota Relations

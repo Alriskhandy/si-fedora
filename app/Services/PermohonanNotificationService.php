@@ -666,7 +666,7 @@ class PermohonanNotificationService
     private function notifyTimFedora(Permohonan $permohonan, $event, $additionalData = null)
     {
         // Get tim fedora yang di-assign untuk kab/kota dan tahun ini
-        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('tahun', $permohonan->tahun)
             ->where('is_active', true)
             ->where(function ($q) use ($permohonan) {
@@ -679,7 +679,7 @@ class PermohonanNotificationService
         if ($assignments->isEmpty()) {
             Log::info('No tim fedora assigned for this permohonan', [
                 'permohonan_id' => $permohonan->id,
-                'kab_kota_id' => $permohonan->kab_kota_id,
+                'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
                 'tahun' => $permohonan->tahun,
             ]);
 
@@ -715,7 +715,7 @@ class PermohonanNotificationService
     private function notifyTimFedoraFasilitator(Permohonan $permohonan, $event, $additionalData = null)
     {
         // Get fasilitator yang di-assign untuk kab/kota dan tahun ini
-        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('tahun', $permohonan->tahun)
             ->where('is_active', true)
             ->where(function ($q) use ($permohonan) {
@@ -733,7 +733,7 @@ class PermohonanNotificationService
         if ($fasilitators->isEmpty()) {
             Log::info('No fasilitator assigned for this permohonan', [
                 'permohonan_id' => $permohonan->id,
-                'kab_kota_id' => $permohonan->kab_kota_id,
+                'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
                 'tahun' => $permohonan->tahun,
             ]);
 
@@ -769,7 +769,7 @@ class PermohonanNotificationService
     private function notifyTimFedoraVerifikator(Permohonan $permohonan, $event, $additionalData = null)
     {
         // Get verifikator yang di-assign untuk kab/kota dan tahun ini
-        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('tahun', $permohonan->tahun)
             ->where('is_active', true)
             ->where(function ($q) use ($permohonan) {
@@ -787,7 +787,7 @@ class PermohonanNotificationService
         if ($verifikators->isEmpty()) {
             Log::info('No verifikator assigned for this permohonan', [
                 'permohonan_id' => $permohonan->id,
-                'kab_kota_id' => $permohonan->kab_kota_id,
+                'kabupaten_kota_id' => $permohonan->kabupaten_kota_id,
                 'tahun' => $permohonan->tahun,
             ]);
 

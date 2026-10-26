@@ -183,7 +183,7 @@ class PenetapanPerdaController extends Controller
             })->get();
 
             // 2. Tim fasilitator dan verifikator yang di-assign ke kabkota + jenis dokumen + tahun ini
-            $timAssignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+            $timAssignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
                 ->where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
                 ->where('tahun', $permohonan->tahun)
                 ->where('is_active', true)

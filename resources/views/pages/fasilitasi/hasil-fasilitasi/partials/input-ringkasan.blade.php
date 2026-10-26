@@ -7,7 +7,7 @@
     [$statusLabel, $statusBadge] = $hasilFasilitasi->statusLabel();
     $deadline = $tahapanHasil?->deadline;
     $isOverdue = $deadline && now()->gt($deadline);
-    $pelaksanaanSelesai = $tahapanPelaksanaan?->status === 'selesai' ? $tahapanPelaksanaan->tanggal_selesai_tampil : null;
+    $pelaksanaanSelesai = $tahapanPelaksanaan?->status === \App\Enums\StatusPermohonan::Selesai ? $tahapanPelaksanaan->tanggal_selesai_tampil : null;
 @endphp
 
 <div class="card mb-4">

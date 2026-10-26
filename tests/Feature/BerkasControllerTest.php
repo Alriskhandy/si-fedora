@@ -39,7 +39,7 @@ class BerkasControllerTest extends TestCase
         Storage::fake('dokumen');
         $kabKota = KabupatenKota::factory()->create();
         $pemohon = User::factory()->withRole('pemohon')->create(['kabupaten_kota_id' => $kabKota->id]);
-        $dokumen = $this->createDokumenTahapan(Permohonan::factory()->create(['kab_kota_id' => $kabKota->id]));
+        $dokumen = $this->createDokumenTahapan(Permohonan::factory()->create(['kabupaten_kota_id' => $kabKota->id]));
 
         $response = $this->actingAs($pemohon)->get(route('berkas.show', ['dokumen-tahapan', $dokumen->id, 'unduh' => 1]));
 

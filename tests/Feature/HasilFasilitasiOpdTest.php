@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StatusHasilFasilitasi;
 use App\Models\HasilFasilitasi;
 use App\Models\HasilFasilitasiUrusan;
 use App\Models\MasterUrusan;
@@ -193,6 +194,6 @@ class HasilFasilitasiOpdTest extends TestCase
 
         $this->actingAs($fasilitator)->post(route('hasil-fasilitasi.submit', $this->permohonan))->assertRedirect();
 
-        $this->assertSame('diajukan', $this->hasil->fresh()->status_draft);
+        $this->assertSame(StatusHasilFasilitasi::Diajukan, $this->hasil->fresh()->status_draft);
     }
 }

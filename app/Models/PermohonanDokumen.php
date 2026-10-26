@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusVerifikasiDokumen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,6 +39,7 @@ class PermohonanDokumen extends Model
     {
         return [
             'is_ada' => 'boolean',
+            'status_verifikasi' => StatusVerifikasiDokumen::class,
             'verified_at' => 'datetime',
         ];
     }
@@ -59,6 +61,6 @@ class PermohonanDokumen extends Model
 
     public function isVerified(): bool
     {
-        return $this->status_verifikasi === 'verified';
+        return $this->status_verifikasi === StatusVerifikasiDokumen::Verified;
     }
 }

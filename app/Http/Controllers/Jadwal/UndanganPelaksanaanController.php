@@ -254,7 +254,7 @@ class UndanganPelaksanaanController extends Controller
      */
     private function getTimAssignments(Permohonan $permohonan): array
     {
-        $kabkotaId = $permohonan->kab_kota_id;
+        $kabkotaId = $permohonan->kabupaten_kota_id;
         $tahun = $permohonan->tahun;
 
         $assignmentQuery = function ($roleType) use ($kabkotaId, $tahun) {
@@ -279,7 +279,7 @@ class UndanganPelaksanaanController extends Controller
             ->get();
 
         $pemohonList = User::whereHas('roles', fn ($q) => $q->where('name', 'pemohon'))
-            ->whereHas('kabupatenKota', fn ($q) => $q->where('id', $permohonan->kab_kota_id))
+            ->whereHas('kabupatenKota', fn ($q) => $q->where('id', $permohonan->kabupaten_kota_id))
             ->get();
 
         $autoSelectedPenerima = collect()

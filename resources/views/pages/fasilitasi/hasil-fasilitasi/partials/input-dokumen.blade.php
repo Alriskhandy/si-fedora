@@ -9,7 +9,7 @@
     $langkah = [
         1 => (bool) $hasilFasilitasi->draft_file,
         2 => (bool) $hasilFasilitasi->draft_final_file,
-        3 => $hasilFasilitasi->status_draft === 'disetujui_kaban',
+        3 => $hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::DisetujuiKaban,
     ];
     $penandaLangkah = fn (int $nomor) => $langkah[$nomor]
         ? '<span class="badge rounded-pill bg-success me-2"><i class="bx bx-check"></i></span>'
@@ -101,12 +101,12 @@
             {{-- Langkah 3: Ajukan ke Kepala Badan --}}
             <div class="col-lg-4 border-lg-start">
                 <h6 class="d-flex align-items-center mb-2">{!! $penandaLangkah(3) !!} Persetujuan Kepala Badan</h6>
-                @if ($hasilFasilitasi->status_draft === 'menunggu_persetujuan_kaban')
+                @if ($hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::MenungguPersetujuanKaban)
                     <p class="small mb-0">
                         <span class="badge bg-label-warning"><i class="bx bx-time"></i> Menunggu persetujuan</span><br>
                         <span class="text-muted">Diajukan {{ $formatTanggal($hasilFasilitasi->tanggal_diajukan_kaban) ?? '-' }}</span>
                     </p>
-                @elseif ($hasilFasilitasi->status_draft === 'disetujui_kaban')
+                @elseif ($hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::DisetujuiKaban)
                     <p class="small mb-0">
                         <span class="badge bg-label-success"><i class="bx bx-check-circle"></i> Sudah disetujui</span><br>
                         <span class="text-muted">{{ $formatTanggal($hasilFasilitasi->tanggal_disetujui_kaban) ?? '-' }}</span>
@@ -115,7 +115,7 @@
                     <p class="small text-muted mb-0">Tersedia setelah draft final diupload.</p>
                 @elseif ($isAdmin)
                     <p class="small text-muted mb-2">
-                        @if ($hasilFasilitasi->status_draft === 'ditolak_kaban')
+                        @if ($hasilFasilitasi->status_draft === \App\Enums\StatusHasilFasilitasi::DitolakKaban)
                             Dikembalikan Kepala Badan. Perbaiki masukan dan draft final, lalu ajukan kembali.
                         @else
                             Draft final siap diajukan untuk persetujuan.

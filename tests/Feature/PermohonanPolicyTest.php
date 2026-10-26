@@ -39,7 +39,7 @@ class PermohonanPolicyTest extends TestCase
     {
         $kabKota = KabupatenKota::factory()->create();
         $pemohon = User::factory()->withRole('pemohon')->create(['kabupaten_kota_id' => $kabKota->id]);
-        $permohonanRekan = Permohonan::factory()->create(['kab_kota_id' => $kabKota->id]);
+        $permohonanRekan = Permohonan::factory()->create(['kabupaten_kota_id' => $kabKota->id]);
 
         $this->assertTrue($pemohon->can('view', $permohonanRekan));
     }
@@ -67,7 +67,7 @@ class PermohonanPolicyTest extends TestCase
     {
         $user = User::factory()->withRole($role)->create();
         $permohonan = Permohonan::factory()->create();
-        $this->assign($user, $permohonan->kab_kota_id, $permohonan->tahun, $role);
+        $this->assign($user, $permohonan->kabupaten_kota_id, $permohonan->tahun, $role);
 
         $this->assertTrue($user->can('view', $permohonan));
     }
@@ -77,7 +77,7 @@ class PermohonanPolicyTest extends TestCase
     {
         $user = User::factory()->withRole($role)->create();
         $permohonan = Permohonan::factory()->create();
-        $this->assign($user, $permohonan->kab_kota_id, $permohonan->tahun - 1, $role);
+        $this->assign($user, $permohonan->kabupaten_kota_id, $permohonan->tahun - 1, $role);
 
         $this->assertFalse($user->can('view', $permohonan));
     }
@@ -86,7 +86,7 @@ class PermohonanPolicyTest extends TestCase
     {
         $verifikator = User::factory()->withRole('verifikator')->create();
         $permohonan = Permohonan::factory()->create();
-        $this->assign($verifikator, $permohonan->kab_kota_id, $permohonan->tahun, 'verifikator', isActive: false);
+        $this->assign($verifikator, $permohonan->kabupaten_kota_id, $permohonan->tahun, 'verifikator', isActive: false);
 
         $this->assertFalse($verifikator->can('view', $permohonan));
     }

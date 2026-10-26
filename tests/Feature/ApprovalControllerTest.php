@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\StatusHasilFasilitasi;
 use App\Models\HasilFasilitasi;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ class ApprovalControllerTest extends TestCase
 
         $response->assertRedirect(route('approval.index'));
         $hasil->refresh();
-        $this->assertSame('disetujui_kaban', $hasil->status_draft);
+        $this->assertSame(StatusHasilFasilitasi::DisetujuiKaban, $hasil->status_draft);
         $this->assertSame('Sudah sesuai.', $hasil->keterangan_kaban);
         $this->assertTrue($hasil->tanggal_disetujui_kaban->equalTo(now()));
     }
@@ -39,7 +40,7 @@ class ApprovalControllerTest extends TestCase
         $response = $this->actingAs($kaban)->post(route('approval.approve', $hasil->permohonan_id));
 
         $response->assertSessionHas('error', 'Dokumen tidak dalam status menunggu persetujuan.');
-        $this->assertSame('draft', $hasil->fresh()->status_draft);
+        $this->assertSame(StatusHasilFasilitasi::Draft, $hasil->fresh()->status_draft);
     }
 
     public function test_admin_peran_is_forbidden_from_approving(): void
@@ -49,6 +50,6 @@ class ApprovalControllerTest extends TestCase
 
         $this->actingAs($admin)->post(route('approval.approve', $hasil->permohonan_id))->assertForbidden();
 
-        $this->assertSame('menunggu_persetujuan_kaban', $hasil->fresh()->status_draft);
+        $this->assertSame(StatusHasilFasilitasi::MenungguPersetujuanKaban, $hasil->fresh()->status_draft);
     }
 }

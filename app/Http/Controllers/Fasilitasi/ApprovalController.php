@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Fasilitasi;
 
+use App\Enums\StatusHasilFasilitasi;
 use App\Http\Controllers\Controller;
 use App\Models\HasilFasilitasi;
 use App\Models\MasterTahapan;
@@ -98,7 +99,7 @@ class ApprovalController extends Controller
      */
     private function notifyTeamMembers(Permohonan $permohonan, string $title, string $message, string $type = 'info'): void
     {
-        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
             ->where('tahun', $permohonan->tahun)
             ->where('is_active', true)
@@ -255,11 +256,11 @@ class ApprovalController extends Controller
         }
 
         // Pastikan status sudah menunggu persetujuan
-        if ($hasilFasilitasi->status_draft !== 'menunggu_persetujuan_kaban') {
+        if ($hasilFasilitasi->status_draft !== StatusHasilFasilitasi::MenungguPersetujuanKaban) {
             $statusMessage = match ($hasilFasilitasi->status_draft) {
-                'disetujui_kaban' => 'Draft final sudah disetujui.',
-                'ditolak_kaban' => 'Draft final ditolak dan memerlukan revisi.',
-                null, '' => 'Draft final belum diajukan untuk persetujuan. Silakan hubungi admin untuk submit ke Kepala Badan.',
+                StatusHasilFasilitasi::DisetujuiKaban => 'Draft final sudah disetujui.',
+                StatusHasilFasilitasi::DitolakKaban => 'Draft final ditolak dan memerlukan revisi.',
+                null => 'Draft final belum diajukan untuk persetujuan. Silakan hubungi admin untuk submit ke Kepala Badan.',
                 default => 'Status draft tidak valid untuk review persetujuan.'
             };
 
@@ -280,7 +281,7 @@ class ApprovalController extends Controller
         $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
 
         // Get tim info
-        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kab_kota_id)
+        $assignments = UserKabkotaAssignment::where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
             ->where('jenis_dokumen_id', $permohonan->jenis_dokumen_id)
             ->where('tahun', $permohonan->tahun)
             ->where('is_active', true)
@@ -323,7 +324,7 @@ class ApprovalController extends Controller
             }
 
             // Check if status is correct
-            if ($hasilFasilitasi->status_draft !== 'menunggu_persetujuan_kaban') {
+            if ($hasilFasilitasi->status_draft !== StatusHasilFasilitasi::MenungguPersetujuanKaban) {
                 return redirect()->back()->with('error', 'Dokumen tidak dalam status menunggu persetujuan.');
             }
 
@@ -464,7 +465,7 @@ class ApprovalController extends Controller
             }
 
             // Check if status is correct
-            if ($hasilFasilitasi->status_draft !== 'menunggu_persetujuan_kaban') {
+            if ($hasilFasilitasi->status_draft !== StatusHasilFasilitasi::MenungguPersetujuanKaban) {
                 return redirect()->back()->with('error', 'Dokumen tidak dalam status menunggu persetujuan.');
             }
 

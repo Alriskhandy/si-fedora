@@ -14,7 +14,7 @@
         ->map(fn ($master) => ['master' => $master, 'tahapan' => $tahapanPerMaster->get($master->id)])
         ->values();
 
-    $selesai = fn ($row) => $row['tahapan']?->status === 'selesai' && $row['tahapan']->tanggal_selesai;
+    $selesai = fn ($row) => $row['tahapan']?->status === \App\Enums\StatusPermohonan::Selesai && $row['tahapan']->tanggal_selesai;
     $jumlahSelesai = $baris->filter($selesai)->count();
 
     $hariIni = now()->startOfDay();
@@ -63,7 +63,7 @@
                     @php
                         $master = $row['master'];
                         $tahapan = $row['tahapan'];
-                        [$label, $badge] = $statusLabel[$tahapan->status ?? 'belum'] ?? $statusLabel['belum'];
+                        [$label, $badge] = $statusLabel[$tahapan?->status?->value ?? 'belum'] ?? $statusLabel['belum'];
                         $mulai = $tahapan?->created_at;
                         $tanggalSelesai = $selesai($row) ? $tahapan->tanggal_selesai : null;
 

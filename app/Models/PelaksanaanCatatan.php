@@ -17,22 +17,13 @@ class PelaksanaanCatatan extends Model
 
     protected $fillable = [
         'permohonan_id',
-        'catatan',
-        'peserta',
-        'hasil_pembahasan',
-        'dokumentasi',
+        'berita_acara_file',
+        'notulensi_file',
+        'dokumentasi_file',
+        'absensi_file',
+        'keterangan',
         'dibuat_oleh',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'peserta' => 'array',
-        ];
-    }
 
     // Relasi
     public function permohonan(): BelongsTo

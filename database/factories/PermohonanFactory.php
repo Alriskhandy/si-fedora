@@ -23,7 +23,7 @@ class PermohonanFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'kab_kota_id' => KabupatenKota::factory(),
+            'kabupaten_kota_id' => KabupatenKota::factory(),
             'jenis_dokumen_id' => MasterJenisDokumen::factory(),
             'jadwal_fasilitasi_id' => JadwalFasilitasi::factory(),
             'tahun' => (int) now()->format('Y'),

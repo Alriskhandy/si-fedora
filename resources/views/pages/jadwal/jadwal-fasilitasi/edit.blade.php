@@ -100,12 +100,12 @@
                                 <select class="form-select @error('status') is-invalid @enderror" id="status"
                                     name="status" required>
                                     <option value="draft"
-                                        {{ old('status', $jadwal->status) == 'draft' ? 'selected' : '' }}>Draft</option>
+                                        {{ old('status', $jadwal->status?->value) == 'draft' ? 'selected' : '' }}>Draft</option>
                                     <option value="published"
-                                        {{ old('status', $jadwal->status) == 'published' ? 'selected' : '' }}>Published
+                                        {{ old('status', $jadwal->status?->value) == 'published' ? 'selected' : '' }}>Published
                                     </option>
                                     <option value="closed"
-                                        {{ old('status', $jadwal->status) == 'closed' ? 'selected' : '' }}>Closed</option>
+                                        {{ old('status', $jadwal->status?->value) == 'closed' ? 'selected' : '' }}>Closed</option>
                                 </select>
                                 @error('status')
                                     <div class="invalid-feedback">{{ $message }}</div>

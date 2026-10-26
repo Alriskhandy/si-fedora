@@ -118,7 +118,7 @@ class ArsipController extends Controller
         // Get surat pemberitahuan if jadwal exists
         if ($permohonan->jadwalFasilitasi) {
             $documentCounts['surat_pemberitahuan'] = SuratPemberitahuan::where('jadwal_fasilitasi_id', $permohonan->jadwalFasilitasi->id)
-                ->where('kabupaten_kota_id', $permohonan->kab_kota_id)
+                ->where('kabupaten_kota_id', $permohonan->kabupaten_kota_id)
                 ->count();
         }
 
