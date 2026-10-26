@@ -97,10 +97,10 @@
                             <dt class="col-sm-5">Tahun</dt>
                             <dd class="col-sm-7">{{ $permohonan->tahun }}</dd>
 
-                            @if ($tahapanPelaksanaan && $tahapanPelaksanaan->updated_at)
+                            @if ($tahapanPelaksanaan && ($tahapanPelaksanaan->tanggal_selesai_tampil ?? $tahapanPelaksanaan->updated_at))
                                 <dt class="col-sm-5">Waktu Pelaksanaan</dt>
                                 <dd class="col-sm-7">
-                                    {{ $tahapanPelaksanaan->updated_at->format('d M Y, H:i') }}
+                                    {{ ($tahapanPelaksanaan->tanggal_selesai_tampil ?? $tahapanPelaksanaan->updated_at)->format('d M Y, H:i') }}
                                     <span class="badge bg-success">{{ $tahapanPelaksanaan->status }}</span>
                                 </dd>
                             @endif

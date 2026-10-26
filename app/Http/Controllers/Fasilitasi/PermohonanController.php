@@ -218,9 +218,12 @@ class PermohonanController extends Controller
             'hasilFasilitasi',
             'tindakLanjut',
             'activityLogs.causer',
-            'tahapan.masterTahapan',
-            'tahapan.riwayat.user',
         ]);
+
+        // Panel tanggal selesai hanya untuk Admin/Superadmin
+        if (Gate::allows('tahapan.update-tanggal-selesai')) {
+            $permohonan->load('tahapan.masterTahapan');
+        }
 
         return view('pages.fasilitasi.permohonan.show', compact('permohonan'));
     }

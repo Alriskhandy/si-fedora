@@ -46,10 +46,9 @@ class TanggalSelesaiTahapanTest extends TestCase
 
         $response = $this->actingAs($this->admin)->put($this->url($verifikasi), [
             'tanggal_selesai' => '2026-10-08',
-            'alasan' => 'Penyesuaian sesuai berita acara verifikasi.',
         ]);
 
-        $response->assertRedirect(route('permohonan.show', $this->permohonan));
+        $response->assertRedirect($this->panelUrl());
         $this->assertSame('2026-10-08', $verifikasi->fresh()->tanggal_selesai->toDateString());
 
         $riwayat = PermohonanTahapanRiwayat::sole();
@@ -57,23 +56,10 @@ class TanggalSelesaiTahapanTest extends TestCase
         $this->assertSame('2026-10-05', $riwayat->nilai_lama->toDateString());
         $this->assertSame('2026-10-08', $riwayat->nilai_baru->toDateString());
         $this->assertTrue($riwayat->user->is($this->admin));
+        $this->assertNull($riwayat->alasan);
 
         $step = collect($this->permohonan->fresh()->getProgressSteps())->firstWhere('name', 'Verifikasi');
         $this->assertSame('2026-10-08', $step['date']->toDateString());
-    }
-
-    public function test_first_correction_of_estimated_date_is_not_recorded_in_history(): void
-    {
-        $verifikasi = $this->tahapan[2];
-        $verifikasi->update(['tanggal_selesai_perkiraan' => true]);
-
-        $this->actingAs($this->admin)->put($this->url($verifikasi), [
-            'tanggal_selesai' => '2026-10-07',
-            'alasan' => 'Koreksi data lama hasil migrasi.',
-        ])->assertRedirect(route('permohonan.show', $this->permohonan));
-
-        $this->assertFalse($verifikasi->fresh()->tanggal_selesai_perkiraan);
-        $this->assertSame(0, PermohonanTahapanRiwayat::count());
     }
 
     /**
@@ -82,11 +68,10 @@ class TanggalSelesaiTahapanTest extends TestCase
     public static function invalidPayloads(): array
     {
         return [
-            'masa depan' => [['tanggal_selesai' => '2026-10-21', 'alasan' => 'Alasan yang cukup panjang.'], 'tanggal_selesai', 'Tanggal selesai tidak boleh di masa depan.'],
-            'sebelum permohonan dibuat' => [['tanggal_selesai' => '2026-09-01', 'alasan' => 'Alasan yang cukup panjang.'], 'tanggal_selesai', 'Tanggal selesai tidak boleh sebelum permohonan dibuat.'],
-            'lebih awal dari tahapan sebelumnya' => [['tanggal_selesai' => '2026-09-29', 'alasan' => 'Alasan yang cukup panjang.'], 'tanggal_selesai', 'Tanggal selesai tidak boleh lebih awal dari tahapan Permohonan (30 September 2026).'],
-            'lebih akhir dari tahapan sesudahnya' => [['tanggal_selesai' => '2026-10-11', 'alasan' => 'Alasan yang cukup panjang.'], 'tanggal_selesai', 'Tanggal selesai tidak boleh lebih akhir dari tahapan Penetapan Jadwal (10 Oktober 2026).'],
-            'tanpa alasan' => [['tanggal_selesai' => '2026-10-06'], 'alasan', 'Alasan perubahan wajib diisi.'],
+            'masa depan' => [['tanggal_selesai' => '2026-10-21'], 'tanggal_selesai', 'Tanggal selesai tidak boleh di masa depan.'],
+            'sebelum permohonan dibuat' => [['tanggal_selesai' => '2026-09-01'], 'tanggal_selesai', 'Tanggal selesai tidak boleh sebelum permohonan dibuat.'],
+            'lebih awal dari tahapan sebelumnya' => [['tanggal_selesai' => '2026-09-29'], 'tanggal_selesai', 'Tanggal selesai tidak boleh lebih awal dari tahapan Permohonan (30 September 2026).'],
+            'lebih akhir dari tahapan sesudahnya' => [['tanggal_selesai' => '2026-10-11'], 'tanggal_selesai', 'Tanggal selesai tidak boleh lebih akhir dari tahapan Penetapan Jadwal (10 Oktober 2026).'],
         ];
     }
 
@@ -105,7 +90,6 @@ class TanggalSelesaiTahapanTest extends TestCase
 
         $this->actingAs($this->admin)->put($this->url($this->tahapan[3]), [
             'tanggal_selesai' => '2026-10-10',
-            'alasan' => 'Alasan yang cukup panjang.',
         ])->assertSessionHasErrors(['tanggal_selesai' => 'Hanya tahapan yang sudah selesai yang dapat diubah tanggal selesainya.']);
     }
 
@@ -115,7 +99,7 @@ class TanggalSelesaiTahapanTest extends TestCase
 
         $this->actingAs($this->admin)->put(
             route('permohonan.tahapan.update-tanggal-selesai', [$this->permohonan, $lain]),
-            ['tanggal_selesai' => '2026-10-18', 'alasan' => 'Alasan yang cukup panjang.'],
+            ['tanggal_selesai' => '2026-10-18'],
         )->assertNotFound();
     }
 
@@ -125,7 +109,6 @@ class TanggalSelesaiTahapanTest extends TestCase
 
         $this->actingAs($fasilitator)->put($this->url($this->tahapan[2]), [
             'tanggal_selesai' => '2026-10-06',
-            'alasan' => 'Alasan yang cukup panjang.',
         ])->assertForbidden();
     }
 
@@ -154,9 +137,57 @@ class TanggalSelesaiTahapanTest extends TestCase
         $this->assertSame('2026-11-01 10:00', $riwayat->nilai_baru->format('Y-m-d H:i'));
     }
 
-    public function test_history_is_visible_to_applicant_who_can_view_the_permohonan(): void
+    public function test_changed_date_is_shown_in_tahapan_timeline_keeping_the_time(): void
     {
-        $pemohon = User::factory()->withRole('pemohon')->create(['kabupaten_kota_id' => $this->permohonan->kab_kota_id]);
+        $verifikasi = $this->tahapan[2];
+        $verifikasi->update(['tanggal_selesai' => now()->setDate(2026, 10, 5)->setTime(14, 30)]);
+
+        $this->actingAs($this->admin)->put($this->url($verifikasi), ['tanggal_selesai' => '2026-10-08'])
+            ->assertRedirect($this->panelUrl());
+
+        $this->assertSame('2026-10-08 14:30', $verifikasi->fresh()->tanggal_selesai->format('Y-m-d H:i'));
+        $this->actingAs($this->admin)->get(route('permohonan.show', $this->permohonan))
+            ->assertOk()
+            ->assertSee('Selesai: <span', false)
+            ->assertSee('08 Oct 2026, 14:30');
+    }
+
+    public function test_panel_does_not_show_change_history(): void
+    {
+        $this->createRiwayat();
+
+        $this->actingAs($this->admin)->get(route('permohonan.show', $this->permohonan))
+            ->assertOk()
+            ->assertSee('id="tanggal-selesai-tahapan"', false)
+            ->assertDontSee('Riwayat perubahan Verifikasi')
+            ->assertDontSee('berita acara');
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function rolesWithoutPanel(): array
+    {
+        return [
+            'kaban' => ['kaban'],
+            'pemohon' => ['pemohon'],
+            'auditor' => ['auditor'],
+        ];
+    }
+
+    #[DataProvider('rolesWithoutPanel')]
+    public function test_panel_is_hidden_from_other_roles(string $role): void
+    {
+        $this->createRiwayat();
+        $user = User::factory()->withRole($role)->create(['kabupaten_kota_id' => $this->permohonan->kab_kota_id]);
+
+        $this->actingAs($user)->get(route('permohonan.show', $this->permohonan))
+            ->assertOk()
+            ->assertDontSee('id="tanggal-selesai-tahapan"', false);
+    }
+
+    private function createRiwayat(): void
+    {
         $this->tahapan[2]->riwayat()->create([
             'jenis' => PermohonanTahapanRiwayat::JENIS_TANGGAL_SELESAI,
             'nilai_lama' => now()->subDays(15),
@@ -164,23 +195,45 @@ class TanggalSelesaiTahapanTest extends TestCase
             'alasan' => 'Penyesuaian <b>berita acara</b>.',
             'user_id' => $this->admin->id,
         ]);
-
-        $this->actingAs($pemohon)->get(route('permohonan.show', $this->permohonan))
-            ->assertOk()
-            ->assertSee('Riwayat Perubahan Tanggal')
-            ->assertSee('Penyesuaian &lt;b&gt;berita acara&lt;/b&gt;.', false)
-            ->assertDontSee('modalTanggalSelesai', false);
     }
 
-    public function test_admin_sees_edit_form_and_estimated_badge(): void
+    public function test_admin_sees_inline_edit_form(): void
     {
-        $this->tahapan[1]->update(['tanggal_selesai_perkiraan' => true]);
+        $this->actingAs($this->admin)->get(route('permohonan.show', $this->permohonan))
+            ->assertOk()
+            ->assertSee('js-form-ubah', false)
+            ->assertSee('3/3 tahapan selesai')
+            ->assertSee('30 Sep 2026');
+    }
+
+    public function test_panel_lists_all_tahapan_and_limits_date_picker_to_valid_range(): void
+    {
+        $tambahan = MasterTahapan::factory()->create(['nama_tahapan' => 'Pelaksanaan', 'urutan' => 4]);
 
         $this->actingAs($this->admin)->get(route('permohonan.show', $this->permohonan))
             ->assertOk()
-            ->assertSee('modalTanggalSelesai', false)
-            ->assertSee('Perkiraan')
-            ->assertSee('30 September 2026');
+            ->assertSee('3/4 tahapan selesai')
+            ->assertSee('4. '.$tambahan->nama_tahapan)
+            ->assertSee('min="2026-09-30" max="2026-10-10"', false)
+            ->assertSee('Rentang: 30 Sep 2026 – 10 Okt 2026');
+    }
+
+    public function test_validation_error_is_shown_on_the_edited_row(): void
+    {
+        $verifikasi = $this->tahapan[2];
+
+        $this->actingAs($this->admin)
+            ->from(route('permohonan.show', $this->permohonan))
+            ->followingRedirects()
+            ->put($this->url($verifikasi), ['permohonan_tahapan_id' => $verifikasi->id, 'tanggal_selesai' => '2026-10-11'])
+            ->assertOk()
+            ->assertSee('Tanggal selesai tidak boleh lebih akhir dari tahapan Penetapan Jadwal (10 Oktober 2026).')
+            ->assertSee('value="2026-10-11"', false);
+    }
+
+    private function panelUrl(): string
+    {
+        return route('permohonan.show', $this->permohonan).'#tanggal-selesai-tahapan';
     }
 
     private function url(PermohonanTahapan $tahapan): string

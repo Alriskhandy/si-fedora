@@ -14,6 +14,7 @@ use Illuminate\Validation\Validator;
  *
  * Tanggal tidak boleh di masa depan, tidak sebelum permohonan dibuat, dan wajib urut terhadap
  * tahapan sebelum dan sesudahnya yang sudah selesai. Hanya tahapan berstatus selesai yang bisa diubah.
+ * Tidak ada alasan perubahan; jejaknya ada di riwayat tahapan dan activity log.
  */
 class UpdateTanggalSelesaiTahapanRequest extends FormRequest
 {
@@ -39,7 +40,6 @@ class UpdateTanggalSelesaiTahapanRequest extends FormRequest
                 'before_or_equal:today',
                 'after_or_equal:'.$this->permohonan()->created_at->toDateString(),
             ],
-            'alasan' => ['required', 'string', 'min:10', 'max:1000'],
         ];
     }
 
@@ -113,8 +113,6 @@ class UpdateTanggalSelesaiTahapanRequest extends FormRequest
             'tanggal_selesai.date_format' => 'Format tanggal selesai tidak valid.',
             'tanggal_selesai.before_or_equal' => 'Tanggal selesai tidak boleh di masa depan.',
             'tanggal_selesai.after_or_equal' => 'Tanggal selesai tidak boleh sebelum permohonan dibuat.',
-            'alasan.required' => 'Alasan perubahan wajib diisi.',
-            'alasan.min' => 'Alasan perubahan minimal 10 karakter.',
         ];
     }
 

@@ -321,7 +321,9 @@
             </div>
         </div>
 
-        @include('pages.fasilitasi.permohonan.partials.tanggal-selesai')
+        @can('tahapan.update-tanggal-selesai')
+            @include('pages.fasilitasi.permohonan.partials.tanggal-selesai')
+        @endcan
 
         <!-- Informasi Umum Permohonan -->
         <div class="row">
@@ -505,10 +507,10 @@
                                         Dimulai: <span
                                             class="text-dark">{{ $history->created_at->format('d M Y, H:i') }}</span>
 
-                                        @if ($history->status === 'selesai')
+                                        @if ($history->tanggal_selesai_tampil)
                                             <br>
                                             Selesai: <span
-                                                class="text-dark">{{ $history->updated_at->format('d M Y, H:i') }}</span>
+                                                class="text-dark">{{ $history->tanggal_selesai_tampil->format('d M Y, H:i') }}</span>
                                         @endif
 
                                         @if ($history->catatan)

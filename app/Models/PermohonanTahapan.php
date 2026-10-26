@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Status, batas waktu, dan tanggal selesai setiap tahapan untuk satu permohonan.
  *
  * tanggal_selesai terisi otomatis saat status menjadi "selesai" dan dikosongkan saat status
  * keluar dari "selesai". Admin dapat menyesuaikannya (PRD #5); perubahannya tercatat di riwayat.
- * tanggal_selesai_perkiraan = true untuk data lama yang diisi dari updated_at saat migrasi.
  */
 class PermohonanTahapan extends Model
 {
@@ -29,7 +29,6 @@ class PermohonanTahapan extends Model
         'updated_by',
         'deadline',
         'tanggal_selesai',
-        'tanggal_selesai_perkiraan',
     ];
 
     /**
@@ -47,8 +46,6 @@ class PermohonanTahapan extends Model
             } else {
                 $tahapan->tanggal_selesai = null;
             }
-
-            $tahapan->tanggal_selesai_perkiraan = false;
         });
     }
 
@@ -62,7 +59,6 @@ class PermohonanTahapan extends Model
             'updated_at' => 'datetime',
             'deadline' => 'datetime',
             'tanggal_selesai' => 'datetime',
-            'tanggal_selesai_perkiraan' => 'boolean',
         ];
     }
 
@@ -75,6 +71,19 @@ class PermohonanTahapan extends Model
     public function masterTahapan(): BelongsTo
     {
         return $this->belongsTo(MasterTahapan::class, 'tahapan_id');
+    }
+
+    /**
+     * Tanggal selesai untuk tampilan: tanggal_selesai, atau updated_at untuk data lama yang belum terisi.
+     * Null bila tahapan belum selesai.
+     */
+    public function getTanggalSelesaiTampilAttribute(): ?Carbon
+    {
+        if ($this->status !== 'selesai') {
+            return null;
+        }
+
+        return $this->tanggal_selesai ?? $this->updated_at;
     }
 
     /**
