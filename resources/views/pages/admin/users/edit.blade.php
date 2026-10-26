@@ -58,20 +58,28 @@
 
                         <div class="mb-3">
                             <label class="form-label" for="role">Role</label>
-                            <select class="form-select @error('role') is-invalid @enderror" 
-                                    id="role" name="role" required>
-                                <option value="">Pilih Role</option>
-                                @foreach($roles as $role)
-                                    <option value="{{ $role->name }}" 
-                                            {{ old('role', $currentRole) == $role->name ? 'selected' : '' }}>
-                                        {{ $role->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            @if ($isRoleLocked)
+                                <input type="hidden" id="role" name="role" value="{{ $currentRole }}">
+                                <input type="text" class="form-control" value="{{ $currentRole }}" disabled>
+                                <div class="form-text">Role akun ini hanya dapat diubah Superadmin.</div>
+                            @else
+                                <select class="form-select @error('role') is-invalid @enderror"
+                                        id="role" name="role" required>
+                                    <option value="">Pilih Role</option>
+                                    @foreach($roles as $role)
+                                        <option value="{{ $role->name }}"
+                                                {{ old('role', $currentRole) == $role->name ? 'selected' : '' }}>
+                                            {{ $role->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
                             @error('role')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        @include('pages.admin.users.partials.opd-field', ['selectedOpd' => $user->opd_id])
 
                         <div class="mb-3">
                             <button type="submit" class="btn btn-success me-2">
@@ -114,10 +122,20 @@
 <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
 <script>
     $(document).ready(function() {
-        $('#role').select2({
+        $('select#role').select2({
             placeholder: "Pilih role...",
             allowClear: true
         });
+
+        // OPD hanya untuk role opd
+        function toggleOpd() {
+            const isOpd = $('#role').val() === 'opd';
+            $('#opd-container').toggle(isOpd);
+            $('#opd_id').prop('required', isOpd);
+        }
+
+        $('#role').on('change', toggleOpd);
+        toggleOpd();
     });
 </script>
 @endpush

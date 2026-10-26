@@ -19,10 +19,11 @@ use App\Http\Controllers\Admin\TimAssignmentController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Role & permission
+// Role & hak akses: batas wewenang per aksi diatur RolePolicy; katalog permission read-only
 Route::middleware(['can:role.manage'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('roles', RoleController::class)->except(['show']);
-    Route::resource('permissions', PermissionController::class)->only(['index', 'create', 'store', 'destroy']);
+    Route::post('/roles/{role}/reset', [RoleController::class, 'reset'])->name('roles.reset');
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
 });
 
 // Activity log

@@ -39,7 +39,7 @@ class DashboardController extends Controller
             $user->hasRole('kaban') => $this->kabanDashboard($user),
             $user->hasRole('admin_peran') => $this->adminPeranDashboard($user),
             $user->hasRole('verifikator') => $this->verifikatorDashboard($user),
-            $user->hasRole('fasilitator') => $this->pokjaDashboard($user),
+            $user->hasRole('fasilitator'), $user->hasRole('opd') => $this->pokjaDashboard($user),
             $user->hasRole('auditor') => $this->auditorDashboard($user),
             $user->hasRole('pemohon') => $this->kabKotaDashboard($user),
             default => view('pages.umum.dashboard.default', ['user' => $user])
@@ -114,8 +114,10 @@ class DashboardController extends Controller
 
     private function pokjaDashboard($user)
     {
-        $permohonanIds = TimFasilitasiAssignment::where('user_id', $user->id)
-            ->pluck('permohonan_id');
+        // OPD (anggota tim terbatas urusan) tanpa penugasan: permohonan yang sudah masuk tahap hasil fasilitasi
+        $permohonanIds = $user->hasRole('opd')
+            ? Permohonan::whereHas('tahapan.masterTahapan', fn ($q) => $q->where('nama_tahapan', 'Hasil Fasilitasi'))->pluck('id')
+            : TimFasilitasiAssignment::where('user_id', $user->id)->pluck('permohonan_id');
 
         $stats = [
             'my_evaluasi' => Permohonan::whereIn('id', $permohonanIds)

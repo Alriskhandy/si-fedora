@@ -493,14 +493,14 @@
                                                         <td class="text-center">{{ $loop->iteration }}</td>
                                                         <td>
                                                             <strong>
-                                                                {{ $item->masterUrusan->urutan }}.
+                                                                {{ $item->masterUrusan->kode_urusan }}
                                                                 {{ $item->masterUrusan->nama_urusan }}
                                                             </strong>
                                                         </td>
                                                         <td>{!! is_string($item->catatan_masukan) ? $item->catatan_masukan : $item->catatan_masukan->render() !!}</td>
                                                         <td>
                                                             <small class="text-muted">
-                                                                {{ $item->user->name ?? '-' }}<br>
+                                                                @include('pages.fasilitasi.hasil-fasilitasi.partials.pengirim', ['user' => $item->user])<br>
                                                                 <span
                                                                     class="text-secondary">{{ $item->created_at->format('d/m/Y H:i') }}</span>
                                                             </small>

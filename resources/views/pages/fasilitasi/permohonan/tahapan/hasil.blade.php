@@ -87,6 +87,9 @@
                     ->where('is_active', true)
                     ->exists();
 
+            // Anggota tim terbatas urusan (OPD) tidak memakai penugasan
+            $isFasilitator = $isFasilitator || (auth()->user()->can('hasil-fasilitasi.input-urusan') && ! auth()->user()->can('hasil-fasilitasi.input'));
+
             // Cek apakah user adalah verifikator yang di-assign
             $isVerifikator =
                 auth()

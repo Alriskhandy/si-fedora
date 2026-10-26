@@ -87,4 +87,28 @@ class HasilFasilitasi extends Model
     {
         return $this->hasMany(HasilFasilitasiRekomendasi::class, 'hasil_fasilitasi_id');
     }
+
+    /**
+     * Status saat isi hasil fasilitasi tidak boleh diubah: sedang dinilai atau sudah disetujui Kaban.
+     *
+     * @var list<string>
+     */
+    public const STATUS_TERKUNCI = ['menunggu_persetujuan_kaban', 'disetujui_kaban'];
+
+    /**
+     * Apakah masukan (sistematika, urusan, form, rekomendasi) terkunci (keputusan K5).
+     * Kunci terbuka lagi bila Kaban menolak (status ditolak_kaban).
+     */
+    public function isLocked(): bool
+    {
+        return in_array($this->status_draft, self::STATUS_TERKUNCI, true);
+    }
+
+    /**
+     * Kebalikan isLocked(); dipakai alur ajukan hasil oleh tim.
+     */
+    public function canEdit(): bool
+    {
+        return ! $this->isLocked();
+    }
 }

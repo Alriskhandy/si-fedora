@@ -136,7 +136,11 @@
                         <div class="alert alert-success mb-3">
                             <i class='bx bx-check-circle me-2'></i>
                             <strong>Tahapan Pelaksanaan telah diselesaikan</strong> pada
-                            {{ $currentTahapan->updated_at ? $currentTahapan->updated_at->format('d F Y, H:i') . " WIT" : '-' }}
+                            @if ($currentTahapan->tanggal_selesai)
+                                {{ $currentTahapan->tanggal_selesai->locale('id')->translatedFormat('d F Y') }}
+                            @else
+                                {{ $currentTahapan->updated_at ? $currentTahapan->updated_at->format('d F Y, H:i') . " WIT" : '-' }}
+                            @endif
                             <br>
                             <small class="text-muted mt-1 d-block">
                                 <i class='bx bx-info-circle'></i> Anda masih dapat mengelola dokumentasi pelaksanaan (upload/hapus dokumen) walaupun tahapan telah selesai.

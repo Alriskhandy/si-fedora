@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -16,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             MasterDataSeeder::class,
             MasterTahapanSeeder::class,
+            OpdSeeder::class,
             MasterUrusanSeeder::class,
             MasterJenisDokumenSeeder::class,
             MasterKelengkapanSeeder::class,

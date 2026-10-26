@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Opd;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Validasi tambah pengguna. Role superadmin, kaban, dan admin_peran tidak boleh diberikan lewat form ini (User::NON_CREATABLE_ROLES).
+ * Validasi tambah pengguna. Role terlindungi (superadmin, kaban, admin_peran) hanya bisa diberikan Superadmin (User::nonAssignableRolesFor).
  */
 class StoreUserRequest extends FormRequest
 {
@@ -25,9 +26,14 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'min:8', 'confirmed'],
             'role' => [
                 'required',
-                Rule::exists('roles', 'name')->whereNotIn('name', User::NON_CREATABLE_ROLES),
+                Rule::exists('roles', 'name')->whereNotIn('name', User::nonAssignableRolesFor($this->user())),
             ],
             'kabupaten_kota_id' => ['nullable', 'exists:kabupaten_kota,id'],
+            'opd_id' => [
+                'nullable',
+                Rule::requiredIf($this->input('role') === 'opd'),
+                Rule::exists('opd', 'id')->where('status', Opd::STATUS_AKTIF),
+            ],
         ];
     }
 
@@ -48,6 +54,8 @@ class StoreUserRequest extends FormRequest
             'role.required' => 'Role wajib dipilih.',
             'role.exists' => 'Role yang dipilih tidak valid.',
             'kabupaten_kota_id.exists' => 'Kabupaten/Kota yang dipilih tidak valid.',
+            'opd_id.required' => 'OPD wajib dipilih untuk akun OPD.',
+            'opd_id.exists' => 'OPD yang dipilih tidak valid atau nonaktif.',
         ];
     }
 }

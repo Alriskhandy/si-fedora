@@ -1,0 +1,45 @@
+﻿id_urusan;kode_urusan;kode_kelompok;nama_kelompok;nama_urusan;rumpun_urusan;kode_opd_pengampu;opd_pengampu;status;tanggal_update
+1;1.01;1;Urusan Pemerintahan Wajib yang Berkaitan dengan Pelayanan Dasar;Pendidikan;Wajib Pelayanan Dasar;82.05.01;DIKBUD;Aktif;2026-10-25
+2;1.02;1;Urusan Pemerintahan Wajib yang Berkaitan dengan Pelayanan Dasar;Kesehatan;Wajib Pelayanan Dasar;"82.05.02; 82.05.02.01";"DINKES; RSUD CB";Aktif;2026-10-25
+3;1.03;1;Urusan Pemerintahan Wajib yang Berkaitan dengan Pelayanan Dasar;Pekerjaan Umum dan Penataan Ruang;Wajib Pelayanan Dasar;82.05.03;DPUPR;Aktif;2026-10-25
+4;1.04;1;Urusan Pemerintahan Wajib yang Berkaitan dengan Pelayanan Dasar;Perumahan Rakyat dan Kawasan Permukiman;Wajib Pelayanan Dasar;82.05.04;DISPERKIM;Aktif;2026-10-25
+5;1.05;1;Urusan Pemerintahan Wajib yang Berkaitan dengan Pelayanan Dasar;Ketenteraman dan Ketertiban Umum serta Pelindungan Masyarakat;Wajib Pelayanan Dasar;"82.03.08; 82.04.01";"BPBD; SATPOL PP";Aktif;2026-10-25
+6;1.06;1;Urusan Pemerintahan Wajib yang Berkaitan dengan Pelayanan Dasar;Sosial;Wajib Pelayanan Dasar;82.05.05;DINSOS;Aktif;2026-10-25
+7;2.07;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Tenaga Kerja;Wajib Non Pelayanan Dasar;82.05.06;DISNAKERTRANS;Aktif;2026-10-25
+8;2.08;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Pemberdayaan Perempuan dan Pelindungan Anak;Wajib Non Pelayanan Dasar;82.05.07;DP3A;Aktif;2026-10-25
+9;2.09;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Pangan;Wajib Non Pelayanan Dasar;82.05.08;DISPANG;Aktif;2026-10-25
+10;2.10;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Pertanahan;Wajib Non Pelayanan Dasar;;;Aktif;2026-10-25
+11;2.11;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Lingkungan Hidup;Wajib Non Pelayanan Dasar;82.05.09;DLH;Aktif;2026-10-25
+12;2.12;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Administrasi Kependudukan dan Pencatatan Sipil;Wajib Non Pelayanan Dasar;82.05.10;DPMD-DUKCAPIL;Aktif;2026-10-25
+13;2.13;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Pemberdayaan Masyarakat dan Desa;Wajib Non Pelayanan Dasar;82.05.10;DPMD-DUKCAPIL;Aktif;2026-10-25
+14;2.14;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Pengendalian Penduduk dan Keluarga Berencana;Wajib Non Pelayanan Dasar;82.05.11;DPPKB;Aktif;2026-10-25
+15;2.15;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Perhubungan;Wajib Non Pelayanan Dasar;82.05.12;DISHUB;Aktif;2026-10-25
+16;2.16;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Komunikasi dan Informatika;Wajib Non Pelayanan Dasar;82.05.13;DISKOMINFO;Aktif;2026-10-25
+17;2.17;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Koperasi, Usaha Kecil, dan Menengah;Wajib Non Pelayanan Dasar;82.05.14;DISKOP UKM;Aktif;2026-10-25
+18;2.18;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Penanaman Modal;Wajib Non Pelayanan Dasar;82.05.15;DPMPTSP;Aktif;2026-10-25
+19;2.19;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Kepemudaan dan Olahraga;Wajib Non Pelayanan Dasar;82.05.16;DISPORA;Aktif;2026-10-25
+20;2.20;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Statistik;Wajib Non Pelayanan Dasar;82.05.13;DISKOMINFO;Aktif;2026-10-25
+21;2.21;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Persandian;Wajib Non Pelayanan Dasar;82.05.13;DISKOMINFO;Aktif;2026-10-25
+22;2.22;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Kebudayaan;Wajib Non Pelayanan Dasar;82.05.01;DIKBUD;Aktif;2026-10-25
+23;2.23;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Perpustakaan;Wajib Non Pelayanan Dasar;82.05.17;DISPUSIP;Aktif;2026-10-25
+24;2.24;2;Urusan Pemerintahan Wajib yang Tidak Berkaitan dengan Pelayanan Dasar;Kearsipan;Wajib Non Pelayanan Dasar;82.05.17;DISPUSIP;Aktif;2026-10-25
+25;3.25;3;Urusan Pemerintahan Pilihan;Kelautan dan Perikanan;Pilihan;82.05.18;DKP;Aktif;2026-10-25
+26;3.26;3;Urusan Pemerintahan Pilihan;Pariwisata;Pilihan;82.05.19;DISPAR;Aktif;2026-10-25
+27;3.27;3;Urusan Pemerintahan Pilihan;Pertanian;Pilihan;82.05.20;DISTAN;Aktif;2026-10-25
+28;3.28;3;Urusan Pemerintahan Pilihan;Kehutanan;Pilihan;82.05.21;DISHUT;Aktif;2026-10-25
+29;3.29;3;Urusan Pemerintahan Pilihan;Energi dan Sumber Daya Mineral;Pilihan;82.05.22;DESDM;Aktif;2026-10-25
+30;3.30;3;Urusan Pemerintahan Pilihan;Perdagangan;Pilihan;82.05.23;DISPERINDAG;Aktif;2026-10-25
+31;3.31;3;Urusan Pemerintahan Pilihan;Perindustrian;Pilihan;82.05.23;DISPERINDAG;Aktif;2026-10-25
+32;3.32;3;Urusan Pemerintahan Pilihan;Transmigrasi;Pilihan;82.05.06;DISNAKERTRANS;Aktif;2026-10-25
+33;4.01;4;Unsur Pendukung Urusan Pemerintahan;Sekretariat Daerah;Pendukung;82.01.01;SETDA;Aktif;2026-10-25
+34;4.02;4;Unsur Pendukung Urusan Pemerintahan;Sekretariat DPRD;Pendukung;82.01.02;SETWAN;Aktif;2026-10-25
+35;5.01;5;Unsur Penunjang Urusan Pemerintahan;Perencanaan;Penunjang;82.03.01;BAPPEDA;Aktif;2026-10-25
+36;5.02;5;Unsur Penunjang Urusan Pemerintahan;Keuangan;Penunjang;"82.03.02; 82.03.03";"BPKAD; BAPENDA";Aktif;2026-10-25
+37;5.03;5;Unsur Penunjang Urusan Pemerintahan;Kepegawaian;Penunjang;82.03.04;BKD;Aktif;2026-10-25
+38;5.04;5;Unsur Penunjang Urusan Pemerintahan;Pendidikan dan Pelatihan;Penunjang;82.03.05;BPSDM;Aktif;2026-10-25
+39;5.05;5;Unsur Penunjang Urusan Pemerintahan;Penelitian dan Pengembangan;Penunjang;82.03.06;BRIDA;Aktif;2026-10-25
+40;5.06;5;Unsur Penunjang Urusan Pemerintahan;Pengelolaan Perbatasan;Penunjang;;;Aktif;2026-10-25
+41;5.07;5;Unsur Penunjang Urusan Pemerintahan;Penunjang Urusan Pemerintahan Lainnya;Penunjang;82.03.07;BADAN PENGHUBUNG;Aktif;2026-10-25
+42;6.01;6;Unsur Pengawasan Urusan Pemerintahan;Inspektorat Daerah;Pengawasan;82.02.01;INSPEKTORAT;Aktif;2026-10-25
+43;7.01;7;Unsur Kewilayahan;Kecamatan;Kewilayahan;;;Aktif;2026-10-25
+44;8.01;8;Unsur Pemerintahan Umum;Kesatuan Bangsa dan Politik;Pemerintahan Umum;82.03.09;KESBANGPOL;Aktif;2026-10-25

@@ -351,26 +351,36 @@
                             $urusanUsers     = $hasilFasilitasi->hasilUrusan->pluck('user')->unique('id')->filter()->values();
                             $rekomendasiUsers = $hasilFasilitasi->hasilRekomendasi->pluck('user')->unique('id')->filter()->values();
                         @endphp
+                        @if ($isLocked)
+                            <div class="alert alert-warning">
+                                <i class="bx bx-lock-alt"></i> Hasil fasilitasi sedang dinilai atau sudah disetujui Kepala Badan. Masukan tidak dapat ditambah, diubah, atau dihapus.
+                            </div>
+                        @endif
+                        @if ($isUrusanOnly && $masterUrusanList->isEmpty())
+                            <div class="alert alert-info">
+                                <i class="bx bx-info-circle"></i> OPD Anda belum memiliki urusan pemerintahan bidang. Hubungi Admin untuk melengkapinya di master OPD.
+                            </div>
+                        @endif
                         <ul class="nav nav-tabs" role="tablist">
-                            <li class="nav-item">
-                                <button class="nav-link active" id="sistematika-tab" data-bs-toggle="tab"
+                            <li class="nav-item {{ $isUrusanOnly ? 'd-none' : '' }}">
+                                <button class="nav-link {{ $isUrusanOnly ? '' : 'active' }}" id="sistematika-tab" data-bs-toggle="tab"
                                     data-bs-target="#sistematika" type="button" role="tab">
                                     <i class="bx bx-book-content"></i> Sistematika & Rancangan Akhir
                                 </button>
                             </li>
-                            <li class="nav-item">
+                            <li class="nav-item {{ $isUrusanOnly ? 'd-none' : '' }}">
                                 <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#form"
                                     type="button" role="tab">
                                     <i class="bx bx-link"></i> Konsistensi & Keselarasan
                                 </button>
                             </li>
                             <li class="nav-item">
-                                <button class="nav-link" id="urusan-tab" data-bs-toggle="tab" data-bs-target="#urusan"
+                                <button class="nav-link {{ $isUrusanOnly ? 'active' : '' }}" id="urusan-tab" data-bs-toggle="tab" data-bs-target="#urusan"
                                     type="button" role="tab">
                                     <i class="bx bx-list-ul"></i> Urusan Pemerintahan
                                 </button>
                             </li>
-                            <li class="nav-item">
+                            <li class="nav-item {{ $isUrusanOnly ? 'd-none' : '' }}">
                                 <button class="nav-link" id="rekomendasi-tab" data-bs-toggle="tab"
                                     data-bs-target="#rekomendasi" type="button" role="tab">
                                     <i class="bx bx-check-shield"></i> Rekomendasi
@@ -380,14 +390,14 @@
 
                         <div class="tab-content pt-4">
                             <!-- Tab 1: Sistematika -->
-                            <div class="tab-pane fade show active" id="sistematika" role="tabpanel">
+                            <div class="tab-pane fade {{ $isUrusanOnly ? 'd-none' : 'show active' }}" id="sistematika" role="tabpanel">
                                 <p class="text-muted mb-3">
                                     <i class="bx bx-info-circle"></i> Catatan penyempurnaan terhadap sistematika
                                     dokumen perencanaan per Bab/Sub Bab
                                 </p>
 
                                 <!-- Form Tambah Sistematika -->
-                                <div class="card border-primary mb-4">
+                                <div class="card border-primary mb-4 {{ $isLocked ? 'd-none' : '' }}">
                                     <div class="card-body">
                                         <h6 class="card-title"><i class="bx bx-plus-circle"></i> Tambah Item Sistematika
                                         </h6>
@@ -493,7 +503,7 @@
                                                                 </small>
                                                             </td>
                                                             <td class="text-center">
-                                                                @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                @if (! $isLocked && ($isKoordinator || $item->user_id == Auth::id()))
                                                                     <button type="button"
                                                                         class="btn btn-sm btn-warning btn-edit-sistematika"
                                                                         data-id="{{ $item->id }}"
@@ -525,13 +535,13 @@
                             </div>
 
                             <!-- Tab 2: Konsistensi & Keselarasan -->
-                            <div class="tab-pane fade" id="form" role="tabpanel">
+                            <div class="tab-pane fade {{ $isUrusanOnly ? 'd-none' : '' }}" id="form" role="tabpanel">
                                 <p class="text-muted mb-3">
                                     <i class="bx bx-info-circle"></i> Catatan terkait konsistensi dan keselarasan dokumen perencanaan
                                 </p>
 
                                 <!-- Form Tambah Item -->
-                                <div class="card border-primary mb-4">
+                                <div class="card border-primary mb-4 {{ $isLocked ? 'd-none' : '' }}">
                                     <div class="card-body">
                                         <h6 class="card-title"><i class="bx bx-plus-circle"></i> Tambah Item</h6>
                                         <form id="formKonsistensi">
@@ -598,7 +608,7 @@
                                                                 </small>
                                                             </td>
                                                             <td class="text-center">
-                                                                @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                @if (! $isLocked && ($isKoordinator || $item->user_id == Auth::id()))
                                                                     <button type="button" class="btn btn-sm btn-warning btn-edit-form" data-id="{{ $item->id }}" data-catatan="{{ $item->catatan }}">
                                                                         <i class="bx bx-edit"></i>
                                                                     </button>
@@ -623,14 +633,14 @@
                             </div>
 
                             <!-- Tab 3: Urusan Pemerintahan -->
-                            <div class="tab-pane fade" id="urusan" role="tabpanel">
+                            <div class="tab-pane fade {{ $isUrusanOnly ? 'show active' : '' }}" id="urusan" role="tabpanel">
                                 <p class="text-muted mb-3">
                                     <i class="bx bx-info-circle"></i> Catatan masukan/saran terhadap urusan
                                     pemerintahan konkuren yang diselenggarakan daerah
                                 </p>
 
                                 <!-- Form Tambah Urusan -->
-                                <div class="card border-primary mb-4">
+                                <div class="card border-primary mb-4 {{ $isLocked ? 'd-none' : '' }}">
                                     <div class="card-body">
                                         <h6 class="card-title"><i class="bx bx-plus-circle"></i> Tambah Item Urusan</h6>
                                         <form id="formUrusan">
@@ -643,7 +653,7 @@
                                                         <select class="form-select" id="master_urusan_id" required>
                                                             <option value="">-- Pilih Urusan --</option>
                                                             @foreach ($masterUrusanList as $urusan)
-                                                                <option value="{{ $urusan->id }}" data-urutan="{{ $urusan->urutan }}">{{ $urusan->urutan }}. {{ $urusan->nama_urusan }}</option>
+                                                                <option value="{{ $urusan->id }}" data-urutan="{{ $urusan->urutan_kode }}">{{ $urusan->kode_urusan }} {{ $urusan->nama_urusan }}</option>
                                                             @endforeach
                                                         </select>
                                                     </div>
@@ -708,22 +718,22 @@
                                                         @endphp
                                                         <tr class="urusan-item"
                                                             data-id="{{ $item->id }}"
-                                                            data-urusan-urutan="{{ $item->masterUrusan->urutan ?? 999 }}"
+                                                            data-urusan-urutan="{{ $item->masterUrusan->urutan_kode ?? 999 }}"
                                                             data-user-id="{{ $item->user_id }}"
                                                             data-created-at="{{ $item->created_at->timestamp }}">
                                                             <td class="text-center">{{ $loop->iteration }}</td>
-                                                            <td><strong>{{ $item->masterUrusan->urutan }}.
+                                                            <td><strong>{{ $item->masterUrusan->kode_urusan }}
                                                                     {{ $item->masterUrusan->nama_urusan }}</strong></td>
                                                             <td class="catatan-cell">{!! $catatanMasukan !!}</td>
                                                             <td>
                                                                 <small class="text-muted">
-                                                                    {{ $item->user->name ?? '-' }}<br>
+                                                                    @include('pages.fasilitasi.hasil-fasilitasi.partials.pengirim', ['user' => $item->user])<br>
                                                                     <span
                                                                         class="text-secondary">{{ $item->created_at->format('d/m/Y H:i') }}</span>
                                                                 </small>
                                                             </td>
                                                             <td class="text-center">
-                                                                @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                @if (! $isLocked && ($isKoordinator || $item->user_id == Auth::id()))
                                                                     <button type="button"
                                                                         class="btn btn-sm btn-warning btn-edit-urusan"
                                                                         data-id="{{ $item->id }}"
@@ -754,13 +764,13 @@
                             </div>
                             
                             <!-- Tab 4: Rekomendasi -->
-                            <div class="tab-pane fade" id="rekomendasi" role="tabpanel">
+                            <div class="tab-pane fade {{ $isUrusanOnly ? 'd-none' : '' }}" id="rekomendasi" role="tabpanel">
                                 <p class="text-muted mb-3">
                                     <i class="bx bx-info-circle"></i> Catatan rekomendasi hasil fasilitasi / evaluasi
                                 </p>
 
                                 <!-- Form Tambah Rekomendasi -->
-                                <div class="card border-primary mb-4">
+                                <div class="card border-primary mb-4 {{ $isLocked ? 'd-none' : '' }}">
                                     <div class="card-body">
                                         <h6 class="card-title"><i class="bx bx-plus-circle"></i> Tambah Item</h6>
                                         <form id="formRekomendasi">
@@ -827,7 +837,7 @@
                                                                 </small>
                                                             </td>
                                                             <td class="text-center">
-                                                                @if ($isKoordinator || $item->user_id == Auth::id())
+                                                                @if (! $isLocked && ($isKoordinator || $item->user_id == Auth::id()))
                                                                     <button type="button" class="btn btn-sm btn-warning btn-edit-rekomendasi" data-id="{{ $item->id }}" data-catatan="{{ $item->catatan }}">
                                                                         <i class="bx bx-edit"></i>
                                                                     </button>
@@ -1036,6 +1046,8 @@
         const permohonanId = {{ $permohonan->id }};
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         const isKoordinator = {{ $isKoordinator ? 'true' : 'false' }};
+        const isLocked = {{ $isLocked ? 'true' : 'false' }};
+        const escapeHtml = (text) => $('<div>').text(text ?? '').html();
         const currentUserId = {{ Auth::id() }};
 
         // Reload iframe when modal is opened to clear cache
@@ -1193,7 +1205,7 @@
                     }
 
                     // Check if user can manage (koordinator or owner)
-                    const canManage = isKoordinator || data.data.user_id === currentUserId;
+                    const canManage = ! isLocked && (isKoordinator || data.data.user_id === currentUserId);
                     const actionButtons = canManage ?
                         `<button type="button" class="btn btn-sm btn-warning btn-edit-sistematika" data-id="${data.data.id}" data-sub-bab="${subBab}" data-catatan="${encodeURIComponent(data.data.catatan_penyempurnaan)}">
                                 <i class="bx bx-edit"></i>
@@ -1293,7 +1305,7 @@
                     const rowCount = tbody.querySelectorAll('tr').length + 1;
 
                     // Check if user can manage (koordinator or owner)
-                    const canManage = isKoordinator || data.data.user_id === currentUserId;
+                    const canManage = ! isLocked && (isKoordinator || data.data.user_id === currentUserId);
                     const actionButtons = canManage ?
                         `<button type="button" class="btn btn-sm btn-warning btn-edit-urusan" data-id="${data.data.id}" data-catatan="${encodeURIComponent(data.data.catatan_masukan)}">
                                 <i class="bx bx-edit"></i>
@@ -1313,7 +1325,7 @@
                             <td class="text-center">${rowCount}</td>
                             <td><strong>${namaUrusan}</strong></td>
                             <td class="catatan-cell">${data.data.catatan_masukan}</td>
-                            <td><small class="text-muted">${data.data.user ? data.data.user.name : '-'}<br><span class="text-secondary">${data.data.created_at}</span></small></td>
+                            <td><small class="text-muted">${data.data.user ? escapeHtml(data.data.user.name) : '-'}${data.data.user && data.data.user.opd ? ' <span class="badge bg-label-info d-inline-block text-wrap text-start">OPD: ' + escapeHtml(data.data.user.opd.nama_opd) + '</span>' : ''}<br><span class="text-secondary">${data.data.created_at}</span></small></td>
                             <td class="text-center">
                                 ${actionButtons}
                             </td>
@@ -1444,7 +1456,7 @@
         }
 
         function buildItemRow(type, data) {
-            const canManage = isKoordinator || data.user_id === currentUserId;
+            const canManage = ! isLocked && (isKoordinator || data.user_id === currentUserId);
             const editBtn = canManage ? `<button type="button" class="btn btn-sm btn-warning btn-edit-${type}" data-id="${data.id}" data-catatan="${encodeURIComponent(data.catatan)}"><i class="bx bx-edit"></i></button>` : '';
             const deleteBtn = canManage ? `<button type="button" class="btn btn-sm btn-danger btn-hapus-${type}" data-id="${data.id}"><i class="bx bx-trash"></i></button>` : '<span class="text-muted small">-</span>';
             const createdAtTs = data.created_at_ts || Math.floor(Date.now() / 1000);

@@ -2,255 +2,44 @@
 
 namespace Database\Seeders;
 
+use App\Models\MasterUrusan;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class MasterUrusanSeeder extends Seeder
 {
+    use BacaCsv;
+
     /**
-     * Run the database seeds.
-     * 
-     * Berdasarkan UU No. 23 Tahun 2014 tentang Pemerintahan Daerah
-     * 32 Urusan Pemerintahan yang dibagi menjadi:
-     * - 6 Urusan Wajib Pelayanan Dasar
-     * - 18 Urusan Wajib Non-Pelayanan Dasar
-     * - 8 Urusan Pilihan
+     * Master urusan dari docs/master-urusan.csv, dicocokkan lewat kode_urusan.
+     *
+     * Urusan baru ditambahkan; urusan yang sudah ada hanya diisi kolom yang masih kosong
+     * (nama dan status yang sudah ada tidak ditimpa). Kelompok, rumpun, dan singkatan OPD pengampu
+     * dihitung model dari kode; penanda tampil di hasil fasilitasi untuk urusan baru mengikuti
+     * kelompok (1–3 tampil). Jalankan OpdSeeder lebih dulu agar singkatan OPD pengampu terisi.
      */
     public function run(): void
     {
-        // Sesuai dengan MasterDataSeeder
-        $urusan = [
-            // === URUSAN WAJIB PELAYANAN DASAR ===
-            [
-                'nama_urusan' => 'Pendidikan',
-                'kategori' => 'wajib_dasar',
-                'urutan' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Kesehatan',
-                'kategori' => 'wajib_dasar',
-                'urutan' => 2,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pekerjaan Umum dan Penataan Ruang',
-                'kategori' => 'wajib_dasar',
-                'urutan' => 3,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Perumahan Rakyat dan Kawasan Permukiman',
-                'kategori' => 'wajib_dasar',
-                'urutan' => 4,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Ketenteraman, Ketertiban Umum & Perlindungan Masyarakat',
-                'kategori' => 'wajib_dasar',
-                'urutan' => 5,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Sosial',
-                'kategori' => 'wajib_dasar',
-                'urutan' => 6,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        $ditambah = 0;
+        $dilengkapi = 0;
 
-            // === URUSAN WAJIB NON-PELAYANAN DASAR ===
-            [
-                'nama_urusan' => 'Tenaga Kerja',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 7,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pemberdayaan Perempuan & Perlindungan Anak',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 8,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pangan',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 9,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pertanahan',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 10,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Lingkungan Hidup',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 11,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Administrasi Kependudukan & Catatan Sipil',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 12,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pemberdayaan Masyarakat & Desa',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 13,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pengendalian Penduduk & Keluarga Berencana',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 14,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Perhubungan',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 15,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Komunikasi & Informatika',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 16,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Koperasi, UKM',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 17,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Penanaman Modal',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 18,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Kepemudaan & Olahraga',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 19,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Statistik',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 20,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Persandian',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 21,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Kebudayaan',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 22,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Perpustakaan',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 23,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Kearsipan',
-                'kategori' => 'wajib_non_dasar',
-                'urutan' => 24,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        foreach ($this->bacaCsv('master-urusan.csv') as $row) {
+            $data = [
+                'nama_urusan' => $row['nama_urusan'],
+                'kode_opd_pengampu' => $row['kode_opd_pengampu'],
+                'status' => $row['status'],
+                'tanggal_update' => $row['tanggal_update'],
+            ];
 
-            // === URUSAN PILIHAN ===
-            [
-                'nama_urusan' => 'Kelautan & Perikanan',
-                'kategori' => 'pilihan',
-                'urutan' => 25,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pariwisata',
-                'kategori' => 'pilihan',
-                'urutan' => 26,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Pertanian',
-                'kategori' => 'pilihan',
-                'urutan' => 27,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Kehutanan',
-                'kategori' => 'pilihan',
-                'urutan' => 28,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Energi & Sumber Daya Mineral',
-                'kategori' => 'pilihan',
-                'urutan' => 29,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Perdagangan',
-                'kategori' => 'pilihan',
-                'urutan' => 30,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Perindustrian',
-                'kategori' => 'pilihan',
-                'urutan' => 31,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_urusan' => 'Transmigrasi',
-                'kategori' => 'pilihan',
-                'urutan' => 32,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ];
+            $urusan = MasterUrusan::where('kode_urusan', $row['kode_urusan'])->first();
 
-        DB::table('master_urusan')->insert($urusan);
+            if (! $urusan) {
+                MasterUrusan::create(['kode_urusan' => $row['kode_urusan']] + array_filter($data, fn ($nilai) => $nilai !== null));
+                $ditambah++;
+            } elseif ($this->isiKolomKosong($urusan, $data)) {
+                $dilengkapi++;
+            }
+        }
+
+        $this->command?->info("Urusan: {$ditambah} ditambah, {$dilengkapi} dilengkapi.");
     }
 }

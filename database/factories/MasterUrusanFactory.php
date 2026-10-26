@@ -18,8 +18,15 @@ class MasterUrusanFactory extends Factory
     public function definition(): array
     {
         return [
+            'kode_urusan' => fake()->unique()->regexify('[1-3]\.[0-9]{2}'),
             'nama_urusan' => fake()->words(2, true),
-            'kategori' => fake()->randomElement(['wajib_dasar', 'wajib_non_dasar', 'pilihan']),
+            'status' => MasterUrusan::STATUS_AKTIF,
+            'tanggal_update' => now()->toDateString(),
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn () => ['status' => 'Tidak Aktif']);
     }
 }

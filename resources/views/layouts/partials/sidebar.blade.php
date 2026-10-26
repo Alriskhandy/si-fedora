@@ -70,7 +70,7 @@
                 </li>
             @endcanany
 
-            @if (auth()->user()?->can('hasil-fasilitasi.view') && auth()->user()?->can('permohonan.view-assigned'))
+            @if (auth()->user()?->can('hasil-fasilitasi.view') && auth()->user()?->canAny(['permohonan.view-assigned', 'hasil-fasilitasi.input-urusan']))
                 <li class="menu-item {{ request()->routeIs('hasil-fasilitasi.*') ? 'active' : '' }}">
                     <a href="{{ route('hasil-fasilitasi.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-edit"></i>
@@ -167,7 +167,7 @@
         <!-- ============================================= -->
         <!-- MASTER DATA -->
         <!-- ============================================= -->
-        @canany(['master.kabkota.manage', 'master.jenis-dokumen.manage', 'master.tahapan.manage', 'master.kelengkapan.manage', 'master.bab.manage', 'master.urusan.manage'])
+        @canany(['master.kabkota.manage', 'master.jenis-dokumen.manage', 'master.tahapan.manage', 'master.kelengkapan.manage', 'master.bab.manage', 'master.urusan.manage', 'master.opd.manage'])
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Master Data</span>
             </li>
@@ -219,6 +219,14 @@
                     </a>
                 </li>
             @endcan
+            @can('master.opd.manage')
+                <li class="menu-item {{ request()->routeIs('opd.*') ? 'active' : '' }}">
+                    <a href="{{ route('opd.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-building-house"></i>
+                        <div data-i18n="OPD">OPD</div>
+                    </a>
+                </li>
+            @endcan
         @endcanany
 
         <!-- ============================================= -->
@@ -232,13 +240,13 @@
             <li class="menu-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.roles.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-shield"></i>
-                    <div data-i18n="Roles">Manajemen Role</div>
+                    <div data-i18n="Roles">Role &amp; Hak Akses</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.permissions.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-key"></i>
-                    <div data-i18n="Permissions">Manajemen Permission</div>
+                    <div data-i18n="Permissions">Katalog Hak Akses</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->routeIs('notifikasi.*') ? 'active' : '' }}">

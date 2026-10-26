@@ -348,7 +348,7 @@ class Permohonan extends Model
                         $status = 'completed';
                         $completed = true;
                         $lastCompletedIndex = $index;
-                        $date = $permohonanTahapan->updated_at;
+                        $date = $permohonanTahapan->tanggal_selesai ?? $permohonanTahapan->updated_at;
                     } else {
                         // Masih proses atau revisi
                         $status = 'active';
@@ -369,7 +369,7 @@ class Permohonan extends Model
                         $status = 'completed';
                         $completed = true;
                         $lastCompletedIndex = $index;
-                        $date = $permohonanTahapan->updated_at;
+                        $date = $permohonanTahapan->tanggal_selesai ?? $permohonanTahapan->updated_at;
                     } elseif (in_array($permohonanTahapan->status, ['proses', 'revisi'])) {
                         $status = 'active';
                         $isActive = true;

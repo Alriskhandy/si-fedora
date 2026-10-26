@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Policies\RolePolicy;
+use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 
 /**
- * Daftar permission. Nama permission seharusnya hanya berasal dari config/permissions.php; pembuatan/penghapusan lewat UI akan diganti di PRD #6.
+ * Katalog hak akses (read-only). Nama permission hanya didefinisikan di config/permissions.php
+ * dan disinkronkan dengan `php artisan permission:sync`; pemetaan ke role diatur di RoleController.
  *
  * Akses: role.manage.
  * View: resources/views/pages/admin/permissions
@@ -15,54 +17,23 @@ use Spatie\Permission\Models\Permission;
 class PermissionController extends Controller
 {
     /**
-     * Daftar permission.
+     * Daftar hak akses per modul beserta role yang saat ini memilikinya.
+     * Bagi Admin, role superadmin dan permission tingkat pengelola tidak ditampilkan.
      */
-    public function index()
+    public function index(): View
     {
-        $permissions = Permission::all();
+        $user = auth()->user();
+        $hiddenRoles = RolePolicy::hiddenRolesFor($user);
 
-        return view('pages.admin.permissions.index', compact('permissions'));
-    }
+        $rolesByPermission = Permission::with('roles:id,name')->get()
+            ->mapWithKeys(fn (Permission $permission) => [
+                $permission->name => $permission->roles->pluck('name')->diff($hiddenRoles)->values()->all(),
+            ]);
 
-    /**
-     * Form tambah permission.
-     */
-    public function create()
-    {
-        return view('pages.admin.permissions.create');
-    }
+        $catalog = collect(config('permissions.permissions'))
+            ->except(RolePolicy::lockedPermissionsFor($user))
+            ->groupBy('modul', preserveKeys: true);
 
-    /**
-     * Tambah permission (dicatat di activity log).
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|unique:permissions,name',
-        ]);
-
-        $permission = Permission::create(['name' => $request->name]);
-
-        activity()
-            ->causedBy(auth()->user())
-            ->withProperties(['permission' => $permission->name])
-            ->log('Created new permission');
-
-        return redirect()->route('admin.permissions.index')->with('success', 'Permission created successfully.');
-    }
-
-    /**
-     * Hapus permission (dicatat di activity log).
-     */
-    public function destroy(Permission $permission)
-    {
-        activity()
-            ->causedBy(auth()->user())
-            ->withProperties(['permission' => $permission->name])
-            ->log('Deleted permission');
-
-        $permission->delete();
-
-        return redirect()->route('admin.permissions.index')->with('success', 'Permission deleted successfully.');
+        return view('pages.admin.permissions.index', compact('catalog', 'rolesByPermission'));
     }
 }

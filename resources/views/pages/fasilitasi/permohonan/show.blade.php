@@ -321,6 +321,8 @@
             </div>
         </div>
 
+        @include('pages.fasilitasi.permohonan.partials.tanggal-selesai')
+
         <!-- Informasi Umum Permohonan -->
         <div class="row">
             <!-- Left Column: Info Permohonan -->

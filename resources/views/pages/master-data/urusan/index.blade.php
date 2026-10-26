@@ -3,167 +3,100 @@
 @section('title', 'Master Urusan')
 
 @section('main')
-    <div class="container-xxl flex-grow-1 container-p-y">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="fw-bold mb-1">
-                    Master Data
-                </h4>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb breadcrumb-style1 mb-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Master Urusan</li>
-                    </ol>
-                </nav>
+<div class="container-xxl flex-grow-1 container-p-y">
+    @foreach (['success' => 'success', 'error' => 'danger'] as $key => $class)
+        @if (session($key))
+            <div class="alert alert-{{ $class }} alert-dismissible" role="alert">
+                {{ session($key) }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
             </div>
-            <a href="{{ route('dashboard') }}" class="btn btn-secondary">
-                <i class='bx bx-arrow-back me-1'></i> Kembali
-            </a>
+        @endif
+    @endforeach
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="card-title mb-0">Daftar Urusan Pemerintahan</h5>
+            <div class="d-flex gap-2">
+                <form method="GET">
+                    <select name="kelompok" class="form-select" onchange="this.form.submit()" aria-label="Filter kelompok">
+                        <option value="">Semua Kelompok</option>
+                        @foreach (App\Models\MasterUrusan::KELOMPOK as $kode => $item)
+                            <option value="{{ $kode }}" @selected((string) request('kelompok') === (string) $kode)>{{ $kode }}. {{ $item['rumpun'] }}</option>
+                        @endforeach
+                    </select>
+                </form>
+                <a href="{{ route('master-urusan.create') }}" class="btn btn-primary text-nowrap">
+                    <i class="bx bx-plus me-1"></i> Tambah Urusan
+                </a>
+            </div>
         </div>
-
-        <div class="row">
-            <div class="col-lg-12 mb-4">
-                @if (session('success'))
-                    <div class="alert alert-success alert-dismissible" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">Daftart Urusan Pemerintahan</h5>
-                        <a href="{{ route('master-urusan.create') }}" class="btn btn-primary">
-                            <i class="bx bx-plus me-1"></i> Tambah Data
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <!-- Filter -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <form method="GET">
-                                    <select name="kategori" class="form-select" onchange="this.form.submit()">
-                                        <option value="">Semua Kategori</option>
-                                        <option value="wajib_dasar"
-                                            {{ request('kategori') == 'wajib_dasar' ? 'selected' : '' }}>
-                                            Urusan Wajib Pelayanan Dasar
-                                        </option>
-                                        <option value="wajib_non_dasar"
-                                            {{ request('kategori') == 'wajib_non_dasar' ? 'selected' : '' }}>
-                                            Urusan Wajib Non Pelayanan Dasar
-                                        </option>
-                                        <option value="pilihan" {{ request('kategori') == 'pilihan' ? 'selected' : '' }}>
-                                            Urusan Pilihan
-                                        </option>
-                                    </select>
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Kode</th>
+                        <th>Nama Urusan</th>
+                        <th>Rumpun</th>
+                        <th>OPD Pengampu</th>
+                        <th>Status</th>
+                        <th>Hasil Fasilitasi</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php($kelompokSaatIni = null)
+                    @forelse ($urusan as $item)
+                        @if ($kelompokSaatIni !== $item->kode_kelompok)
+                            @php($kelompokSaatIni = $item->kode_kelompok)
+                            <tr class="table-secondary">
+                                <td colspan="7" class="fw-bold">{{ $item->kode_kelompok }}. {{ $item->nama_kelompok }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td class="text-nowrap">{{ $item->kode_urusan }}</td>
+                            <td>{{ $item->nama_urusan }}</td>
+                            <td>{{ $item->rumpun_urusan }}</td>
+                            <td>
+                                {{ $item->opd_pengampu ?? '—' }}
+                                @if ($item->kode_opd_pengampu)
+                                    <small class="d-block text-muted">{{ $item->kode_opd_pengampu }}</small>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="badge {{ $item->isActive() ? 'bg-label-success' : 'bg-label-secondary' }}">{{ $item->status }}</span>
+                                <small class="d-block text-muted">{{ $item->tanggal_update?->format('d/m/Y') }}</small>
+                            </td>
+                            <td>
+                                <form action="{{ route('master-urusan.toggle-hasil-fasilitasi', $item) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm {{ $item->tampil_hasil_fasilitasi ? 'btn-success' : 'btn-outline-secondary' }}"
+                                        title="Klik untuk {{ $item->tampil_hasil_fasilitasi ? 'menonaktifkan' : 'mengaktifkan' }}">
+                                        <i class="bx {{ $item->tampil_hasil_fasilitasi ? 'bx-check' : 'bx-x' }} me-1"></i>{{ $item->tampil_hasil_fasilitasi ? 'Tampil' : 'Tidak tampil' }}
+                                    </button>
                                 </form>
-                            </div>
-                        </div>
-
-                        <!-- Table -->
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Urutan</th>
-                                        <th>Nama Urusan</th>
-                                        <th>Kategori</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                        $currentKategori = null;
-                                    @endphp
-                                    @forelse($urusan as $index => $item)
-                                        @if ($currentKategori !== $item->kategori)
-                                            @php $currentKategori = $item->kategori; @endphp
-                                            <tr class="table-secondary">
-                                                <td colspan="5" class="fw-bold">
-                                                    <i class="bx bx-folder me-2"></i>{{ $item->kategori_label }}
-                                                </td>
-                                            </tr>
-                                        @endif
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>
-                                                <span class="badge bg-label-primary">{{ $item->urutan }}</span>
-                                            </td>
-                                            <td>{{ $item->nama_urusan }}</td>
-                                            <td>
-                                                @if ($item->kategori == 'wajib_dasar')
-                                                    <span class="badge bg-label-success">Wajib Dasar</span>
-                                                @elseif($item->kategori == 'wajib_non_dasar')
-                                                    <span class="badge bg-label-info">Wajib Non Dasar</span>
-                                                @else
-                                                    <span class="badge bg-label-warning">Pilihan</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow"
-                                                        data-bs-toggle="dropdown">
-                                                        <i class="bx bx-dots-vertical-rounded"></i>
-                                                    </button>
-                                                    <div class="dropdown-menu">
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('master-urusan.edit', $item) }}">
-                                                            <i class="bx bx-edit-alt me-1"></i> Edit
-                                                        </a>
-                                                        <form action="{{ route('master-urusan.destroy', $item) }}"
-                                                            method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger"
-                                                                onclick="return confirm('Yakin ingin menghapus?')">
-                                                                <i class="bx bx-trash me-1"></i> Delete
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted">Tidak ada data</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{{ route('master-urusan.edit', $item) }}" class="btn btn-sm btn-primary" title="Ubah">
+                                    <i class="bx bx-edit-alt"></i>
+                                </a>
+                                <form action="{{ route('master-urusan.destroy', $item) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus"
+                                        onclick="return confirm('Yakin ingin menghapus urusan ini?')">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Tidak ada data</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 @endsection
-
-@push('scripts')
-    <script>
-        $(document).ready(function() {
-            // Notification helper
-            function showNotification(type, message) {
-                const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-                const icon = type === 'success' ? 'bx-check-circle' : 'bx-error-circle';
-
-                const notification = $(`
-                    <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed" 
-                         role="alert" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-                        <i class='bx ${icon} me-2'></i>${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `);
-
-                $('body').append(notification);
-
-                setTimeout(function() {
-                    notification.fadeOut(function() {
-                        $(this).remove();
-                    });
-                }, 3000);
-            }
-        });
-    </script>
-@endpush

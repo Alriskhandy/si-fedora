@@ -97,6 +97,9 @@
                                                     <span class="badge bg-label-warning">
                                                         <i class="bx bx-time-five me-1"></i> Menunggu Persetujuan
                                                     </span>
+                                                    @if ($item->hasilFasilitasi?->masukan_opd_count)
+                                                        <span class="badge bg-label-info mt-1">{{ $item->hasilFasilitasi->masukan_opd_count }} masukan OPD</span>
+                                                    @endif
                                                 </td>
                                                 <td class="text-center">
                                                     <a href="{{ route('approval.show', $item) }}"

@@ -26,6 +26,7 @@ use App\Http\Controllers\Fasilitasi\PermohonanController;
 use App\Http\Controllers\Fasilitasi\PermohonanDokumenController;
 use App\Http\Controllers\Fasilitasi\PerpanjanganWaktuController;
 use App\Http\Controllers\Fasilitasi\SuratPenyampaianHasilController;
+use App\Http\Controllers\Fasilitasi\TanggalSelesaiTahapanController;
 use App\Http\Controllers\Fasilitasi\TindakLanjutController;
 use App\Http\Controllers\Fasilitasi\VerifikasiController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,11 @@ Route::prefix('permohonan')->name('permohonan.')->controller(PermohonanControlle
 
         Route::put('/update-deadline', 'updateDeadline')->name('update-deadline')->middleware('can:tahapan.update-deadline');
     });
+
+    // Penyesuaian tanggal selesai tahapan oleh Admin (PRD #5)
+    Route::put('/{permohonan}/tahapan/{permohonanTahapan}/tanggal-selesai', [TanggalSelesaiTahapanController::class, 'update'])
+        ->name('tahapan.update-tanggal-selesai')
+        ->middleware('can:tahapan.update-tanggal-selesai');
 
     Route::middleware(['can:permohonan.create'])->group(function () {
         Route::delete('/{permohonan}', 'destroy')->name('destroy');
@@ -106,18 +112,23 @@ Route::prefix('pelaksanaan-fasilitasi')->name('pelaksanaan-fasilitasi.')->contro
 // Tahapan 5 — Hasil fasilitasi, validasi, dan persetujuan Kaban
 // ---------------------------------------------------------------------------
 
-// Input catatan hasil oleh Tim (catatan hanya diubah pemilik atau koordinator; dicek di controller)
-Route::middleware(['can:hasil-fasilitasi.input'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
+// Input catatan hasil oleh Tim (catatan hanya diubah pemilik atau koordinator; terkunci selama dinilai/disetujui Kaban; dicek di controller)
+// Halaman input & masukan urusan: fasilitator dan OPD (OPD hanya urusan bidangnya)
+Route::middleware(['can:hasil-fasilitasi.input-urusan'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
     Route::get('/{permohonan}/create', 'create')->name('create');
+    Route::post('/{permohonan}/urusan', 'storeUrusan')->name('urusan.store');
+    Route::put('/{permohonan}/urusan/{id}', 'updateUrusan')->name('urusan.update');
+    Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
+});
+
+// Bagian lain hasil fasilitasi: hanya fasilitator
+Route::middleware(['can:hasil-fasilitasi.input'])->prefix('hasil-fasilitasi')->name('hasil-fasilitasi.')->controller(HasilFasilitasiController::class)->group(function () {
     Route::post('/{permohonan}', 'store')->name('store');
     Route::post('/{permohonan}/submit', 'submit')->name('submit');
     Route::get('/{permohonan}/generate', 'generate')->name('generate');
     Route::post('/{permohonan}/sistematika', 'storeSistematika')->name('sistematika.store');
     Route::put('/{permohonan}/sistematika/{id}', 'updateSistematika')->name('sistematika.update');
     Route::delete('/{permohonan}/sistematika/{id}', 'deleteSistematika')->name('sistematika.delete');
-    Route::post('/{permohonan}/urusan', 'storeUrusan')->name('urusan.store');
-    Route::put('/{permohonan}/urusan/{id}', 'updateUrusan')->name('urusan.update');
-    Route::delete('/{permohonan}/urusan/{id}', 'deleteUrusan')->name('urusan.delete');
     Route::post('/{permohonan}/form', 'storeForm')->name('form.store');
     Route::put('/{permohonan}/form/{id}', 'updateForm')->name('form.update');
     Route::delete('/{permohonan}/form/{id}', 'deleteForm')->name('form.delete');

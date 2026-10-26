@@ -67,6 +67,8 @@
                                 @enderror
                             </div>
 
+                            @include('pages.admin.users.partials.opd-field', ['selectedOpd' => null])
+
                             <div class="mb-3">
                                 <label class="form-label" for="name">Nama Lengkap</label>
                                 <input type="text" class="form-control @error('name') is-invalid @enderror"
@@ -122,24 +124,29 @@
             const roleSelect = document.getElementById('role');
             const kabKotaContainer = document.getElementById('kab-kota-container');
             const kabKotaSelect = document.getElementById('kab_kota');
+            const opdContainer = document.getElementById('opd-container');
+            const opdSelect = document.getElementById('opd_id');
 
-            // Show/hide Kabupaten/Kota based on role selection
-            roleSelect.addEventListener('change', function() {
-                if (this.value === 'pemohon' ) {
-                    kabKotaContainer.style.display = 'block';
-                    kabKotaSelect.required = true;
-                } else {
-                    kabKotaContainer.style.display = 'none';
+            // Kab/kota hanya untuk pemohon, OPD hanya untuk role opd
+            function toggleFields() {
+                const isPemohon = roleSelect.value === 'pemohon';
+                const isOpd = roleSelect.value === 'opd';
+
+                kabKotaContainer.style.display = isPemohon ? 'block' : 'none';
+                kabKotaSelect.required = isPemohon;
+                if (! isPemohon) {
                     kabKotaSelect.value = '';
-                    kabKotaSelect.required = false;
                 }
-            });
 
-            // Trigger on page load if role already selected
-            if (roleSelect.value === 'pemohon' ) {
-                kabKotaContainer.style.display = 'block';
-                kabKotaSelect.required = true;
+                opdContainer.style.display = isOpd ? 'block' : 'none';
+                opdSelect.required = isOpd;
+                if (! isOpd) {
+                    opdSelect.value = '';
+                }
             }
+
+            roleSelect.addEventListener('change', toggleFields);
+            toggleFields();
         });
     </script>
 @endpush

@@ -1,0 +1,47 @@
+﻿id_opd;kode_opd;kode_wilayah;nama_opd;singkatan;jenis_opd;rumpun_urusan;status;tanggal_update;kode_urusan;urusan_pemerintahan;induk_opd
+1;82.01.01;82;Sekretariat Daerah;SETDA;Sekretariat;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;
+2;82.01.01.01;82;Biro Pemerintahan dan Otonomi Daerah;BIRO PEM;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+3;82.01.01.02;82;Biro Hukum;BIRO HUKUM;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+4;82.01.01.03;82;Biro Kesejahteraan Rakyat;BIRO KESRA;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+5;82.01.01.04;82;Biro Perekonomian;BIRO EKON;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+6;82.01.01.05;82;Biro Administrasi Pembangunan;BIRO ADPEM;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+7;82.01.01.06;82;Biro Pengadaan Barang dan Jasa;BIRO PBJ;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+8;82.01.01.07;82;Biro Organisasi;BIRO ORG;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+9;82.01.01.08;82;Biro Umum;BIRO UMUM;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+10;82.01.01.09;82;Biro Administrasi Pimpinan;BIRO ADPIM;Biro;Penunjang;Aktif;2026-10-25;4.01;Sekretariat Daerah;82.01.01
+11;82.01.02;82;Sekretariat Dewan Perwakilan Rakyat Daerah;SETWAN;Sekretariat;Penunjang;Aktif;2026-10-25;4.02;Sekretariat DPRD;
+12;82.02.01;82;Inspektorat Daerah;INSPEKTORAT;Inspektorat;Pengawasan;Aktif;2026-10-25;6.01;Inspektorat Daerah;
+13;82.03.01;82;Badan Perencanaan Pembangunan Daerah;BAPPEDA;Badan;Penunjang;Aktif;2026-10-25;5.01;Perencanaan;
+14;82.03.02;82;Badan Pengelolaan Keuangan dan Aset Daerah;BPKAD;Badan;Penunjang;Aktif;2026-10-25;5.02;Keuangan;
+15;82.03.03;82;Badan Pendapatan Daerah;BAPENDA;Badan;Penunjang;Aktif;2026-10-25;5.02;Keuangan;
+16;82.03.04;82;Badan Kepegawaian Daerah;BKD;Badan;Penunjang;Aktif;2026-10-25;5.03;Kepegawaian;
+17;82.03.05;82;Badan Pengembangan Sumber Daya Manusia;BPSDM;Badan;Penunjang;Aktif;2026-10-25;5.04;Pendidikan dan Pelatihan;
+18;82.03.06;82;Badan Riset dan Inovasi Daerah;BRIDA;Badan;Penunjang;Aktif;2026-10-25;5.05;Penelitian dan Pengembangan;
+19;82.03.07;82;Badan Penghubung Daerah;BADAN PENGHUBUNG;Badan;Penunjang;Aktif;2026-10-25;5.07;Penunjang Urusan Lainnya;
+20;82.03.08;82;Badan Penanggulangan Bencana Daerah;BPBD;Badan;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.05;Ketenteraman, Ketertiban Umum dan Pelindungan Masyarakat;
+21;82.03.09;82;Badan Kesatuan Bangsa dan Politik;KESBANGPOL;Badan;Pemerintahan Umum;Aktif;2026-10-25;8.01;Kesatuan Bangsa dan Politik;
+22;82.04.01;82;Satuan Polisi Pamong Praja;SATPOL PP;Satuan;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.05;Ketenteraman, Ketertiban Umum dan Pelindungan Masyarakat;
+23;82.05.01;82;Dinas Pendidikan dan Kebudayaan;DIKBUD;Dinas;Wajib Pelayanan Dasar;Aktif;2026-10-25;"1.01; 2.22";"Pendidikan; Kebudayaan";
+24;82.05.02;82;Dinas Kesehatan;DINKES;Dinas;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.02;Kesehatan;
+25;82.05.02.01;82;Rumah Sakit Umum Daerah Dr. H. Chasan Boesoirie;RSUD CB;UPTD;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.02;Kesehatan;82.05.02
+26;82.05.03;82;Dinas Pekerjaan Umum dan Penataan Ruang;DPUPR;Dinas;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.03;Pekerjaan Umum dan Penataan Ruang;
+27;82.05.04;82;Dinas Perumahan dan Kawasan Permukiman;DISPERKIM;Dinas;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.04;Perumahan dan Kawasan Permukiman;
+28;82.05.05;82;Dinas Sosial;DINSOS;Dinas;Wajib Pelayanan Dasar;Aktif;2026-10-25;1.06;Sosial;
+29;82.05.06;82;Dinas Tenaga Kerja dan Transmigrasi;DISNAKERTRANS;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;"2.07; 3.32";"Tenaga Kerja; Transmigrasi";
+30;82.05.07;82;Dinas Pemberdayaan Perempuan dan Perlindungan Anak;DP3A;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.08;Pemberdayaan Perempuan dan Pelindungan Anak;
+31;82.05.08;82;Dinas Pangan;DISPANG;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.09;Pangan;
+32;82.05.09;82;Dinas Lingkungan Hidup;DLH;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.11;Lingkungan Hidup;
+33;82.05.10;82;Dinas Pemberdayaan Masyarakat dan Desa, Kependudukan dan Pencatatan Sipil;DPMD-DUKCAPIL;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;"2.12; 2.13";"Administrasi Kependudukan dan Pencatatan Sipil; Pemberdayaan Masyarakat dan Desa";
+34;82.05.11;82;Dinas Pengendalian Penduduk dan Keluarga Berencana;DPPKB;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.14;Pengendalian Penduduk dan Keluarga Berencana;
+35;82.05.12;82;Dinas Perhubungan;DISHUB;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.15;Perhubungan;
+36;82.05.13;82;Dinas Komunikasi, Informatika, Statistik dan Persandian;DISKOMINFO;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;"2.16; 2.20; 2.21";"Komunikasi dan Informatika; Statistik; Persandian";
+37;82.05.14;82;Dinas Koperasi dan Usaha Kecil Menengah;DISKOP UKM;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.17;Koperasi, Usaha Kecil dan Menengah;
+38;82.05.15;82;Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu;DPMPTSP;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.18;Penanaman Modal;
+39;82.05.16;82;Dinas Pemuda dan Olahraga;DISPORA;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;2.19;Kepemudaan dan Olahraga;
+40;82.05.17;82;Dinas Perpustakaan dan Kearsipan;DISPUSIP;Dinas;Wajib Non Pelayanan Dasar;Aktif;2026-10-25;"2.23; 2.24";"Perpustakaan; Kearsipan";
+41;82.05.18;82;Dinas Kelautan dan Perikanan;DKP;Dinas;Pilihan;Aktif;2026-10-25;3.25;Kelautan dan Perikanan;
+42;82.05.19;82;Dinas Pariwisata;DISPAR;Dinas;Pilihan;Aktif;2026-10-25;3.26;Pariwisata;
+43;82.05.20;82;Dinas Pertanian;DISTAN;Dinas;Pilihan;Aktif;2026-10-25;3.27;Pertanian;
+44;82.05.21;82;Dinas Kehutanan;DISHUT;Dinas;Pilihan;Aktif;2026-10-25;3.28;Kehutanan;
+45;82.05.22;82;Dinas Energi dan Sumber Daya Mineral;DESDM;Dinas;Pilihan;Aktif;2026-10-25;3.29;Energi dan Sumber Daya Mineral;
+46;82.05.23;82;Dinas Perindustrian dan Perdagangan;DISPERINDAG;Dinas;Pilihan;Aktif;2026-10-25;"3.30; 3.31";"Perdagangan; Perindustrian";

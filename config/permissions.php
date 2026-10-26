@@ -17,12 +17,13 @@ $adminSistem = ['superadmin', 'admin_peran'];
 
 return [
 
-    'roles' => ['superadmin', 'kaban', 'admin_peran', 'verifikator', 'fasilitator', 'pemohon', 'auditor'],
+    'roles' => ['superadmin', 'kaban', 'admin_peran', 'verifikator', 'fasilitator', 'pemohon', 'auditor', 'opd'],
 
     'permissions' => [
 
         // Sistem
-        'role.manage' => ['modul' => 'Sistem', 'label' => 'Kelola role & permission', 'roles' => ['superadmin']],
+        'role.manage' => ['modul' => 'Sistem', 'label' => 'Atur hak akses role', 'roles' => $adminSistem],
+        'role.manage-protected' => ['modul' => 'Sistem', 'label' => 'Atur role superadmin, tambah & hapus role, beri hak akses tingkat pengelola', 'roles' => ['superadmin']],
         'activity-log.view' => ['modul' => 'Sistem', 'label' => 'Lihat activity log', 'roles' => ['superadmin', 'kaban', 'admin_peran', 'auditor']],
         'log-viewer.view' => ['modul' => 'Sistem', 'label' => 'Buka Log Viewer', 'roles' => ['superadmin']],
         'modul.manage' => ['modul' => 'Sistem', 'label' => 'Unggah & hapus modul pengguna', 'roles' => ['superadmin']],
@@ -40,15 +41,17 @@ return [
         'master.kelengkapan.manage' => ['modul' => 'Master Data', 'label' => 'Kelola kelengkapan verifikasi', 'roles' => $adminSistem],
         'master.bab.manage' => ['modul' => 'Master Data', 'label' => 'Kelola bab', 'roles' => $adminSistem],
         'master.urusan.manage' => ['modul' => 'Master Data', 'label' => 'Kelola urusan', 'roles' => $adminSistem],
+        'master.opd.manage' => ['modul' => 'Master Data', 'label' => 'Kelola OPD', 'roles' => $adminSistem],
 
         // Permohonan
-        'permohonan.view-all' => ['modul' => 'Permohonan', 'label' => 'Lihat semua permohonan', 'roles' => ['superadmin', 'kaban', 'admin_peran', 'auditor']],
+        'permohonan.view-all' => ['modul' => 'Permohonan', 'label' => 'Lihat semua permohonan', 'roles' => ['superadmin', 'kaban', 'admin_peran', 'auditor', 'opd']],
         'permohonan.view-own' => ['modul' => 'Permohonan', 'label' => 'Lihat permohonan kab/kota sendiri', 'roles' => ['pemohon']],
         'permohonan.view-assigned' => ['modul' => 'Permohonan', 'label' => 'Lihat permohonan yang ditugaskan', 'roles' => ['verifikator', 'fasilitator']],
         'permohonan.create' => ['modul' => 'Permohonan', 'label' => 'Buat, ajukan & hapus permohonan', 'roles' => ['pemohon']],
         'permohonan.upload-dokumen' => ['modul' => 'Permohonan', 'label' => 'Unggah dokumen permohonan', 'roles' => ['pemohon']],
         'permohonan.verify' => ['modul' => 'Permohonan', 'label' => 'Verifikasi kelengkapan dokumen', 'roles' => ['verifikator']],
         'tahapan.update-deadline' => ['modul' => 'Permohonan', 'label' => 'Ubah batas waktu tahapan', 'roles' => $adminSistem],
+        'tahapan.update-tanggal-selesai' => ['modul' => 'Permohonan', 'label' => 'Ubah tanggal selesai tahapan', 'roles' => $adminSistem],
 
         // Jadwal & surat
         'jadwal.manage' => ['modul' => 'Jadwal', 'label' => 'Kelola jadwal fasilitasi', 'roles' => ['admin_peran']],
@@ -59,14 +62,15 @@ return [
 
         // Verifikasi & pelaksanaan
         'laporan-verifikasi.manage' => ['modul' => 'Verifikasi', 'label' => 'Kelola laporan verifikasi', 'roles' => ['admin_peran']],
-        'pelaksanaan.upload-dokumen' => ['modul' => 'Verifikasi', 'label' => 'Unggah & hapus dokumen pelaksanaan', 'roles' => ['superadmin', 'admin_peran', 'verifikator', 'fasilitator']],
+        'pelaksanaan.upload-dokumen' => ['modul' => 'Verifikasi', 'label' => 'Unggah & hapus dokumen pelaksanaan', 'roles' => ['superadmin', 'admin_peran', 'verifikator', 'fasilitator', 'opd']],
         'pelaksanaan.complete' => ['modul' => 'Verifikasi', 'label' => 'Selesaikan tahapan pelaksanaan', 'roles' => $adminSistem],
 
         // Hasil fasilitasi
-        'hasil-fasilitasi.view' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Lihat & unduh hasil fasilitasi', 'roles' => ['superadmin', 'kaban', 'admin_peran', 'verifikator', 'fasilitator']],
+        'hasil-fasilitasi.view' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Lihat & unduh hasil fasilitasi', 'roles' => ['superadmin', 'kaban', 'admin_peran', 'verifikator', 'fasilitator', 'opd']],
         'hasil-fasilitasi.manage-all' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Akses & kelola semua hasil fasilitasi', 'roles' => $adminSistem],
-        'hasil-fasilitasi.input' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Input hasil fasilitasi', 'roles' => ['fasilitator']],
-        'hasil-fasilitasi.submit-kaban' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Unggah draft final & ajukan ke Kaban', 'roles' => ['superadmin', 'admin_peran', 'fasilitator']],
+        'hasil-fasilitasi.input' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Input sistematika, konsistensi & rekomendasi hasil fasilitasi', 'roles' => ['fasilitator']],
+        'hasil-fasilitasi.input-urusan' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Input masukan urusan pemerintahan', 'roles' => ['fasilitator', 'opd']],
+        'hasil-fasilitasi.submit-kaban' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Unggah draft final & ajukan ke Kaban', 'roles' => ['superadmin', 'admin_peran', 'fasilitator', 'opd']],
         'approval.approve' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Setujui / tolak hasil fasilitasi', 'roles' => ['kaban']],
         'surat-penyampaian-hasil.manage' => ['modul' => 'Hasil Fasilitasi', 'label' => 'Kelola surat penyampaian hasil', 'roles' => ['kaban']],
 

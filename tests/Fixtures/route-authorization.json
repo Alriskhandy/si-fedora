@@ -1,9 +1,7 @@
 {
-    "DELETE admin/permissions/{permission}": [
-        "superadmin"
-    ],
     "DELETE admin/roles/{role}": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
     ],
     "DELETE hasil-fasilitasi/{permohonan}/form/{id}": [
         "fasilitator"
@@ -15,7 +13,8 @@
         "fasilitator"
     ],
     "DELETE hasil-fasilitasi/{permohonan}/urusan/{id}": [
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "DELETE jadwal/{jadwal}": [
         "admin_peran"
@@ -51,7 +50,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "DELETE notifikasi/{id}": [
         "(tanpa role)",
@@ -61,7 +61,12 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
+    ],
+    "DELETE opd/{opd}": [
+        "superadmin",
+        "admin_peran"
     ],
     "DELETE permohonan-dokumen/{permohonanDokumen}/file": [
         "pemohon"
@@ -77,7 +82,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "DELETE perpanjangan-waktu/{perpanjanganWaktu}": [
         "pemohon"
@@ -90,7 +96,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "DELETE surat-pemberitahuan/{suratPemberitahuan}": [
         "admin_peran"
@@ -106,19 +113,20 @@
         "auditor"
     ],
     "GET admin/permissions": [
-        "superadmin"
-    ],
-    "GET admin/permissions/create": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
     ],
     "GET admin/roles": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
     ],
     "GET admin/roles/create": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
     ],
     "GET admin/roles/{role}/edit": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
     ],
     "GET approval": [
         "kaban"
@@ -137,7 +145,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET arsip/jenis/{jenisDokumenId}": [
         "(tanpa role)",
@@ -147,7 +156,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET arsip/{permohonan}": [
         "(tanpa role)",
@@ -157,7 +167,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET berkas/{jenis}/{id}": [
         "(tanpa role)",
@@ -167,7 +178,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET confirm-password": [
         "(tanpa role)",
@@ -177,7 +189,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET dashboard": [
         "(tanpa role)",
@@ -187,24 +200,28 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET hasil-fasilitasi": [
         "superadmin",
         "kaban",
         "admin_peran",
         "verifikator",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "GET hasil-fasilitasi/{permohonan}": [
         "superadmin",
         "kaban",
         "admin_peran",
         "verifikator",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "GET hasil-fasilitasi/{permohonan}/create": [
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "GET hasil-fasilitasi/{permohonan}/download-draft-final": [
         "(tanpa role)",
@@ -214,21 +231,24 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET hasil-fasilitasi/{permohonan}/download-pdf": [
         "superadmin",
         "kaban",
         "admin_peran",
         "verifikator",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "GET hasil-fasilitasi/{permohonan}/download-word": [
         "superadmin",
         "kaban",
         "admin_peran",
         "verifikator",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "GET hasil-fasilitasi/{permohonan}/generate": [
         "fasilitator"
@@ -238,7 +258,8 @@
         "kaban",
         "admin_peran",
         "verifikator",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "GET jadwal": [
         "(tanpa role)",
@@ -248,7 +269,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET jadwal/create": [
         "admin_peran"
@@ -261,7 +283,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET jadwal/{jadwal}/download": [
         "(tanpa role)",
@@ -271,7 +294,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET jadwal/{jadwal}/edit": [
         "admin_peran"
@@ -360,7 +384,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET modul/{modul}/download": [
         "(tanpa role)",
@@ -370,7 +395,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET my-undangan": [
         "(tanpa role)",
@@ -380,7 +406,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET my-undangan/{id}": [
         "(tanpa role)",
@@ -390,7 +417,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET notifikasi": [
         "(tanpa role)",
@@ -400,7 +428,20 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
+    ],
+    "GET opd": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET opd/create": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "GET opd/{opd}/edit": [
+        "superadmin",
+        "admin_peran"
     ],
     "GET pemohon/undangan": [
         "pemohon"
@@ -425,7 +466,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan": [
         "(tanpa role)",
@@ -435,7 +477,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/create": [
         "pemohon"
@@ -448,7 +491,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/dokumen/{dokumen}/download": [
         "(tanpa role)",
@@ -458,7 +502,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/hasil": [
         "(tanpa role)",
@@ -468,7 +513,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/jadwal": [
         "(tanpa role)",
@@ -478,7 +524,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/pelaksanaan": [
         "(tanpa role)",
@@ -488,7 +535,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/penetapan": [
         "(tanpa role)",
@@ -498,7 +546,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/permohonan": [
         "(tanpa role)",
@@ -508,7 +557,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/tindak-lanjut": [
         "(tanpa role)",
@@ -518,7 +568,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET permohonan/{permohonan}/tahapan/verifikasi": [
         "(tanpa role)",
@@ -528,7 +579,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET perpanjangan-waktu": [
         "superadmin",
@@ -556,7 +608,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET phone/verify/otp": [
         "(tanpa role)",
@@ -566,7 +619,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET profile": [
         "(tanpa role)",
@@ -576,7 +630,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET public/surat-penyampaian-hasil": [
         "(tanpa role)",
@@ -586,7 +641,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET public/surat-penyampaian-hasil/{permohonan}/download": [
         "(tanpa role)",
@@ -596,7 +652,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET surat-pemberitahuan": [
         "admin_peran"
@@ -654,7 +711,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET users": [
         "superadmin",
@@ -686,7 +744,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "GET verify-email/{id}/{hash}": [],
     "PATCH profile": [
@@ -697,13 +756,16 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
-    ],
-    "POST admin/permissions": [
-        "superadmin"
+        "auditor",
+        "opd"
     ],
     "POST admin/roles": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
+    ],
+    "POST admin/roles/{role}/reset": [
+        "superadmin",
+        "admin_peran"
     ],
     "POST approval/{permohonan}/approve": [
         "kaban"
@@ -719,7 +781,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST email/verification-notification": [
         "(tanpa role)",
@@ -729,7 +792,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST hasil-fasilitasi/{permohonan}": [
         "fasilitator"
@@ -749,15 +813,18 @@
     "POST hasil-fasilitasi/{permohonan}/submit-to-kaban": [
         "superadmin",
         "admin_peran",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "POST hasil-fasilitasi/{permohonan}/upload-draft-final": [
         "superadmin",
         "admin_peran",
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "POST hasil-fasilitasi/{permohonan}/urusan": [
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "POST jadwal": [
         "admin_peran"
@@ -777,7 +844,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST master-bab": [
         "superadmin",
@@ -799,6 +867,10 @@
         "superadmin",
         "admin_peran"
     ],
+    "POST master-urusan/{masterUrusan}/toggle-hasil-fasilitasi": [
+        "superadmin",
+        "admin_peran"
+    ],
     "POST modul": [
         "superadmin"
     ],
@@ -810,7 +882,12 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
+    ],
+    "POST opd": [
+        "superadmin",
+        "admin_peran"
     ],
     "POST pelaksanaan-fasilitasi/{permohonan}/complete": [
         "superadmin",
@@ -836,7 +913,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST permohonan/{permohonan}/submit": [
         "pemohon"
@@ -852,7 +930,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST phone/verify/resend": [
         "(tanpa role)",
@@ -862,7 +941,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST phone/verify/send": [
         "(tanpa role)",
@@ -872,7 +952,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "POST surat-pemberitahuan": [
         "admin_peran"
@@ -919,7 +1000,8 @@
         "verifikator"
     ],
     "PUT admin/roles/{role}": [
-        "superadmin"
+        "superadmin",
+        "admin_peran"
     ],
     "PUT hasil-fasilitasi/{permohonan}/form/{id}": [
         "fasilitator"
@@ -931,7 +1013,8 @@
         "fasilitator"
     ],
     "PUT hasil-fasilitasi/{permohonan}/urusan/{id}": [
-        "fasilitator"
+        "fasilitator",
+        "opd"
     ],
     "PUT jadwal/{jadwal}": [
         "admin_peran"
@@ -960,6 +1043,10 @@
         "superadmin",
         "admin_peran"
     ],
+    "PUT opd/{opd}": [
+        "superadmin",
+        "admin_peran"
+    ],
     "PUT password": [
         "(tanpa role)",
         "superadmin",
@@ -968,7 +1055,8 @@
         "verifikator",
         "fasilitator",
         "pemohon",
-        "auditor"
+        "auditor",
+        "opd"
     ],
     "PUT penetapan-jadwal/{permohonan}": [
         "kaban"
@@ -977,6 +1065,10 @@
         "pemohon"
     ],
     "PUT permohonan/{permohonan}/tahapan/update-deadline": [
+        "superadmin",
+        "admin_peran"
+    ],
+    "PUT permohonan/{permohonan}/tahapan/{permohonanTahapan}/tanggal-selesai": [
         "superadmin",
         "admin_peran"
     ],

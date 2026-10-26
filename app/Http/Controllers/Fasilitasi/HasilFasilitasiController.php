@@ -104,6 +104,12 @@ class HasilFasilitasiController extends Controller
             return true;
         }
 
+        // Anggota tim terbatas urusan (OPD) tidak memakai penugasan: anggota tim untuk semua permohonan.
+        // Cabang sementara sampai penugasan tim dihapus (docs/implementasi/FASE-5-BACKLOG.md).
+        if ($this->isUrusanOnlyMember()) {
+            return true;
+        }
+
         // Get jenis_dokumen_id directly from permohonan
         $jenisDokumenId = $permohonan->jenis_dokumen_id;
 
@@ -117,6 +123,43 @@ class HasilFasilitasiController extends Controller
             ->first();
 
         return $assignment !== null;
+    }
+
+    /**
+     * Anggota tim yang inputnya terbatas pada urusan pemerintahan (role OPD, keputusan teknis 24 Okt 2026).
+     */
+    private function isUrusanOnlyMember(): bool
+    {
+        $user = Auth::user();
+
+        return $user->can('hasil-fasilitasi.input-urusan') && ! $user->can('hasil-fasilitasi.input');
+    }
+
+    /**
+     * ID urusan yang boleh diberi masukan pengguna ini; null = semua urusan.
+     * Anggota terbatas urusan hanya pada urusan bidang OPD-nya; tanpa OPD/urusan berarti tidak ada (K7).
+     *
+     * @return list<int>|null
+     */
+    private function allowedUrusanIds(): ?array
+    {
+        if (! $this->isUrusanOnlyMember()) {
+            return null;
+        }
+
+        return Auth::user()->opd?->urusan()->pluck('master_urusan.id')->all() ?? [];
+    }
+
+    /**
+     * Respons penolakan bila hasil fasilitasi sedang dinilai atau sudah disetujui Kaban (K5).
+     */
+    private function lockedResponse(Permohonan $permohonan): ?JsonResponse
+    {
+        if ($permohonan->hasilFasilitasi?->isLocked()) {
+            return response()->json(['error' => 'Hasil fasilitasi sedang dinilai atau sudah disetujui Kepala Badan; masukan tidak dapat diubah.'], 423);
+        }
+
+        return null;
     }
 
     /**
@@ -253,8 +296,8 @@ class HasilFasilitasiController extends Controller
     {
         $query = Permohonan::with(['kabupatenKota', 'jenisDokumen', 'hasilFasilitasi']);
 
-        // Admin can see all permohonan
-        if (! $this->isAdmin()) {
+        // Admin dan anggota tim terbatas urusan (tanpa penugasan) melihat semua permohonan
+        if (! $this->isAdmin() && ! $this->isUrusanOnlyMember()) {
             // Get user's tim assignments (fasilitator or verifikator)
             $userAssignments = UserKabkotaAssignment::where('user_id', Auth::id())
                 ->whereIn('role_type', ['fasilitator', 'verifikator'])
@@ -330,8 +373,12 @@ class HasilFasilitasiController extends Controller
             $permohonan->refresh();
         }
 
-        // Ambil daftar urusan
-        $masterUrusanList = MasterUrusan::orderBy('urutan')->get();
+        // Ambil daftar urusan (anggota terbatas urusan hanya urusan bidang OPD-nya)
+        $allowedUrusanIds = $this->allowedUrusanIds();
+        $masterUrusanList = MasterUrusan::untukHasilFasilitasi()->orderBy('kode_urusan')
+            ->when($allowedUrusanIds !== null, fn ($query) => $query->whereIn('id', $allowedUrusanIds))
+            ->get();
+        $isUrusanOnly = $this->isUrusanOnlyMember();
 
         // Ambil daftar bab berdasarkan jenis dokumen dari permohonan (hanya parent/level 1)
         $masterBabList = collect();
@@ -346,7 +393,7 @@ class HasilFasilitasiController extends Controller
         $hasilFasilitasi = $permohonan->hasilFasilitasi;
         $hasilFasilitasi->load([
             'hasilSistematika.masterBab', 'hasilSistematika.user',
-            'hasilUrusan.masterUrusan', 'hasilUrusan.user',
+            'hasilUrusan.masterUrusan', 'hasilUrusan.user.opd',
             'hasilForm.user',
             'hasilRekomendasi.user',
         ]);
@@ -359,7 +406,7 @@ class HasilFasilitasiController extends Controller
 
         // Sort urusan by master urusan urutan
         $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
-            return $item->masterUrusan->urutan ?? 999;
+            return $item->masterUrusan->urutan_kode ?? 999;
         });
         $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
 
@@ -393,7 +440,9 @@ class HasilFasilitasiController extends Controller
             ];
         }
 
-        return view('pages.fasilitasi.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo'));
+        $isLocked = $hasilFasilitasi->isLocked();
+
+        return view('pages.fasilitasi.hasil-fasilitasi.create', compact('permohonan', 'masterUrusanList', 'masterBabList', 'hasilFasilitasi', 'isKoordinator', 'isAdmin', 'timInfo', 'isUrusanOnly', 'isLocked'));
     }
 
     /**
@@ -404,6 +453,10 @@ class HasilFasilitasiController extends Controller
      */
     public function store(Request $request, Permohonan $permohonan)
     {
+        if ($permohonan->hasilFasilitasi?->isLocked()) {
+            return back()->with('error', 'Hasil fasilitasi sedang dinilai atau sudah disetujui Kepala Badan; tidak dapat diubah.');
+        }
+
         $request->validate([
             'ringkasan_hasil' => 'required|string',
             'rekomendasi' => 'required|string',
@@ -489,7 +542,7 @@ class HasilFasilitasiController extends Controller
 
         $hasilFasilitasi->load(
             'hasilUrusan.masterUrusan',
-            'hasilUrusan.user',
+            'hasilUrusan.user.opd',
             'hasilSistematika.masterBab',
             'hasilSistematika.user',
             'hasilForm.user',
@@ -505,7 +558,7 @@ class HasilFasilitasiController extends Controller
 
         // Sort urusan by master urusan urutan
         $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
-            return $item->masterUrusan->urutan ?? 999;
+            return $item->masterUrusan->urutan_kode ?? 999;
         });
         $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
 
@@ -578,6 +631,10 @@ class HasilFasilitasiController extends Controller
      */
     public function storeSistematika(Request $request, Permohonan $permohonan)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         // Check if user is member of this tim
         if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
@@ -661,6 +718,10 @@ class HasilFasilitasiController extends Controller
      */
     public function updateSistematika(Request $request, Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         $request->validate([
             'sub_bab' => 'nullable|string',
             'catatan_penyempurnaan' => 'required|string',
@@ -712,6 +773,10 @@ class HasilFasilitasiController extends Controller
      */
     public function deleteSistematika(Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
@@ -769,6 +834,10 @@ class HasilFasilitasiController extends Controller
      */
     public function storeUrusan(Request $request, Permohonan $permohonan)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         // Check if user is member of this tim
         if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
@@ -778,6 +847,11 @@ class HasilFasilitasiController extends Controller
             'master_urusan_id' => 'required|exists:master_urusan,id',
             'catatan_masukan' => 'required|string',
         ]);
+
+        $allowedUrusanIds = $this->allowedUrusanIds();
+        if ($allowedUrusanIds !== null && ! in_array((int) $request->master_urusan_id, $allowedUrusanIds, true)) {
+            return response()->json(['error' => 'Anda hanya dapat memberi masukan pada urusan pemerintahan bidang OPD Anda.'], 403);
+        }
 
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
@@ -793,7 +867,7 @@ class HasilFasilitasiController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
-            $urusan->load('masterUrusan', 'user');
+            $urusan->load('masterUrusan', 'user.opd');
 
             // Activity Log
             activity()
@@ -822,7 +896,7 @@ class HasilFasilitasiController extends Controller
                     ? $urusan->catatan_masukan->render()
                     : $urusan->catatan_masukan,
                 'masterUrusan' => $urusan->masterUrusan,
-                'urusan_urutan' => $urusan->masterUrusan->urutan ?? 999,
+                'urusan_urutan' => $urusan->masterUrusan->urutan_kode ?? 999,
                 'user' => $urusan->user,
                 'created_at' => $urusan->created_at->format('d/m/Y H:i'),
                 'created_at_ts' => $urusan->created_at->timestamp,
@@ -847,6 +921,10 @@ class HasilFasilitasiController extends Controller
      */
     public function updateUrusan(Request $request, Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         $request->validate([
             'catatan_masukan' => 'required|string',
         ]);
@@ -895,6 +973,10 @@ class HasilFasilitasiController extends Controller
      */
     public function deleteUrusan(Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
 
@@ -948,6 +1030,10 @@ class HasilFasilitasiController extends Controller
      */
     public function storeForm(Request $request, Permohonan $permohonan)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
         }
@@ -990,6 +1076,10 @@ class HasilFasilitasiController extends Controller
      */
     public function updateForm(Request $request, Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         $request->validate(['catatan' => 'required|string']);
 
         try {
@@ -1021,6 +1111,10 @@ class HasilFasilitasiController extends Controller
      */
     public function deleteForm(Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
             if (! $hasilFasilitasi) {
@@ -1050,6 +1144,10 @@ class HasilFasilitasiController extends Controller
      */
     public function storeRekomendasi(Request $request, Permohonan $permohonan)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         if (! $this->isTimMember($permohonan)) {
             return response()->json(['error' => 'Anda bukan anggota tim untuk permohonan ini'], 403);
         }
@@ -1092,6 +1190,10 @@ class HasilFasilitasiController extends Controller
      */
     public function updateRekomendasi(Request $request, Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         $request->validate(['catatan' => 'required|string']);
 
         try {
@@ -1123,6 +1225,10 @@ class HasilFasilitasiController extends Controller
      */
     public function deleteRekomendasi(Permohonan $permohonan, $id)
     {
+        if ($locked = $this->lockedResponse($permohonan)) {
+            return $locked;
+        }
+
         try {
             $hasilFasilitasi = $permohonan->hasilFasilitasi;
             if (! $hasilFasilitasi) {
@@ -1176,7 +1282,7 @@ class HasilFasilitasiController extends Controller
             $urusan = $hasilFasilitasi->hasilUrusan()
                 ->with('masterUrusan')
                 ->join('master_urusan', 'hasil_fasilitasi_urusan.master_urusan_id', '=', 'master_urusan.id')
-                ->orderBy('master_urusan.urutan')
+                ->orderBy('master_urusan.kode_urusan')
                 ->orderBy('hasil_fasilitasi_urusan.id')
                 ->select('hasil_fasilitasi_urusan.*')
                 ->get();

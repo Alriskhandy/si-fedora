@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\KabupatenKota;
+use App\Models\Opd;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -106,11 +107,11 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles = Role::whereNotIn('name', User::NON_CREATABLE_ROLES)->get();
+        $roles = Role::whereNotIn('name', User::nonAssignableRolesFor(Auth::user()))->get();
         $kab_kota = KabupatenKota::all();
+        $opdList = Opd::active()->orderBy('nama_opd')->get();
 
-        // dd($roles);
-        return view('pages.admin.users.create', compact('roles', 'kab_kota'));
+        return view('pages.admin.users.create', compact('roles', 'kab_kota', 'opdList'));
     }
 
     /**
@@ -123,6 +124,7 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'kabupaten_kota_id' => $request->kabupaten_kota_id,
+            'opd_id' => $request->role === 'opd' ? $request->opd_id : null,
         ]);
 
         $user->assignRole($request->role);
@@ -153,10 +155,12 @@ class UserController extends Controller
     {
         $this->authorize('manage', $user);
 
-        $roles = Role::whereNotIn('name', User::nonEditableRolesFor(Auth::user()))->get();
+        $roles = Role::whereNotIn('name', User::nonAssignableRolesFor(Auth::user()))->get();
         $currentRole = $user->roles->first()?->name;
+        $isRoleLocked = $user->isRoleLockedFor(Auth::user());
+        $opdList = Opd::active()->orWhere('id', $user->opd_id)->orderBy('nama_opd')->get();
 
-        return view('pages.admin.users.edit', compact('user', 'roles', 'currentRole'));
+        return view('pages.admin.users.edit', compact('user', 'roles', 'currentRole', 'isRoleLocked', 'opdList'));
     }
 
     /**
@@ -167,6 +171,7 @@ class UserController extends Controller
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
+            'opd_id' => $request->role === 'opd' ? $request->opd_id : null,
         ]);
 
         $previousRoles = $user->getRoleNames()->all();

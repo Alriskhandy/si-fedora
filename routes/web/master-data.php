@@ -5,7 +5,7 @@
 | Route Master Data
 |--------------------------------------------------------------------------
 |
-| Data referensi: kabupaten/kota, tahapan, urusan, kelengkapan, jenis dokumen, bab.
+| Data referensi: kabupaten/kota, tahapan, urusan, kelengkapan, jenis dokumen, bab, OPD.
 | Controller: app/Http/Controllers/MasterData. Setiap resource dijaga permission-nya sendiri.
 | Dimuat di dalam grup auth + verified.phone (routes/web.php).
 |
@@ -17,6 +17,7 @@ use App\Http\Controllers\MasterData\MasterJenisDokumenController;
 use App\Http\Controllers\MasterData\MasterKelengkapanController;
 use App\Http\Controllers\MasterData\MasterTahapanController;
 use App\Http\Controllers\MasterData\MasterUrusanController;
+use App\Http\Controllers\MasterData\OpdController;
 use Illuminate\Support\Facades\Route;
 
 Route::resource('kabupaten-kota', KabupatenKotaController::class)
@@ -29,10 +30,14 @@ Route::resource('master-tahapan', MasterTahapanController::class)
     ->only(['index', 'edit', 'update'])
     ->middleware('can:master.tahapan.manage');
 
-Route::resource('master-urusan', MasterUrusanController::class)
-    ->parameters(['master-urusan' => 'masterUrusan'])
-    ->except(['show'])
-    ->middleware('can:master.urusan.manage');
+Route::middleware(['can:master.urusan.manage'])->group(function () {
+    Route::resource('master-urusan', MasterUrusanController::class)
+        ->parameters(['master-urusan' => 'masterUrusan'])
+        ->except(['show']);
+    // Tampil/tidaknya urusan di bagian urusan hasil fasilitasi
+    Route::post('/master-urusan/{masterUrusan}/toggle-hasil-fasilitasi', [MasterUrusanController::class, 'toggleHasilFasilitasi'])
+        ->name('master-urusan.toggle-hasil-fasilitasi');
+});
 
 Route::resource('master-kelengkapan', MasterKelengkapanController::class)
     ->parameters(['master-kelengkapan' => 'masterKelengkapan'])
@@ -53,3 +58,8 @@ Route::resource('master-bab', MasterBabController::class)
     ->parameters(['master-bab' => 'masterBab'])
     ->only(['index', 'store', 'update', 'destroy'])
     ->middleware('can:master.bab.manage');
+
+// OPD untuk akun pengguna ber-role opd (PRD #2)
+Route::resource('opd', OpdController::class)
+    ->except(['show'])
+    ->middleware('can:master.opd.manage');

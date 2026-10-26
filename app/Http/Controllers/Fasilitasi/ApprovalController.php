@@ -185,7 +185,10 @@ class ApprovalController extends Controller
         $query = Permohonan::with([
             'kabupatenKota',
             'jenisDokumen',
-            'hasilFasilitasi',
+            // Jumlah masukan urusan dari akun OPD, untuk badge di daftar (PRD #3)
+            'hasilFasilitasi' => fn ($q) => $q->withCount([
+                'hasilUrusan as masukan_opd_count' => fn ($u) => $u->whereHas('user', fn ($user) => $user->whereNotNull('opd_id')),
+            ]),
         ])
             ->whereHas('hasilFasilitasi', function ($q) {
                 $q->where('status_draft', 'menunggu_persetujuan_kaban')
@@ -233,6 +236,7 @@ class ApprovalController extends Controller
             'jenisDokumen',
             'hasilFasilitasi.hasilSistematika.masterBab',
             'hasilFasilitasi.hasilUrusan.masterUrusan',
+            'hasilFasilitasi.hasilUrusan.user.opd',
             'hasilFasilitasi.pembuat',
         ]);
 
@@ -271,7 +275,7 @@ class ApprovalController extends Controller
 
         // Sort urusan by master urusan urutan
         $sortedUrusan = $hasilFasilitasi->hasilUrusan->sortBy(function ($item) {
-            return $item->masterUrusan->urutan ?? 999;
+            return $item->masterUrusan->urutan_kode ?? 999;
         });
         $hasilFasilitasi->setRelation('hasilUrusan', $sortedUrusan);
 

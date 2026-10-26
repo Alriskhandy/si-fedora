@@ -11,6 +11,7 @@ use App\Models\Notifikasi;
 use App\Models\Permohonan;
 use App\Models\PermohonanDokumen;
 use App\Models\PermohonanTahapan;
+use App\Models\PermohonanTahapanRiwayat;
 use App\Models\User;
 use App\Models\UserKabkotaAssignment;
 use App\Services\PermohonanNotificationService;
@@ -217,6 +218,8 @@ class PermohonanController extends Controller
             'hasilFasilitasi',
             'tindakLanjut',
             'activityLogs.causer',
+            'tahapan.masterTahapan',
+            'tahapan.riwayat.user',
         ]);
 
         return view('pages.fasilitasi.permohonan.show', compact('permohonan'));
@@ -567,6 +570,15 @@ class PermohonanController extends Controller
             $permohonanTahapan->update([
                 'deadline' => $request->deadline,
                 'updated_by' => Auth::id(),
+            ]);
+
+            // Riwayat per tahapan (PRD #5), tampil di halaman detail permohonan
+            $permohonanTahapan->riwayat()->create([
+                'jenis' => PermohonanTahapanRiwayat::JENIS_DEADLINE,
+                'nilai_lama' => $deadlineLama,
+                'nilai_baru' => $request->deadline,
+                'alasan' => $request->keterangan,
+                'user_id' => Auth::id(),
             ]);
 
             // Log activity

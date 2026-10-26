@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MasterUrusanRequest;
+use App\Models\HasilFasilitasiUrusan;
 use App\Models\MasterUrusan;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 /**
- * Master urusan pemerintahan.
+ * Master urusan pemerintahan (kamus data urusan): kode X.XX, kelompok 1–8, OPD pengampu,
+ * dan penanda tampil di bagian urusan hasil fasilitasi.
  *
  * Akses: master.urusan.manage.
  * View: resources/views/pages/master-data/urusan
@@ -15,24 +20,14 @@ use Illuminate\Http\Request;
 class MasterUrusanController extends Controller
 {
     /**
-     * Daftar urusan pemerintahan.
+     * Daftar urusan per kelompok, urut kode urusan.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = MasterUrusan::query();
-
-        if ($request->filled('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
-
-        // Order by kategori: wajib_dasar, wajib_non_dasar, pilihan
-        $urusan = $query->orderByRaw(
-            "CASE 
-                WHEN kategori = 'wajib_dasar' THEN 1 
-                WHEN kategori = 'wajib_non_dasar' THEN 2 
-                WHEN kategori = 'pilihan' THEN 3 
-            END"
-        )->orderBy('urutan')->get();
+        $urusan = MasterUrusan::query()
+            ->when($request->filled('kelompok'), fn ($query) => $query->where('kode_kelompok', $request->kelompok))
+            ->orderBy('kode_urusan')
+            ->get();
 
         return view('pages.master-data.urusan.index', compact('urusan'));
     }
@@ -40,7 +35,7 @@ class MasterUrusanController extends Controller
     /**
      * Form tambah urusan.
      */
-    public function create()
+    public function create(): View
     {
         return view('pages.master-data.urusan.create');
     }
@@ -48,24 +43,17 @@ class MasterUrusanController extends Controller
     /**
      * Simpan urusan baru.
      */
-    public function store(Request $request)
+    public function store(MasterUrusanRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'nama_urusan' => 'required|string|max:255',
-            'kategori' => 'required|in:wajib_dasar,wajib_non_dasar,pilihan',
-            'urutan' => 'required|integer|min:1',
-        ]);
+        MasterUrusan::create($request->validated());
 
-        MasterUrusan::create($validated);
-
-        return redirect()->route('master-urusan.index')
-            ->with('success', 'Urusan berhasil ditambahkan.');
+        return redirect()->route('master-urusan.index')->with('success', 'Urusan berhasil ditambahkan.');
     }
 
     /**
      * Form ubah urusan.
      */
-    public function edit(MasterUrusan $masterUrusan)
+    public function edit(MasterUrusan $masterUrusan): View
     {
         return view('pages.master-data.urusan.edit', compact('masterUrusan'));
     }
@@ -73,28 +61,39 @@ class MasterUrusanController extends Controller
     /**
      * Simpan perubahan urusan.
      */
-    public function update(Request $request, MasterUrusan $masterUrusan)
+    public function update(MasterUrusanRequest $request, MasterUrusan $masterUrusan): RedirectResponse
     {
-        $validated = $request->validate([
-            'nama_urusan' => 'required|string|max:255',
-            'kategori' => 'required|in:wajib_dasar,wajib_non_dasar,pilihan',
-            'urutan' => 'required|integer|min:1',
-        ]);
+        $masterUrusan->update($request->validated());
 
-        $masterUrusan->update($validated);
-
-        return redirect()->route('master-urusan.index')
-            ->with('success', 'Urusan berhasil diperbarui.');
+        return redirect()->route('master-urusan.index')->with('success', 'Urusan berhasil diperbarui.');
     }
 
     /**
-     * Hapus urusan.
+     * Aktifkan/nonaktifkan urusan di bagian urusan hasil fasilitasi.
      */
-    public function destroy(MasterUrusan $masterUrusan)
+    public function toggleHasilFasilitasi(MasterUrusan $masterUrusan): RedirectResponse
     {
+        $masterUrusan->update(['tampil_hasil_fasilitasi' => ! $masterUrusan->tampil_hasil_fasilitasi]);
+
+        return redirect()->back()->with('success', sprintf(
+            'Urusan %s %s di hasil fasilitasi.',
+            $masterUrusan->nama_urusan,
+            $masterUrusan->tampil_hasil_fasilitasi ? 'ditampilkan' : 'tidak lagi ditampilkan',
+        ));
+    }
+
+    /**
+     * Hapus urusan. Urusan yang sudah dipakai masukan hasil fasilitasi tidak bisa dihapus (nonaktifkan saja).
+     */
+    public function destroy(MasterUrusan $masterUrusan): RedirectResponse
+    {
+        if (HasilFasilitasiUrusan::where('master_urusan_id', $masterUrusan->id)->exists()) {
+            return redirect()->route('master-urusan.index')
+                ->with('error', 'Urusan sudah dipakai pada masukan hasil fasilitasi. Ubah statusnya menjadi Tidak Aktif sebagai gantinya.');
+        }
+
         $masterUrusan->delete();
 
-        return redirect()->route('master-urusan.index')
-            ->with('success', 'Urusan berhasil dihapus.');
+        return redirect()->route('master-urusan.index')->with('success', 'Urusan berhasil dihapus.');
     }
 }

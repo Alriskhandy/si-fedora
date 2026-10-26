@@ -24,27 +24,28 @@ class User extends Authenticatable
     use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     /**
-     * Role yang tidak boleh diberikan lewat form tambah pengguna.
+     * Role yang hanya boleh diberikan atau diubah oleh pemegang user.manage-superadmin (Superadmin).
      *
      * @var list<string>
      */
-    public const NON_CREATABLE_ROLES = ['superadmin', 'kaban', 'admin_peran'];
+    public const PROTECTED_ROLES = ['superadmin', 'kaban', 'admin_peran'];
 
     /**
-     * Role yang tidak boleh diberikan lewat form ubah pengguna.
-     *
-     * @var list<string>
-     */
-    public const NON_EDITABLE_ROLES = ['superadmin'];
-
-    /**
-     * Role yang tidak boleh diberikan oleh pengguna tertentu lewat form ubah pengguna.
+     * Role yang tidak boleh diberikan pengguna ini lewat form tambah/ubah pengguna.
      *
      * @return list<string>
      */
-    public static function nonEditableRolesFor(User $actor): array
+    public static function nonAssignableRolesFor(User $actor): array
     {
-        return $actor->can('user.manage-superadmin') ? [] : self::NON_EDITABLE_ROLES;
+        return $actor->can('user.manage-superadmin') ? [] : self::PROTECTED_ROLES;
+    }
+
+    /**
+     * Apakah role akun ini tidak boleh diubah oleh pengguna tersebut (akun ber-role terlindungi).
+     */
+    public function isRoleLockedFor(User $actor): bool
+    {
+        return ! $actor->can('user.manage-superadmin') && $this->hasAnyRole(self::PROTECTED_ROLES);
     }
 
     protected $fillable = [
@@ -52,6 +53,7 @@ class User extends Authenticatable
         'email',
         'password',
         'kabupaten_kota_id',
+        'opd_id',
         'no_hp',
         'foto_profile',
         'last_login_at',
@@ -76,6 +78,14 @@ class User extends Authenticatable
     public function kabupatenKota(): BelongsTo
     {
         return $this->belongsTo(KabupatenKota::class, 'kabupaten_kota_id');
+    }
+
+    /**
+     * OPD asal akun ber-role opd.
+     */
+    public function opd(): BelongsTo
+    {
+        return $this->belongsTo(Opd::class);
     }
 
     public function notifikasi(): HasMany

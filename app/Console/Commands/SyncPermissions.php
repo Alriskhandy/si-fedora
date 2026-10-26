@@ -10,7 +10,8 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Menyinkronkan role & permission dengan katalog config/permissions.php.
  *
- * Tanpa --reset: menambah permission baru ke role default tanpa mencabut perubahan dari UI.
+ * Tanpa --reset: menambah permission baru ke role default tanpa mencabut perubahan dari UI;
+ * role yang baru dibuat langsung mendapat seluruh pemetaan default-nya.
  * Dengan --reset: menyamakan seluruh pemetaan role persis dengan katalog.
  * Permission yang tidak ada di katalog selalu dihapus.
  */
@@ -39,8 +40,11 @@ class SyncPermissions extends Command
         $catalog = config('permissions.permissions');
         $isReset = (bool) $this->option('reset');
 
+        $createdRoles = [];
         foreach (config('permissions.roles') as $roleName) {
-            Role::findOrCreate($roleName, 'web');
+            if (Role::findOrCreate($roleName, 'web')->wasRecentlyCreated) {
+                $createdRoles[] = $roleName;
+            }
         }
 
         $created = [];
@@ -59,7 +63,7 @@ class SyncPermissions extends Command
             $role = Role::findByName($roleName, 'web');
             $defaults = collect($catalog)->filter(fn (array $item) => in_array($roleName, $item['roles'], true))->keys();
 
-            if ($isReset) {
+            if ($isReset || in_array($roleName, $createdRoles, true)) {
                 $role->syncPermissions($defaults->all());
             } else {
                 // Server berjalan: hanya permission baru yang diberikan ke role default-nya
